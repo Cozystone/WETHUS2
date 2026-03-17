@@ -96,11 +96,24 @@ a { color: inherit; text-decoration: none; }
 .chip { border: 1px solid var(--border); background: var(--surface-alt); color: var(--text-secondary); padding: 6px 12px; font-size: .78rem; font-weight: 700; border-radius: 999px; }
 .chip.active { color: var(--orange); border-color: var(--orange); }
 .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
-.hero-ribbon { margin-top: 18px; display:grid; gap:6px; overflow:hidden; }
-.ribbon-line { border-top: 1px solid rgba(255,106,0,.35); border-bottom: 1px solid rgba(255,106,0,.2); white-space: nowrap; }
-.ribbon-line span { display:inline-block; padding: 4px 0; color: var(--orange); font-size: .72rem; letter-spacing: .08em; animation: ribbonMove 14s linear infinite; }
-.ribbon-line--alt span { animation-duration: 18s; animation-direction: reverse; }
-@keyframes ribbonMove { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+.hero-ribbon { margin-top: 26px; display:grid; gap:8px; overflow:hidden; }
+.ribbon-line {
+  border-top: 1px solid rgba(255,106,0,.32);
+  border-bottom: 1px solid rgba(255,106,0,.22);
+  background: linear-gradient(90deg, rgba(255,106,0,.10), rgba(255,126,26,.06), rgba(255,106,0,.10));
+  white-space: nowrap;
+}
+.ribbon-track { display:flex; width:max-content; animation: ribbonMove 16s linear infinite; }
+.ribbon-track span {
+  display:inline-block;
+  padding: 6px 28px 6px 0;
+  color: #ff7e1a;
+  font-size: .82rem;
+  letter-spacing: .09em;
+  font-weight: 700;
+}
+.ribbon-line--alt .ribbon-track { animation-duration: 20s; animation-direction: reverse; }
+@keyframes ribbonMove { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
 .btn { display: inline-flex; align-items: center; justify-content: center; border: 0; cursor: pointer; font-weight: 700; padding: 10px 14px; font-size: .84rem; font-family: var(--font-sans); border-radius: 10px; }
 .btn--primary { background: var(--orange); color: #fff; }

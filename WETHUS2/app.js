@@ -502,8 +502,9 @@
   function listNotifications(limit = 30) {
     const s = load();
     const actor = currentActorId();
+    if (!actor) return [];
     return (s.notifications || [])
-      .filter(n => !n.userId || n.userId === actor)
+      .filter(n => n.userId === actor || n.userId == null)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, limit);
   }
@@ -776,6 +777,7 @@
       }
 
       if (nav.querySelector('.js-nav-notify')) return;
+      if (!actor) return;
       const mentor = Array.from(nav.querySelectorAll('a')).find(a => (a.textContent || '').trim() === '멘토');
       const profile = Array.from(nav.querySelectorAll('a')).find(a => (a.textContent || '').trim() === '프로필');
 
@@ -910,4 +912,6 @@
     getGeminiApiKey,
     askGemini
   };
+})();
+ };
 })();
