@@ -21,15 +21,9 @@
   </header>
 
   <main class="container">
-    <section class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;">
-      <div>
-        <h1 class="page-title">프로젝트 탐색</h1>
-        <p class="page-sub">지금 합류 가능한 팀을 빠르게 찾으세요.</p>
-      </div>
-      <div class="view-toggle" role="group" aria-label="보기 전환">
-        <button id="viewList" class="btn btn--secondary active">리스트형</button>
-        <button id="viewAlbum" class="btn btn--secondary">앨범형</button>
-      </div>
+    <section class="page-header">
+      <h1 class="page-title">프로젝트 탐색</h1>
+      <p class="page-sub">지금 합류 가능한 팀을 빠르게 찾으세요.</p>
     </section>
 
     <section class="search-wrap">
@@ -39,11 +33,21 @@
         <button id="searchBtn" class="btn btn--primary">검색</button>
       </div>
 
-      <div class="hero-tags" style="margin:2px 0 0;">
-        <span class="chip quick" data-q="영화">영화</span>
-        <span class="chip quick" data-q="앱">앱</span>
-        <span class="chip quick" data-q="정책">정책</span>
-        <span class="chip quick" data-q="캠페인">캠페인</span>
+      <div class="search-subrow">
+        <div class="hero-tags" style="margin:2px 0 0;">
+          <span class="chip quick" data-q="영화">영화</span>
+          <span class="chip quick" data-q="앱">앱</span>
+          <span class="chip quick" data-q="정책">정책</span>
+          <span class="chip quick" data-q="캠페인">캠페인</span>
+        </div>
+        <div class="view-toggle" role="group" aria-label="보기 전환">
+          <button id="viewList" class="view-icon-btn active" title="리스트형" aria-label="리스트형">
+            <span class="icon-list"></span>
+          </button>
+          <button id="viewAlbum" class="view-icon-btn" title="앨범형" aria-label="앨범형">
+            <span class="icon-grid"></span>
+          </button>
+        </div>
       </div>
 
       <article id="aiResult" class="list-item" style="display:none;"></article>
@@ -51,6 +55,21 @@
 
     <section id="list" class="list-grid"></section>
   </main>
+
+  <div id="projectModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close="true"></div>
+    <article class="modal-panel">
+      <button class="modal-close" id="modalClose" aria-label="닫기">×</button>
+      <div class="modal-media-wrap"><img id="modalImage" class="modal-image" alt="프로젝트 이미지" /></div>
+      <div class="modal-content">
+        <p class="section-kicker" id="modalCategory">CATEGORY</p>
+        <h3 id="modalTitle" style="margin:0 0 10px;font-size:1.45rem;font-weight:800;"></h3>
+        <p id="modalSummary" style="margin:0 0 12px;color:#f5f5f5;"></p>
+        <p id="modalDesc" style="margin:0 0 18px;color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p>
+        <div class="meta"><span class="badge" id="modalStatus"></span> · <span id="modalRoles"></span> · <span id="modalDuration"></span></div>
+      </div>
+    </article>
+  </div>
 
   <script src="app.js"></script>
   <script>
@@ -73,7 +92,7 @@
     function renderList(items) {
       listEl.className = 'list-grid';
       listEl.innerHTML = items.map(p => `
-        <article class="list-item">
+        <article class="list-item" data-project='${JSON.stringify(p).replace(/'/g, "&#39;")}'>
           <h3>${p.title}</h3>
           <p>${p.summary}</p>
           <div class="meta"><span class="badge">${p.category}</span> · ${p.status} · 필요역할: ${p.roles}</div>
@@ -83,16 +102,18 @@
 
     function renderAlbum(items) {
       listEl.className = 'project-grid-album';
-      listEl.innerHTML = items.map((p, i) => `
-        <article class="project-tile">
-          <img src="${imageFor(p, i)}" alt="${p.title}" class="project-tile-img" />
+      listEl.innerHTML = items.map((p, i) => {
+        const item = { ...p, image: imageFor(p, i) };
+        return `
+        <article class="project-tile" data-project='${JSON.stringify(item).replace(/'/g, "&#39;")}'>
+          <img src="${item.image}" alt="${p.title}" class="project-tile-img" />
           <div class="project-tile-body">
             <h3>${p.title}</h3>
             <p>${p.summary}</p>
             <div class="meta"><span class="badge">${p.category}</span> · ${p.status}</div>
           </div>
         </article>
-      `).join('');
+      `}).join('');
     }
 
     function render(items) {
@@ -145,6 +166,55 @@
       viewMode = 'album';
       localStorage.setItem('wethus_explore_view', viewMode);
       render(currentItems);
+    });
+
+    const modal = document.getElementById('projectModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalCategory = document.getElementById('modalCategory');
+    const modalSummary = document.getElementById('modalSummary');
+    const modalDesc = document.getElementById('modalDesc');
+    const modalStatus = document.getElementById('modalStatus');
+    const modalRoles = document.getElementById('modalRoles');
+    const modalDuration = document.getElementById('modalDuration');
+    const modalImage = document.getElementById('modalImage');
+
+    function openModal(data) {
+      modalTitle.textContent = data.title || '';
+      modalCategory.textContent = data.category || '';
+      modalSummary.textContent = data.summary || '';
+      modalDesc.textContent = data.desc || data.fullDescription || '프로젝트 상세 설명이 준비 중입니다.';
+      modalStatus.textContent = data.status || '';
+      modalRoles.textContent = data.roles || '';
+      modalDuration.textContent = data.duration || '';
+      modalImage.src = data.image || imageFor(data, 0);
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    listEl.addEventListener('click', (e) => {
+      const target = e.target.closest('[data-project]');
+      if (!target) return;
+      try {
+        const data = JSON.parse(target.getAttribute('data-project'));
+        openModal(data);
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close') === 'true') closeModal();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
     });
 
     render(WETHUS.listProjects());

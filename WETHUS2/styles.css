@@ -104,7 +104,7 @@ a { color: inherit; text-decoration: none; }
 .ai-hint { color: var(--text-secondary); font-size: .88rem; }
 
 .list-grid { display: grid; gap: 14px; }
-.list-item { background: var(--surface); border: 1px solid var(--border); padding: 14px; border-radius: 12px; transition: .16s ease; }
+.list-item { background: var(--surface); border: 1px solid var(--border); padding: 14px; border-radius: 12px; transition: .16s ease; cursor: pointer; }
 .list-item:hover { border-color: #3f3f3f; transform: translateY(-1px); }
 .list-item h3 { margin: 0 0 4px; font-size: .98rem; font-weight: 800; }
 .list-item p { margin: 0 0 6px; color: var(--text-secondary); font-size: .9rem; }
@@ -112,7 +112,7 @@ a { color: inherit; text-decoration: none; }
 .badge { color: var(--orange); font-weight: 700; }
 
 .project-grid-album { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:14px; }
-.project-tile { background: var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:.16s ease; }
+.project-tile { background: var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:.16s ease; cursor:pointer; }
 .project-tile:hover { border-color:#3f3f3f; transform:translateY(-1px); }
 .project-tile-img { width:100%; aspect-ratio: 16/10; object-fit:cover; display:block; }
 .project-tile-body { padding: 10px 12px 12px; }
@@ -127,8 +127,30 @@ a { color: inherit; text-decoration: none; }
 .auth-form input { background: #0d0d0d; border: 1px solid var(--border); color: var(--text-primary); padding: 12px; }
 .auth-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
 .auth-tab.active { border-color: var(--orange); color: var(--orange); }
-.view-toggle { display:flex; gap:8px; }
-.view-toggle .btn.active { border-color: var(--orange); color: var(--orange); background: rgba(255,106,0,.08); }
+.search-subrow { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+.view-toggle { display:flex; gap:6px; margin-left:auto; }
+.view-icon-btn {
+  width:36px; height:36px; border-radius:10px;
+  border:1px solid var(--border); background:#111; color:#ddd;
+  display:grid; place-items:center; cursor:pointer;
+}
+.view-icon-btn.active { border-color: var(--orange); box-shadow: 0 0 0 2px rgba(255,106,0,.12) inset; }
+.icon-list, .icon-grid { display:block; }
+.icon-list {
+  width:16px; height:14px;
+  background:
+    linear-gradient(#cfcfcf,#cfcfcf) 0 0/16px 2px no-repeat,
+    linear-gradient(#cfcfcf,#cfcfcf) 0 6px/16px 2px no-repeat,
+    linear-gradient(#cfcfcf,#cfcfcf) 0 12px/16px 2px no-repeat;
+}
+.icon-grid {
+  width:16px; height:16px;
+  background:
+    linear-gradient(#cfcfcf,#cfcfcf) 0 0/6px 6px no-repeat,
+    linear-gradient(#cfcfcf,#cfcfcf) 10px 0/6px 6px no-repeat,
+    linear-gradient(#cfcfcf,#cfcfcf) 0 10px/6px 6px no-repeat,
+    linear-gradient(#cfcfcf,#cfcfcf) 10px 10px/6px 6px no-repeat;
+}
 .auth-close { position: absolute; right: 14px; top: 10px; font-size: 1.8rem; color: #888; }
 .auth-close:hover { color: var(--orange); }
 .dev-row { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
@@ -156,10 +178,12 @@ a { color: inherit; text-decoration: none; }
 .modal { position: fixed; inset: 0; display: none; z-index: 200; }
 .modal.open { display: block; }
 .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.7); }
-.modal-panel { position: relative; width: min(700px, 92vw); margin: 8vh auto 0; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; z-index: 2; overflow: hidden; max-height: 84vh; display: flex; flex-direction: column; }
+.modal-panel { position: relative; width: min(700px, 92vw); margin: 8vh auto 0; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; z-index: 2; max-height: 84vh; overflow: auto; }
+.modal-panel { -ms-overflow-style: none; scrollbar-width: none; }
+.modal-panel::-webkit-scrollbar { display: none; }
 .modal-media-wrap { width: 100%; aspect-ratio: 16/8; background: #0b0b0b; }
 .modal-image { width: 100%; height: 100%; object-fit: cover; display: block; }
-.modal-content { padding: 18px 20px 20px; overflow: auto; }
+.modal-content { padding: 18px 20px 20px; }
 .modal-close { position: absolute; right: 10px; top: 8px; background: rgba(0,0,0,.5); color: #eee; border: 0; width: 34px; height: 34px; border-radius: 999px; font-size: 1.2rem; cursor: pointer; z-index: 3; }
 .modal-close:hover { color: var(--orange); }
 
