@@ -21,9 +21,15 @@
   </header>
 
   <main class="container">
-    <section class="page-header">
-      <h1 class="page-title">프로젝트 탐색</h1>
-      <p class="page-sub">지금 합류 가능한 팀을 빠르게 찾으세요.</p>
+    <section class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;">
+      <div>
+        <h1 class="page-title">프로젝트 탐색</h1>
+        <p class="page-sub">지금 합류 가능한 팀을 빠르게 찾으세요.</p>
+      </div>
+      <div class="view-toggle" role="group" aria-label="보기 전환">
+        <button id="viewList" class="btn btn--secondary active">리스트형</button>
+        <button id="viewAlbum" class="btn btn--secondary">앨범형</button>
+      </div>
     </section>
 
     <section class="search-wrap">
@@ -52,8 +58,20 @@
     const listEl = document.getElementById('list');
     const q = document.getElementById('q');
     const aiResultEl = document.getElementById('aiResult');
+    const viewListBtn = document.getElementById('viewList');
+    const viewAlbumBtn = document.getElementById('viewAlbum');
 
-    function render(items) {
+    let currentItems = WETHUS.listProjects();
+    let viewMode = localStorage.getItem('wethus_explore_view') || 'list';
+
+    function imageFor(project, idx) {
+      if (project.image) return project.image;
+      const key = (project.category || 'project').toLowerCase();
+      return `https://picsum.photos/seed/wethus-${key}-${idx}/900/560`;
+    }
+
+    function renderList(items) {
+      listEl.className = 'list-grid';
       listEl.innerHTML = items.map(p => `
         <article class="list-item">
           <h3>${p.title}</h3>
@@ -61,6 +79,28 @@
           <div class="meta"><span class="badge">${p.category}</span> · ${p.status} · 필요역할: ${p.roles}</div>
         </article>
       `).join('');
+    }
+
+    function renderAlbum(items) {
+      listEl.className = 'project-grid-album';
+      listEl.innerHTML = items.map((p, i) => `
+        <article class="project-tile">
+          <img src="${imageFor(p, i)}" alt="${p.title}" class="project-tile-img" />
+          <div class="project-tile-body">
+            <h3>${p.title}</h3>
+            <p>${p.summary}</p>
+            <div class="meta"><span class="badge">${p.category}</span> · ${p.status}</div>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function render(items) {
+      currentItems = items;
+      if (viewMode === 'album') renderAlbum(items);
+      else renderList(items);
+      viewListBtn.classList.toggle('active', viewMode === 'list');
+      viewAlbumBtn.classList.toggle('active', viewMode === 'album');
     }
 
     async function runSearch() {
@@ -93,6 +133,18 @@
         q.value = chip.dataset.q;
         runSearch();
       });
+    });
+
+    viewListBtn.addEventListener('click', () => {
+      viewMode = 'list';
+      localStorage.setItem('wethus_explore_view', viewMode);
+      render(currentItems);
+    });
+
+    viewAlbumBtn.addEventListener('click', () => {
+      viewMode = 'album';
+      localStorage.setItem('wethus_explore_view', viewMode);
+      render(currentItems);
     });
 
     render(WETHUS.listProjects());
