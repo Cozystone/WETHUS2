@@ -135,17 +135,25 @@
       if (!window.WETHUS) return;
       const el = document.getElementById('homeFeatured');
       if (!el) return;
-      const featured = WETHUS.listProjects().slice().sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0, 6);
+      const normalizeStage = (v) => {
+        const s = String(v || '').replace(/\s+/g,'');
+        if (s === '모집중' || s === '구인중') return '모집 중';
+        if (s === '팀빌딩' || s === '기획중') return '기획 중';
+        if (s === '진행중') return '진행 중';
+        if (s === '피보팅') return '피보팅';
+        return v || '기획 중';
+      };
+      const featured = WETHUS.listProjects().slice().sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0, 6).map(p => ({...p, status: normalizeStage(p.status)}));
       const fallbackClass = { Film:'card-media--film', App:'card-media--startup', Startup:'card-media--startup', Policy:'card-media--policy', Campaign:'card-media--policy', Creative:'card-media--film' };
       el.innerHTML = featured.map(p => `
         <article class="card" data-project='${JSON.stringify(p).replace(/'/g, "&#39;")}'>
           <div class="card-media ${fallbackClass[p.category] || 'card-media--film'}">
             <img src="${p.image || `https://picsum.photos/seed/wethus-${(p.category||'project').toLowerCase()}/900/560`}" alt="${p.title}" class="card-img" />
           </div>
-          <span class="card-chip">${p.category}</span>
+          <span class="card-chip">${p.status || '기획 중'}</span>
           <h3 class="card-title">${p.title}</h3>
           <p class="card-summary">${p.summary || ''}</p>
-          <div class="card-meta"><span class="card-status">${p.status || ''}</span><span class="card-roles">${p.roles || ''}</span></div>
+          <div class="card-meta"><span class="card-status">${p.category || ''}</span><span class="card-roles">${p.roles || ''}</span></div>
           <div class="card-social"><span>♡ ${(p.likes||0)}</span><span>💬 ${Array.isArray(p.comments)?p.comments.length:0}</span></div>
         </article>
       `).join('');
