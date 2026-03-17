@@ -16,7 +16,7 @@
         <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
         <a href="mentor.html" class="nav-link">멘토</a>
         <a href="profile.html" class="nav-link nav-link--cta">프로필</a>
-        <a href="#" id="logoutBtn" class="nav-link">로그아웃</a>
+        <a href="login.html" id="logoutBtn" class="nav-link">로그아웃</a>
       </nav>
     </div>
   </header>
@@ -41,76 +41,85 @@
 
   <script src="app.js"></script>
   <script>
-    WETHUS.requireAuth();
-    const u = WETHUS.currentUser();
-    const hero = document.getElementById('profileHero');
-    const editBox = document.getElementById('profileEditBox');
-    const mine = document.getElementById('myProjects');
+    const logoutBtn = document.getElementById('logoutBtn');
+    logoutBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      try {
+        window.WETHUS?.logout?.();
+      } finally {
+        location.href = 'login.html';
+      }
+    });
 
-    const fallbackUser = { name: '개발자 모드', nickname: 'dev_mode', email: 'dev@local', bio: '임시 세션으로 로그인됨', founderVerified: false, profileImage: '' };
-    const user = u || fallbackUser;
-    const founderBadge = user.founderVerified ? '<span class="verify-badge">Founder 인증</span>' : '';
+    try {
+      WETHUS.requireAuth();
 
-    hero.innerHTML = `
-      <div class="profile-avatar">${(user.name || 'U').slice(0,1)}</div>
-      <div class="profile-main">
-        <div class="profile-topline">
-          <h2>${user.name}</h2>
-          <span class="profile-nickname">@${user.nickname || (user.name || '').replace(/\s+/g,'').toLowerCase()}</span>
-          ${founderBadge}
+      const u = WETHUS.currentUser();
+      const hero = document.getElementById('profileHero');
+      const editBox = document.getElementById('profileEditBox');
+      const mine = document.getElementById('myProjects');
+
+      const fallbackUser = { name: '개발자 모드', nickname: 'dev_mode', email: 'dev@local', bio: '임시 세션으로 로그인됨', founderVerified: false, profileImage: '' };
+      const user = u || fallbackUser;
+      const founderBadge = user.founderVerified ? '<span class="verify-badge">Founder 인증</span>' : '';
+
+      hero.innerHTML = `
+        <div class="profile-avatar">${(user.name || 'U').slice(0,1)}</div>
+        <div class="profile-main">
+          <div class="profile-topline">
+            <h2>${user.name}</h2>
+            <span class="profile-nickname">@${user.nickname || (user.name || '').replace(/\s+/g,'').toLowerCase()}</span>
+            ${founderBadge}
+          </div>
+          <p class="profile-bio">${user.bio || '아직 소개가 없습니다. 프로젝트를 시작해보세요.'}</p>
+          <div class="profile-stats">
+            <span><strong>${WETHUS.myProjects().length}</strong> 프로젝트</span>
+            <span><strong>${WETHUS.listProjects().filter(p => p.founderId === (u ? u.id : 'dev-temp')).length}</strong> 등록</span>
+            <span><strong>${u ? '일반' : '개발'}</strong> 모드</span>
+          </div>
         </div>
-        <p class="profile-bio">${user.bio || '아직 소개가 없습니다. 프로젝트를 시작해보세요.'}</p>
-        <div class="profile-stats">
-          <span><strong>${WETHUS.myProjects().length}</strong> 프로젝트</span>
-          <span><strong>${WETHUS.listProjects().filter(p => p.founderId === (u?.id || 'dev-temp')).length}</strong> 등록</span>
-          <span><strong>${u ? '일반' : '개발'}</strong> 모드</span>
-        </div>
-      </div>
-    `;
-
-    if (u) {
-      editBox.innerHTML = `
-        <h3 style="margin:0 0 10px;">프로필 편집</h3>
-        <form id="profileForm" class="application-form">
-          <label>이름 <input name="name" value="${u.name}" required /></label>
-          <label>별명 <input name="nickname" value="${u.nickname || ''}" required /></label>
-          <label>소개 <textarea name="bio" placeholder="자기소개를 입력하세요">${u.bio || ''}</textarea></label>
-          <label><input type="checkbox" name="founderVerified" ${u.founderVerified ? 'checked' : ''}/> Founder 인증서 보유(개발용)</label>
-          <button class="btn btn--primary" type="submit">저장</button>
-        </form>
-        <p id="profileMsg" class="form-message"></p>
       `;
 
-      document.getElementById('profileForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        const s = WETHUS.getState();
-        const target = s.users.find(x => x.id === u.id);
-        target.name = fd.get('name');
-        target.nickname = fd.get('nickname');
-        target.bio = fd.get('bio');
-        target.founderVerified = fd.get('founderVerified') === 'on';
-        localStorage.setItem('wethus_v1', JSON.stringify(s));
-        document.getElementById('profileMsg').textContent = '저장되었습니다. 새로고침하면 상단 카드에 반영됩니다.';
-      });
-    } else {
-      editBox.innerHTML = '<p class="page-sub">개발자 모드에서는 프로필 편집이 제한됩니다.</p>';
+      if (u) {
+        editBox.innerHTML = `
+          <h3 style="margin:0 0 10px;">프로필 편집</h3>
+          <form id="profileForm" class="application-form">
+            <label>이름 <input name="name" value="${u.name}" required /></label>
+            <label>별명 <input name="nickname" value="${u.nickname || ''}" required /></label>
+            <label>소개 <textarea name="bio" placeholder="자기소개를 입력하세요">${u.bio || ''}</textarea></label>
+            <label><input type="checkbox" name="founderVerified" ${u.founderVerified ? 'checked' : ''}/> Founder 인증서 보유(개발용)</label>
+            <button class="btn btn--primary" type="submit">저장</button>
+          </form>
+          <p id="profileMsg" class="form-message"></p>
+        `;
+
+        document.getElementById('profileForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const s = WETHUS.getState();
+          const target = s.users.find(x => x.id === u.id);
+          target.name = fd.get('name');
+          target.nickname = fd.get('nickname');
+          target.bio = fd.get('bio');
+          target.founderVerified = fd.get('founderVerified') === 'on';
+          localStorage.setItem('wethus_v1', JSON.stringify(s));
+          document.getElementById('profileMsg').textContent = '저장되었습니다. 새로고침하면 상단 카드에 반영됩니다.';
+        });
+      } else {
+        editBox.innerHTML = '<p class="page-sub">개발자 모드에서는 프로필 편집이 제한됩니다.</p>';
+      }
+
+      const list = WETHUS.myProjects();
+      mine.innerHTML = list.length ? list.map(p => `
+        <article class="list-item">
+          <h3>${p.title}</h3>
+          <p>${p.summary}</p>
+          <div class="meta"><span class="badge">${p.category}</span> · ${p.status} · ${p.duration || ''}</div>
+        </article>
+      `).join('') : '<article class="list-item"><h3>프로젝트 없음</h3><p>아직 등록한 프로젝트가 없습니다. + 프로젝트 추가를 눌러 시작해보세요.</p></article>';
+    } catch (err) {
+      console.error(err);
     }
-
-    const list = WETHUS.myProjects();
-    mine.innerHTML = list.length ? list.map(p => `
-      <article class="list-item">
-        <h3>${p.title}</h3>
-        <p>${p.summary}</p>
-        <div class="meta"><span class="badge">${p.category}</span> · ${p.status} · ${p.duration || ''}</div>
-      </article>
-    `).join('') : '<article class="list-item"><h3>프로젝트 없음</h3><p>아직 등록한 프로젝트가 없습니다. + 프로젝트 추가를 눌러 시작해보세요.</p></article>';
-
-    document.getElementById('logoutBtn').addEventListener('click', (e) => {
-      e.preventDefault();
-      WETHUS.logout();
-      location.href = 'login.html';
-    });
   </script>
 </body>
 </html>
