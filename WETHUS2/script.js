@@ -21,6 +21,7 @@
   var summaryEl = document.getElementById('modalSummary');
   var descEl = document.getElementById('modalDesc');
   var statusEl = document.getElementById('modalStatus');
+  var categoryBadgeEl = document.getElementById('modalCategoryBadge');
   var rolesEl = document.getElementById('modalRoles');
   var durationEl = document.getElementById('modalDuration');
   var imageEl = document.getElementById('modalImage');
@@ -33,7 +34,21 @@
   var commentsEl = document.getElementById('modalComments');
   var commentForm = document.getElementById('modalCommentForm');
   var commentInput = document.getElementById('modalCommentInput');
+  var modalTeamEl = document.getElementById('modalTeam');
   var currentProjectId = null;
+
+  function memberHref(m) {
+    return 'member.html?name=' + encodeURIComponent(m?.name || '팀원') + '&role=' + encodeURIComponent(m?.role || '담당') + '&bio=' + encodeURIComponent(m?.bio || '소개가 아직 없습니다.');
+  }
+
+  function renderTeamMini(team) {
+    if (!modalTeamEl) return;
+    if (!team || !team.length) { modalTeamEl.innerHTML = ''; return; }
+    var leader = team.find(function (m) { return m.isLeader; }) || team[0];
+    var rest = team.filter(function (m) { return m !== leader; });
+    modalTeamEl.innerHTML = '<a class="member-pill leader" href="'+memberHref(leader)+'">'+(leader.name||'대표')+' 대표</a>' +
+      rest.slice(0,3).map(function (m) { return '<a class="member-pill" href="'+memberHref(m)+'">'+(m.name||'팀원')+' '+(m.role||'')+'</a>'; }).join('');
+  }
 
   function renderComments(comments) {
     if (!commentsEl) return;
@@ -52,6 +67,7 @@
     summaryEl.textContent = data.summary || '';
     descEl.textContent = data.desc || '';
     statusEl.textContent = data.status || '';
+    if (categoryBadgeEl) categoryBadgeEl.textContent = data.category || '';
     rolesEl.textContent = data.roles || '';
     durationEl.textContent = data.duration || '';
     imageEl.src = data.image || 'https://picsum.photos/seed/wethus-default/1200/700';
@@ -62,6 +78,7 @@
     if (likeBtn) likeBtn.classList.toggle('liked', !!data._liked);
     if (likeBtn) likeBtn.innerHTML = (data._liked ? '♥ ' : '♡ ') + '<span id="modalLikeCount">' + (data.likes || 0) + '</span>';
     likeCountEl = document.getElementById('modalLikeCount');
+    renderTeamMini(data.teamMembers || []);
     renderComments(data.comments || []);
     if (commentPanel) commentPanel.style.display = 'none';
     modal.classList.add('open');
@@ -140,40 +157,7 @@
     });
   }
 
-  var memberModal = document.getElementById('memberModal');
-  var memberName = document.getElementById('memberName');
-  var memberRole = document.getElementById('memberRole');
-  var memberBio = document.getElementById('memberBio');
-
-  function openMember(member) {
-    if (!memberModal) return;
-    memberName.textContent = member.name || '팀원';
-    memberRole.textContent = member.role || '팀원';
-    memberBio.textContent = member.bio || '소개가 아직 없습니다.';
-    memberModal.classList.add('open');
-    memberModal.setAttribute('aria-hidden', 'false');
-  }
-
-  function closeMember() {
-    if (!memberModal) return;
-    memberModal.classList.remove('open');
-    memberModal.setAttribute('aria-hidden', 'true');
-  }
-
-  document.querySelectorAll('.member-pill').forEach(function (pill) {
-    pill.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var raw = pill.getAttribute('data-member');
-      try { openMember(JSON.parse(raw)); } catch (_) {}
-    });
-  });
-
-  document.getElementById('memberModalClose')?.addEventListener('click', closeMember);
-  memberModal?.addEventListener('click', function (e) {
-    if (e.target && e.target.getAttribute('data-close-member') === 'true') closeMember();
-  });
-
   window.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') { closeModal(); closeMember(); }
+    if (e.key === 'Escape') { closeModal(); }
   });
 })();

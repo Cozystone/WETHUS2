@@ -16,7 +16,7 @@
         <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
         <a href="mentor.html" class="nav-link">멘토</a>
         <a href="profile.html" class="nav-link">프로필</a>
-        <a href="login.html" class="nav-link">로그인</a>
+        <a href="login.html" class="nav-link js-auth-link">로그인</a>
         <a href="founder.html" class="nav-link nav-link--cta">Founder 신청</a>
       </nav>
     </div>
@@ -109,7 +109,8 @@
         <h3 id="modalTitle" style="margin:0 0 10px;font-size:1.45rem;font-weight:800;"></h3>
         <p id="modalSummary" style="margin:0 0 12px;color:#f5f5f5;"></p>
         <p id="modalDesc" style="margin:0 0 18px;color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p>
-        <div class="meta"><span class="badge" id="modalStatus"></span> · <span id="modalRoles"></span> · <span id="modalDuration"></span></div>
+        <div id="modalTeam" class="team-row" style="margin-bottom:12px;"></div>
+        <div class="meta"><span class="badge" id="modalCategoryBadge"></span> · <span id="modalStatus"></span> · <span id="modalRoles"></span> · <span id="modalDuration"></span></div>
         <div class="modal-social-row">
           <button id="modalLikeBtn" class="btn btn--secondary">♡ <span id="modalLikeCount">0</span></button>
           <button id="modalCommentBtn" class="btn btn--secondary">💬 <span id="modalCommentCount">0</span></button>
@@ -129,22 +130,18 @@
     </article>
   </div>
 
-  <div id="memberModal" class="modal" aria-hidden="true">
-    <div class="modal-backdrop" data-close-member="true"></div>
-    <article class="modal-panel" style="max-width:420px;">
-      <button class="modal-close" id="memberModalClose" aria-label="닫기">×</button>
-      <div class="modal-content">
-        <h3 id="memberName" style="margin:0 0 6px;"></h3>
-        <p id="memberRole" class="badge" style="margin:0 0 10px;"></p>
-        <p id="memberBio" style="margin:0;color:#b8b8b8;"></p>
-      </div>
-    </article>
-  </div>
-
+  
   <script src="app.js"></script>
   <script>
     (function(){
       if (!window.WETHUS) return;
+      const authLink = document.querySelector('.js-auth-link');
+      const st = WETHUS.getState();
+      if (authLink && (st.currentUserId || st.devMode)) {
+        authLink.textContent = '로그아웃';
+        authLink.href = '#';
+        authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
+      }
       const el = document.getElementById('homeFeatured');
       if (!el) return;
       const normalizeStage = (v) => {
@@ -157,6 +154,7 @@
       };
       const featured = WETHUS.listProjects().slice().sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0, 6).map(p => ({...p, status: normalizeStage(p.status)}));
       const fallbackClass = { Film:'card-media--film', App:'card-media--startup', Startup:'card-media--startup', Policy:'card-media--policy', Campaign:'card-media--policy', Creative:'card-media--film' };
+      const memberHref = (m) => `member.html?name=${encodeURIComponent(m?.name||'팀원')}&role=${encodeURIComponent(m?.role||'담당')}&bio=${encodeURIComponent(m?.bio||'소개가 아직 없습니다.')}`;
       const renderTeam = (team=[]) => {
         const leader = team.find(m => m.isLeader) || team[0];
         const others = team.filter(m => m !== leader);
@@ -164,9 +162,9 @@
         const hidden = others.slice(2);
         return `
           <div class="team-row">
-            <button class="member-pill leader" data-member='${JSON.stringify(leader||{}).replace(/'/g, "&#39;")}'>${leader?.name || '대표'}</button>
-            ${visible.map(m => `<button class="member-pill" data-member='${JSON.stringify(m).replace(/'/g, "&#39;")}'>${m.name}</button>`).join('')}
-            ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length+1}명</button><div class="team-list">${hidden.map(m=>`<button class="member-pill block" data-member='${JSON.stringify(m).replace(/'/g, "&#39;")}'>${m.name}</button>`).join('')}</div>` : ''}
+            <a class="member-pill leader" href="${memberHref(leader)}">${leader?.name || '대표'} 대표</a>
+            ${visible.map(m => `<a class="member-pill" href="${memberHref(m)}">${m.name} ${m.role||''}</a>`).join('')}
+            ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length+1}명</button><div class="team-list">${hidden.map(m=>`<a class="member-pill block" href="${memberHref(m)}">${m.name} ${m.role||''}</a>`).join('')}</div>` : ''}
           </div>`;
       };
       el.innerHTML = featured.map(p => `
