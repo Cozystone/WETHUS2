@@ -150,6 +150,7 @@ a { color: inherit; text-decoration: none; }
 
 .page-main { flex: 1; }
 .page-main--standard { min-height: calc(100vh - 260px); padding-bottom: 140px; }
+.page-main--explore { width: min(96vw, 1520px); max-width: 1520px; }
 .page-main--profile { min-height: calc(100vh - 240px); padding-bottom: 120px; }
 #myProjects, #participatingProjects { min-height: 180px; align-content: start; }
 .page-header { padding: 36px 0 14px; }
