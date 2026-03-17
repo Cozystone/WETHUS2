@@ -30,6 +30,7 @@
         <input name="nickname" placeholder="별명" required />
         <input name="email" type="email" placeholder="이메일" required />
         <input name="password" type="password" placeholder="비밀번호" required />
+        <input name="passwordConfirm" type="password" placeholder="비밀번호 확인" required />
         <button class="btn btn--primary" type="submit">회원가입</button>
       </form>
 
@@ -49,6 +50,10 @@
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
 
+    if (!window.WETHUS) {
+      msg.textContent = '앱 로딩 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.';
+    }
+
     function setTab(mode) {
       const isLogin = mode === 'login';
       tabLogin.classList.toggle('active', isLogin);
@@ -63,6 +68,7 @@
 
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
+      if (!window.WETHUS) return;
       const fd = new FormData(loginForm);
       try {
         WETHUS.loginUser({ email: fd.get('email'), password: fd.get('password') });
@@ -72,7 +78,12 @@
 
     signupForm.addEventListener('submit', (e) => {
       e.preventDefault();
+      if (!window.WETHUS) return;
       const fd = new FormData(signupForm);
+      if (fd.get('password') !== fd.get('passwordConfirm')) {
+        msg.textContent = '비밀번호 확인이 일치하지 않습니다.';
+        return;
+      }
       try {
         WETHUS.registerUser({
           name: fd.get('name'),
@@ -85,10 +96,12 @@
     });
 
     document.getElementById('devModeBtn').addEventListener('click', () => {
+      if (!window.WETHUS) return;
       const p = prompt('개발자모드 비밀번호를 입력하세요');
       if (p === '0904') {
-        WETHUS.setCurrentUser(null, true);
-        location.href = 'index.html';
+        WETHUS.setCurrentUser('dev-temp', true);
+        msg.textContent = '개발자모드로 진입합니다...';
+        setTimeout(() => { location.href = 'index.html'; }, 250);
       } else {
         msg.textContent = '비밀번호가 올바르지 않습니다.';
       }
