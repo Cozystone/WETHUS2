@@ -65,7 +65,7 @@
   <main class="container">
     <section class="page-header">
       <h1 class="page-title">Founder 신청</h1>
-      <p class="page-sub">모든 항목을 채워야 포스팅할 수 있습니다.</p>
+      <p class="page-sub">Founder 신청이 승인되면 프로젝트가 공개되고, 신청자는 Founder로 인증됩니다.</p>
     </section>
 
     <section class="founder-form">
@@ -149,7 +149,7 @@
 
         <div class="form-row">
           <button id="previewBtn" class="btn preview-trigger" type="button">미리보기</button>
-          <button id="submitBtn" class="btn btn--primary" type="submit">포스팅하기</button>
+          <button id="submitBtn" class="btn btn--primary" type="submit">신청하기</button>
         </div>
       </form>
       <p id="msg" class="form-message"></p>
@@ -209,6 +209,7 @@
     const customCategoryInput = document.getElementById('customCategory');
 
     let imageData = '';
+    let aiImageSelected = false;
 
     function noSpaceLen(v) { return String(v || '').replace(/\s/g, '').length; }
 
@@ -229,8 +230,8 @@
     }
 
     function validateStrict(showMessage = false) {
-      if (!imageData) {
-        if (showMessage) msg.textContent = '메인 사진을 업로드해주세요.';
+      if (!imageData && !aiImageSelected) {
+        if (showMessage) msg.textContent = '메인 사진을 업로드하거나 AI 이미지 생성을 선택해주세요.';
         return false;
       }
 
@@ -261,6 +262,12 @@
       return true;
     }
 
+    function setAiButtonState() {
+      genImageBtn.classList.toggle('btn--primary', aiImageSelected);
+      genImageBtn.classList.toggle('btn--secondary', !aiImageSelected);
+      genImageBtn.textContent = aiImageSelected ? 'AI 이미지 선택됨' : 'AI 이미지 생성';
+    }
+
     function handleFile(file) {
       if (!file || !file.type.startsWith('image/')) {
         msg.textContent = '이미지 파일만 업로드할 수 있습니다.';
@@ -269,6 +276,8 @@
       const reader = new FileReader();
       reader.onload = () => {
         imageData = reader.result;
+        aiImageSelected = false;
+        setAiButtonState();
         coverPreview.src = imageData;
         coverPreviewWrap.style.display = 'block';
         msg.textContent = '';
@@ -286,29 +295,22 @@
       if (!custom) customCategoryInput.value = '';
     });
 
-    genImageBtn.addEventListener('click', async () => {
+    genImageBtn.addEventListener('click', () => {
       const title = String(form.elements.title.value || '').trim();
       const desc = String(form.elements.description.value || '').trim();
-      const category = resolvedCategory() || String(categorySelect.value || '').trim();
       if (!title || !desc) {
-        msg.textContent = 'AI 이미지 생성을 위해 제목과 프로젝트 설명을 먼저 입력해주세요.';
+        msg.textContent = 'AI 이미지 생성을 선택하려면 제목과 프로젝트 설명을 먼저 입력해주세요.';
         return;
       }
-      msg.textContent = 'AI가 메인 이미지를 생성 중입니다...';
-      try {
-        const keywordPrompt = `Create one concise English visual prompt (max 10 words) for a cinematic poster image. Category: ${category}. Title: ${title}. Description: ${desc.slice(0, 300)}`;
-        let keyword = 'youth project cinematic poster dark background orange accent';
-        try {
-          const k = await WETHUS.askGemini(keywordPrompt);
-          keyword = String(k || '').replace(/[\n\r]/g, ' ').trim().slice(0, 120) || keyword;
-        } catch (_) {}
-        imageData = `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword)}`;
-        coverPreview.src = imageData;
-        coverPreviewWrap.style.display = 'block';
-        msg.textContent = 'AI 이미지 생성 완료.';
-      } catch (_) {
-        msg.textContent = 'AI 이미지 생성에 실패했어요. 잠시 후 다시 시도해주세요.';
+      aiImageSelected = !aiImageSelected;
+      if (aiImageSelected) {
+        imageData = '';
+        coverPreviewWrap.style.display = 'none';
+        msg.textContent = 'AI 이미지 생성이 선택되었습니다. 신청 시 자동 생성됩니다.';
+      } else {
+        msg.textContent = 'AI 이미지 선택이 해제되었습니다.';
       }
+      setAiButtonState();
     });
 
     ['dragenter','dragover'].forEach(evt => {
@@ -336,12 +338,14 @@
       updateCounter(textarea);
       textarea.addEventListener('input', () => updateCounter(textarea));
     });
+    setAiButtonState();
 
     const previewModal = document.getElementById('previewModal');
     function openPreview() {
       if (!validateStrict(true)) return;
       const fd = new FormData(form);
-      document.getElementById('previewImage').src = imageData;
+      const fallbackPreview = `https://image.pollinations.ai/prompt/${encodeURIComponent(`${resolvedCategory()} ${fd.get('title')} cinematic poster dark orange`)}`;
+      document.getElementById('previewImage').src = imageData || fallbackPreview;
       document.getElementById('previewCategory').textContent = resolvedCategory();
       document.getElementById('previewTitle').textContent = fd.get('title');
       document.getElementById('previewSummary').textContent = String(fd.get('description')).slice(0, 120);
@@ -366,12 +370,26 @@
       if (e.target && e.target.getAttribute('data-close-preview') === 'true') closePreview();
     });
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!validateStrict(true)) return;
 
       const fd = new FormData(form);
       const summary = String(fd.get('description')).slice(0, 90);
+
+      let finalImage = imageData;
+      if (!finalImage && aiImageSelected) {
+        msg.textContent = 'AI가 메인 이미지를 생성 중입니다...';
+        const category = resolvedCategory();
+        const title = String(fd.get('title') || '').trim();
+        const desc = String(fd.get('description') || '').trim();
+        let keyword = `${category} ${title} cinematic poster dark orange accent`;
+        try {
+          const k = await WETHUS.askGemini(`Create one concise English visual prompt (max 10 words) for a cinematic poster image. Category: ${category}. Title: ${title}. Description: ${desc.slice(0, 300)}`);
+          keyword = String(k || '').replace(/[\n\r]/g, ' ').trim().slice(0, 120) || keyword;
+        } catch (_) {}
+        finalImage = `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword)}`;
+      }
 
       WETHUS.addProject({
         title: fd.get('title'),
@@ -385,15 +403,19 @@
         teamSize: fd.get('teamSize'),
         roles: fd.get('roles'),
         duration: fd.get('duration'),
-        image: imageData,
+        image: finalImage,
         likes: 0,
         comments: []
       });
 
-      msg.textContent = '포스팅 완료! 탐색/프로필에서 확인할 수 있어요.';
+      msg.textContent = '신청 완료! 운영자 검토 후 탐색/프로필에 반영됩니다.';
       form.reset();
       imageData = '';
+      aiImageSelected = false;
+      setAiButtonState();
       coverPreviewWrap.style.display = 'none';
+      customCategoryWrap.style.display = 'none';
+      customCategoryInput.required = false;
       form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
     });
   </script>
