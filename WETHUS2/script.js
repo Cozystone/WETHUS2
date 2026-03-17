@@ -61,6 +61,28 @@
     }).join('');
   }
 
+  function syncProjectStats(projectId, likes, commentsLen) {
+    if (!projectId) return;
+    document.querySelectorAll('[data-project]').forEach(function (card) {
+      try {
+        var raw = card.getAttribute('data-project');
+        var data = JSON.parse(raw);
+        if (data.id !== projectId) return;
+        if (typeof likes === 'number') data.likes = likes;
+        if (typeof commentsLen === 'number') {
+          if (!Array.isArray(data.comments)) data.comments = [];
+          data.comments.length = commentsLen;
+        }
+        card.setAttribute('data-project', JSON.stringify(data).replace(/'/g, '&#39;'));
+        var social = card.querySelector('.card-social');
+        if (social) {
+          if (typeof likes === 'number' && social.children[0]) social.children[0].textContent = '♡ ' + likes;
+          if (typeof commentsLen === 'number' && social.children[1]) social.children[1].textContent = '💬 ' + commentsLen;
+        }
+      } catch (_) {}
+    });
+  }
+
   function openModal(data) {
     titleEl.textContent = data.title || '';
     categoryEl.textContent = data.category || '';
@@ -127,6 +149,7 @@
       likeBtn.classList.toggle('liked', !!result.liked);
       likeBtn.innerHTML = (result.liked ? '♥ ' : '♡ ') + '<span id="modalLikeCount">' + result.likes + '</span>';
       likeCountEl = document.getElementById('modalLikeCount');
+      syncProjectStats(currentProjectId, result.likes);
     });
   }
 
@@ -154,6 +177,7 @@
       commentInput.value = '';
       commentCountEl.textContent = comments.length;
       renderComments(comments);
+      syncProjectStats(currentProjectId, undefined, comments.length);
     });
   }
 
