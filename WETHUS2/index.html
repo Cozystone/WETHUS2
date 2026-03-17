@@ -168,7 +168,36 @@
         if (s === '피보팅') return '피보팅';
         return '기획 중';
       };
-      const featured = WETHUS.listProjects().slice().filter(p => !WETHUS.hasApplied(p.id)).sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0, 6).map(p => ({...p, status: normalizeStage(p.status)}));
+      function recommendationPool() {
+        const now = Date.now();
+        const items = WETHUS.listProjects().slice().filter(p => !WETHUS.hasApplied(p.id)).map(p => {
+          const likes = Number(p.likes || 0);
+          const comments = Array.isArray(p.comments) ? p.comments.length : 0;
+          const ageDays = Math.max(1, (now - new Date(p.createdAt || now).getTime()) / 86400000);
+          const freshness = Math.max(0, 1 - ageDays / 14);
+          const activity = Math.min(1, (likes * 0.6 + comments * 1.2) / 40);
+          const quality = Math.min(1, ((p.fullDescription || p.desc || p.summary || '').length / 600));
+          const diversityBoost = ['Policy','Campaign','Creative'].includes(p.category) ? 0.08 : 0;
+          const score = activity * 0.45 + freshness * 0.3 + quality * 0.25 + diversityBoost + Math.random() * 0.03;
+          return { ...p, _recScore: score };
+        }).sort((a,b)=>b._recScore-a._recScore);
+
+        const picked = [];
+        const usedCategory = new Set();
+        for (const p of items) {
+          if (picked.length >= 6) break;
+          if (!usedCategory.has(p.category) || picked.length >= 4) {
+            picked.push(p);
+            usedCategory.add(p.category);
+          }
+        }
+        for (const p of items) {
+          if (picked.length >= 6) break;
+          if (!picked.find(x => x.id === p.id)) picked.push(p);
+        }
+        return picked.map(p => ({ ...p, status: normalizeStage(p.status) }));
+      }
+      const featured = recommendationPool();
       const fallbackClass = { Film:'card-media--film', App:'card-media--startup', Startup:'card-media--startup', Policy:'card-media--policy', Campaign:'card-media--policy', Creative:'card-media--film' };
       const memberHref = (m) => `member.html?name=${encodeURIComponent(m?.name||'팀원')}&role=${encodeURIComponent(m?.role||'담당')}&bio=${encodeURIComponent(m?.bio||'소개가 아직 없습니다.')}&founder=${m?.isLeader ? '1' : '0'}`;
       const renderTeam = (team=[]) => {

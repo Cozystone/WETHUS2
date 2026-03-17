@@ -537,11 +537,31 @@
       if (e.target && e.target.getAttribute('data-close-preview') === 'true') closePreview();
     });
 
+    async function moderateFounderApplication(fd) {
+      const text = [fd.get('title'), fd.get('description'), fd.get('motivation'), fd.get('output'), fd.get('plan')].join('\n');
+      const hardBlock = /(성적|음란|19금|노출|강간|자살|폭탄|테러|혐오|죽여|미성년\s*성)/i;
+      if (hardBlock.test(text)) return { blocked: true, reason: '안전 정책 위반 가능성이 높은 내용이 감지되었습니다.' };
+
+      try {
+        const prompt = `You are a strict but low-false-positive safety reviewer for a teen project platform. Return JSON only: {"decision":"allow|review|block","reason":"..."}. Block only if clearly harmful/sexual abuse/hate/violent extremism. Review if ambiguous. Text:\n${text.slice(0, 2400)}`;
+        const out = await WETHUS.askGemini(prompt);
+        const json = JSON.parse(String(out).match(/\{[\s\S]*\}/)?.[0] || '{}');
+        if (json.decision === 'block') return { blocked: true, reason: json.reason || '안전 정책 위반 가능성으로 자동 반려되었습니다.' };
+      } catch (_) {}
+      return { blocked: false };
+    }
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!validateStrict(true)) return;
 
       const fd = new FormData(form);
+      const moderation = await moderateFounderApplication(fd);
+      if (moderation.blocked) {
+        msg.textContent = moderation.reason || '신청서가 안전 정책에 따라 반려되었습니다.';
+        return;
+      }
+
       const summary = String(fd.get('description')).slice(0, 90);
 
       let finalImage = imageData;
