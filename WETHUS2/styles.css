@@ -96,7 +96,7 @@ a { color: inherit; text-decoration: none; }
 .chip { border: 1px solid var(--border); background: var(--surface-alt); color: var(--text-secondary); padding: 6px 12px; font-size: .78rem; font-weight: 700; border-radius: 999px; }
 .chip.active { color: var(--orange); border-color: var(--orange); }
 .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
-.hero-ribbon { margin-top: 30px; display:grid; gap:10px; overflow:hidden; }
+.hero-ribbon { margin-top: 30px; display:grid; gap:12px; overflow:hidden; }
 .ribbon-line {
   border-top: 1px solid rgba(255,106,0,.35);
   border-bottom: 1px solid rgba(255,106,0,.24);
@@ -106,9 +106,9 @@ a { color: inherit; text-decoration: none; }
 .ribbon-track { display:flex; width:max-content; animation: ribbonMove 22s linear infinite; }
 .ribbon-track span {
   display:inline-block;
-  padding: 10px 34px;
+  padding: 20px 38px;
   color: #ff8a2b;
-  font-size: .92rem;
+  font-size: 1.18rem;
   letter-spacing: .10em;
   font-weight: 800;
 }
