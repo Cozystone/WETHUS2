@@ -101,6 +101,7 @@
       type: 'founder_submitted',
       title: 'Founder 신청이 접수되었습니다',
       body: '운영자 검토 후 승인 여부가 안내됩니다.',
+      sender: 'WETHUS',
       href: 'founder.html',
       unread: true,
       createdAt: new Date().toISOString(),
@@ -111,6 +112,7 @@
       type: 'team_request',
       title: '새 팀 참여 요청이 도착했습니다',
       body: '프로젝트 지원서를 확인해보세요.',
+      sender: 'WETHUS',
       href: 'profile.html',
       unread: true,
       createdAt: new Date(Date.now() - 3600 * 1000 * 6).toISOString(),
@@ -352,6 +354,7 @@
       title: 'Founder 신청이 완료되었습니다',
       body: '운영자 검토 후 승인 여부가 알림으로 전달됩니다.',
       href: 'notifications.html',
+      sender: 'WETHUS',
       unread: true,
       createdAt: new Date().toISOString(),
       userId: s.currentUserId || 'dev-temp'
@@ -436,6 +439,7 @@
       title: payload?.title || '새 알림',
       body: payload?.body || '',
       href: payload?.href || 'notifications.html',
+      sender: payload?.sender || 'WETHUS',
       unread: payload?.unread !== false,
       createdAt: new Date().toISOString(),
       userId: payload?.userId === undefined ? actor : payload.userId
@@ -486,11 +490,13 @@
     const project = s.projects.find(p => p.id === projectId);
     if (project) {
       s.notifications = s.notifications || [];
+      const applicant = s.users.find(u => u.id === actor);
       s.notifications.unshift({
         id: uid(),
         type: 'team_request',
         title: '새 팀 참여 요청이 도착했습니다',
         body: `${project.title} 프로젝트에 새로운 지원이 들어왔어요.`,
+        sender: applicant?.nickname || applicant?.name || '다른 이용자',
         href: 'notifications.html',
         unread: true,
         createdAt: new Date().toISOString(),
@@ -638,6 +644,7 @@
         dropdown.innerHTML = items.map(n => `
           <a class="notify-item ${n.unread ? 'unread' : ''}" href="notifications.html?n=${encodeURIComponent(n.id)}" data-id="${n.id}">
             <strong>${n.title}</strong>
+            <em>${n.sender || 'WETHUS'}</em>
             <p>${n.body || ''}</p>
             <span>${formatTimeAgo(n.createdAt)}</span>
           </a>

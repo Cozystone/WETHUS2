@@ -16,6 +16,7 @@
         <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
         <a href="mentor.html" class="nav-link">멘토</a>
         <a href="profile.html" class="nav-link">프로필</a>
+        <a href="login.html" class="nav-link js-auth-link">로그인</a>
       </nav>
     </div>
   </header>
@@ -99,6 +100,7 @@
         <div class="modal-social-row">
           <button id="modalLikeBtn" class="btn btn--secondary">♡ <span id="modalLikeCount">0</span></button>
           <button id="modalCommentBtn" class="btn btn--secondary">💬 <span id="modalCommentCount">0</span></button>
+          <button id="modalApplyBtn" class="apply-btn" type="button">지원하기</button>
         </div>
         <div id="modalCommentPanel" class="comment-panel" style="display:none;">
           <div class="comment-panel-head">
@@ -332,6 +334,7 @@
     const modalLikeCount = document.getElementById('modalLikeCount');
     const modalCommentCount = document.getElementById('modalCommentCount');
     const modalCommentBtn = document.getElementById('modalCommentBtn');
+    const modalApplyBtn = document.getElementById('modalApplyBtn');
     const modalCommentPanel = document.getElementById('modalCommentPanel');
     const modalCommentClose = document.getElementById('modalCommentClose');
     const modalComments = document.getElementById('modalComments');
@@ -388,6 +391,11 @@
       modalLikeBtn.innerHTML = (data._liked ? '♥ ' : '♡ ') + '<span id=\"modalLikeCount\">' + (data.likes || 0) + '</span>';
       modalLikeCount.textContent = data.likes || 0;
       modalCommentCount.textContent = (data.comments || []).length;
+      if (modalApplyBtn) {
+        const applied = WETHUS.hasApplied(data.id);
+        modalApplyBtn.classList.toggle('applied', applied);
+        modalApplyBtn.textContent = applied ? '지원완료' : '지원하기';
+      }
       renderComments(data.comments || []);
       modalCommentPanel.style.display = 'none';
       modal.classList.add('open');
@@ -452,6 +460,14 @@
       modalCommentInput.focus();
     });
 
+    modalApplyBtn.addEventListener('click', () => {
+      if (!currentProjectId) return;
+      if (WETHUS.hasApplied(currentProjectId)) return;
+      applyProjectId = currentProjectId;
+      applyModal.classList.add('open');
+      applyModal.setAttribute('aria-hidden', 'false');
+    });
+
     modalCommentClose.addEventListener('click', () => {
       modalCommentPanel.style.display = 'none';
     });
@@ -487,6 +503,10 @@
       if (!confirm('지원하시겠습니까?')) return;
       WETHUS.applyToProject(applyProjectId, motivation);
       document.querySelectorAll(`.apply-btn[data-apply="${applyProjectId}"]`).forEach(btn => { btn.classList.add('applied'); btn.textContent='지원완료'; });
+      if (currentProjectId === applyProjectId && modalApplyBtn) {
+        modalApplyBtn.classList.add('applied');
+        modalApplyBtn.textContent = '지원완료';
+      }
       applyMotivation.value='';
       applyModal.classList.remove('open');
       applyModal.setAttribute('aria-hidden', 'true');

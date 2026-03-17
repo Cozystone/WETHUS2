@@ -40,6 +40,7 @@
       <div class="modal-content">
         <p class="section-kicker" id="notifyDetailType">NOTIFICATION</p>
         <h3 id="notifyDetailTitle" style="margin:0 0 8px;font-size:1.2rem;"></h3>
+        <p id="notifyDetailSender" style="margin:0 0 4px;color:var(--orange);font-size:.82rem;font-weight:700;"></p>
         <p id="notifyDetailTime" class="meta" style="margin:0 0 10px;"></p>
         <p id="notifyDetailBody" style="margin:0;color:#d6d6d6;line-height:1.7;white-space:pre-line;"></p>
       </div>
@@ -78,6 +79,7 @@
       if (!n) return;
       document.getElementById('notifyDetailType').textContent = (n.type || 'notification').toUpperCase();
       document.getElementById('notifyDetailTitle').textContent = n.title || '';
+      document.getElementById('notifyDetailSender').textContent = n.sender || 'WETHUS';
       document.getElementById('notifyDetailTime').textContent = timeText(n.createdAt);
       document.getElementById('notifyDetailBody').textContent = n.body || '';
       detailModal.classList.add('open');
@@ -101,7 +103,8 @@
         <article class="list-item" data-id="${n.id}" style="border-color:${n.unread ? '#ff6a00' : '#2a2a2a'};">
           <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
             <div>
-              <h3 style="margin:0 0 4px;">${n.title}</h3>
+              <h3 style="margin:0 0 2px;">${n.title}</h3>
+              <p style="margin:0 0 4px;color:var(--orange);font-size:.82rem;font-weight:700;">${n.sender || 'WETHUS'}</p>
               <p style="margin:0 0 6px;">${n.body || ''}</p>
               <div class="meta">${timeText(n.createdAt)}</div>
             </div>

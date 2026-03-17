@@ -30,12 +30,17 @@
   var likeCountEl = document.getElementById('modalLikeCount');
   var commentCountEl = document.getElementById('modalCommentCount');
   var commentBtn = document.getElementById('modalCommentBtn');
+  var applyBtn = document.getElementById('modalApplyBtn');
   var commentPanel = document.getElementById('modalCommentPanel');
   var commentCloseBtn = document.getElementById('modalCommentClose');
   var commentsEl = document.getElementById('modalComments');
   var commentForm = document.getElementById('modalCommentForm');
   var commentInput = document.getElementById('modalCommentInput');
   var modalTeamEl = document.getElementById('modalTeam');
+  var applyModal = document.getElementById('applyModal');
+  var applyMotivation = document.getElementById('applyMotivation');
+  var applySubmit = document.getElementById('applySubmit');
+  var applyClose = document.getElementById('applyClose');
   var currentProjectId = null;
 
   function memberHref(m) {
@@ -118,6 +123,11 @@
     likeCountEl = document.getElementById('modalLikeCount');
     renderTeamMini(data.teamMembers || []);
     renderComments(data.comments || []);
+    if (applyBtn) {
+      var applied = window.WETHUS && WETHUS.hasApplied(data.id);
+      applyBtn.classList.toggle('applied', !!applied);
+      applyBtn.textContent = applied ? '지원완료' : '지원하기';
+    }
     if (commentPanel) commentPanel.style.display = 'none';
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
@@ -177,6 +187,16 @@
     });
   }
 
+  if (applyBtn) {
+    applyBtn.addEventListener('click', function () {
+      if (!currentProjectId || !window.WETHUS) return;
+      if (WETHUS.hasApplied(currentProjectId)) return;
+      if (!applyModal) return;
+      applyModal.classList.add('open');
+      applyModal.setAttribute('aria-hidden', 'false');
+    });
+  }
+
   if (commentCloseBtn) {
     commentCloseBtn.addEventListener('click', function () {
       if (commentPanel) commentPanel.style.display = 'none';
@@ -194,6 +214,45 @@
       commentCountEl.textContent = comments.length;
       renderComments(comments);
       syncProjectStats(currentProjectId, undefined, comments.length);
+    });
+  }
+
+  if (applySubmit) {
+    applySubmit.addEventListener('click', function () {
+      if (!currentProjectId || !window.WETHUS) return;
+      var motivation = (applyMotivation && applyMotivation.value || '').trim();
+      if (!motivation) { alert('지원동기를 입력해주세요.'); return; }
+      if (!confirm('지원하시겠습니까?')) return;
+      WETHUS.applyToProject(currentProjectId, motivation);
+      if (applyBtn) {
+        applyBtn.classList.add('applied');
+        applyBtn.textContent = '지원완료';
+      }
+      document.querySelectorAll('.apply-btn[data-apply="' + currentProjectId + '"]').forEach(function (b) {
+        b.classList.add('applied');
+        b.textContent = '지원완료';
+      });
+      if (applyMotivation) applyMotivation.value = '';
+      if (applyModal) {
+        applyModal.classList.remove('open');
+        applyModal.setAttribute('aria-hidden', 'true');
+      }
+    });
+  }
+
+  if (applyClose) {
+    applyClose.addEventListener('click', function () {
+      if (!applyModal) return;
+      applyModal.classList.remove('open');
+      applyModal.setAttribute('aria-hidden', 'true');
+    });
+  }
+  if (applyModal) {
+    applyModal.addEventListener('click', function (e) {
+      if (e.target && e.target.getAttribute('data-close-apply') === 'true') {
+        applyModal.classList.remove('open');
+        applyModal.setAttribute('aria-hidden', 'true');
+      }
     });
   }
 
