@@ -98,10 +98,10 @@
   function normalizeStatus(status) {
     const s = String(status || '').replace(/\s+/g, '');
     if (s === '구인중' || s === '모집중') return '모집 중';
-    if (s === '팀빌딩' || s === '기획중') return '기획 중';
+    if (s === '팀빌딩' || s === '기획중' || s === '초기팀빌딩' || s === '검토대기') return '기획 중';
     if (s === '진행중') return '진행 중';
     if (s === '피보팅') return '피보팅';
-    return status || '기획 중';
+    return '기획 중';
   }
 
   function defaultTeamForProject(title, founderName) {

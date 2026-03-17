@@ -139,10 +139,10 @@
     function normalizeStage(v) {
       const s = String(v || '').replace(/\s+/g,'');
       if (s === '모집중' || s === '구인중') return '모집 중';
-      if (s === '팀빌딩' || s === '기획중') return '기획 중';
+      if (s === '팀빌딩' || s === '기획중' || s === '초기팀빌딩' || s === '검토대기') return '기획 중';
       if (s === '진행중') return '진행 중';
       if (s === '피보팅') return '피보팅';
-      return v || '기획 중';
+      return '기획 중';
     }
 
     function imageFor(project, idx) {
@@ -171,11 +171,11 @@
         const item = { ...p, status: stage };
         return `
         <article class="list-item" data-project='${JSON.stringify(item).replace(/'/g, "&#39;")}'>
-          <span class="badge">${stage}</span>
+          <span class="badge">${p.category}</span>
           <h3>${p.title}</h3>
           <p>${p.summary}</p>
           ${renderTeam(p.teamMembers)}
-          <div class="meta">${p.category} · ${p.teamSize || ''} · 필요역할: ${p.roles}</div>
+          <div class="meta">${stage} · ${p.teamSize || ''} · 필요역할: ${p.roles}</div>
           <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
         </article>
       `}).join('');
@@ -193,7 +193,7 @@
             <h3>${p.title}</h3>
             <p>${p.summary}</p>
             ${renderTeam(p.teamMembers)}
-            <div class="meta"><span class="badge">${stage}</span> · ${p.category} · ${p.teamSize || ''}</div>
+            <div class="meta"><span class="badge">${p.category}</span> · ${stage} · ${p.teamSize || ''}</div>
             <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
           </div>
         </article>

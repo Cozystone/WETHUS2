@@ -51,7 +51,7 @@ a { color: inherit; text-decoration: none; }
 .hero-support { margin: 0 0 18px; max-width: 620px; color: var(--text-secondary); font-size: .98rem; }
 .hero-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px; }
 .chip { border: 1px solid var(--border); background: var(--surface-alt); color: var(--text-secondary); padding: 6px 12px; font-size: .78rem; font-weight: 700; border-radius: 999px; }
-.chip:first-child { color: var(--orange); border-color: var(--orange); }
+.chip.active { color: var(--orange); border-color: var(--orange); }
 .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
 
 .btn { display: inline-flex; align-items: center; justify-content: center; border: 0; cursor: pointer; font-weight: 700; padding: 10px 14px; font-size: .84rem; font-family: var(--font-sans); border-radius: 10px; }
