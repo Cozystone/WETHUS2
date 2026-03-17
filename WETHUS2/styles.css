@@ -68,7 +68,8 @@ a { color: inherit; text-decoration: none; }
 .project-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .card { background: linear-gradient(180deg, #121212 0%, #0f0f0f 100%); border: 1px solid var(--border); padding: 16px; min-height: 296px; display: flex; flex-direction: column; cursor: pointer; border-radius: 14px; transition: .18s ease; }
 .card:hover { border-color: #4a4a4a; transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,.28), 0 0 0 1px rgba(255,106,0,.08) inset; }
-.card-media { width: 100%; aspect-ratio: 16/9; margin-bottom: 16px; border: 1px solid #222; }
+.card-media { width: 100%; aspect-ratio: 16/9; margin-bottom: 16px; border: 1px solid #222; overflow:hidden; border-radius:10px; background:#0f0f0f; }
+.card-img { width:100%; height:100%; object-fit:cover; display:block; }
 .card-media--film { background: linear-gradient(135deg,#141414,#262626 70%,#3a2b20); }
 .card-media--startup { background: linear-gradient(135deg,#111,#212121 60%,#44260e); }
 .card-media--policy { background: linear-gradient(135deg,#101010,#1f1f1f 55%,#3a240f); }
