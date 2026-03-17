@@ -6,6 +6,47 @@
   <title>WETHUS | Founder 신청</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .dropzone {
+      border: 1px dashed #4a4a4a;
+      background: #0d0d0d;
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      transition: .15s ease;
+      cursor: pointer;
+    }
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(255,106,0,.12) inset;
+    }
+    .dropzone-title { font-weight: 800; margin-bottom: 4px; }
+    .dropzone-sub { margin: 0; color: var(--text-secondary); font-size: .86rem; }
+    .dropzone-preview {
+      margin-top: 10px;
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #2a2a2a;
+      display: none;
+    }
+    .dropzone-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .textarea-wrap { position: relative; }
+    .textarea-wrap textarea { padding-top: 30px; }
+    .char-counter {
+      position: absolute;
+      right: 10px;
+      top: 8px;
+      font-size: .78rem;
+      font-weight: 800;
+      color: #ff4d4d;
+      pointer-events: none;
+    }
+    .char-counter.ok { color: #22c55e; }
+    .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .preview-trigger { background: transparent; border: 1px solid var(--orange); color: var(--orange); }
+  </style>
 </head>
 <body>
   <header class="nav">
@@ -24,37 +65,87 @@
   <main class="container">
     <section class="page-header">
       <h1 class="page-title">Founder 신청</h1>
-      <p class="page-sub">신청 완료 시 프로젝트가 탐색/프로필에 연결됩니다.</p>
+      <p class="page-sub">모든 항목을 채워야 포스팅할 수 있습니다.</p>
     </section>
 
     <section class="founder-form">
       <form class="application-form" id="founderForm">
-        <label>프로젝트 제목 <input required name="title" /></label>
+        <label>메인 사진
+          <input id="coverFile" name="coverFile" type="file" accept="image/*" hidden required />
+          <div id="dropzone" class="dropzone" tabindex="0">
+            <div class="dropzone-title">드래그 앤 드롭 또는 파일 선택</div>
+            <p class="dropzone-sub">권장 비율 16:9 · JPG/PNG/WebP</p>
+            <div class="form-row" style="justify-content:center;margin-top:10px;">
+              <button id="pickFileBtn" class="btn btn--secondary" type="button">파일에서 찾기</button>
+            </div>
+            <div class="dropzone-preview" id="coverPreviewWrap">
+              <img id="coverPreview" alt="메인 사진 미리보기" />
+            </div>
+          </div>
+        </label>
+
+        <label>프로젝트 제목
+          <input required name="title" placeholder="예: 청소년 지역문제 해결 다큐 제작 프로젝트" />
+        </label>
+
         <label>카테고리
           <select name="category" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
-            <option>Film</option><option>Startup</option><option>Policy</option><option>Campaign</option><option>App</option>
+            <option>Film</option><option>Startup</option><option>Policy</option><option>Campaign</option><option>App</option><option>Creative</option>
           </select>
         </label>
-        <label>프로젝트 설명 <textarea required name="description"></textarea></label>
-        <label>동기 <textarea required name="motivation"></textarea></label>
-        <label>예상 산출물 <input required name="output" /></label>
-        <label>첫 2주 실행 계획 <textarea required name="plan"></textarea></label>
-        <label>필요 역할 <input name="roles" placeholder="예: 기획 1 · 디자인 1 · 개발 2" required /></label>
+
+        <label>프로젝트 설명 (공백 제외 300자 이상)
+          <div class="textarea-wrap">
+            <span class="char-counter" data-counter="description" data-min="300">0/300</span>
+            <textarea required name="description" data-min="300" placeholder="어떤 문제를 해결하려는 프로젝트인지, 누구를 위한 프로젝트인지, 실행 범위를 구체적으로 적어주세요."></textarea>
+          </div>
+        </label>
+
+        <label>동기 (공백 제외 200자 이상)
+          <div class="textarea-wrap">
+            <span class="char-counter" data-counter="motivation" data-min="200">0/200</span>
+            <textarea required name="motivation" data-min="200" placeholder="왜 이 프로젝트를 시작하는지, 왜 지금 해야 하는지, 본인의 진짜 동기를 적어주세요."></textarea>
+          </div>
+        </label>
+
+        <label>예상 산출물 (공백 제외 200자 이상)
+          <div class="textarea-wrap">
+            <span class="char-counter" data-counter="output" data-min="200">0/200</span>
+            <textarea required name="output" data-min="200" placeholder="최종 결과물 형태를 명확히 써주세요. 예: 10분 단편영화 1편, 정책 제안서 PDF, MVP 웹앱 배포 링크 등"></textarea>
+          </div>
+        </label>
+
+        <label>첫 2주 실행 계획 (공백 제외 200자 이상)
+          <div class="textarea-wrap">
+            <span class="char-counter" data-counter="plan" data-min="200">0/200</span>
+            <textarea required name="plan" data-min="200" placeholder="1~2주차에 실제로 무엇을, 어떤 순서로, 누가 수행할지 작성해주세요. 일정/산출물/검증 방법까지 포함하면 좋아요."></textarea>
+          </div>
+        </label>
+
+        <label>팀 구성원
+          <input name="roles" placeholder="예: 대표 1 · 기획 1 · 디자인 1 · 개발 2" required />
+        </label>
+
         <label>팀 인원
           <select name="teamSize" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
             <option>1인</option><option>2인</option><option selected>3인</option><option>4인이상</option>
           </select>
         </label>
+
         <label>단계
           <select name="status" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
             <option>모집 중</option><option selected>기획 중</option><option>진행 중</option><option>피보팅</option>
           </select>
         </label>
-        <label>대표 이미지 URL (선택)
-          <input name="image" placeholder="비워두면 AI가 자동 생성합니다" />
+
+        <label>예상 기간
+          <input name="duration" placeholder="예: 8주" required />
         </label>
-        <label>예상 기간 <input name="duration" placeholder="예: 8주" required /></label>
-        <button class="btn btn--primary" type="submit">프로젝트 등록하기</button>
+
+        <div class="form-row">
+          <button id="previewBtn" class="btn preview-trigger" type="button">미리보기</button>
+          <button id="submitBtn" class="btn btn--primary" type="submit">포스팅하기</button>
+        </div>
       </form>
       <p id="msg" class="form-message"></p>
     </section>
@@ -69,6 +160,24 @@
     </div>
   </footer>
 
+  <div id="previewModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-preview="true"></div>
+    <article class="modal-panel">
+      <button class="modal-close" id="previewClose" aria-label="닫기">×</button>
+      <div class="modal-media-wrap"><img id="previewImage" class="modal-image" alt="프로젝트 미리보기" /></div>
+      <div class="modal-content">
+        <p class="section-kicker" id="previewCategory">CATEGORY</p>
+        <h3 id="previewTitle" style="margin:0 0 10px;font-size:1.45rem;font-weight:800;"></h3>
+        <p id="previewSummary" style="margin:0 0 12px;color:#f5f5f5;"></p>
+        <p id="previewDesc" style="margin:0 0 18px;color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p>
+        <div class="meta"><span class="card-status" id="previewStatus"></span> · <span id="previewTeamSize"></span> · <span id="previewRoles"></span> · <span id="previewDuration"></span></div>
+        <div class="card-bottom-row" style="margin-top:10px;">
+          <div class="card-social"><span>♡ 0</span><span>💬 0</span></div>
+          <button class="apply-btn" type="button" disabled>지원하기</button>
+        </div>
+      </div>
+    </article>
+  </div>
 
   <script src="app.js"></script>
   <script>
@@ -81,27 +190,136 @@
       authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
     }
 
-    document.getElementById('founderForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const summary = String(fd.get('description')).slice(0, 90);
-      const msg = document.getElementById('msg');
+    const form = document.getElementById('founderForm');
+    const msg = document.getElementById('msg');
+    const coverFile = document.getElementById('coverFile');
+    const dropzone = document.getElementById('dropzone');
+    const pickFileBtn = document.getElementById('pickFileBtn');
+    const coverPreviewWrap = document.getElementById('coverPreviewWrap');
+    const coverPreview = document.getElementById('coverPreview');
+    const previewBtn = document.getElementById('previewBtn');
 
-      let image = String(fd.get('image') || '').trim();
-      if (!image) {
-        try {
-          msg.textContent = 'AI가 프로젝트 이미지를 생성 중...';
-          const promptSeed = `${fd.get('category')} ${fd.get('title')} ${summary}`;
-          let keyword = 'youth project poster';
-          try {
-            const k = await WETHUS.askGemini(`다음 프로젝트에 맞는 이미지 키워드를 영어 6단어 이내로 하나만 반환해줘: ${promptSeed}`);
-            keyword = (k || '').replace(/[\n\r]/g, ' ').trim().slice(0, 80) || keyword;
-          } catch (_) {}
-          image = `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword + ' cinematic clean dark orange style')}`;
-        } catch (_) {
-          image = `https://picsum.photos/seed/${encodeURIComponent(fd.get('title'))}/1200/700`;
+    let imageData = '';
+
+    function noSpaceLen(v) { return String(v || '').replace(/\s/g, '').length; }
+
+    function updateCounter(textarea) {
+      const name = textarea.name;
+      const counter = document.querySelector(`.char-counter[data-counter="${name}"]`);
+      if (!counter) return;
+      const min = Number(textarea.dataset.min || 0);
+      const now = noSpaceLen(textarea.value);
+      counter.textContent = `${now}/${min}`;
+      counter.classList.toggle('ok', now >= min);
+    }
+
+    function validateStrict(showMessage = false) {
+      if (!imageData) {
+        if (showMessage) msg.textContent = '메인 사진을 업로드해주세요.';
+        return false;
+      }
+
+      const requiredFields = ['title','category','description','motivation','output','plan','roles','teamSize','status','duration'];
+      for (const key of requiredFields) {
+        const el = form.elements[key];
+        if (!el || !String(el.value || '').trim()) {
+          if (showMessage) msg.textContent = '모든 항목을 입력해주세요.';
+          return false;
         }
       }
+
+      const limits = { description: 300, motivation: 200, output: 200, plan: 200 };
+      for (const [name, min] of Object.entries(limits)) {
+        const len = noSpaceLen(form.elements[name].value);
+        if (len < min) {
+          if (showMessage) msg.textContent = `${name === 'description' ? '프로젝트 설명' : name === 'motivation' ? '동기' : name === 'output' ? '예상 산출물' : '첫 2주 실행 계획'}은 공백 제외 ${min}자 이상이어야 합니다.`;
+          return false;
+        }
+      }
+
+      msg.textContent = '';
+      return true;
+    }
+
+    function handleFile(file) {
+      if (!file || !file.type.startsWith('image/')) {
+        msg.textContent = '이미지 파일만 업로드할 수 있습니다.';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        imageData = reader.result;
+        coverPreview.src = imageData;
+        coverPreviewWrap.style.display = 'block';
+        msg.textContent = '';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    pickFileBtn.addEventListener('click', () => coverFile.click());
+    coverFile.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+    ['dragenter','dragover'].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+    });
+    ['dragleave','drop'].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      });
+    });
+    dropzone.addEventListener('drop', (e) => {
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      handleFile(file);
+    });
+    dropzone.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      coverFile.click();
+    });
+
+    form.querySelectorAll('textarea[data-min]').forEach(textarea => {
+      updateCounter(textarea);
+      textarea.addEventListener('input', () => updateCounter(textarea));
+    });
+
+    const previewModal = document.getElementById('previewModal');
+    function openPreview() {
+      if (!validateStrict(true)) return;
+      const fd = new FormData(form);
+      document.getElementById('previewImage').src = imageData;
+      document.getElementById('previewCategory').textContent = fd.get('category');
+      document.getElementById('previewTitle').textContent = fd.get('title');
+      document.getElementById('previewSummary').textContent = String(fd.get('description')).slice(0, 120);
+      document.getElementById('previewDesc').textContent = fd.get('description');
+      document.getElementById('previewStatus').textContent = fd.get('status');
+      document.getElementById('previewTeamSize').textContent = fd.get('teamSize');
+      document.getElementById('previewRoles').textContent = fd.get('roles');
+      document.getElementById('previewDuration').textContent = fd.get('duration');
+      previewModal.classList.add('open');
+      previewModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+    function closePreview() {
+      previewModal.classList.remove('open');
+      previewModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    previewBtn.addEventListener('click', openPreview);
+    document.getElementById('previewClose').addEventListener('click', closePreview);
+    previewModal.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close-preview') === 'true') closePreview();
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!validateStrict(true)) return;
+
+      const fd = new FormData(form);
+      const summary = String(fd.get('description')).slice(0, 90);
 
       WETHUS.addProject({
         title: fd.get('title'),
@@ -115,13 +333,16 @@
         teamSize: fd.get('teamSize'),
         roles: fd.get('roles'),
         duration: fd.get('duration'),
-        image,
+        image: imageData,
         likes: 0,
         comments: []
       });
 
-      msg.textContent = '등록 완료! 탐색/프로필에서 확인할 수 있어요.';
-      e.target.reset();
+      msg.textContent = '포스팅 완료! 탐색/프로필에서 확인할 수 있어요.';
+      form.reset();
+      imageData = '';
+      coverPreviewWrap.style.display = 'none';
+      form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
     });
   </script>
 </body>
