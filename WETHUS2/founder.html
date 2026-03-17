@@ -104,6 +104,8 @@
           </div>
         </label>
 
+        <p id="imageActionMsg" class="form-message" style="margin:0 0 2px;"></p>
+
         <label>프로젝트 제목
           <input required name="title" placeholder="예: 청소년 지역문제 해결 다큐 제작 프로젝트" />
         </label>
@@ -241,6 +243,7 @@
     const regenImageBtn = document.getElementById('regenImageBtn');
     const removeImageBtn = document.getElementById('removeImageBtn');
     const imageMsg = document.getElementById('imageMsg');
+    const imageActionMsg = document.getElementById('imageActionMsg');
     const categorySelect = document.getElementById('categorySelect');
     const customCategoryWrap = document.getElementById('customCategoryWrap');
     const customCategoryInput = document.getElementById('customCategory');
@@ -331,7 +334,7 @@
 
     function handleFile(file) {
       if (!file || !file.type.startsWith('image/')) {
-        msg.textContent = '이미지 파일만 업로드할 수 있습니다.';
+        imageActionMsg.textContent = '이미지 파일만 업로드할 수 있습니다.';
         return;
       }
       const reader = new FileReader();
@@ -343,6 +346,7 @@
         coverPreviewWrap.style.display = 'block';
         setImageError('');
         msg.textContent = '';
+        imageActionMsg.textContent = '';
       };
       reader.readAsDataURL(file);
     }
@@ -372,10 +376,10 @@
       const desc = String(form.elements.description.value || '').trim();
       const category = resolvedCategory() || String(categorySelect.value || '').trim();
       if (!title || !desc) {
-        msg.textContent = 'AI 이미지 생성을 선택하려면 제목과 프로젝트 설명을 먼저 입력해주세요.';
+        imageActionMsg.textContent = 'AI 이미지 생성을 선택하려면 제목과 프로젝트 설명을 먼저 입력해주세요.';
         return false;
       }
-      msg.textContent = 'AI가 메인 이미지를 생성 중입니다...';
+      imageActionMsg.textContent = 'AI가 메인 이미지를 생성 중입니다...';
       let keyword = `${category} ${title} cinematic poster dark orange accent`;
       try {
         const k = await WETHUS.askGemini(`Create one concise English visual prompt (max 10 words) for a cinematic poster image. Category: ${category}. Title: ${title}. Description: ${desc.slice(0, 300)}`);
@@ -387,7 +391,7 @@
       aiImageSelected = true;
       setAiButtonState();
       setImageError('');
-      msg.textContent = 'AI 이미지 생성 완료.';
+      imageActionMsg.textContent = 'AI 이미지 생성 완료.';
       return true;
     }
 
@@ -397,7 +401,7 @@
         imageData = '';
         coverPreviewWrap.style.display = 'none';
         setAiButtonState();
-        msg.textContent = 'AI 이미지 선택이 해제되었습니다.';
+        imageActionMsg.textContent = 'AI 이미지 선택이 해제되었습니다.';
         return;
       }
       await generateAiImage();
@@ -439,6 +443,7 @@
       coverPreview.src = '';
       coverPreviewWrap.style.display = 'none';
       coverFile.value = '';
+      imageActionMsg.textContent = '';
     });
 
     form.querySelectorAll('textarea[data-min]').forEach(textarea => {
@@ -530,6 +535,7 @@
       ongoingNow.checked = false;
       form.elements.endDate.disabled = false;
       setImageError('');
+      imageActionMsg.textContent = '';
       form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
     });
   </script>

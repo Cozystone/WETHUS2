@@ -104,6 +104,13 @@
     return '기획 중';
   }
 
+  function addDays(dateStr, days) {
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return '';
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+
   function defaultTeamForProject(title, founderName) {
     const leader = { id: uid(), name: founderName || '대표', role: '대표', bio: '프로젝트 리딩 및 의사결정', isLeader: true };
     const presets = {
@@ -199,6 +206,25 @@
       if (!next.status) {
         const stages = ['모집 중', '기획 중', '진행 중', '피보팅'];
         next.status = stages[Math.floor(Math.random() * stages.length)];
+        changed = true;
+      }
+      if (!next.startDate) {
+        next.startDate = String(next.createdAt || new Date().toISOString()).slice(0, 10);
+        changed = true;
+      }
+      if (typeof next.ongoingNow !== 'boolean') {
+        if (next.endDate) {
+          next.ongoingNow = false;
+        } else if (next.status === '진행 중' || next.status === '피보팅') {
+          next.ongoingNow = true;
+        } else {
+          next.endDate = addDays(next.startDate, 56);
+          next.ongoingNow = false;
+        }
+        changed = true;
+      }
+      if (next.ongoingNow && next.endDate) {
+        next.endDate = null;
         changed = true;
       }
       return next;
