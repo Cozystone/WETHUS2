@@ -50,6 +50,9 @@
             <option>모집 중</option><option selected>기획 중</option><option>진행 중</option><option>피보팅</option>
           </select>
         </label>
+        <label>대표 이미지 URL (선택)
+          <input name="image" placeholder="비워두면 AI가 자동 생성합니다" />
+        </label>
         <label>예상 기간 <input name="duration" placeholder="예: 8주" required /></label>
         <button class="btn btn--primary" type="submit">프로젝트 등록하기</button>
       </form>
@@ -68,10 +71,27 @@
       authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
     }
 
-    document.getElementById('founderForm').addEventListener('submit', (e) => {
+    document.getElementById('founderForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
       const summary = String(fd.get('description')).slice(0, 90);
+      const msg = document.getElementById('msg');
+
+      let image = String(fd.get('image') || '').trim();
+      if (!image) {
+        try {
+          msg.textContent = 'AI가 프로젝트 이미지를 생성 중...';
+          const promptSeed = `${fd.get('category')} ${fd.get('title')} ${summary}`;
+          let keyword = 'youth project poster';
+          try {
+            const k = await WETHUS.askGemini(`다음 프로젝트에 맞는 이미지 키워드를 영어 6단어 이내로 하나만 반환해줘: ${promptSeed}`);
+            keyword = (k || '').replace(/[\n\r]/g, ' ').trim().slice(0, 80) || keyword;
+          } catch (_) {}
+          image = `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword + ' cinematic clean dark orange style')}`;
+        } catch (_) {
+          image = `https://picsum.photos/seed/${encodeURIComponent(fd.get('title'))}/1200/700`;
+        }
+      }
 
       WETHUS.addProject({
         title: fd.get('title'),
@@ -85,11 +105,12 @@
         teamSize: fd.get('teamSize'),
         roles: fd.get('roles'),
         duration: fd.get('duration'),
+        image,
         likes: 0,
         comments: []
       });
 
-      document.getElementById('msg').textContent = '등록 완료! 탐색/프로필에서 확인할 수 있어요.';
+      msg.textContent = '등록 완료! 탐색/프로필에서 확인할 수 있어요.';
       e.target.reset();
     });
   </script>

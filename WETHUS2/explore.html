@@ -157,9 +157,9 @@
       const hidden = others.slice(2);
       return `
         <div class="team-row">
-          <a class="member-pill leader" href="${memberHref(leader)}">${leader?.name || '대표'} 대표</a>
-          ${visible.map(m => `<a class="member-pill" href="${memberHref(m)}">${m.name} ${m.role||''}</a>`).join('')}
-          ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length+1}명</button><div class="team-list">${hidden.map(m=>`<a class="member-pill block" href="${memberHref(m)}">${m.name} ${m.role||''}</a>`).join('')}</div>` : ''}
+          <a class="member-pill leader" href="${memberHref(leader)}"><span class="member-name">${leader?.name || '대표'}</span> <span class="member-role">대표</span></a>
+          ${visible.map(m => `<a class="member-pill" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('')}
+          ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length+1}명</button><div class="team-list">${hidden.map(m=>`<a class="member-pill block" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('')}</div>` : ''}
         </div>`;
     }
 
@@ -309,13 +309,12 @@
     const modalTeam = document.getElementById('modalTeam');
     let currentProjectId = null;
 
-    const memberHref = (m) => `member.html?name=${encodeURIComponent(m?.name||'팀원')}&role=${encodeURIComponent(m?.role||'담당')}&bio=${encodeURIComponent(m?.bio||'소개가 아직 없습니다.')}`;
     function renderTeamMini(team=[]) {
       if (!team.length) { modalTeam.innerHTML = ''; return; }
       const leader = team.find(m => m.isLeader) || team[0];
       const rest = team.filter(m => m !== leader).slice(0, 3);
-      modalTeam.innerHTML = `<a class="member-pill leader" href="${memberHref(leader)}">${leader?.name || '대표'} 대표</a>` +
-        rest.map(m => `<a class="member-pill" href="${memberHref(m)}">${m.name} ${m.role||''}</a>`).join('');
+      modalTeam.innerHTML = `<a class="member-pill leader" href="${memberHref(leader)}"><span class="member-name">${leader?.name || '대표'}</span> <span class="member-role">대표</span></a>` +
+        rest.map(m => `<a class="member-pill" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('');
     }
 
     function renderComments(comments) {

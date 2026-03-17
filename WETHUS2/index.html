@@ -162,9 +162,9 @@
         const hidden = others.slice(2);
         return `
           <div class="team-row">
-            <a class="member-pill leader" href="${memberHref(leader)}">${leader?.name || '대표'} 대표</a>
-            ${visible.map(m => `<a class="member-pill" href="${memberHref(m)}">${m.name} ${m.role||''}</a>`).join('')}
-            ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length+1}명</button><div class="team-list">${hidden.map(m=>`<a class="member-pill block" href="${memberHref(m)}">${m.name} ${m.role||''}</a>`).join('')}</div>` : ''}
+            <a class="member-pill leader" href="${memberHref(leader)}"><span class="member-name">${leader?.name || '대표'}</span> <span class="member-role">대표</span></a>
+            ${visible.map(m => `<a class="member-pill" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('')}
+            ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length+1}명</button><div class="team-list">${hidden.map(m=>`<a class="member-pill block" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('')}</div>` : ''}
           </div>`;
       };
       el.innerHTML = featured.map(p => `

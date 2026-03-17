@@ -46,8 +46,8 @@
     if (!team || !team.length) { modalTeamEl.innerHTML = ''; return; }
     var leader = team.find(function (m) { return m.isLeader; }) || team[0];
     var rest = team.filter(function (m) { return m !== leader; });
-    modalTeamEl.innerHTML = '<a class="member-pill leader" href="'+memberHref(leader)+'">'+(leader.name||'대표')+' 대표</a>' +
-      rest.slice(0,3).map(function (m) { return '<a class="member-pill" href="'+memberHref(m)+'">'+(m.name||'팀원')+' '+(m.role||'')+'</a>'; }).join('');
+    modalTeamEl.innerHTML = '<a class="member-pill leader" href="'+memberHref(leader)+'"><span class="member-name">'+(leader.name||'대표')+'</span> <span class="member-role">대표</span></a>' +
+      rest.slice(0,3).map(function (m) { return '<a class="member-pill" href="'+memberHref(m)+'"><span class="member-name">'+(m.name||'팀원')+'</span> <span class="member-role">'+(m.role||'')+'</span></a>'; }).join('');
   }
 
   function renderComments(comments) {
