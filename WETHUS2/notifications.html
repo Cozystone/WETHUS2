@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | 알림</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="wordmark">WETHUS</a>
+      <nav class="nav-links">
+        <a href="explore.html" class="nav-link">탐색</a>
+        <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
+        <a href="mentor.html" class="nav-link">멘토</a>
+        <a href="profile.html" class="nav-link">프로필</a>
+        <a href="login.html" class="nav-link js-auth-link">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="projects-head-row" style="padding-top:28px;">
+      <div>
+        <h1 class="page-title" style="margin:0;">알림</h1>
+        <p class="page-sub">Founder 신청/승인, 팀 참여요청, 메시지 등 주요 업데이트</p>
+      </div>
+      <button id="markAllRead" class="btn btn--secondary">모두 읽음 처리</button>
+    </section>
+
+    <section id="notifyList" class="list-grid"></section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="wordmark">WETHUS</span>
+        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:anseokkim@gmail.com">anseokkim@gmail.com</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    const authLink = document.querySelector('.js-auth-link');
+    const st = WETHUS.getState();
+    if (authLink && (st.currentUserId || st.devMode)) {
+      authLink.textContent = '로그아웃';
+      authLink.href = '#';
+      authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
+    }
+
+    const listEl = document.getElementById('notifyList');
+    const markAllBtn = document.getElementById('markAllRead');
+
+    function timeText(iso) {
+      const d = new Date(iso);
+      return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+
+    function render() {
+      const items = WETHUS.listNotifications(200);
+      if (!items.length) {
+        listEl.innerHTML = '<article class="list-item"><p class="page-sub">표시할 알림이 없습니다.</p></article>';
+        return;
+      }
+      listEl.innerHTML = items.map(n => `
+        <article class="list-item" data-id="${n.id}" style="border-color:${n.unread ? '#ff6a00' : '#2a2a2a'};">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+            <div>
+              <h3 style="margin:0 0 4px;">${n.title}</h3>
+              <p style="margin:0 0 6px;">${n.body || ''}</p>
+              <div class="meta">${timeText(n.createdAt)}</div>
+            </div>
+            ${n.unread ? '<span class="verify-badge" style="padding:2px 7px;">NEW</span>' : ''}
+          </div>
+        </article>
+      `).join('');
+
+      listEl.querySelectorAll('.list-item[data-id]').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = el.getAttribute('data-id');
+          WETHUS.markNotificationRead(id);
+          render();
+        });
+      });
+    }
+
+    markAllBtn.addEventListener('click', () => {
+      WETHUS.markAllNotificationsRead();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

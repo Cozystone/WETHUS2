@@ -95,6 +95,29 @@
     }
   ];
 
+  const seedNotifications = [
+    {
+      id: uid(),
+      type: 'founder_submitted',
+      title: 'Founder 신청이 접수되었습니다',
+      body: '운영자 검토 후 승인 여부가 안내됩니다.',
+      href: 'founder.html',
+      unread: true,
+      createdAt: new Date().toISOString(),
+      userId: null
+    },
+    {
+      id: uid(),
+      type: 'team_request',
+      title: '새 팀 참여 요청이 도착했습니다',
+      body: '프로젝트 지원서를 확인해보세요.',
+      href: 'profile.html',
+      unread: true,
+      createdAt: new Date(Date.now() - 3600 * 1000 * 6).toISOString(),
+      userId: null
+    }
+  ];
+
   function normalizeStatus(status) {
     const s = String(status || '').replace(/\s+/g, '');
     if (s === '구인중' || s === '모집중') return '모집 중';
@@ -147,6 +170,7 @@
         currentUserId: null,
         devMode: false,
         applications: [],
+        notifications: seedNotifications,
         geminiApiKey: DEFAULT_GEMINI_KEY
       };
       localStorage.setItem(KEY, JSON.stringify(init));
@@ -155,6 +179,10 @@
     const parsed = JSON.parse(raw);
     if (!parsed.geminiApiKey) parsed.geminiApiKey = DEFAULT_GEMINI_KEY;
     if (!Array.isArray(parsed.applications)) parsed.applications = [];
+    if (!Array.isArray(parsed.notifications)) parsed.notifications = [];
+    if (!parsed.notifications.length) {
+      parsed.notifications = seedNotifications.slice();
+    }
 
     if (!Array.isArray(parsed.projects)) parsed.projects = [];
     const existingTitles = new Set(parsed.projects.map(p => p.title));
@@ -317,6 +345,17 @@
       ...payload
     };
     s.projects.unshift(project);
+    s.notifications = s.notifications || [];
+    s.notifications.unshift({
+      id: uid(),
+      type: 'founder_submitted',
+      title: 'Founder 신청이 완료되었습니다',
+      body: '운영자 검토 후 승인 여부가 알림으로 전달됩니다.',
+      href: 'notifications.html',
+      unread: true,
+      createdAt: new Date().toISOString(),
+      userId: s.currentUserId || 'dev-temp'
+    });
     save(s);
     return project;
   }
@@ -375,7 +414,54 @@
     return target;
   }
 
+  function listNotifications(limit = 30) {
+    const s = load();
+    const actor = currentActorId();
+    return (s.notifications || [])
+      .filter(n => !n.userId || n.userId === actor)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, limit);
+  }
 
+  function unreadNotificationCount() {
+    return listNotifications(200).filter(n => n.unread).length;
+  }
+
+  function addNotification(payload) {
+    const s = load();
+    const actor = currentActorId();
+    const item = {
+      id: uid(),
+      type: payload?.type || 'general',
+      title: payload?.title || '새 알림',
+      body: payload?.body || '',
+      href: payload?.href || 'notifications.html',
+      unread: payload?.unread !== false,
+      createdAt: new Date().toISOString(),
+      userId: payload?.userId === undefined ? actor : payload.userId
+    };
+    s.notifications.unshift(item);
+    save(s);
+    return item;
+  }
+
+  function markNotificationRead(id) {
+    const s = load();
+    const target = (s.notifications || []).find(n => n.id === id);
+    if (!target) return false;
+    target.unread = false;
+    save(s);
+    return true;
+  }
+
+  function markAllNotificationsRead() {
+    const s = load();
+    const actor = currentActorId();
+    (s.notifications || []).forEach(n => {
+      if (!n.userId || n.userId === actor) n.unread = false;
+    });
+    save(s);
+  }
 
   function currentActorId() {
     const s = load();
@@ -397,6 +483,20 @@
     if (exists) return exists;
     const app = { id: uid(), projectId, userId: actor, motivation: motivation || '', status: 'applied', createdAt: new Date().toISOString() };
     s.applications.push(app);
+    const project = s.projects.find(p => p.id === projectId);
+    if (project) {
+      s.notifications = s.notifications || [];
+      s.notifications.unshift({
+        id: uid(),
+        type: 'team_request',
+        title: '새 팀 참여 요청이 도착했습니다',
+        body: `${project.title} 프로젝트에 새로운 지원이 들어왔어요.`,
+        href: 'notifications.html',
+        unread: true,
+        createdAt: new Date().toISOString(),
+        userId: project.founderId || null
+      });
+    }
     save(s);
     return app;
   }
@@ -478,6 +578,81 @@
     return data?.candidates?.[0]?.content?.parts?.[0]?.text || '응답이 비어 있습니다.';
   }
 
+  function formatTimeAgo(iso) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return '방금 전';
+    if (m < 60) return `${m}분 전`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}시간 전`;
+    const d = Math.floor(h / 24);
+    return `${d}일 전`;
+  }
+
+  function initNotificationNav() {
+    const navs = document.querySelectorAll('.nav-links');
+    if (!navs.length) return;
+    navs.forEach(nav => {
+      if (nav.querySelector('.js-nav-notify')) return;
+      const mentor = Array.from(nav.querySelectorAll('a')).find(a => (a.textContent || '').trim() === '멘토');
+      const profile = Array.from(nav.querySelectorAll('a')).find(a => (a.textContent || '').trim() === '프로필');
+
+      const wrap = document.createElement('div');
+      wrap.className = 'notify-wrap js-nav-notify';
+      wrap.innerHTML = `
+        <a href="notifications.html" class="nav-link notify-link">알림 <span class="notify-badge" style="display:none;">0</span></a>
+        <div class="notify-dropdown" style="display:none;"></div>
+      `;
+
+      if (profile && profile.parentNode === nav) nav.insertBefore(wrap, profile);
+      else if (mentor && mentor.parentNode === nav) mentor.insertAdjacentElement('afterend', wrap);
+      else nav.appendChild(wrap);
+
+      const badge = wrap.querySelector('.notify-badge');
+      const dropdown = wrap.querySelector('.notify-dropdown');
+
+      function renderNotify() {
+        const items = listNotifications(5);
+        const unread = items.filter(n => n.unread).length;
+        badge.textContent = unread > 99 ? '99+' : String(unread);
+        badge.style.display = unread ? 'inline-flex' : 'none';
+        if (!items.length) {
+          dropdown.innerHTML = `<div class="notify-empty">새 알림이 없습니다.</div><a class="notify-more" href="notifications.html">전체 알림 보기</a>`;
+          return;
+        }
+        dropdown.innerHTML = items.map(n => `
+          <a class="notify-item ${n.unread ? 'unread' : ''}" href="${n.href || 'notifications.html'}" data-id="${n.id}">
+            <strong>${n.title}</strong>
+            <p>${n.body || ''}</p>
+            <span>${formatTimeAgo(n.createdAt)}</span>
+          </a>
+        `).join('') + `<a class="notify-more" href="notifications.html">전체 알림 보기</a>`;
+
+        dropdown.querySelectorAll('.notify-item').forEach(el => {
+          el.addEventListener('click', () => {
+            const id = el.getAttribute('data-id');
+            if (id) markNotificationRead(id);
+          });
+        });
+      }
+
+      renderNotify();
+      wrap.addEventListener('mouseenter', () => {
+        renderNotify();
+        dropdown.style.display = 'block';
+      });
+      wrap.addEventListener('mouseleave', () => {
+        dropdown.style.display = 'none';
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initNotificationNav);
+  } else {
+    initNotificationNav();
+  }
+
   window.WETHUS = {
     getState,
     currentUser,
@@ -492,6 +667,11 @@
     toggleLike,
     addComment,
     updateProject,
+    listNotifications,
+    unreadNotificationCount,
+    addNotification,
+    markNotificationRead,
+    markAllNotificationsRead,
     hasApplied,
     applyToProject,
     cancelApplication,
