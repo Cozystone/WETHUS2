@@ -77,6 +77,7 @@
             <p class="dropzone-sub">권장 비율 16:9 · JPG/PNG/WebP</p>
             <div class="form-row" style="justify-content:center;margin-top:10px;">
               <button id="pickFileBtn" class="btn btn--secondary" type="button">파일에서 찾기</button>
+              <button id="genImageBtn" class="btn btn--secondary" type="button">AI 이미지 생성</button>
             </div>
             <div class="dropzone-preview" id="coverPreviewWrap">
               <img id="coverPreview" alt="메인 사진 미리보기" />
@@ -89,9 +90,13 @@
         </label>
 
         <label>카테고리
-          <select name="category" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
-            <option>Film</option><option>Startup</option><option>Policy</option><option>Campaign</option><option>App</option><option>Creative</option>
+          <select id="categorySelect" name="category" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
+            <option>Film</option><option>Startup</option><option>Policy</option><option>Campaign</option><option>App</option><option>Creative</option><option>기타</option>
           </select>
+        </label>
+
+        <label id="customCategoryWrap" style="display:none;">기타 카테고리 직접 입력
+          <input id="customCategory" name="customCategory" placeholder="예: Education, Research, Community" />
         </label>
 
         <label>프로젝트 설명 (공백 제외 300자 이상)
@@ -198,6 +203,10 @@
     const coverPreviewWrap = document.getElementById('coverPreviewWrap');
     const coverPreview = document.getElementById('coverPreview');
     const previewBtn = document.getElementById('previewBtn');
+    const genImageBtn = document.getElementById('genImageBtn');
+    const categorySelect = document.getElementById('categorySelect');
+    const customCategoryWrap = document.getElementById('customCategoryWrap');
+    const customCategoryInput = document.getElementById('customCategory');
 
     let imageData = '';
 
@@ -213,6 +222,12 @@
       counter.classList.toggle('ok', now >= min);
     }
 
+    function resolvedCategory() {
+      const raw = String(categorySelect.value || '').trim();
+      if (raw !== '기타') return raw;
+      return String(customCategoryInput.value || '').trim();
+    }
+
     function validateStrict(showMessage = false) {
       if (!imageData) {
         if (showMessage) msg.textContent = '메인 사진을 업로드해주세요.';
@@ -226,6 +241,11 @@
           if (showMessage) msg.textContent = '모든 항목을 입력해주세요.';
           return false;
         }
+      }
+
+      if (categorySelect.value === '기타' && !resolvedCategory()) {
+        if (showMessage) msg.textContent = '기타 카테고리를 입력해주세요.';
+        return false;
       }
 
       const limits = { description: 300, motivation: 200, output: 200, plan: 200 };
@@ -259,6 +279,38 @@
     pickFileBtn.addEventListener('click', () => coverFile.click());
     coverFile.addEventListener('change', (e) => handleFile(e.target.files[0]));
 
+    categorySelect.addEventListener('change', () => {
+      const custom = categorySelect.value === '기타';
+      customCategoryWrap.style.display = custom ? 'grid' : 'none';
+      customCategoryInput.required = custom;
+      if (!custom) customCategoryInput.value = '';
+    });
+
+    genImageBtn.addEventListener('click', async () => {
+      const title = String(form.elements.title.value || '').trim();
+      const desc = String(form.elements.description.value || '').trim();
+      const category = resolvedCategory() || String(categorySelect.value || '').trim();
+      if (!title || !desc) {
+        msg.textContent = 'AI 이미지 생성을 위해 제목과 프로젝트 설명을 먼저 입력해주세요.';
+        return;
+      }
+      msg.textContent = 'AI가 메인 이미지를 생성 중입니다...';
+      try {
+        const keywordPrompt = `Create one concise English visual prompt (max 10 words) for a cinematic poster image. Category: ${category}. Title: ${title}. Description: ${desc.slice(0, 300)}`;
+        let keyword = 'youth project cinematic poster dark background orange accent';
+        try {
+          const k = await WETHUS.askGemini(keywordPrompt);
+          keyword = String(k || '').replace(/[\n\r]/g, ' ').trim().slice(0, 120) || keyword;
+        } catch (_) {}
+        imageData = `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword)}`;
+        coverPreview.src = imageData;
+        coverPreviewWrap.style.display = 'block';
+        msg.textContent = 'AI 이미지 생성 완료.';
+      } catch (_) {
+        msg.textContent = 'AI 이미지 생성에 실패했어요. 잠시 후 다시 시도해주세요.';
+      }
+    });
+
     ['dragenter','dragover'].forEach(evt => {
       dropzone.addEventListener(evt, (e) => {
         e.preventDefault();
@@ -290,7 +342,7 @@
       if (!validateStrict(true)) return;
       const fd = new FormData(form);
       document.getElementById('previewImage').src = imageData;
-      document.getElementById('previewCategory').textContent = fd.get('category');
+      document.getElementById('previewCategory').textContent = resolvedCategory();
       document.getElementById('previewTitle').textContent = fd.get('title');
       document.getElementById('previewSummary').textContent = String(fd.get('description')).slice(0, 120);
       document.getElementById('previewDesc').textContent = fd.get('description');
@@ -323,7 +375,7 @@
 
       WETHUS.addProject({
         title: fd.get('title'),
-        category: fd.get('category'),
+        category: resolvedCategory(),
         summary,
         fullDescription: fd.get('description'),
         motivation: fd.get('motivation'),
