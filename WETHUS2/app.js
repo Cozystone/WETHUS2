@@ -140,6 +140,10 @@
         next.comments = [];
         changed = true;
       }
+      if (!Array.isArray(next.likedBy)) {
+        next.likedBy = [];
+        changed = true;
+      }
       if (!next.teamSize) {
         const pool = ['1인', '2인', '3인', '4인이상'];
         next.teamSize = pool[Math.floor(Math.random() * pool.length)];
@@ -255,11 +259,25 @@
     const s = load();
     const target = s.projects.find(p => p.id === projectId);
     if (!target) return null;
-    const wasLiked = !!target._liked;
-    target._liked = !wasLiked;
-    target.likes = Math.max(0, (target.likes || 0) + (wasLiked ? -1 : 1));
+
+    const actorId = s.currentUserId || (s.devMode ? 'dev-temp' : null);
+    if (!actorId) return { likes: target.likes || 0, liked: false };
+
+    if (!Array.isArray(target.likedBy)) target.likedBy = [];
+    const idx = target.likedBy.indexOf(actorId);
+    const liked = idx === -1;
+
+    if (liked) {
+      target.likedBy.push(actorId);
+      target.likes = (target.likes || 0) + 1;
+    } else {
+      target.likedBy.splice(idx, 1);
+      target.likes = Math.max(0, (target.likes || 0) - 1);
+    }
+
+    target._liked = liked;
     save(s);
-    return { likes: target.likes, liked: target._liked };
+    return { likes: target.likes, liked };
   }
 
   function addComment(projectId, text) {
