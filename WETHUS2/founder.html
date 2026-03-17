@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | Founder 신청</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="wordmark">WETHUS</a>
+      <nav class="nav-links">
+        <a href="explore.html" class="nav-link">탐색</a>
+        <a href="founder.html" class="nav-link nav-link--cta">프로젝트 시작하기</a>
+        <a href="mentor.html" class="nav-link">멘토</a>
+        <a href="profile.html" class="nav-link">프로필</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="page-header">
+      <h1 class="page-title">Founder 신청</h1>
+      <p class="page-sub">신청 완료 시 프로젝트가 탐색/프로필에 연결됩니다.</p>
+    </section>
+
+    <section class="founder-form">
+      <form class="application-form" id="founderForm">
+        <label>프로젝트 제목 <input required name="title" /></label>
+        <label>카테고리
+          <select name="category" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
+            <option>Film</option><option>Startup</option><option>Policy</option><option>Campaign</option><option>App</option>
+          </select>
+        </label>
+        <label>프로젝트 설명 <textarea required name="description"></textarea></label>
+        <label>동기 <textarea required name="motivation"></textarea></label>
+        <label>예상 산출물 <input required name="output" /></label>
+        <label>첫 2주 실행 계획 <textarea required name="plan"></textarea></label>
+        <label>필요 역할 <input name="roles" placeholder="예: 기획 1 · 디자인 1 · 개발 2" required /></label>
+        <label>예상 기간 <input name="duration" placeholder="예: 8주" required /></label>
+        <button class="btn btn--primary" type="submit">프로젝트 등록하기</button>
+      </form>
+      <p id="msg" class="form-message"></p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    WETHUS.requireAuth();
+    document.getElementById('founderForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const summary = String(fd.get('description')).slice(0, 90);
+
+      WETHUS.addProject({
+        title: fd.get('title'),
+        category: fd.get('category'),
+        summary,
+        fullDescription: fd.get('description'),
+        motivation: fd.get('motivation'),
+        expectedOutput: fd.get('output'),
+        firstTwoWeekPlan: fd.get('plan'),
+        status: '모집 중',
+        roles: fd.get('roles'),
+        duration: fd.get('duration')
+      });
+
+      document.getElementById('msg').textContent = '등록 완료! 탐색/프로필에서 확인할 수 있어요.';
+      e.target.reset();
+    });
+  </script>
+</body>
+</html>

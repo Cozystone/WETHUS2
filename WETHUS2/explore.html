@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | 탐색</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="wordmark">WETHUS</a>
+      <nav class="nav-links">
+        <a href="explore.html" class="nav-link nav-link--cta">탐색</a>
+        <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
+        <a href="mentor.html" class="nav-link">멘토</a>
+        <a href="profile.html" class="nav-link">프로필</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="page-header">
+      <h1 class="page-title">프로젝트 탐색</h1>
+      <p class="page-sub">프로젝트만 모아서 보여줍니다. (커뮤니티 피드 없음)</p>
+    </section>
+
+    <section class="search-wrap">
+      <div class="search-row">
+        <input id="q" placeholder="AI 검색: 예) 영화 팀, 정책 제안, 앱 MVP" />
+        <button id="searchBtn" class="btn btn--primary">검색</button>
+      </div>
+      <div class="search-row">
+        <button id="aiCurateBtn" class="btn btn--secondary">AI 큐레이션</button>
+      </div>
+      <p class="ai-hint">AI 연동: 프로젝트 맥락 기반으로 추천/정리 요약 생성</p>
+      <article id="aiResult" class="list-item" style="display:none;"></article>
+    </section>
+
+    <section id="list" class="list-grid"></section>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    WETHUS.requireAuth();
+    const listEl = document.getElementById('list');
+    const q = document.getElementById('q');
+    const aiResultEl = document.getElementById('aiResult');
+
+    function render(items) {
+      listEl.innerHTML = items.map(p => `
+        <article class="list-item">
+          <h3>${p.title}</h3>
+          <p>${p.summary}</p>
+          <div class="meta">
+            <span class="badge">${p.category}</span> · ${p.status} · 필요역할: ${p.roles}
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function runSearch() {
+      const items = WETHUS.listProjects();
+      const result = WETHUS.fakeAiSearch(items, q.value.trim());
+      render(q.value.trim() ? result : items);
+    }
+
+    async function runAiCurate() {
+      const items = WETHUS.listProjects().slice(0, 8);
+      const query = q.value.trim() || '실행 가능한 청소년 프로젝트 추천';
+      const prompt = `다음 프로젝트 목록에서 '${query}'에 맞는 추천 TOP3를 골라줘.\n` +
+        items.map((p, i) => `${i + 1}. [${p.category}] ${p.title} - ${p.summary} / ${p.roles}`).join('\n') +
+        `\n형식: 번호, 추천 이유(짧게), 첫 2주 실행 제안(한 줄)`;
+
+      aiResultEl.style.display = 'block';
+      aiResultEl.innerHTML = '<p>AI가 큐레이션 중...</p>';
+      try {
+        const text = await WETHUS.askGemini(prompt);
+        aiResultEl.innerHTML = `<h3>AI 큐레이션 결과</h3><p style="white-space:pre-wrap;">${text}</p>`;
+      } catch (e) {
+        aiResultEl.innerHTML = `<h3>AI 큐레이션 오류</h3><p>${e.message}</p>`;
+      }
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', runSearch);
+    document.getElementById('aiCurateBtn').addEventListener('click', runAiCurate);
+    q.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
+
+    render(WETHUS.listProjects());
+  </script>
+</body>
+</html>

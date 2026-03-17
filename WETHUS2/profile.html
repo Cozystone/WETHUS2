@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | 프로필</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="wordmark">WETHUS</a>
+      <nav class="nav-links">
+        <a href="explore.html" class="nav-link">탐색</a>
+        <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
+        <a href="mentor.html" class="nav-link">멘토</a>
+        <a href="profile.html" class="nav-link nav-link--cta">프로필</a>
+        <a href="#" id="logoutBtn" class="nav-link">로그아웃</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="page-header">
+      <h1 class="page-title">내 프로필</h1>
+      <p class="page-sub">로그인 사용자별 프로필과 내 프로젝트</p>
+    </section>
+
+    <section class="profile-card" id="profileBox"></section>
+
+    <section class="profile-card" id="profileEditBox"></section>
+
+    <section>
+      <h2 class="section-title" style="font-size:1.4rem;">내 프로젝트</h2>
+      <div id="myProjects" class="list-grid"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    WETHUS.requireAuth();
+    const state = WETHUS.getState();
+    const u = WETHUS.currentUser();
+
+    const box = document.getElementById('profileBox');
+    const editBox = document.getElementById('profileEditBox');
+    const mine = document.getElementById('myProjects');
+
+    box.innerHTML = u
+      ? `<h3 style="margin:0 0 8px;">${u.name}</h3><p style="margin:0;color:#a3a3a3;">${u.email}</p>`
+      : `<h3 style="margin:0 0 8px;">개발자 모드</h3><p style="margin:0;color:#a3a3a3;">임시 세션으로 로그인됨</p>`;
+
+    if (u) {
+      editBox.innerHTML = `
+        <h3 style="margin:0 0 10px;">프로필 편집</h3>
+        <form id="profileForm" class="application-form">
+          <label>이름 <input name="name" value="${u.name}" required /></label>
+          <label>소개 <textarea name="bio" placeholder="자기소개를 입력하세요">${u.bio || ''}</textarea></label>
+          <button class="btn btn--primary" type="submit">저장</button>
+        </form>
+        <p id="profileMsg" class="form-message"></p>
+      `;
+
+      document.getElementById('profileForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const s = WETHUS.getState();
+        const target = s.users.find(x => x.id === u.id);
+        target.name = fd.get('name');
+        target.bio = fd.get('bio');
+        localStorage.setItem('wethus_v1', JSON.stringify(s));
+        document.getElementById('profileMsg').textContent = '저장되었습니다.';
+      });
+    }
+
+    const list = WETHUS.myProjects();
+    mine.innerHTML = list.length ? list.map(p => `
+      <article class="list-item">
+        <h3>${p.title}</h3>
+        <p>${p.summary}</p>
+        <div class="meta"><span class="badge">${p.category}</span> · ${p.status} · ${p.duration || ''}</div>
+      </article>
+    `).join('') : '<p class="page-sub">아직 등록한 프로젝트가 없습니다.</p>';
+
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      WETHUS.logout();
+      location.href = 'login.html';
+    });
+  </script>
+</body>
+</html>
