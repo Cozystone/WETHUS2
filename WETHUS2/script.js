@@ -39,7 +39,7 @@
   var currentProjectId = null;
 
   function memberHref(m) {
-    return 'member.html?name=' + encodeURIComponent(m?.name || '팀원') + '&role=' + encodeURIComponent(m?.role || '담당') + '&bio=' + encodeURIComponent(m?.bio || '소개가 아직 없습니다.');
+    return 'member.html?name=' + encodeURIComponent(m?.name || '팀원') + '&role=' + encodeURIComponent(m?.role || '담당') + '&bio=' + encodeURIComponent(m?.bio || '소개가 아직 없습니다.') + '&founder=' + (m?.isLeader ? '1' : '0');
   }
 
   function renderTeamMini(team) {

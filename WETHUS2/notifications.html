@@ -33,6 +33,19 @@
     <section id="notifyList" class="list-grid"></section>
   </main>
 
+  <div id="notifyDetailModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-notify="true"></div>
+    <article class="modal-panel" style="max-width:560px;">
+      <button class="modal-close" id="notifyDetailClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <p class="section-kicker" id="notifyDetailType">NOTIFICATION</p>
+        <h3 id="notifyDetailTitle" style="margin:0 0 8px;font-size:1.2rem;"></h3>
+        <p id="notifyDetailTime" class="meta" style="margin:0 0 10px;"></p>
+        <p id="notifyDetailBody" style="margin:0;color:#d6d6d6;line-height:1.7;white-space:pre-line;"></p>
+      </div>
+    </article>
+  </div>
+
   <footer class="footer">
     <div class="container">
       <div class="footer-inner">
@@ -54,13 +67,31 @@
 
     const listEl = document.getElementById('notifyList');
     const markAllBtn = document.getElementById('markAllRead');
+    const detailModal = document.getElementById('notifyDetailModal');
 
     function timeText(iso) {
       const d = new Date(iso);
       return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     }
 
-    function render() {
+    function openDetail(n) {
+      if (!n) return;
+      document.getElementById('notifyDetailType').textContent = (n.type || 'notification').toUpperCase();
+      document.getElementById('notifyDetailTitle').textContent = n.title || '';
+      document.getElementById('notifyDetailTime').textContent = timeText(n.createdAt);
+      document.getElementById('notifyDetailBody').textContent = n.body || '';
+      detailModal.classList.add('open');
+      detailModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeDetail() {
+      detailModal.classList.remove('open');
+      detailModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    function render(focusId) {
       const items = WETHUS.listNotifications(200);
       if (!items.length) {
         listEl.innerHTML = '<article class="list-item"><p class="page-sub">표시할 알림이 없습니다.</p></article>';
@@ -83,9 +114,20 @@
         el.addEventListener('click', () => {
           const id = el.getAttribute('data-id');
           WETHUS.markNotificationRead(id);
-          render();
+          const picked = WETHUS.listNotifications(200).find(x => x.id === id);
+          render(id);
+          openDetail(picked);
         });
       });
+
+      if (focusId) {
+        const focusEl = listEl.querySelector(`.list-item[data-id="${focusId}"]`);
+        if (focusEl) {
+          focusEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          focusEl.style.boxShadow = '0 0 0 2px rgba(255,106,0,.3) inset';
+          setTimeout(() => { focusEl.style.boxShadow = ''; }, 1500);
+        }
+      }
     }
 
     markAllBtn.addEventListener('click', () => {
@@ -93,7 +135,20 @@
       render();
     });
 
-    render();
+    document.getElementById('notifyDetailClose').addEventListener('click', closeDetail);
+    detailModal.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close-notify') === 'true') closeDetail();
+    });
+
+    const qid = new URLSearchParams(location.search).get('n');
+    render(qid || undefined);
+    if (qid) {
+      const hit = WETHUS.listNotifications(200).find(x => x.id === qid);
+      if (hit) {
+        WETHUS.markNotificationRead(qid);
+        openDetail(hit);
+      }
+    }
   </script>
 </body>
 </html>

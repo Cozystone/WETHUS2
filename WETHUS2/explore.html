@@ -186,7 +186,7 @@
       return `https://picsum.photos/seed/wethus-${key}-${idx}/900/560`;
     }
 
-    const memberHref = (m) => `member.html?name=${encodeURIComponent(m?.name||'팀원')}&role=${encodeURIComponent(m?.role||'담당')}&bio=${encodeURIComponent(m?.bio||'소개가 아직 없습니다.')}`;
+    const memberHref = (m) => `member.html?name=${encodeURIComponent(m?.name||'팀원')}&role=${encodeURIComponent(m?.role||'담당')}&bio=${encodeURIComponent(m?.bio||'소개가 아직 없습니다.')}&founder=${m?.isLeader ? '1' : '0'}`;
     function renderTeam(team=[]) {
       const leader = team.find(m => m.isLeader) || team[0];
       const others = team.filter(m => m !== leader);

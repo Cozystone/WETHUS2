@@ -636,7 +636,7 @@
           return;
         }
         dropdown.innerHTML = items.map(n => `
-          <a class="notify-item ${n.unread ? 'unread' : ''}" href="${n.href || 'notifications.html'}" data-id="${n.id}">
+          <a class="notify-item ${n.unread ? 'unread' : ''}" href="notifications.html?n=${encodeURIComponent(n.id)}" data-id="${n.id}">
             <strong>${n.title}</strong>
             <p>${n.body || ''}</p>
             <span>${formatTimeAgo(n.createdAt)}</span>
@@ -651,14 +651,22 @@
         });
       }
 
-      renderNotify();
-      wrap.addEventListener('mouseenter', () => {
+      let closeTimer = null;
+      const openDrop = () => {
+        if (closeTimer) clearTimeout(closeTimer);
         renderNotify();
         dropdown.style.display = 'block';
-      });
-      wrap.addEventListener('mouseleave', () => {
-        dropdown.style.display = 'none';
-      });
+      };
+      const closeDrop = () => {
+        if (closeTimer) clearTimeout(closeTimer);
+        closeTimer = setTimeout(() => { dropdown.style.display = 'none'; }, 160);
+      };
+
+      renderNotify();
+      wrap.addEventListener('mouseenter', openDrop);
+      wrap.addEventListener('mouseleave', closeDrop);
+      dropdown.addEventListener('mouseenter', openDrop);
+      dropdown.addEventListener('mouseleave', closeDrop);
     });
   }
 

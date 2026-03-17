@@ -63,7 +63,8 @@
     const member = {
       name: params.get('name') || '팀원',
       role: params.get('role') || '담당 미정',
-      bio: params.get('bio') || '소개가 아직 없습니다.'
+      bio: params.get('bio') || '소개가 아직 없습니다.',
+      founder: params.get('founder') === '1'
     };
 
     document.getElementById('memberHero').innerHTML = `
@@ -73,6 +74,7 @@
           <h2>${member.name}</h2>
           <span class="profile-nickname">@${member.name.replace(/\s+/g,'').toLowerCase()}</span>
           <span class="verify-badge">${member.role}</span>
+          ${member.founder ? '<span class="verify-badge">Founder 인증</span>' : ''}
         </div>
         <p class="profile-bio">${member.bio}</p>
       </div>
