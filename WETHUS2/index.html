@@ -188,7 +188,7 @@
           <h3 class="card-title">${p.title}</h3>
           <p class="card-summary">${p.summary || ''}</p>
           ${renderTeam(p.teamMembers)}
-          <div class="meta"><span class="card-status">${p.status || '기획 중'}</span> · 필요역할: ${p.roles || ''}</div>
+          <div class="meta"><span class="card-status">${p.status || '기획 중'}</span> · ${p.roles || ''}</div>
           <div class="card-bottom-row">
             <div class="card-social"><span>♡ ${(p.likes||0)}</span><span>💬 ${Array.isArray(p.comments)?p.comments.length:0}</span></div>
             <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>

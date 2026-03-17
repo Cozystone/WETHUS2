@@ -148,6 +148,17 @@
     let viewMode = localStorage.getItem('wethus_explore_view') || 'list';
     let selectedCategory = null;
 
+    function actorId() {
+      const s = WETHUS.getState();
+      return s.currentUserId || (s.devMode ? 'dev-temp' : null);
+    }
+
+    function likedSymbol(p) {
+      const actor = actorId();
+      const liked = !!p._liked || (actor && Array.isArray(p.likedBy) && p.likedBy.includes(actor));
+      return liked ? '♥' : '♡';
+    }
+
     function normalizeStage(v) {
       const s = String(v || '').replace(/\s+/g,'');
       if (s === '모집중' || s === '구인중') return '모집 중';
@@ -188,9 +199,9 @@
           <h3>${p.title}</h3>
           <p>${p.summary}</p>
           ${renderTeam(p.teamMembers)}
-          <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · 필요역할: ${p.roles}</div>
+          <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}</div>
           <div class="card-bottom-row">
-            <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
+            <div class="card-social"><span>${likedSymbol(p)} ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
             <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>
           </div>
         </article>
@@ -210,9 +221,9 @@
             <h3>${p.title}</h3>
             <p>${p.summary}</p>
             ${renderTeam(p.teamMembers)}
-            <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · 필요역할: ${p.roles}</div>
+            <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}</div>
             <div class="card-bottom-row">
-              <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
+              <div class="card-social"><span>${likedSymbol(p)} ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
               <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>
             </div>
           </div>

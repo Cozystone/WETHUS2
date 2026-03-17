@@ -22,9 +22,12 @@
   </header>
 
   <main class="container">
-    <section class="page-header">
-      <h1 class="page-title">팀원 프로필</h1>
-      <p class="page-sub">프로젝트 팀원 상세 정보</p>
+    <section class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+      <div>
+        <h1 class="page-title">팀원 프로필</h1>
+        <p class="page-sub">프로젝트 팀원 상세 정보</p>
+      </div>
+      <button id="memberClose" class="modal-close" aria-label="뒤로가기" style="position:static;">×</button>
     </section>
 
     <section class="profile-hero" id="memberHero"></section>
@@ -39,6 +42,12 @@
       authLink.href = '#';
       authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
     }
+
+    const closeBtn = document.getElementById('memberClose');
+    closeBtn?.addEventListener('click', () => {
+      if (history.length > 1) history.back();
+      else location.href = 'explore.html';
+    });
 
     const params = new URLSearchParams(location.search);
     const member = {
