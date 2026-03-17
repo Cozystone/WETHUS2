@@ -186,6 +186,17 @@
       parsed.notifications = seedNotifications.slice();
     }
 
+    if (!Array.isArray(parsed.dmThreads)) parsed.dmThreads = [];
+    if (!parsed.dmThreads.length) {
+      parsed.dmThreads = [
+        {
+          id: uid(),
+          targetName: '운영팀',
+          messages: [{ id: uid(), from: 'WETHUS', text: 'WETHUS에 오신 걸 환영합니다. 최신 공지와 승인은 여기로 안내됩니다.', createdAt: new Date().toISOString() }]
+        }
+      ];
+    }
+
     if (!Array.isArray(parsed.projects)) parsed.projects = [];
     const existingTitles = new Set(parsed.projects.map(p => p.title));
     let changed = false;
@@ -195,6 +206,13 @@
         changed = true;
       }
     });
+
+    if (Array.isArray(parsed.users)) {
+      parsed.users = parsed.users.map(u => {
+        if (!u.plan) return { ...u, plan: 'free' };
+        return u;
+      });
+    }
 
     const likePreset = {
       '청소년 독립영화 단편 제작팀': 42,
@@ -292,6 +310,20 @@
     return s.users.find(u => u.id === s.currentUserId) || null;
   }
 
+  function currentPlan() {
+    const u = currentUser();
+    return u?.plan || 'free';
+  }
+
+  function setCurrentUserPlan(plan) {
+    const s = load();
+    const u = s.users.find(x => x.id === s.currentUserId);
+    if (!u) return false;
+    u.plan = plan === 'premium' ? 'premium' : 'free';
+    save(s);
+    return true;
+  }
+
   function registerUser({ name, nickname, email, password }) {
     const s = load();
     const exists = s.users.find(u => u.email === email);
@@ -308,6 +340,7 @@
       bio: '',
       founderVerified: false,
       profileImage: '',
+      plan: 'free',
       createdAt: new Date().toISOString()
     };
     s.users.push(user);
@@ -467,6 +500,29 @@
     save(s);
   }
 
+  function listDmThreads() {
+    const s = load();
+    return s.dmThreads || [];
+  }
+
+  function listDmMessages(threadId) {
+    const s = load();
+    const t = (s.dmThreads || []).find(x => x.id === threadId);
+    return t?.messages || [];
+  }
+
+  function sendDm(threadId, text) {
+    const s = load();
+    const actor = currentActorId();
+    const u = s.users.find(x => x.id === s.currentUserId);
+    if ((u?.plan || 'free') !== 'premium') throw new Error('프리 플랜은 DM 수신만 가능합니다.');
+    const t = (s.dmThreads || []).find(x => x.id === threadId);
+    if (!t) throw new Error('대화방을 찾을 수 없습니다.');
+    t.messages.push({ id: uid(), from: u?.nickname || u?.name || actor || 'Me', text: text || '', createdAt: new Date().toISOString() });
+    save(s);
+    return t.messages;
+  }
+
   function currentActorId() {
     const s = load();
     return s.currentUserId || (s.devMode ? 'dev-temp' : null);
@@ -599,6 +655,7 @@
     const navs = document.querySelectorAll('.nav-links');
     if (!navs.length) return;
     const isNotificationsPage = /\/notifications\.html$/i.test(location.pathname);
+    const isDmPage = /\/dm\.html$/i.test(location.pathname);
 
     navs.forEach(nav => {
       const firstLink = nav.querySelector('a.nav-link');
@@ -610,24 +667,38 @@
         nav.insertBefore(home, firstLink || nav.firstChild);
       }
 
-      if (nav.querySelector('.js-nav-notify')) {
-        const existNotify = nav.querySelector('.notify-link');
-        if (existNotify) existNotify.classList.toggle('nav-link--cta', isNotificationsPage);
-        return;
-      }
+      if (nav.querySelector('.js-nav-notify')) return;
       const mentor = Array.from(nav.querySelectorAll('a')).find(a => (a.textContent || '').trim() === '멘토');
       const profile = Array.from(nav.querySelectorAll('a')).find(a => (a.textContent || '').trim() === '프로필');
+
+      const dmWrap = document.createElement('div');
+      dmWrap.className = 'notify-wrap js-nav-notify';
+      dmWrap.innerHTML = `
+        <a href="dm.html" class="nav-link notify-link ${isDmPage ? 'nav-link--cta' : ''}" title="DM" aria-label="DM">
+          <span class="nav-icon">✈</span>
+        </a>
+      `;
 
       const wrap = document.createElement('div');
       wrap.className = 'notify-wrap js-nav-notify';
       wrap.innerHTML = `
-        <a href="notifications.html" class="nav-link notify-link ${isNotificationsPage ? 'nav-link--cta' : ''}">알림 <span class="notify-badge" style="display:none;">0</span></a>
+        <a href="notifications.html" class="nav-link notify-link ${isNotificationsPage ? 'nav-link--cta' : ''}" title="알림" aria-label="알림">
+          <span class="nav-icon">🔔</span>
+          <span class="notify-badge" style="display:none;">0</span>
+        </a>
         <div class="notify-dropdown" style="display:none;"></div>
       `;
 
-      if (profile && profile.parentNode === nav) nav.insertBefore(wrap, profile);
-      else if (mentor && mentor.parentNode === nav) mentor.insertAdjacentElement('afterend', wrap);
-      else nav.appendChild(wrap);
+      if (profile && profile.parentNode === nav) {
+        nav.insertBefore(wrap, profile);
+        nav.insertBefore(dmWrap, wrap);
+      } else if (mentor && mentor.parentNode === nav) {
+        mentor.insertAdjacentElement('afterend', dmWrap);
+        dmWrap.insertAdjacentElement('afterend', wrap);
+      } else {
+        nav.appendChild(dmWrap);
+        nav.appendChild(wrap);
+      }
 
       const badge = wrap.querySelector('.notify-badge');
       const dropdown = wrap.querySelector('.notify-dropdown');
@@ -697,11 +768,16 @@
     toggleLike,
     addComment,
     updateProject,
+    currentPlan,
+    setCurrentUserPlan,
     listNotifications,
     unreadNotificationCount,
     addNotification,
     markNotificationRead,
     markAllNotificationsRead,
+    listDmThreads,
+    listDmMessages,
+    sendDm,
     hasApplied,
     applyToProject,
     cancelApplication,
