@@ -67,6 +67,15 @@
         <p id="modalSummary" style="margin:0 0 12px;color:#f5f5f5;"></p>
         <p id="modalDesc" style="margin:0 0 18px;color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p>
         <div class="meta"><span class="badge" id="modalStatus"></span> · <span id="modalRoles"></span> · <span id="modalDuration"></span></div>
+        <div class="modal-social-row">
+          <button id="modalLikeBtn" class="btn btn--secondary">♡ <span id="modalLikeCount">0</span></button>
+          <span class="meta">💬 <span id="modalCommentCount">0</span></span>
+        </div>
+        <div id="modalComments" class="modal-comments"></div>
+        <form id="modalCommentForm" class="modal-comment-form">
+          <input id="modalCommentInput" placeholder="댓글을 입력하세요" />
+          <button class="btn btn--primary" type="submit">등록</button>
+        </form>
       </div>
     </article>
   </div>
@@ -177,6 +186,21 @@
     const modalRoles = document.getElementById('modalRoles');
     const modalDuration = document.getElementById('modalDuration');
     const modalImage = document.getElementById('modalImage');
+    const modalLikeBtn = document.getElementById('modalLikeBtn');
+    const modalLikeCount = document.getElementById('modalLikeCount');
+    const modalCommentCount = document.getElementById('modalCommentCount');
+    const modalComments = document.getElementById('modalComments');
+    const modalCommentForm = document.getElementById('modalCommentForm');
+    const modalCommentInput = document.getElementById('modalCommentInput');
+    let currentProjectId = null;
+
+    function renderComments(comments) {
+      if (!comments || !comments.length) {
+        modalComments.innerHTML = '<p class="meta">아직 댓글이 없습니다.</p>';
+        return;
+      }
+      modalComments.innerHTML = comments.map(c => `<div class="comment-item"><strong>${c.author || '익명'}</strong><p>${c.text || ''}</p></div>`).join('');
+    }
 
     function openModal(data) {
       modalTitle.textContent = data.title || '';
@@ -187,6 +211,10 @@
       modalRoles.textContent = data.roles || '';
       modalDuration.textContent = data.duration || '';
       modalImage.src = data.image || imageFor(data, 0);
+      currentProjectId = data.id || null;
+      modalLikeCount.textContent = data.likes || 0;
+      modalCommentCount.textContent = (data.comments || []).length;
+      renderComments(data.comments || []);
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
@@ -213,11 +241,33 @@
     modal.addEventListener('click', (e) => {
       if (e.target && e.target.getAttribute('data-close') === 'true') closeModal();
     });
+
+    modalLikeBtn.addEventListener('click', () => {
+      if (!currentProjectId) return;
+      const count = WETHUS.toggleLike(currentProjectId);
+      modalLikeCount.textContent = count;
+      const target = currentItems.find(p => p.id === currentProjectId);
+      if (target) target.likes = count;
+    });
+
+    modalCommentForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!currentProjectId) return;
+      const text = (modalCommentInput.value || '').trim();
+      if (!text) return;
+      const comments = WETHUS.addComment(currentProjectId, text) || [];
+      modalCommentInput.value = '';
+      modalCommentCount.textContent = comments.length;
+      renderComments(comments);
+      const target = currentItems.find(p => p.id === currentProjectId);
+      if (target) target.comments = comments;
+    });
+
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeModal();
     });
 
-    render(WETHUS.listProjects());
+    render(WETHUS.listProjects().slice().sort((a,b)=>(b.likes||0)-(a.likes||0)));
   </script>
 </body>
 </html>

@@ -75,9 +75,10 @@ a { color: inherit; text-decoration: none; }
 .card-chip { color: var(--orange); font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
 .card-title { margin: 8px 0 6px; font-size: 1rem; font-weight: 800; line-height: 1.35; }
 .card-summary { margin: 0 0 12px; color: var(--text-secondary); font-size: .86rem; }
-.card-meta { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; color: var(--text-secondary); font-size: .8rem; margin-bottom: 2px; }
+.card-meta { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; color: var(--text-secondary); font-size: .8rem; margin-bottom: 6px; }
 .card-status { color: var(--orange); font-weight: 700; }
 .card-open { width: 100%; }
+.card-social { display:flex; gap:12px; color:#b9b9b9; font-size:.82rem; }
 
 .how-it-works { background: var(--surface); }
 .steps { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 0 14px; }
@@ -186,6 +187,14 @@ a { color: inherit; text-decoration: none; }
 .modal-content { padding: 18px 20px 20px; }
 .modal-close { position: absolute; right: 10px; top: 8px; background: rgba(0,0,0,.5); color: #eee; border: 0; width: 34px; height: 34px; border-radius: 999px; font-size: 1.2rem; cursor: pointer; z-index: 3; }
 .modal-close:hover { color: var(--orange); }
+.modal-social-row { display:flex; align-items:center; gap:10px; margin:14px 0 10px; }
+.modal-comments { display:grid; gap:8px; max-height:180px; overflow:auto; margin-bottom:10px; }
+.modal-comments::-webkit-scrollbar { width: 0; height: 0; }
+.comment-item { border:1px solid #2b2b2b; border-radius:10px; padding:8px 10px; background:#111; }
+.comment-item strong { font-size:.82rem; color:#f0f0f0; }
+.comment-item p { margin:4px 0 0; color:#b8b8b8; font-size:.84rem; }
+.modal-comment-form { display:flex; gap:8px; }
+.modal-comment-form input { flex:1; background:#0d0d0d; border:1px solid #2a2a2a; color:#f5f5f5; padding:10px; border-radius:10px; }
 
 .footer { border-top: 1px solid var(--border); padding: 30px 0; margin-top: 60px; }
 .footer-inner { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }

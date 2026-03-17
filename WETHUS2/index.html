@@ -110,6 +110,15 @@
         <p id="modalSummary" style="margin:0 0 12px;color:#f5f5f5;"></p>
         <p id="modalDesc" style="margin:0 0 18px;color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p>
         <div class="meta"><span class="badge" id="modalStatus"></span> · <span id="modalRoles"></span> · <span id="modalDuration"></span></div>
+        <div class="modal-social-row">
+          <button id="modalLikeBtn" class="btn btn--secondary">♡ <span id="modalLikeCount">0</span></button>
+          <span class="meta">💬 <span id="modalCommentCount">0</span></span>
+        </div>
+        <div id="modalComments" class="modal-comments"></div>
+        <form id="modalCommentForm" class="modal-comment-form">
+          <input id="modalCommentInput" placeholder="댓글을 입력하세요" />
+          <button class="btn btn--primary" type="submit">등록</button>
+        </form>
       </div>
     </article>
   </div>
@@ -120,7 +129,7 @@
       if (!window.WETHUS) return;
       const el = document.getElementById('homeFeatured');
       if (!el) return;
-      const featured = WETHUS.listProjects().slice(0, 6);
+      const featured = WETHUS.listProjects().slice().sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0, 6);
       const fallbackClass = { Film:'card-media--film', App:'card-media--startup', Startup:'card-media--startup', Policy:'card-media--policy', Campaign:'card-media--policy', Creative:'card-media--film' };
       el.innerHTML = featured.map(p => `
         <article class="card" data-project='${JSON.stringify(p).replace(/'/g, "&#39;")}'>
@@ -129,6 +138,7 @@
           <h3 class="card-title">${p.title}</h3>
           <p class="card-summary">${p.summary || ''}</p>
           <div class="card-meta"><span class="card-status">${p.status || ''}</span><span class="card-roles">${p.roles || ''}</span></div>
+          <div class="card-social"><span>♡ ${(p.likes||0)}</span><span>💬 ${Array.isArray(p.comments)?p.comments.length:0}</span></div>
         </article>
       `).join('');
     })();

@@ -114,6 +114,29 @@
         changed = true;
       }
     });
+
+    const likePreset = {
+      '청소년 독립영화 단편 제작팀': 42,
+      '고등학생 팀 협업 앱 MVP 실험': 35,
+      '청소년 교통비 정책 제안 프로젝트': 28,
+      '지역 문제 해결 캠페인 미디어팀': 24,
+      '청소년 로컬 브랜드 런칭 실험': 20,
+      '청소년 전시/출판 크리에이티브 프로젝트': 18
+    };
+
+    parsed.projects = parsed.projects.map(p => {
+      const next = { ...p };
+      if (typeof next.likes !== 'number') {
+        next.likes = likePreset[next.title] ?? Math.floor(Math.random() * 12) + 3;
+        changed = true;
+      }
+      if (!Array.isArray(next.comments)) {
+        next.comments = [];
+        changed = true;
+      }
+      return next;
+    });
+
     if (changed) localStorage.setItem(KEY, JSON.stringify(parsed));
 
     return parsed;
@@ -212,6 +235,26 @@
     return s.projects.filter(p => p.founderId === s.currentUserId || (s.devMode && p.founderId === 'dev-temp'));
   }
 
+  function toggleLike(projectId) {
+    const s = load();
+    const target = s.projects.find(p => p.id === projectId);
+    if (!target) return null;
+    target.likes = (target.likes || 0) + 1;
+    save(s);
+    return target.likes;
+  }
+
+  function addComment(projectId, text) {
+    const s = load();
+    const target = s.projects.find(p => p.id === projectId);
+    if (!target) return null;
+    const author = currentUser()?.nickname || currentUser()?.name || '익명';
+    if (!Array.isArray(target.comments)) target.comments = [];
+    target.comments.push({ id: uid(), author, text, createdAt: new Date().toISOString() });
+    save(s);
+    return target.comments;
+  }
+
   function requireAuth() {
     const s = load();
     if (!s.currentUserId && !s.devMode) {
@@ -277,6 +320,8 @@
     addProject,
     listProjects,
     myProjects,
+    toggleLike,
+    addComment,
     requireAuth,
     fakeAiSearch,
     setGeminiApiKey,
