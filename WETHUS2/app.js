@@ -674,25 +674,27 @@
       const dmWrap = document.createElement('div');
       dmWrap.className = 'notify-wrap js-nav-notify';
       dmWrap.innerHTML = `
-        <a href="dm.html" class="nav-link notify-link ${isDmPage ? 'nav-link--cta' : ''}" title="DM" aria-label="DM">
+        <a href="dm.html" class="nav-link notify-link notify-link--text ${isDmPage ? 'nav-link--cta' : ''}" title="DM" aria-label="DM">
           <span class="nav-icon-svg" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
           </span>
+          <span>DM</span>
         </a>
       `;
 
       const wrap = document.createElement('div');
       wrap.className = 'notify-wrap js-nav-notify';
       wrap.innerHTML = `
-        <a href="notifications.html" class="nav-link notify-link ${isNotificationsPage ? 'nav-link--cta' : ''}" title="알림" aria-label="알림">
+        <a href="notifications.html" class="nav-link notify-link notify-link--text ${isNotificationsPage ? 'nav-link--cta' : ''}" title="알림" aria-label="알림">
           <span class="nav-icon-svg" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"/>
               <path d="M9 17a3 3 0 0 0 6 0"/>
             </svg>
           </span>
+          <span>알림</span>
           <span class="notify-badge" style="display:none;">0</span>
         </a>
         <div class="notify-dropdown" style="display:none;"></div>
