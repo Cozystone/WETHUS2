@@ -81,14 +81,13 @@
 
     const projects = WETHUS.projectsByMemberName(member.name);
     const wrap = document.createElement('section');
-    wrap.className = 'container';
     wrap.innerHTML = `
       <section class="projects-head-row" style="margin-top:16px;">
         <h2 class="section-title" style="font-size:1.3rem;margin:0;">참여 프로젝트</h2>
       </section>
       <section class="list-grid">${projects.length ? projects.map(p => `<article class=\"list-item\"><span class=\"card-chip\">${p.category||''}</span><h3>${p.title}</h3><p>${p.summary||''}</p><div class=\"meta\">${p.status||''} · ${p.teamSize||''}</div></article>`).join('') : '<article class="list-item"><p class="page-sub">참여 프로젝트가 없습니다.</p></article>'}</section>
     `;
-    document.body.appendChild(wrap);
+    document.querySelector('main.container')?.appendChild(wrap);
   </script>
 </body>
 </html>

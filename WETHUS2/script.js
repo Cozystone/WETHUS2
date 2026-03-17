@@ -190,7 +190,17 @@
   if (applyBtn) {
     applyBtn.addEventListener('click', function () {
       if (!currentProjectId || !window.WETHUS) return;
-      if (WETHUS.hasApplied(currentProjectId)) return;
+      if (WETHUS.hasApplied(currentProjectId)) {
+        if (!confirm('지원을 취소하겠습니까?')) return;
+        WETHUS.cancelApplication(currentProjectId);
+        applyBtn.classList.remove('applied');
+        applyBtn.textContent = '지원하기';
+        document.querySelectorAll('.apply-btn[data-apply="' + currentProjectId + '"]').forEach(function (b) {
+          b.classList.remove('applied');
+          b.textContent = '지원하기';
+        });
+        return;
+      }
       if (!applyModal) return;
       applyModal.classList.add('open');
       applyModal.setAttribute('aria-hidden', 'false');

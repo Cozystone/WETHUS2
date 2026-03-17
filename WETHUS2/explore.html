@@ -72,6 +72,9 @@
     </section>
 
     <section id="list" class="list-grid"></section>
+    <div style="display:flex;justify-content:center;margin-top:14px;">
+      <button id="loadMoreBtn" class="btn btn--secondary" style="display:none;">더보기</button>
+    </div>
   </main>
 
   <footer class="footer">
@@ -155,9 +158,11 @@
     const stageFilter = document.getElementById('stageFilter');
     const resetFilter = document.getElementById('resetFilter');
     const categoryChips = document.getElementById('categoryChips');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
 
-    const allProjects = WETHUS.listProjects().slice();
-    let currentItems = allProjects.slice();
+    let allProjects = [];
+    let currentItems = [];
+    let visibleCount = 6;
     let viewMode = localStorage.getItem('wethus_explore_view') || 'list';
     let selectedCategory = null;
 
@@ -233,10 +238,12 @@
 
     function render(items) {
       currentItems = items;
-      if (viewMode === 'album') renderAlbum(items);
-      else renderList(items);
+      const pageItems = items.slice(0, visibleCount);
+      if (viewMode === 'album') renderAlbum(pageItems);
+      else renderList(pageItems);
       viewListBtn.classList.toggle('active', viewMode === 'list');
       viewAlbumBtn.classList.toggle('active', viewMode === 'album');
+      loadMoreBtn.style.display = items.length > visibleCount ? 'inline-flex' : 'none';
     }
 
     function buildCategoryChips(items) {
@@ -251,8 +258,13 @@
       });
     }
 
+    function sourceProjects() {
+      return WETHUS.listProjects().slice().filter(p => !WETHUS.hasApplied(p.id));
+    }
+
     function applyFilters() {
       const query = q.value.trim();
+      allProjects = sourceProjects();
       let items = allProjects.slice();
 
       if (selectedCategory) items = items.filter(p => p.category === selectedCategory);
@@ -266,6 +278,7 @@
     }
 
     async function runSearch() {
+      visibleCount = 6;
       const query = q.value.trim();
       const items = applyFilters();
 
@@ -308,15 +321,21 @@
     filterBtn.addEventListener('click', () => {
       filterPanel.style.display = filterPanel.style.display === 'none' ? 'grid' : 'none';
     });
-    teamSizeFilter.addEventListener('change', applyFilters);
-    stageFilter.addEventListener('change', applyFilters);
+    teamSizeFilter.addEventListener('change', () => { visibleCount = 6; applyFilters(); });
+    stageFilter.addEventListener('change', () => { visibleCount = 6; applyFilters(); });
     resetFilter.addEventListener('click', () => {
       teamSizeFilter.value = '';
       stageFilter.value = '';
       selectedCategory = null;
       q.value = '';
+      visibleCount = 6;
       aiResultEl.style.display = 'none';
       applyFilters();
+    });
+
+    loadMoreBtn.addEventListener('click', () => {
+      visibleCount += 6;
+      render(currentItems);
     });
 
     const modal = document.getElementById('projectModal');
@@ -414,8 +433,14 @@
       const applyBtn = e.target.closest('.apply-btn');
       if (applyBtn) {
         e.stopPropagation();
-        if (applyBtn.classList.contains('applied')) return;
         applyProjectId = applyBtn.dataset.apply;
+        if (applyBtn.classList.contains('applied')) {
+          if (!confirm('지원을 취소하겠습니까?')) return;
+          WETHUS.cancelApplication(applyProjectId);
+          visibleCount = Math.max(6, visibleCount - 1);
+          applyFilters();
+          return;
+        }
         applyModal.classList.add('open');
         applyModal.setAttribute('aria-hidden', 'false');
         return;
@@ -462,7 +487,13 @@
 
     modalApplyBtn.addEventListener('click', () => {
       if (!currentProjectId) return;
-      if (WETHUS.hasApplied(currentProjectId)) return;
+      if (WETHUS.hasApplied(currentProjectId)) {
+        if (!confirm('지원을 취소하겠습니까?')) return;
+        WETHUS.cancelApplication(currentProjectId);
+        closeModal();
+        applyFilters();
+        return;
+      }
       applyProjectId = currentProjectId;
       applyModal.classList.add('open');
       applyModal.setAttribute('aria-hidden', 'false');
@@ -502,14 +533,11 @@
       if (!motivation) { alert('지원동기를 입력해주세요.'); return; }
       if (!confirm('지원하시겠습니까?')) return;
       WETHUS.applyToProject(applyProjectId, motivation);
-      document.querySelectorAll(`.apply-btn[data-apply="${applyProjectId}"]`).forEach(btn => { btn.classList.add('applied'); btn.textContent='지원완료'; });
-      if (currentProjectId === applyProjectId && modalApplyBtn) {
-        modalApplyBtn.classList.add('applied');
-        modalApplyBtn.textContent = '지원완료';
-      }
       applyMotivation.value='';
       applyModal.classList.remove('open');
       applyModal.setAttribute('aria-hidden', 'true');
+      if (currentProjectId === applyProjectId) closeModal();
+      applyFilters();
     });
 
     window.addEventListener('keydown', (e) => {

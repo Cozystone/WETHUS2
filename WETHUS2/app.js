@@ -92,6 +92,48 @@
       image: 'https://picsum.photos/seed/wethus-creative/1200/700',
       founderId: 'system',
       createdAt: new Date().toISOString()
+    },
+    {
+      id: uid(),
+      title: '청소년 사회문제 인터랙티브 웹다큐 팀',
+      category: 'Film',
+      summary: '인터뷰와 데이터 시각화를 결합한 웹다큐 제작.',
+      desc: '기획-취재-편집을 3스프린트로 나눠 진행하며 최종 웹다큐 페이지 공개를 목표로 합니다.',
+      status: '기획 중',
+      teamSize: '3인',
+      roles: '취재 1 · 편집 1 · 개발 1',
+      duration: '7주',
+      image: 'https://picsum.photos/seed/wethus-webdoc/1200/700',
+      founderId: 'system',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: uid(),
+      title: '청소년 로컬 상권 데이터랩',
+      category: 'Policy',
+      summary: '지역 상권 데이터를 수집·분석해 정책 인사이트 제안.',
+      desc: '현장 인터뷰와 공공데이터 분석으로 청소년 관점의 제안 리포트를 제작합니다.',
+      status: '모집 중',
+      teamSize: '2인',
+      roles: '데이터 1 · 리서치 1 · 문서 1',
+      duration: '6주',
+      image: 'https://picsum.photos/seed/wethus-datalab/1200/700',
+      founderId: 'system',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: uid(),
+      title: '청소년 커뮤니티 서비스 브랜딩 스프린트',
+      category: 'Startup',
+      summary: '서비스 포지셔닝과 브랜드 키트 제작 단기 스프린트.',
+      desc: '문제정의-브랜드메시지-랜딩검증까지 4주 스프린트로 빠르게 실험합니다.',
+      status: '진행 중',
+      teamSize: '3인',
+      roles: '브랜딩 1 · 콘텐츠 1 · 운영 1',
+      duration: '4주',
+      image: 'https://picsum.photos/seed/wethus-brand/1200/700',
+      founderId: 'system',
+      createdAt: new Date().toISOString()
     }
   ];
 
@@ -173,6 +215,13 @@
         devMode: false,
         applications: [],
         notifications: seedNotifications,
+        dmThreads: [
+          {
+            id: uid(),
+            targetName: '운영팀',
+            messages: [{ id: uid(), from: 'WETHUS', text: 'WETHUS에 오신 걸 환영합니다. 최신 공지와 승인은 여기로 안내됩니다.', createdAt: new Date().toISOString() }]
+          }
+        ],
         geminiApiKey: DEFAULT_GEMINI_KEY
       };
       localStorage.setItem(KEY, JSON.stringify(init));

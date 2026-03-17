@@ -168,7 +168,7 @@
         if (s === '피보팅') return '피보팅';
         return '기획 중';
       };
-      const featured = WETHUS.listProjects().slice().sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0, 6).map(p => ({...p, status: normalizeStage(p.status)}));
+      const featured = WETHUS.listProjects().slice().filter(p => !WETHUS.hasApplied(p.id)).sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0, 6).map(p => ({...p, status: normalizeStage(p.status)}));
       const fallbackClass = { Film:'card-media--film', App:'card-media--startup', Startup:'card-media--startup', Policy:'card-media--policy', Campaign:'card-media--policy', Creative:'card-media--film' };
       const memberHref = (m) => `member.html?name=${encodeURIComponent(m?.name||'팀원')}&role=${encodeURIComponent(m?.role||'담당')}&bio=${encodeURIComponent(m?.bio||'소개가 아직 없습니다.')}&founder=${m?.isLeader ? '1' : '0'}`;
       const renderTeam = (team=[]) => {
@@ -209,7 +209,12 @@
         if (!applyBtn) return;
         e.stopPropagation();
         applyProjectId = applyBtn.dataset.apply;
-        if (applyBtn.classList.contains('applied')) return;
+        if (applyBtn.classList.contains('applied')) {
+          if (!confirm('지원을 취소하겠습니까?')) return;
+          WETHUS.cancelApplication(applyProjectId);
+          location.reload();
+          return;
+        }
         applyModal.classList.add('open');
         applyModal.setAttribute('aria-hidden', 'false');
       });
