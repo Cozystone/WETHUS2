@@ -700,6 +700,65 @@
     return `${d}일 전`;
   }
 
+  function ensureUiDialog() {
+    let el = document.getElementById('uiDialog');
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = 'uiDialog';
+    el.className = 'modal';
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = `
+      <div class="modal-backdrop" data-ui-close="true"></div>
+      <article class="modal-panel" style="max-width:420px;">
+        <div class="modal-content">
+          <h3 id="uiDialogTitle" style="margin:0 0 8px;">확인</h3>
+          <p id="uiDialogMsg" style="margin:0 0 14px;color:#d6d6d6;"></p>
+          <div style="display:flex;justify-content:flex-end;gap:8px;">
+            <button id="uiDialogCancel" class="btn btn--secondary" type="button">취소</button>
+            <button id="uiDialogOk" class="btn btn--primary" type="button">확인</button>
+          </div>
+        </div>
+      </article>
+    `;
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function uiConfirm(message, opts = {}) {
+    return new Promise((resolve) => {
+      const el = ensureUiDialog();
+      const okBtn = el.querySelector('#uiDialogOk');
+      const cancelBtn = el.querySelector('#uiDialogCancel');
+      const msg = el.querySelector('#uiDialogMsg');
+      const title = el.querySelector('#uiDialogTitle');
+      title.textContent = opts.title || '확인';
+      msg.textContent = message || '';
+      okBtn.textContent = opts.confirmText || '확인';
+      cancelBtn.textContent = opts.cancelText || '취소';
+
+      const close = (v) => {
+        el.classList.remove('open');
+        el.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        resolve(v);
+      };
+
+      okBtn.onclick = () => close(true);
+      cancelBtn.onclick = () => close(false);
+      el.onclick = (e) => {
+        if (e.target && e.target.getAttribute('data-ui-close') === 'true') close(false);
+      };
+
+      el.classList.add('open');
+      el.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    });
+  }
+
+  function uiAlert(message, opts = {}) {
+    return uiConfirm(message, { ...opts, cancelText: '', confirmText: opts.confirmText || '확인' });
+  }
+
   function initNotificationNav() {
     const navs = document.querySelectorAll('.nav-links');
     if (!navs.length) return;
@@ -838,6 +897,8 @@
     listDmThreads,
     listDmMessages,
     sendDm,
+    uiConfirm,
+    uiAlert,
     hasApplied,
     applyToProject,
     cancelApplication,

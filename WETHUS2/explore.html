@@ -429,13 +429,14 @@
     }
 
 
-    listEl.addEventListener('click', (e) => {
+    listEl.addEventListener('click', async (e) => {
       const applyBtn = e.target.closest('.apply-btn');
       if (applyBtn) {
         e.stopPropagation();
         applyProjectId = applyBtn.dataset.apply;
         if (applyBtn.classList.contains('applied')) {
-          if (!confirm('지원을 취소하겠습니까?')) return;
+          const ok = await WETHUS.uiConfirm('지원을 취소하겠습니까?', { title: '지원 취소' });
+          if (!ok) return;
           WETHUS.cancelApplication(applyProjectId);
           visibleCount = Math.max(6, visibleCount - 1);
           applyFilters();
@@ -485,10 +486,11 @@
       modalCommentInput.focus();
     });
 
-    modalApplyBtn.addEventListener('click', () => {
+    modalApplyBtn.addEventListener('click', async () => {
       if (!currentProjectId) return;
       if (WETHUS.hasApplied(currentProjectId)) {
-        if (!confirm('지원을 취소하겠습니까?')) return;
+        const ok = await WETHUS.uiConfirm('지원을 취소하겠습니까?', { title: '지원 취소' });
+        if (!ok) return;
         WETHUS.cancelApplication(currentProjectId);
         closeModal();
         applyFilters();
@@ -527,11 +529,12 @@
         applyModal.setAttribute('aria-hidden', 'true');
       }
     });
-    document.getElementById('applySubmit').addEventListener('click', () => {
+    document.getElementById('applySubmit').addEventListener('click', async () => {
       if (!applyProjectId) return;
       const motivation = (applyMotivation.value || '').trim();
-      if (!motivation) { alert('지원동기를 입력해주세요.'); return; }
-      if (!confirm('지원하시겠습니까?')) return;
+      if (!motivation) { await WETHUS.uiAlert('지원동기를 입력해주세요.', { title: '입력 필요' }); return; }
+      const ok = await WETHUS.uiConfirm('지원하시겠습니까?', { title: '프로젝트 지원' });
+      if (!ok) return;
       WETHUS.applyToProject(applyProjectId, motivation);
       applyMotivation.value='';
       applyModal.classList.remove('open');

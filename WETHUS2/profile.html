@@ -201,11 +201,15 @@
       `).join('') : '<article class="list-item"><p class="page-sub">참여중인 프로젝트가 없습니다.</p></article>';
 
       participatingEl.querySelectorAll('.cancel-apply').forEach(btn => {
-        btn.addEventListener('click', () => {
-          if (!confirm('지원을 취소하겠습니까?')) return;
+        btn.addEventListener('click', async () => {
+          const ok = await WETHUS.uiConfirm('지원을 취소하겠습니까?', { title: '지원 취소' });
+          if (!ok) return;
           WETHUS.cancelApplication(btn.dataset.project);
-          btn.textContent = '취소완료';
-          btn.disabled = true;
+          const card = btn.closest('.list-item');
+          if (card) card.remove();
+          if (!participatingEl.querySelector('.list-item')) {
+            participatingEl.innerHTML = '<article class="list-item"><p class="page-sub">참여중인 프로젝트가 없습니다.</p></article>';
+          }
         });
       });
     } catch (err) {

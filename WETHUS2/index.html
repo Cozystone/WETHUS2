@@ -204,13 +204,14 @@
       const applyMotivation = document.getElementById('applyMotivation');
       let applyProjectId = null;
 
-      el.addEventListener('click', (e) => {
+      el.addEventListener('click', async (e) => {
         const applyBtn = e.target.closest('.apply-btn');
         if (!applyBtn) return;
         e.stopPropagation();
         applyProjectId = applyBtn.dataset.apply;
         if (applyBtn.classList.contains('applied')) {
-          if (!confirm('지원을 취소하겠습니까?')) return;
+          const ok = await WETHUS.uiConfirm('지원을 취소하겠습니까?', { title: '지원 취소' });
+          if (!ok) return;
           WETHUS.cancelApplication(applyProjectId);
           location.reload();
           return;
@@ -229,11 +230,12 @@
           applyModal.setAttribute('aria-hidden', 'true');
         }
       });
-      document.getElementById('applySubmit')?.addEventListener('click', () => {
+      document.getElementById('applySubmit')?.addEventListener('click', async () => {
         if (!applyProjectId) return;
         const motivation = (applyMotivation.value || '').trim();
-        if (!motivation) { alert('지원동기를 입력해주세요.'); return; }
-        if (!confirm('지원하시겠습니까?')) return;
+        if (!motivation) { await WETHUS.uiAlert('지원동기를 입력해주세요.', { title: '입력 필요' }); return; }
+        const ok = await WETHUS.uiConfirm('지원하시겠습니까?', { title: '프로젝트 지원' });
+        if (!ok) return;
         WETHUS.applyToProject(applyProjectId, motivation);
         const btn = el.querySelector(`.apply-btn[data-apply="${applyProjectId}"]`);
         if (btn) {
