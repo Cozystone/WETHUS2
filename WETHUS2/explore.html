@@ -90,7 +90,8 @@
       <div class="modal-media-wrap"><img id="modalImage" class="modal-image" alt="프로젝트 이미지" /></div>
       <div class="modal-content">
         <p class="section-kicker" id="modalCategory">CATEGORY</p>
-        <h3 id="modalTitle" style="margin:0 0 10px;font-size:1.45rem;font-weight:800;"></h3>
+        <h3 id="modalTitle" style="margin:0 0 4px;font-size:1.45rem;font-weight:800;"></h3>
+        <p id="modalDateRange" class="modal-date-range" style="margin:0 0 10px;"></p>
         <p id="modalSummary" style="margin:0 0 12px;color:#f5f5f5;"></p>
         <p id="modalDesc" style="margin:0 0 18px;color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p>
         <div id="modalTeam" class="team-row" style="margin-bottom:12px;"></div>
@@ -334,6 +335,7 @@
     const modalTitle = document.getElementById('modalTitle');
     const modalCategory = document.getElementById('modalCategory');
     const modalSummary = document.getElementById('modalSummary');
+    const modalDateRange = document.getElementById('modalDateRange');
     const modalDesc = document.getElementById('modalDesc');
     const modalStatus = document.getElementById('modalStatus');
     const modalCategoryBadge = document.getElementById('modalCategoryBadge');
@@ -371,8 +373,21 @@
       modalComments.innerHTML = comments.map(c => `<div class="comment-item"><strong>${c.author || '익명'}</strong><p>${c.text || ''}</p></div>`).join('');
     }
 
+    function formatDateDot(v) {
+      return String(v || '').replaceAll('-', '.');
+    }
+
+    function renderModalDate(data) {
+      if (!data || !data.startDate) {
+        modalDateRange.textContent = '';
+        return;
+      }
+      modalDateRange.textContent = `${formatDateDot(data.startDate)}~${data.ongoingNow ? '현재' : formatDateDot(data.endDate || '')}`;
+    }
+
     function openModal(data) {
       modalTitle.textContent = data.title || '';
+      renderModalDate(data);
       modalCategory.textContent = data.category || '';
       modalSummary.textContent = data.summary || '';
       modalDesc.textContent = data.desc || data.fullDescription || '프로젝트 상세 설명이 준비 중입니다.';

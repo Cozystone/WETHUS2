@@ -19,6 +19,7 @@
   var titleEl = document.getElementById('modalTitle');
   var categoryEl = document.getElementById('modalCategory');
   var summaryEl = document.getElementById('modalSummary');
+  var dateRangeEl = document.getElementById('modalDateRange');
   var descEl = document.getElementById('modalDesc');
   var statusEl = document.getElementById('modalStatus');
   var categoryBadgeEl = document.getElementById('modalCategoryBadge');
@@ -61,6 +62,20 @@
     }).join('');
   }
 
+  function formatDateDot(v) {
+    return String(v || '').replaceAll('-', '.');
+  }
+
+  function renderDateRange(data) {
+    if (!dateRangeEl) return;
+    if (!data || !data.startDate) {
+      dateRangeEl.textContent = '';
+      return;
+    }
+    var text = formatDateDot(data.startDate) + '~' + (data.ongoingNow ? '현재' : formatDateDot(data.endDate || ''));
+    dateRangeEl.textContent = text;
+  }
+
   function syncProjectStats(projectId, likes, commentsLen) {
     if (!projectId) return;
     document.querySelectorAll('[data-project]').forEach(function (card) {
@@ -87,6 +102,7 @@
     titleEl.textContent = data.title || '';
     categoryEl.textContent = data.category || '';
     summaryEl.textContent = data.summary || '';
+    renderDateRange(data);
     descEl.textContent = data.desc || '';
     statusEl.textContent = data.status || '';
     if (categoryBadgeEl) categoryBadgeEl.textContent = data.category || '';

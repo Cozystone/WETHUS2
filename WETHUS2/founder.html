@@ -162,6 +162,20 @@
           </select>
         </label>
 
+        <div class="form-row">
+          <label style="flex:1;min-width:220px;">시작일
+            <input type="date" name="startDate" required />
+          </label>
+          <label style="flex:1;min-width:220px;">종료일
+            <input type="date" name="endDate" />
+          </label>
+        </div>
+
+        <label style="display:flex;align-items:center;gap:8px;font-weight:600;">
+          <input type="checkbox" id="ongoingNow" name="ongoingNow" style="width:auto;" />
+          종료일을 "현재"로 표시 (진행 중)
+        </label>
+
         <label>예상 기간
           <input name="duration" placeholder="예: 8주" required />
         </label>
@@ -191,7 +205,8 @@
       <div class="modal-media-wrap"><img id="previewImage" class="modal-image" alt="프로젝트 미리보기" /></div>
       <div class="modal-content">
         <p class="section-kicker" id="previewCategory">CATEGORY</p>
-        <h3 id="previewTitle" style="margin:0 0 10px;font-size:1.45rem;font-weight:800;"></h3>
+        <h3 id="previewTitle" style="margin:0 0 4px;font-size:1.45rem;font-weight:800;"></h3>
+        <p id="previewDate" class="modal-date-range" style="margin:0 0 10px;"></p>
         <p id="previewSummary" style="margin:0 0 12px;color:#f5f5f5;"></p>
         <p id="previewDesc" style="margin:0 0 18px;color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p>
         <div class="meta"><span class="card-status" id="previewStatus"></span> · <span id="previewTeamSize"></span> · <span id="previewRoles"></span> · <span id="previewDuration"></span></div>
@@ -229,6 +244,7 @@
     const categorySelect = document.getElementById('categorySelect');
     const customCategoryWrap = document.getElementById('customCategoryWrap');
     const customCategoryInput = document.getElementById('customCategory');
+    const ongoingNow = document.getElementById('ongoingNow');
 
     let imageData = '';
     let aiImageSelected = false;
@@ -251,6 +267,17 @@
       return String(customCategoryInput.value || '').trim();
     }
 
+    function formatDateDot(v) {
+      if (!v) return '';
+      return String(v).replaceAll('-', '.');
+    }
+
+    function dateRangeText(startDate, endDate, isOngoing) {
+      const start = formatDateDot(startDate);
+      if (!start) return '';
+      return `${start}~${isOngoing ? '현재' : formatDateDot(endDate)}`;
+    }
+
     function setImageError(text = '') {
       imageMsg.textContent = text;
     }
@@ -262,7 +289,7 @@
       }
       setImageError('');
 
-      const requiredFields = ['title','category','description','motivation','output','plan','roles','teamSize','status','duration'];
+      const requiredFields = ['title','category','description','motivation','output','plan','roles','teamSize','status','duration','startDate'];
       for (const key of requiredFields) {
         const el = form.elements[key];
         if (!el || !String(el.value || '').trim()) {
@@ -273,6 +300,12 @@
 
       if (categorySelect.value === '기타' && !resolvedCategory()) {
         if (showMessage) msg.textContent = '기타 카테고리를 입력해주세요.';
+        return false;
+      }
+
+      const hasEndDate = !!String(form.elements.endDate.value || '').trim();
+      if (!ongoingNow.checked && !hasEndDate) {
+        if (showMessage) msg.textContent = '종료일을 입력하거나 "현재"를 선택해주세요.';
         return false;
       }
 
@@ -326,6 +359,12 @@
       customCategoryWrap.style.display = custom ? 'grid' : 'none';
       customCategoryInput.required = custom;
       if (!custom) customCategoryInput.value = '';
+    });
+
+    ongoingNow.addEventListener('change', () => {
+      const endInput = form.elements.endDate;
+      endInput.disabled = ongoingNow.checked;
+      if (ongoingNow.checked) endInput.value = '';
     });
 
     async function generateAiImage() {
@@ -416,6 +455,7 @@
       document.getElementById('previewImage').src = imageData || fallbackPreview;
       document.getElementById('previewCategory').textContent = resolvedCategory();
       document.getElementById('previewTitle').textContent = fd.get('title');
+      document.getElementById('previewDate').textContent = dateRangeText(fd.get('startDate'), fd.get('endDate'), ongoingNow.checked);
       document.getElementById('previewSummary').textContent = String(fd.get('description')).slice(0, 120);
       document.getElementById('previewDesc').textContent = fd.get('description');
       document.getElementById('previewStatus').textContent = fd.get('status');
@@ -471,6 +511,9 @@
         teamSize: fd.get('teamSize'),
         roles: fd.get('roles'),
         duration: fd.get('duration'),
+        startDate: fd.get('startDate'),
+        endDate: ongoingNow.checked ? null : fd.get('endDate'),
+        ongoingNow: ongoingNow.checked,
         image: finalImage,
         likes: 0,
         comments: []
@@ -484,6 +527,8 @@
       coverPreviewWrap.style.display = 'none';
       customCategoryWrap.style.display = 'none';
       customCategoryInput.required = false;
+      ongoingNow.checked = false;
+      form.elements.endDate.disabled = false;
       setImageError('');
       form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
     });
