@@ -592,15 +592,30 @@
   function initNotificationNav() {
     const navs = document.querySelectorAll('.nav-links');
     if (!navs.length) return;
+    const isNotificationsPage = /\/notifications\.html$/i.test(location.pathname);
+
     navs.forEach(nav => {
-      if (nav.querySelector('.js-nav-notify')) return;
+      const firstLink = nav.querySelector('a.nav-link');
+      if (!Array.from(nav.querySelectorAll('a')).some(a => (a.textContent || '').trim() === '홈')) {
+        const home = document.createElement('a');
+        home.href = 'index.html';
+        home.className = 'nav-link';
+        home.textContent = '홈';
+        nav.insertBefore(home, firstLink || nav.firstChild);
+      }
+
+      if (nav.querySelector('.js-nav-notify')) {
+        const existNotify = nav.querySelector('.notify-link');
+        if (existNotify) existNotify.classList.toggle('nav-link--cta', isNotificationsPage);
+        return;
+      }
       const mentor = Array.from(nav.querySelectorAll('a')).find(a => (a.textContent || '').trim() === '멘토');
       const profile = Array.from(nav.querySelectorAll('a')).find(a => (a.textContent || '').trim() === '프로필');
 
       const wrap = document.createElement('div');
       wrap.className = 'notify-wrap js-nav-notify';
       wrap.innerHTML = `
-        <a href="notifications.html" class="nav-link notify-link">알림 <span class="notify-badge" style="display:none;">0</span></a>
+        <a href="notifications.html" class="nav-link notify-link ${isNotificationsPage ? 'nav-link--cta' : ''}">알림 <span class="notify-badge" style="display:none;">0</span></a>
         <div class="notify-dropdown" style="display:none;"></div>
       `;
 
