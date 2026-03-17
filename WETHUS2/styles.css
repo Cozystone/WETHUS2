@@ -96,24 +96,24 @@ a { color: inherit; text-decoration: none; }
 .chip { border: 1px solid var(--border); background: var(--surface-alt); color: var(--text-secondary); padding: 6px 12px; font-size: .78rem; font-weight: 700; border-radius: 999px; }
 .chip.active { color: var(--orange); border-color: var(--orange); }
 .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
-.hero-ribbon { margin-top: 26px; display:grid; gap:8px; overflow:hidden; }
+.hero-ribbon { margin-top: 30px; display:grid; gap:10px; overflow:hidden; }
 .ribbon-line {
-  border-top: 1px solid rgba(255,106,0,.32);
-  border-bottom: 1px solid rgba(255,106,0,.22);
-  background: linear-gradient(90deg, rgba(255,106,0,.10), rgba(255,126,26,.06), rgba(255,106,0,.10));
+  border-top: 1px solid rgba(255,106,0,.35);
+  border-bottom: 1px solid rgba(255,106,0,.24);
+  background: linear-gradient(90deg, rgba(255,106,0,.16), rgba(255,126,26,.10), rgba(255,106,0,.16));
   white-space: nowrap;
 }
-.ribbon-track { display:flex; width:max-content; animation: ribbonMove 16s linear infinite; }
+.ribbon-track { display:flex; width:max-content; animation: ribbonMove 22s linear infinite; }
 .ribbon-track span {
   display:inline-block;
-  padding: 6px 28px 6px 0;
-  color: #ff7e1a;
-  font-size: .82rem;
-  letter-spacing: .09em;
-  font-weight: 700;
+  padding: 10px 34px;
+  color: #ff8a2b;
+  font-size: .92rem;
+  letter-spacing: .10em;
+  font-weight: 800;
 }
-.ribbon-line--alt .ribbon-track { animation-duration: 20s; animation-direction: reverse; }
-@keyframes ribbonMove { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.ribbon-line--alt .ribbon-track { animation-duration: 26s; animation-direction: reverse; }
+@keyframes ribbonMove { from { transform: translateX(0); } to { transform: translateX(-33.3333%); } }
 
 .btn { display: inline-flex; align-items: center; justify-content: center; border: 0; cursor: pointer; font-weight: 700; padding: 10px 14px; font-size: .84rem; font-family: var(--font-sans); border-radius: 10px; }
 .btn--primary { background: var(--orange); color: #fff; }
