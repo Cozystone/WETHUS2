@@ -190,6 +190,7 @@
         </label>
 
         <div class="form-row">
+          <button id="draftSaveBtn" class="btn btn--secondary" type="button">임시저장</button>
           <button id="previewBtn" class="btn preview-trigger" type="button">미리보기</button>
           <button id="submitBtn" class="btn btn--primary" type="submit">신청하기</button>
         </div>
@@ -246,6 +247,7 @@
     const coverPreviewWrap = document.getElementById('coverPreviewWrap');
     const coverPreview = document.getElementById('coverPreview');
     const previewBtn = document.getElementById('previewBtn');
+    const draftSaveBtn = document.getElementById('draftSaveBtn');
     const genImageBtn = document.getElementById('genImageBtn');
     const regenImageBtn = document.getElementById('regenImageBtn');
     const removeImageBtn = document.getElementById('removeImageBtn');
@@ -359,6 +361,14 @@
         if (showMessage) msg.textContent = '종료일을 입력하거나 "현재"를 선택해주세요.';
         return false;
       }
+      if (!isOngoingNow()) {
+        const s = new Date(startDateValue());
+        const e = new Date(endDateValue());
+        if (!(e.getTime() > s.getTime())) {
+          if (showMessage) msg.textContent = '종료일은 시작일(신청일) 이후 날짜만 선택할 수 있습니다.';
+          return false;
+        }
+      }
 
       const limits = { description: 300, motivation: 200, output: 200, plan: 200 };
       for (const [name, min] of Object.entries(limits)) {
@@ -435,6 +445,10 @@
         keyword = String(k || '').replace(/[\n\r]/g, ' ').trim().slice(0, 120) || keyword;
       } catch (_) {}
       imageData = `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword)}`;
+      coverPreview.onerror = () => {
+        imageData = `https://picsum.photos/seed/wethus-ai-${encodeURIComponent(title || 'project')}/1200/700`;
+        coverPreview.src = imageData;
+      };
       coverPreview.src = imageData;
       coverPreviewWrap.style.display = 'block';
       aiImageSelected = true;
@@ -445,14 +459,6 @@
     }
 
     genImageBtn.addEventListener('click', async () => {
-      if (aiImageSelected) {
-        aiImageSelected = false;
-        imageData = '';
-        coverPreviewWrap.style.display = 'none';
-        setAiButtonState();
-        imageActionMsg.textContent = 'AI 이미지 선택이 해제되었습니다.';
-        return;
-      }
       await generateAiImage();
     });
 
@@ -506,6 +512,78 @@
     endMode.dispatchEvent(new Event('change'));
     setAiButtonState();
 
+    const DRAFT_KEY = 'wethus_founder_draft_v1';
+
+    function saveDraft() {
+      const fd = new FormData(form);
+      const draft = {
+        title: fd.get('title') || '',
+        category: categorySelect.value || 'Film',
+        customCategory: customCategoryInput.value || '',
+        description: fd.get('description') || '',
+        motivation: fd.get('motivation') || '',
+        output: fd.get('output') || '',
+        plan: fd.get('plan') || '',
+        roles: fd.get('roles') || '',
+        teamSize: fd.get('teamSize') || '3인',
+        status: fd.get('status') || '기획 중',
+        duration: fd.get('duration') || '',
+        startDate: startDateValue(),
+        endMode: endMode.value,
+        endDate: endDateValue(),
+        aiImageSelected,
+        imageData
+      };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      msg.textContent = '임시저장되었습니다.';
+    }
+
+    function loadDraft() {
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return;
+        const d = JSON.parse(raw);
+        form.elements.title.value = d.title || '';
+        categorySelect.value = d.category || 'Film';
+        categorySelect.dispatchEvent(new Event('change'));
+        customCategoryInput.value = d.customCategory || '';
+        form.elements.description.value = d.description || '';
+        form.elements.motivation.value = d.motivation || '';
+        form.elements.output.value = d.output || '';
+        form.elements.plan.value = d.plan || '';
+        form.elements.roles.value = d.roles || '';
+        form.elements.teamSize.value = d.teamSize || '3인';
+        form.elements.status.value = d.status || '기획 중';
+        form.elements.duration.value = d.duration || '';
+
+        const sd = new Date(d.startDate || new Date());
+        startYear.value = String(sd.getFullYear());
+        startMonth.value = String(sd.getMonth() + 1);
+        startDay.value = String(sd.getDate());
+
+        endMode.value = d.endMode || 'current';
+        endMode.dispatchEvent(new Event('change'));
+        if (d.endDate) {
+          const ed = new Date(d.endDate);
+          endYear.value = String(ed.getFullYear());
+          endMonth.value = String(ed.getMonth() + 1);
+          endDay.value = String(ed.getDate());
+        }
+
+        aiImageSelected = !!d.aiImageSelected;
+        imageData = d.imageData || '';
+        if (imageData) {
+          coverPreview.src = imageData;
+          coverPreviewWrap.style.display = 'block';
+        }
+        setAiButtonState();
+        form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
+      } catch (_) {}
+    }
+
+    draftSaveBtn.addEventListener('click', saveDraft);
+    loadDraft();
+
     const previewModal = document.getElementById('previewModal');
     function openPreview() {
       if (!validateStrict(true)) return;
@@ -553,67 +631,72 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!validateStrict(true)) return;
+      try {
+        if (!validateStrict(true)) return;
 
-      const fd = new FormData(form);
-      const moderation = await moderateFounderApplication(fd);
-      if (moderation.blocked) {
-        msg.textContent = moderation.reason || '신청서가 안전 정책에 따라 반려되었습니다.';
-        return;
+        const fd = new FormData(form);
+        const moderation = await moderateFounderApplication(fd);
+        if (moderation.blocked) {
+          msg.textContent = moderation.reason || '신청서가 안전 정책에 따라 반려되었습니다.';
+          return;
+        }
+
+        const summary = String(fd.get('description')).slice(0, 90);
+
+        let finalImage = imageData;
+        if (!finalImage && aiImageSelected) {
+          msg.textContent = 'AI가 메인 이미지를 생성 중입니다...';
+          const category = resolvedCategory();
+          const title = String(fd.get('title') || '').trim();
+          const desc = String(fd.get('description') || '').trim();
+          let keyword = `${category} ${title} cinematic poster dark orange accent`;
+          try {
+            const k = await WETHUS.askGemini(`Create one concise English visual prompt (max 10 words) for a cinematic poster image. Category: ${category}. Title: ${title}. Description: ${desc.slice(0, 300)}`);
+            keyword = String(k || '').replace(/[\n\r]/g, ' ').trim().slice(0, 120) || keyword;
+          } catch (_) {}
+          finalImage = `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword)}`;
+        }
+
+        WETHUS.addProject({
+          title: fd.get('title'),
+          category: resolvedCategory(),
+          summary,
+          fullDescription: fd.get('description'),
+          motivation: fd.get('motivation'),
+          expectedOutput: fd.get('output'),
+          firstTwoWeekPlan: fd.get('plan'),
+          status: fd.get('status'),
+          teamSize: fd.get('teamSize'),
+          roles: fd.get('roles'),
+          duration: fd.get('duration'),
+          startDate: startDateValue(),
+          endDate: isOngoingNow() ? null : endDateValue(),
+          ongoingNow: isOngoingNow(),
+          image: finalImage,
+          likes: 0,
+          comments: []
+        });
+
+        msg.textContent = '신청 완료! 운영자 검토 후 탐색/프로필에 반영됩니다.';
+        localStorage.removeItem(DRAFT_KEY);
+        form.reset();
+        imageData = '';
+        aiImageSelected = false;
+        setAiButtonState();
+        coverPreviewWrap.style.display = 'none';
+        customCategoryWrap.style.display = 'none';
+        customCategoryInput.required = false;
+        const now = new Date();
+        populateDateSelects(startYear, startMonth, startDay, now);
+        populateDateSelects(endYear, endMonth, endDay, now);
+        endMode.value = 'current';
+        endMode.dispatchEvent(new Event('change'));
+        setImageError('');
+        imageActionMsg.textContent = '';
+        form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
+      } catch (err) {
+        msg.textContent = err?.message || '신청 처리 중 오류가 발생했습니다. 다시 시도해주세요.';
       }
-
-      const summary = String(fd.get('description')).slice(0, 90);
-
-      let finalImage = imageData;
-      if (!finalImage && aiImageSelected) {
-        msg.textContent = 'AI가 메인 이미지를 생성 중입니다...';
-        const category = resolvedCategory();
-        const title = String(fd.get('title') || '').trim();
-        const desc = String(fd.get('description') || '').trim();
-        let keyword = `${category} ${title} cinematic poster dark orange accent`;
-        try {
-          const k = await WETHUS.askGemini(`Create one concise English visual prompt (max 10 words) for a cinematic poster image. Category: ${category}. Title: ${title}. Description: ${desc.slice(0, 300)}`);
-          keyword = String(k || '').replace(/[\n\r]/g, ' ').trim().slice(0, 120) || keyword;
-        } catch (_) {}
-        finalImage = `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword)}`;
-      }
-
-      WETHUS.addProject({
-        title: fd.get('title'),
-        category: resolvedCategory(),
-        summary,
-        fullDescription: fd.get('description'),
-        motivation: fd.get('motivation'),
-        expectedOutput: fd.get('output'),
-        firstTwoWeekPlan: fd.get('plan'),
-        status: fd.get('status'),
-        teamSize: fd.get('teamSize'),
-        roles: fd.get('roles'),
-        duration: fd.get('duration'),
-        startDate: startDateValue(),
-        endDate: isOngoingNow() ? null : endDateValue(),
-        ongoingNow: isOngoingNow(),
-        image: finalImage,
-        likes: 0,
-        comments: []
-      });
-
-      msg.textContent = '신청 완료! 운영자 검토 후 탐색/프로필에 반영됩니다.';
-      form.reset();
-      imageData = '';
-      aiImageSelected = false;
-      setAiButtonState();
-      coverPreviewWrap.style.display = 'none';
-      customCategoryWrap.style.display = 'none';
-      customCategoryInput.required = false;
-      const now = new Date();
-      populateDateSelects(startYear, startMonth, startDay, now);
-      populateDateSelects(endYear, endMonth, endDay, now);
-      endMode.value = 'current';
-      endMode.dispatchEvent(new Event('change'));
-      setImageError('');
-      imageActionMsg.textContent = '';
-      form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
     });
   </script>
 </body>
