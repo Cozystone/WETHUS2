@@ -119,7 +119,7 @@ a { color: inherit; text-decoration: none; }
 .card-media--policy { background: linear-gradient(135deg,#101010,#1f1f1f 55%,#3a240f); }
 .card-chip { color: var(--orange); font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
 .card-title { margin: 8px 0 6px; font-size: 1rem; font-weight: 800; line-height: 1.35; }
-.card-summary { margin: 0 0 12px; color: var(--text-secondary); font-size: .86rem; min-height: 52px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.card-summary { margin: 0 0 8px; color: var(--text-secondary); font-size: .86rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .card-meta { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; color: var(--text-secondary); font-size: .8rem; margin-bottom: 6px; }
 .card-status { color: var(--orange); font-weight: 700; }
 .card-open { width: 100%; }
@@ -155,8 +155,8 @@ a { color: inherit; text-decoration: none; }
 .page-main { flex: 1; }
 .page-main--standard { min-height: calc(100vh - 260px); padding-bottom: 140px; }
 .page-main--explore { width: min(96vw, 1520px); max-width: 1520px; }
-.page-main--profile { min-height: calc(100vh - 240px); padding-bottom: 40px; }
-#myProjects, #participatingProjects { min-height: 260px; align-content: start; }
+.page-main--profile { min-height: calc(100vh - 220px); padding-bottom: 20px; }
+#myProjects, #participatingProjects { min-height: 320px; align-content: start; }
 .page-header { padding: 36px 0 14px; }
 .page-title { margin: 0 0 8px; font-size: 2rem; font-weight: 800; }
 .page-sub { margin: 0; color: var(--text-secondary); }
@@ -275,7 +275,7 @@ a { color: inherit; text-decoration: none; }
 .my-projects-scroll::-webkit-scrollbar-thumb { background:#2f2f2f; border-radius:8px; }
 
 .founder-form { background: var(--surface); border: 1px solid var(--border); padding: 18px; }
-.application-form { display: grid; gap: 14px; max-width: 780px; }
+.application-form { display: grid; gap: 14px; max-width: 1000px; width: 100%; }
 .application-form label { display: grid; gap: 8px; font-size: .92rem; font-weight: 700; }
 .application-form input, .application-form textarea { width: 100%; background: #0d0d0d; color: var(--text-primary); border: 1px solid var(--border); padding: 12px; font: inherit; }
 .application-form textarea { min-height: 92px; resize: vertical; }
