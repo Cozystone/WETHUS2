@@ -43,10 +43,8 @@
     document.body.style.overflow = '';
   }
 
-  document.querySelectorAll('.card').forEach(function (card) {
-    var btn = card.querySelector('.card-open');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
+  document.querySelectorAll('.card[data-project]').forEach(function (card) {
+    card.addEventListener('click', function () {
       var raw = card.getAttribute('data-project');
       try {
         openModal(JSON.parse(raw));
