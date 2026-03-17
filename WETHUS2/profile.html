@@ -114,9 +114,28 @@
         <article class="list-item">
           <h3>${p.title}</h3>
           <p>${p.summary}</p>
-          <div class="meta"><span class="badge">${p.category}</span> · ${p.status} · ${p.duration || ''}</div>
+          <div class="meta"><span class="badge">${p.category}</span> · ${p.status} · ${p.teamSize || ''} · ${p.duration || ''}</div>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <select class="project-status-select" data-id="${p.id}" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:8px;border-radius:8px;">
+              ${['팀빌딩','기획중','진행중','피보팅','구인중'].map(s => `<option ${p.status===s?'selected':''}>${s}</option>`).join('')}
+            </select>
+            <select class="project-size-select" data-id="${p.id}" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:8px;border-radius:8px;">
+              ${['1인','2인','3인','4인이상'].map(s => `<option ${p.teamSize===s?'selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>
         </article>
       `).join('') : '<article class="list-item"><h3>프로젝트 없음</h3><p>아직 등록한 프로젝트가 없습니다. + 프로젝트 추가를 눌러 시작해보세요.</p></article>';
+
+      document.querySelectorAll('.project-status-select').forEach(sel => {
+        sel.addEventListener('change', () => {
+          WETHUS.updateProject(sel.dataset.id, { status: sel.value });
+        });
+      });
+      document.querySelectorAll('.project-size-select').forEach(sel => {
+        sel.addEventListener('change', () => {
+          WETHUS.updateProject(sel.dataset.id, { teamSize: sel.value });
+        });
+      });
     } catch (err) {
       console.error(err);
     }

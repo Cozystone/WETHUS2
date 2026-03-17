@@ -39,6 +39,16 @@
         <label>예상 산출물 <input required name="output" /></label>
         <label>첫 2주 실행 계획 <textarea required name="plan"></textarea></label>
         <label>필요 역할 <input name="roles" placeholder="예: 기획 1 · 디자인 1 · 개발 2" required /></label>
+        <label>팀 인원
+          <select name="teamSize" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
+            <option>1인</option><option>2인</option><option selected>3인</option><option>4인이상</option>
+          </select>
+        </label>
+        <label>단계
+          <select name="status" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
+            <option>팀빌딩</option><option>기획중</option><option selected>구인중</option><option>진행중</option><option>피보팅</option>
+          </select>
+        </label>
         <label>예상 기간 <input name="duration" placeholder="예: 8주" required /></label>
         <button class="btn btn--primary" type="submit">프로젝트 등록하기</button>
       </form>
@@ -62,9 +72,12 @@
         motivation: fd.get('motivation'),
         expectedOutput: fd.get('output'),
         firstTwoWeekPlan: fd.get('plan'),
-        status: '모집 중',
+        status: fd.get('status'),
+        teamSize: fd.get('teamSize'),
         roles: fd.get('roles'),
-        duration: fd.get('duration')
+        duration: fd.get('duration'),
+        likes: 0,
+        comments: []
       });
 
       document.getElementById('msg').textContent = '등록 완료! 탐색/프로필에서 확인할 수 있어요.';

@@ -15,7 +15,8 @@
       category: 'Film',
       summary: '부산 로케이션 기반으로 2개월 내 단편영화 완성.',
       desc: '촬영 전 프리프로덕션 2주, 촬영 3주, 후반 3주로 운영합니다. 팀 내부에 제작/촬영/편집 파트를 나누고 주 2회 오프라인 스프린트를 진행합니다.\n\n현재 시나리오 리딩과 로케이션 리서치가 진행 중이며, 합류 후 첫 2주에는 쇼트리스트 작성과 장비 테스트를 함께 진행합니다.',
-      status: '모집 중',
+      status: '구인중',
+      teamSize: '4인이상',
       roles: '촬영 1 · 편집 2 · 배우 1',
       duration: '8주',
       image: 'https://picsum.photos/seed/wethus-film/1200/700',
@@ -28,7 +29,8 @@
       category: 'App',
       summary: '학교 프로젝트 운영 불편을 해결하는 앱 MVP 제작.',
       desc: '초기 인터뷰 10건을 통해 문제를 정의하고, 2주 단위로 기능 실험을 반복합니다. MVP 범위는 팀 모집/할 일/진행 체크 기능까지로 제한합니다.\n\n첫 스프린트는 사용자 플로우 설계, 두 번째 스프린트는 실제 프로토타입 배포를 목표로 합니다.',
-      status: '초기 팀 빌딩',
+      status: '팀빌딩',
+      teamSize: '3인',
       roles: 'PM 1 · 프론트 1 · 디자이너 1',
       duration: '6주',
       image: 'https://picsum.photos/seed/wethus-app/1200/700',
@@ -41,7 +43,8 @@
       category: 'Policy',
       summary: '데이터 리서치 기반 정책 제안서와 발표 자료 제작.',
       desc: '청소년 교통비 부담 데이터를 수집·시각화하고 지역의회 제안용 문서를 제작합니다. 인터뷰/리서치/문서/발표 파트를 나눠 실행합니다.\n\n산출물은 제안서 PDF, 발표 슬라이드, 요약 인포그래픽 3종입니다.',
-      status: '검토 대기',
+      status: '기획중',
+      teamSize: '2인',
       roles: '리서처 2 · 문서 1 · 발표 1',
       duration: '5주',
       image: 'https://picsum.photos/seed/wethus-policy/1200/700',
@@ -54,7 +57,8 @@
       category: 'Campaign',
       summary: '청소년이 직접 기획하는 지역 인식개선 캠페인.',
       desc: '캠페인 메시지 설계, 숏폼 제작, 오프라인 부스 운영까지 통합 진행합니다.\n\n콘텐츠 기획과 촬영 가능한 팀원을 우선 모집합니다.',
-      status: '모집 중',
+      status: '진행중',
+      teamSize: '4인이상',
       roles: '기획 1 · 영상 2 · 운영 1',
       duration: '7주',
       image: 'https://picsum.photos/seed/wethus-campaign/1200/700',
@@ -67,7 +71,8 @@
       category: 'Startup',
       summary: '작은 제품을 실제 판매까지 연결하는 창업 실험.',
       desc: '아이템 선정부터 브랜딩, 판매 채널 테스트까지 6주 내 완료를 목표로 합니다.\n\n운영/디자인/콘텐츠 제작 역할을 모집합니다.',
-      status: '초기 팀 빌딩',
+      status: '피보팅',
+      teamSize: '3인',
       roles: '브랜딩 1 · 운영 1 · 콘텐츠 2',
       duration: '6주',
       image: 'https://picsum.photos/seed/wethus-startup/1200/700',
@@ -80,7 +85,8 @@
       category: 'Creative',
       summary: '인터뷰 기반 아카이브 전시와 소책자 제작.',
       desc: '주제 리서치, 인터뷰, 에디토리얼 디자인, 전시 설치까지 경험하는 프로젝트입니다.\n\n글/디자인/촬영 파트가 함께 작업합니다.',
-      status: '모집 중',
+      status: '구인중',
+      teamSize: '1인',
       roles: '에디터 1 · 디자이너 1 · 촬영 1',
       duration: '8주',
       image: 'https://picsum.photos/seed/wethus-creative/1200/700',
@@ -132,6 +138,16 @@
       }
       if (!Array.isArray(next.comments)) {
         next.comments = [];
+        changed = true;
+      }
+      if (!next.teamSize) {
+        const pool = ['1인', '2인', '3인', '4인이상'];
+        next.teamSize = pool[Math.floor(Math.random() * pool.length)];
+        changed = true;
+      }
+      if (!next.status) {
+        const stages = ['팀빌딩', '기획중', '진행중', '피보팅', '구인중'];
+        next.status = stages[Math.floor(Math.random() * stages.length)];
         changed = true;
       }
       return next;
@@ -255,6 +271,15 @@
     return target.comments;
   }
 
+  function updateProject(projectId, patch) {
+    const s = load();
+    const target = s.projects.find(p => p.id === projectId);
+    if (!target) return null;
+    Object.assign(target, patch || {});
+    save(s);
+    return target;
+  }
+
   function requireAuth() {
     const s = load();
     if (!s.currentUserId && !s.devMode) {
@@ -322,6 +347,7 @@
     myProjects,
     toggleLike,
     addComment,
+    updateProject,
     requireAuth,
     fakeAiSearch,
     setGeminiApiKey,

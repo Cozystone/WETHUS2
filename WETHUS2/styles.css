@@ -136,7 +136,7 @@ a { color: inherit; text-decoration: none; }
   display:grid; place-items:center; cursor:pointer;
 }
 .view-icon-btn.active { border-color: var(--orange); box-shadow: 0 0 0 2px rgba(255,106,0,.12) inset; }
-.icon-list, .icon-grid { display:block; }
+.icon-list, .icon-grid, .icon-shuffle, .icon-filter { display:block; }
 .icon-list {
   width:16px; height:14px;
   background:
@@ -152,6 +152,25 @@ a { color: inherit; text-decoration: none; }
     linear-gradient(#cfcfcf,#cfcfcf) 0 10px/6px 6px no-repeat,
     linear-gradient(#cfcfcf,#cfcfcf) 10px 10px/6px 6px no-repeat;
 }
+.icon-shuffle {
+  width:16px; height:16px;
+  background:
+    linear-gradient(135deg,#cfcfcf 0 40%,transparent 41%) 0 0/8px 8px no-repeat,
+    linear-gradient(45deg,#cfcfcf 0 40%,transparent 41%) 8px 8px/8px 8px no-repeat,
+    linear-gradient(#cfcfcf,#cfcfcf) 2px 7px/12px 2px no-repeat;
+}
+.icon-filter {
+  width:16px; height:16px;
+  background:
+    linear-gradient(#cfcfcf,#cfcfcf) 0 0/16px 2px no-repeat,
+    linear-gradient(#cfcfcf,#cfcfcf) 3px 6px/10px 2px no-repeat,
+    linear-gradient(#cfcfcf,#cfcfcf) 6px 12px/4px 2px no-repeat;
+}
+.chip-btn { cursor:pointer; }
+.chip-btn.active { border-color: var(--orange); color: var(--orange); }
+.filter-panel { display:grid; grid-template-columns: 1fr 1fr auto; gap:8px; align-items:end; }
+.filter-panel select { background:#0d0d0d; color:#f5f5f5; border:1px solid #2a2a2a; padding:10px; border-radius:10px; width:100%; }
+.filter-panel label { display:grid; gap:6px; color:#a9a9a9; font-size:.84rem; }
 .auth-close { position: absolute; right: 14px; top: 10px; font-size: 1.8rem; color: #888; }
 .auth-close:hover { color: var(--orange); }
 .dev-row { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
