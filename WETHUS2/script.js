@@ -23,6 +23,7 @@
   var statusEl = document.getElementById('modalStatus');
   var rolesEl = document.getElementById('modalRoles');
   var durationEl = document.getElementById('modalDuration');
+  var imageEl = document.getElementById('modalImage');
 
   function openModal(data) {
     titleEl.textContent = data.title || '';
@@ -32,6 +33,8 @@
     statusEl.textContent = data.status || '';
     rolesEl.textContent = data.roles || '';
     durationEl.textContent = data.duration || '';
+    imageEl.src = data.image || 'https://picsum.photos/seed/wethus-default/1200/700';
+    imageEl.alt = (data.title || '프로젝트') + ' 이미지';
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';

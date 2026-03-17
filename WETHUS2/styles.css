@@ -146,8 +146,11 @@ a { color: inherit; text-decoration: none; }
 .modal { position: fixed; inset: 0; display: none; z-index: 200; }
 .modal.open { display: block; }
 .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.7); }
-.modal-panel { position: relative; width: min(620px, 92vw); margin: 10vh auto 0; background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 14px; z-index: 2; }
-.modal-close { position: absolute; right: 12px; top: 8px; background: transparent; color: #bbb; border: 0; font-size: 1.7rem; cursor: pointer; }
+.modal-panel { position: relative; width: min(700px, 92vw); margin: 8vh auto 0; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; z-index: 2; overflow: hidden; max-height: 84vh; display: flex; flex-direction: column; }
+.modal-media-wrap { width: 100%; aspect-ratio: 16/8; background: #0b0b0b; }
+.modal-image { width: 100%; height: 100%; object-fit: cover; display: block; }
+.modal-content { padding: 18px 20px 20px; overflow: auto; }
+.modal-close { position: absolute; right: 10px; top: 8px; background: rgba(0,0,0,.5); color: #eee; border: 0; width: 34px; height: 34px; border-radius: 999px; font-size: 1.2rem; cursor: pointer; z-index: 3; }
 .modal-close:hover { color: var(--orange); }
 
 .footer { border-top: 1px solid var(--border); padding: 30px 0; margin-top: 60px; }
