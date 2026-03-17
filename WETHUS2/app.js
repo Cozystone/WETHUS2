@@ -71,19 +71,44 @@
     return s.users.find(u => u.id === s.currentUserId) || null;
   }
 
-  function registerOrLogin({ name, email, password }) {
+  function registerUser({ name, nickname, email, password }) {
     const s = load();
-    let user = s.users.find(u => u.email === email);
-    if (!user) {
-      user = { id: crypto.randomUUID(), name, email, password, bio: '', createdAt: new Date().toISOString() };
-      s.users.push(user);
-    } else if (user.password !== password) {
-      throw new Error('비밀번호가 일치하지 않습니다.');
-    }
+    const exists = s.users.find(u => u.email === email);
+    if (exists) throw new Error('이미 가입된 이메일입니다.');
+    const user = {
+      id: crypto.randomUUID(),
+      name,
+      nickname: nickname || name,
+      email,
+      password,
+      bio: '',
+      founderVerified: false,
+      profileImage: '',
+      createdAt: new Date().toISOString()
+    };
+    s.users.push(user);
     s.currentUserId = user.id;
     s.devMode = false;
     save(s);
     return user;
+  }
+
+  function loginUser({ email, password }) {
+    const s = load();
+    const user = s.users.find(u => u.email === email);
+    if (!user) throw new Error('가입된 계정이 없습니다.');
+    if (user.password !== password) throw new Error('비밀번호가 일치하지 않습니다.');
+    s.currentUserId = user.id;
+    s.devMode = false;
+    save(s);
+    return user;
+  }
+
+  function registerOrLogin(payload) {
+    const s = load();
+    const user = s.users.find(u => u.email === payload.email);
+    if (user) return loginUser({ email: payload.email, password: payload.password });
+    return registerUser(payload);
   }
 
   function addProject(payload) {
@@ -166,6 +191,8 @@
   window.WETHUS = {
     getState,
     currentUser,
+    registerUser,
+    loginUser,
     registerOrLogin,
     setCurrentUser,
     logout,
