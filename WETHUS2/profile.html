@@ -29,16 +29,14 @@
 
     <section class="profile-hero" id="profileHero"></section>
 
-    <section class="profile-card" id="profileEditBox"></section>
-
-    <section class="projects-head-row">
+    <section class="projects-head-row" style="margin-top:8px;">
       <h2 class="section-title" style="font-size:1.4rem;margin:0;">내 프로젝트</h2>
       <a class="btn btn--primary" href="founder.html">+ 프로젝트 추가</a>
     </section>
 
     <section id="myProjects" class="list-grid my-projects-scroll"></section>
 
-    <section class="projects-head-row" style="margin-top:20px;">
+    <section class="projects-head-row" style="margin-top:10px;">
       <h2 class="section-title" style="font-size:1.4rem;margin:0;">참여중인 프로젝트</h2>
     </section>
     <section id="participatingProjects" class="list-grid"></section>
@@ -53,6 +51,26 @@
     </div>
   </footer>
 
+  <div id="profileEditModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-profile="true"></div>
+    <article class="modal-panel" style="max-width:560px;">
+      <button class="modal-close" id="profileEditClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 style="margin:0 0 12px;">프로필 수정</h3>
+        <form id="profileForm" class="application-form">
+          <label>이름 <input name="name" required /></label>
+          <label>별명 <input name="nickname" required /></label>
+          <label>자기소개 <textarea name="bio" placeholder="어떤 프로젝트를 왜 하는지 간단히 소개해보세요."></textarea></label>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input type="checkbox" name="founderVerified" style="width:auto;"/> Founder 인증서 보유(개발용)</label>
+          <div style="display:flex;justify-content:flex-end;gap:8px;">
+            <button class="btn btn--secondary" type="button" id="profileEditCancel">취소</button>
+            <button class="btn btn--primary" type="submit">저장</button>
+          </div>
+        </form>
+        <p id="profileMsg" class="form-message"></p>
+      </div>
+    </article>
+  </div>
 
   <script src="app.js"></script>
   <script>
@@ -69,9 +87,11 @@
 
       const u = WETHUS.currentUser();
       const hero = document.getElementById('profileHero');
-      const editBox = document.getElementById('profileEditBox');
       const mine = document.getElementById('myProjects');
       const participatingEl = document.getElementById('participatingProjects');
+      const profileEditModal = document.getElementById('profileEditModal');
+      const profileEditClose = document.getElementById('profileEditClose');
+      const profileEditCancel = document.getElementById('profileEditCancel');
 
       const fallbackUser = { name: '개발자 모드', nickname: 'dev_mode', email: 'dev@local', bio: '임시 세션으로 로그인됨', founderVerified: false, profileImage: '' };
       const user = u || fallbackUser;
@@ -92,22 +112,39 @@
             <span><strong>${u ? '일반' : '개발'}</strong> 모드</span>
           </div>
         </div>
+        ${u ? '<button id="profileEditOpen" class="btn btn--secondary" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;">✎ 수정</button>' : ''}
       `;
 
       if (u) {
-        editBox.innerHTML = `
-          <h3 style="margin:0 0 10px;">프로필 편집</h3>
-          <form id="profileForm" class="application-form">
-            <label>이름 <input name="name" value="${u.name}" required /></label>
-            <label>별명 <input name="nickname" value="${u.nickname || ''}" required /></label>
-            <label>소개 <textarea name="bio" placeholder="자기소개를 입력하세요">${u.bio || ''}</textarea></label>
-            <label><input type="checkbox" name="founderVerified" ${u.founderVerified ? 'checked' : ''}/> Founder 인증서 보유(개발용)</label>
-            <button class="btn btn--primary" type="submit">저장</button>
-          </form>
-          <p id="profileMsg" class="form-message"></p>
-        `;
+        const profileForm = document.getElementById('profileForm');
+        const profileMsg = document.getElementById('profileMsg');
+        const profileEditOpen = document.getElementById('profileEditOpen');
 
-        document.getElementById('profileForm').addEventListener('submit', (e) => {
+        function openProfileEdit() {
+          profileForm.elements.name.value = u.name || '';
+          profileForm.elements.nickname.value = u.nickname || '';
+          profileForm.elements.bio.value = u.bio || '';
+          profileForm.elements.founderVerified.checked = !!u.founderVerified;
+          profileMsg.textContent = '';
+          profileEditModal.classList.add('open');
+          profileEditModal.setAttribute('aria-hidden', 'false');
+          document.body.style.overflow = 'hidden';
+        }
+
+        function closeProfileEdit() {
+          profileEditModal.classList.remove('open');
+          profileEditModal.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+        }
+
+        profileEditOpen?.addEventListener('click', openProfileEdit);
+        profileEditClose?.addEventListener('click', closeProfileEdit);
+        profileEditCancel?.addEventListener('click', closeProfileEdit);
+        profileEditModal?.addEventListener('click', (e) => {
+          if (e.target && e.target.getAttribute('data-close-profile') === 'true') closeProfileEdit();
+        });
+
+        profileForm.addEventListener('submit', (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
           const s = WETHUS.getState();
@@ -117,10 +154,9 @@
           target.bio = fd.get('bio');
           target.founderVerified = fd.get('founderVerified') === 'on';
           localStorage.setItem('wethus_v1', JSON.stringify(s));
-          document.getElementById('profileMsg').textContent = '저장되었습니다. 새로고침하면 상단 카드에 반영됩니다.';
+          closeProfileEdit();
+          location.reload();
         });
-      } else {
-        editBox.innerHTML = '<p class="page-sub">개발자 모드에서는 프로필 편집이 제한됩니다.</p>';
       }
 
       const list = WETHUS.myProjects();
