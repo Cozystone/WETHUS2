@@ -29,15 +29,16 @@ a { color: inherit; text-decoration: none; }
 .container { width: min(80vw, var(--container)); max-width: var(--container); margin: 0 auto; padding: 0 24px; }
 
 .nav { position: sticky; top: 0; z-index: 100; background: rgba(5,5,5,.88); border-bottom: 1px solid var(--border); backdrop-filter: blur(10px); box-shadow: 0 8px 24px rgba(0,0,0,.22); }
-.nav-inner { width: min(80vw, var(--container)); max-width: var(--container); margin: 0 auto; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
-.wordmark { font-size: 1.1rem; font-weight: 800; letter-spacing: .02em; }
+.nav-inner { width: min(80vw, var(--container)); max-width: var(--container); margin: 0 auto; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+.wordmark { font-size: 1.2rem; font-weight: 900; letter-spacing: .02em; }
 .nav-links { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
 .nav-link { font-size: .82rem; color: var(--text-secondary); font-weight: 700; position: relative; padding-bottom: 3px; }
 .notify-wrap { position: relative; }
-.notify-link { display:inline-flex; align-items:flex-start; gap:4px; }
+.notify-link { display:inline-flex; align-items:center; gap:4px; position:relative; padding-right:12px; }
 .notify-badge {
-  position: relative;
-  margin-top: -6px;
+  position: absolute;
+  top: -7px;
+  right: -6px;
   min-width: 16px;
   height: 16px;
   border-radius: 999px;
@@ -100,6 +101,7 @@ a { color: inherit; text-decoration: none; }
 .section-kicker { margin: 0 0 8px; color: var(--orange); font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .section-title { margin: 0 0 24px; font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em; }
 
+.featured .container { width: min(92vw, 1440px); max-width: 1440px; }
 .project-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .card { background: linear-gradient(180deg, #121212 0%, #0f0f0f 100%); border: 1px solid var(--border); padding: 16px; min-height: 296px; display: flex; flex-direction: column; cursor: pointer; border-radius: 14px; transition: .18s ease; }
 .card:hover { border-color: #4a4a4a; transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,.28), 0 0 0 1px rgba(255,106,0,.08) inset; }
