@@ -191,7 +191,7 @@
           <div class="meta">${stage} · ${p.teamSize || ''} · 필요역할: ${p.roles}</div>
           <div class="card-bottom-row">
             <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
-            <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'참여하기'}</button>
+            <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>
           </div>
         </article>
       `}).join('');
@@ -213,7 +213,7 @@
             <div class="meta">${stage} · ${p.teamSize || ''} · 필요역할: ${p.roles}</div>
             <div class="card-bottom-row">
               <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
-              <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'참여하기'}</button>
+              <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>
             </div>
           </div>
         </article>
