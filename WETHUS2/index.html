@@ -112,13 +112,19 @@
         <div class="meta"><span class="badge" id="modalStatus"></span> · <span id="modalRoles"></span> · <span id="modalDuration"></span></div>
         <div class="modal-social-row">
           <button id="modalLikeBtn" class="btn btn--secondary">♡ <span id="modalLikeCount">0</span></button>
-          <span class="meta">💬 <span id="modalCommentCount">0</span></span>
+          <button id="modalCommentBtn" class="btn btn--secondary">💬 <span id="modalCommentCount">0</span></button>
         </div>
-        <div id="modalComments" class="modal-comments"></div>
-        <form id="modalCommentForm" class="modal-comment-form">
-          <input id="modalCommentInput" placeholder="댓글을 입력하세요" />
-          <button class="btn btn--primary" type="submit">등록</button>
-        </form>
+        <div id="modalCommentPanel" class="comment-panel" style="display:none;">
+          <div class="comment-panel-head">
+            <strong>댓글</strong>
+            <button id="modalCommentClose" class="comment-close" type="button">×</button>
+          </div>
+          <div id="modalComments" class="modal-comments"></div>
+          <form id="modalCommentForm" class="modal-comment-form">
+            <input id="modalCommentInput" placeholder="댓글을 입력하세요" />
+            <button class="btn btn--primary" type="submit">등록</button>
+          </form>
+        </div>
       </div>
     </article>
   </div>

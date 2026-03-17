@@ -255,9 +255,11 @@
     const s = load();
     const target = s.projects.find(p => p.id === projectId);
     if (!target) return null;
-    target.likes = (target.likes || 0) + 1;
+    const wasLiked = !!target._liked;
+    target._liked = !wasLiked;
+    target.likes = Math.max(0, (target.likes || 0) + (wasLiked ? -1 : 1));
     save(s);
-    return target.likes;
+    return { likes: target.likes, liked: target._liked };
   }
 
   function addComment(projectId, text) {

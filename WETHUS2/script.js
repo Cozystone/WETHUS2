@@ -27,6 +27,9 @@
   var likeBtn = document.getElementById('modalLikeBtn');
   var likeCountEl = document.getElementById('modalLikeCount');
   var commentCountEl = document.getElementById('modalCommentCount');
+  var commentBtn = document.getElementById('modalCommentBtn');
+  var commentPanel = document.getElementById('modalCommentPanel');
+  var commentCloseBtn = document.getElementById('modalCommentClose');
   var commentsEl = document.getElementById('modalComments');
   var commentForm = document.getElementById('modalCommentForm');
   var commentInput = document.getElementById('modalCommentInput');
@@ -56,7 +59,11 @@
     currentProjectId = data.id || null;
     if (likeCountEl) likeCountEl.textContent = data.likes || 0;
     if (commentCountEl) commentCountEl.textContent = (data.comments || []).length;
+    if (likeBtn) likeBtn.classList.toggle('liked', !!data._liked);
+    if (likeBtn) likeBtn.innerHTML = (data._liked ? '♥ ' : '♡ ') + '<span id="modalLikeCount">' + (data.likes || 0) + '</span>';
+    likeCountEl = document.getElementById('modalLikeCount');
     renderComments(data.comments || []);
+    if (commentPanel) commentPanel.style.display = 'none';
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
@@ -87,8 +94,25 @@
   if (likeBtn) {
     likeBtn.addEventListener('click', function () {
       if (!currentProjectId || !window.WETHUS) return;
-      var count = WETHUS.toggleLike(currentProjectId);
-      likeCountEl.textContent = count;
+      var result = WETHUS.toggleLike(currentProjectId);
+      if (!result) return;
+      likeBtn.classList.toggle('liked', !!result.liked);
+      likeBtn.innerHTML = (result.liked ? '♥ ' : '♡ ') + '<span id="modalLikeCount">' + result.likes + '</span>';
+      likeCountEl = document.getElementById('modalLikeCount');
+    });
+  }
+
+  if (commentBtn) {
+    commentBtn.addEventListener('click', function () {
+      if (!commentPanel) return;
+      commentPanel.style.display = 'block';
+      if (commentInput) commentInput.focus();
+    });
+  }
+
+  if (commentCloseBtn) {
+    commentCloseBtn.addEventListener('click', function () {
+      if (commentPanel) commentPanel.style.display = 'none';
     });
   }
 
