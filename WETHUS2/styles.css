@@ -80,6 +80,9 @@ a { color: inherit; text-decoration: none; }
 .card-status { color: var(--orange); font-weight: 700; }
 .card-open { width: 100%; }
 .card-social { display:flex; gap:12px; color:#b9b9b9; font-size:.82rem; }
+.card-bottom-row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px; }
+.apply-btn { border:1px solid var(--orange); background: var(--orange); color:#fff; border-radius:10px; padding:6px 10px; font-size:.76rem; font-weight:700; cursor:pointer; }
+.apply-btn.applied { background: transparent; color: var(--orange); }
 .team-row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
 .member-pill { border:1px solid #333; background:#141414; color:#d7d7d7; border-radius:999px; padding:4px 9px; font-size:.74rem; cursor:pointer; }
 .member-pill .member-role { color: var(--orange); margin-left: 3px; }

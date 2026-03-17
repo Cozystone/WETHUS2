@@ -131,6 +131,21 @@
   </div>
 
   
+  <div id="applyModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-apply="true"></div>
+    <article class="modal-panel" style="max-width:520px;">
+      <button class="modal-close" id="applyClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 style="margin:0 0 8px;">프로젝트 참여 지원</h3>
+        <p class="meta" style="margin-bottom:10px;">지원동기를 간단히 작성해주세요.</p>
+        <textarea id="applyMotivation" style="width:100%;min-height:120px;background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+          <button id="applySubmit" class="btn btn--primary">지원서 제출</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
   <script src="app.js"></script>
   <script>
     (function(){
@@ -177,9 +192,52 @@
           <p class="card-summary">${p.summary || ''}</p>
           ${renderTeam(p.teamMembers)}
           <div class="card-meta"><span class="card-status">${p.status || '기획 중'}</span><span class="card-roles">${p.roles || ''}</span></div>
-          <div class="card-social"><span>♡ ${(p.likes||0)}</span><span>💬 ${Array.isArray(p.comments)?p.comments.length:0}</span></div>
+          <div class="card-bottom-row">
+            <div class="card-social"><span>♡ ${(p.likes||0)}</span><span>💬 ${Array.isArray(p.comments)?p.comments.length:0}</span></div>
+            <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'참여하기'}</button>
+          </div>
         </article>
       `).join('');
+
+      const applyModal = document.getElementById('applyModal');
+      const applyMotivation = document.getElementById('applyMotivation');
+      let applyProjectId = null;
+
+      el.addEventListener('click', (e) => {
+        const applyBtn = e.target.closest('.apply-btn');
+        if (!applyBtn) return;
+        e.stopPropagation();
+        applyProjectId = applyBtn.dataset.apply;
+        if (applyBtn.classList.contains('applied')) return;
+        applyModal.classList.add('open');
+        applyModal.setAttribute('aria-hidden', 'false');
+      });
+
+      document.getElementById('applyClose')?.addEventListener('click', () => {
+        applyModal.classList.remove('open');
+        applyModal.setAttribute('aria-hidden', 'true');
+      });
+      applyModal?.addEventListener('click', (e) => {
+        if (e.target && e.target.getAttribute('data-close-apply') === 'true') {
+          applyModal.classList.remove('open');
+          applyModal.setAttribute('aria-hidden', 'true');
+        }
+      });
+      document.getElementById('applySubmit')?.addEventListener('click', () => {
+        if (!applyProjectId) return;
+        const motivation = (applyMotivation.value || '').trim();
+        if (!motivation) { alert('지원동기를 입력해주세요.'); return; }
+        if (!confirm('지원하시겠습니까?')) return;
+        WETHUS.applyToProject(applyProjectId, motivation);
+        const btn = el.querySelector(`.apply-btn[data-apply="${applyProjectId}"]`);
+        if (btn) {
+          btn.classList.add('applied');
+          btn.textContent = '지원완료';
+        }
+        applyMotivation.value = '';
+        applyModal.classList.remove('open');
+        applyModal.setAttribute('aria-hidden', 'true');
+      });
     })();
   </script>
   <script src="script.js"></script>

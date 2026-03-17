@@ -37,6 +37,11 @@
     </section>
 
     <section id="myProjects" class="list-grid my-projects-scroll"></section>
+
+    <section class="projects-head-row" style="margin-top:20px;">
+      <h2 class="section-title" style="font-size:1.4rem;margin:0;">참여중인 프로젝트</h2>
+    </section>
+    <section id="participatingProjects" class="list-grid"></section>
   </main>
 
   <script src="app.js"></script>
@@ -56,6 +61,7 @@
       const hero = document.getElementById('profileHero');
       const editBox = document.getElementById('profileEditBox');
       const mine = document.getElementById('myProjects');
+      const participatingEl = document.getElementById('participatingProjects');
 
       const fallbackUser = { name: '개발자 모드', nickname: 'dev_mode', email: 'dev@local', bio: '임시 세션으로 로그인됨', founderVerified: false, profileImage: '' };
       const user = u || fallbackUser;
@@ -132,6 +138,28 @@
       document.querySelectorAll('.project-size-select').forEach(sel => {
         sel.addEventListener('change', () => {
           WETHUS.updateProject(sel.dataset.id, { teamSize: sel.value });
+        });
+      });
+
+      const participating = WETHUS.myParticipatingProjects();
+      participatingEl.innerHTML = participating.length ? participating.map(p => `
+        <article class="list-item">
+          <span class="card-chip">${p.category || ''}</span>
+          <h3>${p.title}</h3>
+          <p>${p.summary}</p>
+          <div class="meta">${p.status || ''} · ${p.teamSize || ''}</div>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+            <button class="apply-btn applied cancel-apply" data-project="${p.id}">지원취소</button>
+          </div>
+        </article>
+      `).join('') : '<article class="list-item"><p class="page-sub">참여중인 프로젝트가 없습니다.</p></article>';
+
+      participatingEl.querySelectorAll('.cancel-apply').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!confirm('지원을 취소하겠습니까?')) return;
+          WETHUS.cancelApplication(btn.dataset.project);
+          btn.textContent = '취소완료';
+          btn.disabled = true;
         });
       });
     } catch (err) {

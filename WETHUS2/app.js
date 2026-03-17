@@ -139,6 +139,7 @@
         projects: seedProjects,
         currentUserId: null,
         devMode: false,
+        applications: [],
         geminiApiKey: DEFAULT_GEMINI_KEY
       };
       localStorage.setItem(KEY, JSON.stringify(init));
@@ -146,6 +147,7 @@
     }
     const parsed = JSON.parse(raw);
     if (!parsed.geminiApiKey) parsed.geminiApiKey = DEFAULT_GEMINI_KEY;
+    if (!Array.isArray(parsed.applications)) parsed.applications = [];
 
     if (!Array.isArray(parsed.projects)) parsed.projects = [];
     const existingTitles = new Set(parsed.projects.map(p => p.title));
@@ -347,6 +349,55 @@
     return target;
   }
 
+
+
+  function currentActorId() {
+    const s = load();
+    return s.currentUserId || (s.devMode ? 'dev-temp' : null);
+  }
+
+  function hasApplied(projectId) {
+    const s = load();
+    const actor = currentActorId();
+    if (!actor) return false;
+    return s.applications.some(a => a.projectId === projectId && a.userId === actor && a.status === 'applied');
+  }
+
+  function applyToProject(projectId, motivation) {
+    const s = load();
+    const actor = currentActorId();
+    if (!actor) throw new Error('로그인이 필요합니다.');
+    const exists = s.applications.find(a => a.projectId === projectId && a.userId === actor && a.status === 'applied');
+    if (exists) return exists;
+    const app = { id: uid(), projectId, userId: actor, motivation: motivation || '', status: 'applied', createdAt: new Date().toISOString() };
+    s.applications.push(app);
+    save(s);
+    return app;
+  }
+
+  function cancelApplication(projectId) {
+    const s = load();
+    const actor = currentActorId();
+    const target = s.applications.find(a => a.projectId === projectId && a.userId === actor && a.status === 'applied');
+    if (!target) return false;
+    target.status = 'cancelled';
+    target.cancelledAt = new Date().toISOString();
+    save(s);
+    return true;
+  }
+
+  function myParticipatingProjects() {
+    const s = load();
+    const actor = currentActorId();
+    if (!actor) return [];
+    const ids = new Set(s.applications.filter(a => a.userId===actor && a.status==='applied').map(a => a.projectId));
+    return s.projects.filter(p => ids.has(p.id));
+  }
+
+  function projectsByMemberName(name) {
+    const s = load();
+    return s.projects.filter(p => Array.isArray(p.teamMembers) && p.teamMembers.some(m => m.name === name));
+  }
   function requireAuth() {
     const s = load();
     if (!s.currentUserId && !s.devMode) {
@@ -415,6 +466,11 @@
     toggleLike,
     addComment,
     updateProject,
+    hasApplied,
+    applyToProject,
+    cancelApplication,
+    myParticipatingProjects,
+    projectsByMemberName,
     requireAuth,
     fakeAiSearch,
     setGeminiApiKey,

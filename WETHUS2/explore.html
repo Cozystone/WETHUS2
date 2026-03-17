@@ -104,7 +104,21 @@
     </article>
   </div>
 
-  
+  <div id="applyModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-apply="true"></div>
+    <article class="modal-panel" style="max-width:520px;">
+      <button class="modal-close" id="applyClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 style="margin:0 0 8px;">프로젝트 참여 지원</h3>
+        <p class="meta" style="margin-bottom:10px;">지원동기를 간단히 작성해주세요.</p>
+        <textarea id="applyMotivation" style="width:100%;min-height:120px;background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+          <button id="applySubmit" class="btn btn--primary">지원서 제출</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
   <script src="app.js"></script>
   <script>
     WETHUS.requireAuth();
@@ -170,12 +184,15 @@
         const item = { ...p, status: stage };
         return `
         <article class="list-item" data-project='${JSON.stringify(item).replace(/'/g, "&#39;")}'>
-          <span class="badge">${p.category}</span>
+          <span class="card-chip">${p.category}</span>
           <h3>${p.title}</h3>
           <p>${p.summary}</p>
           ${renderTeam(p.teamMembers)}
           <div class="meta">${stage} · ${p.teamSize || ''} · 필요역할: ${p.roles}</div>
-          <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
+          <div class="card-bottom-row">
+            <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
+            <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'참여하기'}</button>
+          </div>
         </article>
       `}).join('');
     }
@@ -189,11 +206,15 @@
         <article class="project-tile" data-project='${JSON.stringify(item).replace(/'/g, "&#39;")}'>
           <img src="${item.image}" alt="${p.title}" class="project-tile-img" />
           <div class="project-tile-body">
+            <span class="card-chip">${p.category}</span>
             <h3>${p.title}</h3>
             <p>${p.summary}</p>
             ${renderTeam(p.teamMembers)}
-            <div class="meta"><span class="badge">${p.category}</span> · ${stage} · ${p.teamSize || ''}</div>
-            <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
+            <div class="meta">${stage} · ${p.teamSize || ''} · 필요역할: ${p.roles}</div>
+            <div class="card-bottom-row">
+              <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
+              <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'참여하기'}</button>
+            </div>
           </div>
         </article>
       `}).join('');
@@ -307,6 +328,9 @@
     const modalCommentForm = document.getElementById('modalCommentForm');
     const modalCommentInput = document.getElementById('modalCommentInput');
     const modalTeam = document.getElementById('modalTeam');
+    const applyModal = document.getElementById('applyModal');
+    const applyMotivation = document.getElementById('applyMotivation');
+    let applyProjectId = null;
     let currentProjectId = null;
 
     function renderTeamMini(team=[]) {
@@ -356,6 +380,16 @@
 
 
     listEl.addEventListener('click', (e) => {
+      const applyBtn = e.target.closest('.apply-btn');
+      if (applyBtn) {
+        e.stopPropagation();
+        if (applyBtn.classList.contains('applied')) return;
+        applyProjectId = applyBtn.dataset.apply;
+        applyModal.classList.add('open');
+        applyModal.setAttribute('aria-hidden', 'false');
+        return;
+      }
+
       const toggleBtn = e.target.closest('.team-toggle');
       if (toggleBtn) {
         const list = toggleBtn.nextElementSibling;
@@ -409,6 +443,28 @@
       renderComments(comments);
       const target = currentItems.find(p => p.id === currentProjectId);
       if (target) target.comments = comments;
+    });
+
+    document.getElementById('applyClose').addEventListener('click', () => {
+      applyModal.classList.remove('open');
+      applyModal.setAttribute('aria-hidden', 'true');
+    });
+    applyModal.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close-apply') === 'true') {
+        applyModal.classList.remove('open');
+        applyModal.setAttribute('aria-hidden', 'true');
+      }
+    });
+    document.getElementById('applySubmit').addEventListener('click', () => {
+      if (!applyProjectId) return;
+      const motivation = (applyMotivation.value || '').trim();
+      if (!motivation) { alert('지원동기를 입력해주세요.'); return; }
+      if (!confirm('지원하시겠습니까?')) return;
+      WETHUS.applyToProject(applyProjectId, motivation);
+      document.querySelectorAll(`.apply-btn[data-apply="${applyProjectId}"]`).forEach(btn => { btn.classList.add('applied'); btn.textContent='지원완료'; });
+      applyMotivation.value='';
+      applyModal.classList.remove('open');
+      applyModal.setAttribute('aria-hidden', 'true');
     });
 
     window.addEventListener('keydown', (e) => {
