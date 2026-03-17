@@ -185,8 +185,14 @@
         return '기획 중';
       };
       function recommendationPool() {
+        const actor = WETHUS.getState().currentUserId || (WETHUS.getState().devMode ? 'dev-temp' : null);
+        const base = WETHUS.listProjects().slice().filter(p => !WETHUS.hasApplied(p.id));
+        if (!actor) {
+          return base.sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0,6).map(p => ({ ...p, status: normalizeStage(p.status) }));
+        }
+
         const now = Date.now();
-        const items = WETHUS.listProjects().slice().filter(p => !WETHUS.hasApplied(p.id)).map(p => {
+        const items = base.map(p => {
           const likes = Number(p.likes || 0);
           const comments = Array.isArray(p.comments) ? p.comments.length : 0;
           const ageDays = Math.max(1, (now - new Date(p.createdAt || now).getTime()) / 86400000);
