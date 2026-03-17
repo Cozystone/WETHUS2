@@ -150,6 +150,9 @@
     const s = load();
     const exists = s.users.find(u => u.email === email);
     if (exists) throw new Error('이미 가입된 이메일입니다.');
+    if (String(password || '').length < 8) throw new Error('비밀번호는 8자 이상이어야 합니다.');
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) throw new Error('비밀번호는 영문+숫자를 포함해야 합니다.');
+    if (s.users.some(u => u.password === password)) throw new Error('이미 사용 중인 비밀번호입니다. 다른 비밀번호를 사용해주세요.');
     const user = {
       id: uid(),
       name,

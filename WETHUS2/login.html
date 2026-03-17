@@ -12,26 +12,36 @@
     <section class="auth-card">
       <a href="index.html" class="auth-close" aria-label="닫기">×</a>
       <h1>WETHUS 계정</h1>
-      <p>로그인하거나, 바로 회원가입할 수 있습니다.</p>
+      <p>로그인하거나, 회원가입 후 바로 프로젝트를 시작할 수 있습니다.</p>
 
       <div class="auth-tabs">
         <button id="tabLogin" class="btn btn--secondary auth-tab active" type="button">로그인</button>
         <button id="tabSignup" class="btn btn--secondary auth-tab" type="button">회원가입</button>
       </div>
 
-      <form class="auth-form" id="loginForm">
+      <form class="auth-form" id="loginForm" novalidate>
         <input name="email" type="email" placeholder="이메일" required />
         <input name="password" type="password" placeholder="비밀번호" required />
         <button class="btn btn--primary" type="submit">로그인</button>
       </form>
 
-      <form class="auth-form" id="signupForm" style="display:none;">
+      <form class="auth-form" id="signupForm" style="display:none;" novalidate>
         <input name="name" placeholder="이름" required />
-        <input name="nickname" placeholder="별명" required />
-        <input name="email" type="email" placeholder="이메일" required />
-        <input name="password" type="password" placeholder="비밀번호" required />
-        <input name="passwordConfirm" type="password" placeholder="비밀번호 확인" required />
-        <button class="btn btn--primary" type="submit">회원가입</button>
+        <input name="nickname" placeholder="닉네임" required />
+        <input id="signupEmail" name="email" type="email" placeholder="이메일" required />
+        <small id="emailHint" class="note"></small>
+
+        <input id="signupPw" name="password" type="password" placeholder="비밀번호 (영문+숫자 포함 8자 이상)" required />
+        <small id="pwHint" class="note"></small>
+
+        <input id="signupPwConfirm" name="passwordConfirm" type="password" placeholder="비밀번호 확인" required />
+        <small id="pwConfirmHint" class="note"></small>
+
+        <label style="display:flex;gap:8px;align-items:center;color:#a3a3a3;font-size:.85rem;">
+          <input id="agreeChk" type="checkbox" /> 이용약관 및 개인정보 처리방침에 동의합니다.
+        </label>
+
+        <button id="signupSubmit" class="btn btn--primary" type="submit" disabled>회원가입</button>
       </form>
 
       <div class="dev-row">
@@ -50,6 +60,15 @@
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
 
+    const signupEmail = document.getElementById('signupEmail');
+    const signupPw = document.getElementById('signupPw');
+    const signupPwConfirm = document.getElementById('signupPwConfirm');
+    const emailHint = document.getElementById('emailHint');
+    const pwHint = document.getElementById('pwHint');
+    const pwConfirmHint = document.getElementById('pwConfirmHint');
+    const agreeChk = document.getElementById('agreeChk');
+    const signupSubmit = document.getElementById('signupSubmit');
+
     if (!window.WETHUS) {
       msg.textContent = '앱 로딩 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.';
     }
@@ -63,8 +82,59 @@
       msg.textContent = '';
     }
 
+    function validateSignupForm() {
+      if (!window.WETHUS) return false;
+      const s = WETHUS.getState();
+      const email = signupEmail.value.trim();
+      const pw = signupPw.value;
+      const pw2 = signupPwConfirm.value;
+
+      let ok = true;
+
+      if (!email) {
+        emailHint.textContent = '';
+        ok = false;
+      } else if (s.users.some(u => u.email === email)) {
+        emailHint.textContent = '이미 가입된 이메일입니다.';
+        ok = false;
+      } else {
+        emailHint.textContent = '사용 가능한 이메일입니다.';
+      }
+
+      if (!pw) {
+        pwHint.textContent = '';
+        ok = false;
+      } else if (pw.length < 8 || !/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) {
+        pwHint.textContent = '비밀번호는 영문+숫자 포함 8자 이상이어야 합니다.';
+        ok = false;
+      } else {
+        pwHint.textContent = '사용 가능한 비밀번호 형식입니다.';
+      }
+
+      if (!pw2) {
+        pwConfirmHint.textContent = '';
+        ok = false;
+      } else if (pw !== pw2) {
+        pwConfirmHint.textContent = '비밀번호 확인이 일치하지 않습니다.';
+        ok = false;
+      } else {
+        pwConfirmHint.textContent = '비밀번호가 일치합니다.';
+      }
+
+      if (!agreeChk.checked) ok = false;
+
+      signupSubmit.disabled = !ok;
+      return ok;
+    }
+
     tabLogin.addEventListener('click', () => setTab('login'));
     tabSignup.addEventListener('click', () => setTab('signup'));
+
+    [signupEmail, signupPw, signupPwConfirm].forEach(el => {
+      el.addEventListener('input', validateSignupForm);
+      el.addEventListener('blur', validateSignupForm);
+    });
+    agreeChk.addEventListener('change', validateSignupForm);
 
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -79,11 +149,11 @@
     signupForm.addEventListener('submit', (e) => {
       e.preventDefault();
       if (!window.WETHUS) return;
-      const fd = new FormData(signupForm);
-      if (fd.get('password') !== fd.get('passwordConfirm')) {
-        msg.textContent = '비밀번호 확인이 일치하지 않습니다.';
+      if (!validateSignupForm()) {
+        msg.textContent = '입력값을 다시 확인해주세요.';
         return;
       }
+      const fd = new FormData(signupForm);
       try {
         WETHUS.registerUser({
           name: fd.get('name'),
