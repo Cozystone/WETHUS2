@@ -154,8 +154,9 @@
     }
 
     function likedSymbol(p) {
+      if (typeof p._liked === 'boolean') return p._liked ? '♥' : '♡';
       const actor = actorId();
-      const liked = !!p._liked || (actor && Array.isArray(p.likedBy) && p.likedBy.includes(actor));
+      const liked = !!(actor && Array.isArray(p.likedBy) && p.likedBy.includes(actor));
       return liked ? '♥' : '♡';
     }
 

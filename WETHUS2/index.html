@@ -184,6 +184,9 @@
       };
       el.innerHTML = featured.map(p => `
         <article class="card list-item" data-project='${JSON.stringify(p).replace(/'/g, "&#39;")}'>
+          <div class="card-media ${fallbackClass[p.category] || 'card-media--film'}">
+            <img src="${p.image || `https://picsum.photos/seed/wethus-${(p.category||'project').toLowerCase()}/900/560`}" alt="${p.title}" class="card-img" />
+          </div>
           <span class="card-chip">${p.category || ''}</span>
           <h3 class="card-title">${p.title}</h3>
           <p class="card-summary">${p.summary || ''}</p>
