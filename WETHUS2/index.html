@@ -129,6 +129,18 @@
     </article>
   </div>
 
+  <div id="memberModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-member="true"></div>
+    <article class="modal-panel" style="max-width:420px;">
+      <button class="modal-close" id="memberModalClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 id="memberName" style="margin:0 0 6px;"></h3>
+        <p id="memberRole" class="badge" style="margin:0 0 10px;"></p>
+        <p id="memberBio" style="margin:0;color:#b8b8b8;"></p>
+      </div>
+    </article>
+  </div>
+
   <script src="app.js"></script>
   <script>
     (function(){
@@ -145,6 +157,18 @@
       };
       const featured = WETHUS.listProjects().slice().sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0, 6).map(p => ({...p, status: normalizeStage(p.status)}));
       const fallbackClass = { Film:'card-media--film', App:'card-media--startup', Startup:'card-media--startup', Policy:'card-media--policy', Campaign:'card-media--policy', Creative:'card-media--film' };
+      const renderTeam = (team=[]) => {
+        const leader = team.find(m => m.isLeader) || team[0];
+        const others = team.filter(m => m !== leader);
+        const visible = others.slice(0,2);
+        const hidden = others.slice(2);
+        return `
+          <div class="team-row">
+            <button class="member-pill leader" data-member='${JSON.stringify(leader||{}).replace(/'/g, "&#39;")}'>${leader?.name || '대표'}</button>
+            ${visible.map(m => `<button class="member-pill" data-member='${JSON.stringify(m).replace(/'/g, "&#39;")}'>${m.name}</button>`).join('')}
+            ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length+1}명</button><div class="team-list">${hidden.map(m=>`<button class="member-pill block" data-member='${JSON.stringify(m).replace(/'/g, "&#39;")}'>${m.name}</button>`).join('')}</div>` : ''}
+          </div>`;
+      };
       el.innerHTML = featured.map(p => `
         <article class="card" data-project='${JSON.stringify(p).replace(/'/g, "&#39;")}'>
           <div class="card-media ${fallbackClass[p.category] || 'card-media--film'}">
@@ -153,6 +177,7 @@
           <span class="card-chip">${p.status || '기획 중'}</span>
           <h3 class="card-title">${p.title}</h3>
           <p class="card-summary">${p.summary || ''}</p>
+          ${renderTeam(p.teamMembers)}
           <div class="card-meta"><span class="card-status">${p.category || ''}</span><span class="card-roles">${p.roles || ''}</span></div>
           <div class="card-social"><span>♡ ${(p.likes||0)}</span><span>💬 ${Array.isArray(p.comments)?p.comments.length:0}</span></div>
         </article>

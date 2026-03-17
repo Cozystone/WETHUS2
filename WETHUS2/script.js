@@ -76,7 +76,8 @@
   }
 
   document.querySelectorAll('.card[data-project]').forEach(function (card) {
-    card.addEventListener('click', function () {
+    card.addEventListener('click', function (e) {
+      if (e.target.closest('.team-toggle') || e.target.closest('.member-pill')) return;
       var raw = card.getAttribute('data-project');
       try {
         openModal(JSON.parse(raw));
@@ -85,6 +86,16 @@
       }
     });
   });
+
+  document.querySelectorAll('.team-toggle').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var list = btn.nextElementSibling;
+      if (!list) return;
+      list.classList.toggle('open');
+    });
+  });
+
 
   document.getElementById('modalClose').addEventListener('click', closeModal);
   modal.addEventListener('click', function (e) {
@@ -129,7 +140,40 @@
     });
   }
 
+  var memberModal = document.getElementById('memberModal');
+  var memberName = document.getElementById('memberName');
+  var memberRole = document.getElementById('memberRole');
+  var memberBio = document.getElementById('memberBio');
+
+  function openMember(member) {
+    if (!memberModal) return;
+    memberName.textContent = member.name || '팀원';
+    memberRole.textContent = member.role || '팀원';
+    memberBio.textContent = member.bio || '소개가 아직 없습니다.';
+    memberModal.classList.add('open');
+    memberModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeMember() {
+    if (!memberModal) return;
+    memberModal.classList.remove('open');
+    memberModal.setAttribute('aria-hidden', 'true');
+  }
+
+  document.querySelectorAll('.member-pill').forEach(function (pill) {
+    pill.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var raw = pill.getAttribute('data-member');
+      try { openMember(JSON.parse(raw)); } catch (_) {}
+    });
+  });
+
+  document.getElementById('memberModalClose')?.addEventListener('click', closeMember);
+  memberModal?.addEventListener('click', function (e) {
+    if (e.target && e.target.getAttribute('data-close-member') === 'true') closeMember();
+  });
+
   window.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Escape') { closeModal(); closeMember(); }
   });
 })();

@@ -104,6 +104,33 @@
     return status || '기획 중';
   }
 
+  function defaultTeamForProject(title, founderName) {
+    const leader = { id: uid(), name: founderName || '대표', role: '대표', bio: '프로젝트 리딩 및 의사결정', isLeader: true };
+    const presets = {
+      '청소년 독립영화 단편 제작팀': [
+        leader,
+        { id: uid(), name: '서진', role: '촬영', bio: '다큐/숏폼 촬영 경험' },
+        { id: uid(), name: '민재', role: '편집', bio: '프리미어/다빈치 편집' },
+        { id: uid(), name: '하린', role: '배우', bio: '연기 워크숍 참여' }
+      ],
+      '고등학생 팀 협업 앱 MVP 실험': [
+        leader,
+        { id: uid(), name: '유진', role: '디자인', bio: '모바일 UX 설계' },
+        { id: uid(), name: '도윤', role: '프론트', bio: 'React/Next 개발' }
+      ],
+      '청소년 교통비 정책 제안 프로젝트': [
+        leader,
+        { id: uid(), name: '지우', role: '리서치', bio: '데이터 정리/인터뷰' },
+        { id: uid(), name: '현서', role: '문서', bio: '보고서 작성/편집' }
+      ]
+    };
+    return presets[title] || [
+      leader,
+      { id: uid(), name: '가온', role: '운영', bio: '프로젝트 운영 지원' },
+      { id: uid(), name: '로아', role: '콘텐츠', bio: '콘텐츠 기획/제작' }
+    ];
+  }
+
   function load() {
     const raw = localStorage.getItem(KEY);
     if (!raw) {
@@ -151,6 +178,10 @@
       }
       if (!Array.isArray(next.likedBy)) {
         next.likedBy = [];
+        changed = true;
+      }
+      if (!Array.isArray(next.teamMembers) || !next.teamMembers.length) {
+        next.teamMembers = defaultTeamForProject(next.title, '대표');
         changed = true;
       }
       if (!next.teamSize) {
@@ -249,9 +280,11 @@
   function addProject(payload) {
     const s = load();
     if (!s.currentUserId && !s.devMode) throw new Error('로그인이 필요합니다.');
+    const me = s.users.find(u => u.id === s.currentUserId);
     const project = {
       id: uid(),
       founderId: s.currentUserId || 'dev-temp',
+      teamMembers: [{ id: uid(), name: me?.nickname || me?.name || '대표', role: '대표', bio: '프로젝트 대표', isLeader: true }],
       createdAt: new Date().toISOString(),
       ...payload
     };

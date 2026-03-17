@@ -103,6 +103,18 @@
     </article>
   </div>
 
+  <div id="memberModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-member="true"></div>
+    <article class="modal-panel" style="max-width:420px;">
+      <button class="modal-close" id="memberModalClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 id="memberName" style="margin:0 0 6px;"></h3>
+        <p id="memberRole" class="badge" style="margin:0 0 10px;"></p>
+        <p id="memberBio" style="margin:0;color:#b8b8b8;"></p>
+      </div>
+    </article>
+  </div>
+
   <script src="app.js"></script>
   <script>
     WETHUS.requireAuth();
@@ -139,6 +151,19 @@
       return `https://picsum.photos/seed/wethus-${key}-${idx}/900/560`;
     }
 
+    function renderTeam(team=[]) {
+      const leader = team.find(m => m.isLeader) || team[0];
+      const others = team.filter(m => m !== leader);
+      const visible = others.slice(0,2);
+      const hidden = others.slice(2);
+      return `
+        <div class="team-row">
+          <button class="member-pill leader" data-member='${JSON.stringify(leader||{}).replace(/'/g, "&#39;")}'>${leader?.name || '대표'}</button>
+          ${visible.map(m => `<button class="member-pill" data-member='${JSON.stringify(m).replace(/'/g, "&#39;")}'>${m.name}</button>`).join('')}
+          ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length+1}명</button><div class="team-list">${hidden.map(m=>`<button class="member-pill block" data-member='${JSON.stringify(m).replace(/'/g, "&#39;")}'>${m.name}</button>`).join('')}</div>` : ''}
+        </div>`;
+    }
+
     function renderList(items) {
       listEl.className = 'list-grid';
       listEl.innerHTML = items.map(p => {
@@ -149,6 +174,7 @@
           <span class="badge">${stage}</span>
           <h3>${p.title}</h3>
           <p>${p.summary}</p>
+          ${renderTeam(p.teamMembers)}
           <div class="meta">${p.category} · ${p.teamSize || ''} · 필요역할: ${p.roles}</div>
           <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
         </article>
@@ -166,6 +192,7 @@
           <div class="project-tile-body">
             <h3>${p.title}</h3>
             <p>${p.summary}</p>
+            ${renderTeam(p.teamMembers)}
             <div class="meta"><span class="badge">${stage}</span> · ${p.category} · ${p.teamSize || ''}</div>
             <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
           </div>
@@ -316,7 +343,38 @@
       document.body.style.overflow = '';
     }
 
+    const memberModal = document.getElementById('memberModal');
+    const memberName = document.getElementById('memberName');
+    const memberRole = document.getElementById('memberRole');
+    const memberBio = document.getElementById('memberBio');
+
+    function openMember(member) {
+      memberName.textContent = member.name || '팀원';
+      memberRole.textContent = member.role || '팀원';
+      memberBio.textContent = member.bio || '소개가 아직 없습니다.';
+      memberModal.classList.add('open');
+      memberModal.setAttribute('aria-hidden', 'false');
+    }
+    function closeMember() {
+      memberModal.classList.remove('open');
+      memberModal.setAttribute('aria-hidden', 'true');
+    }
+
     listEl.addEventListener('click', (e) => {
+      const memberBtn = e.target.closest('.member-pill');
+      if (memberBtn) {
+        e.stopPropagation();
+        try { openMember(JSON.parse(memberBtn.getAttribute('data-member'))); } catch(_) {}
+        return;
+      }
+
+      const toggleBtn = e.target.closest('.team-toggle');
+      if (toggleBtn) {
+        const list = toggleBtn.nextElementSibling;
+        if (list) list.classList.toggle('open');
+        return;
+      }
+
       const target = e.target.closest('[data-project]');
       if (!target) return;
       try {
@@ -364,8 +422,13 @@
       if (target) target.comments = comments;
     });
 
+    document.getElementById('memberModalClose').addEventListener('click', closeMember);
+    memberModal.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close-member') === 'true') closeMember();
+    });
+
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Escape') { closeModal(); closeMember(); }
     });
 
     buildCategoryChips(allProjects);
