@@ -166,17 +166,24 @@
 
         <div class="form-row">
           <label style="flex:1;min-width:220px;">시작일
-            <input type="date" name="startDate" required />
+            <div class="form-row" style="margin:0;">
+              <select id="startYear" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;"></select>
+              <select id="startMonth" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;"></select>
+              <select id="startDay" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;"></select>
+            </div>
           </label>
           <label style="flex:1;min-width:220px;">종료일
-            <input type="date" name="endDate" />
+            <div class="form-row" style="margin:0;">
+              <select id="endMode" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;min-width:110px;">
+                <option value="current" selected>현재</option>
+                <option value="date">날짜 지정</option>
+              </select>
+              <select id="endYear" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;display:none;"></select>
+              <select id="endMonth" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;display:none;"></select>
+              <select id="endDay" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;display:none;"></select>
+            </div>
           </label>
         </div>
-
-        <label style="display:flex;align-items:center;gap:8px;font-weight:600;">
-          <input type="checkbox" id="ongoingNow" name="ongoingNow" style="width:auto;" />
-          종료일을 "현재"로 표시 (진행 중)
-        </label>
 
         <label>예상 기간
           <input name="duration" placeholder="예: 8주" required />
@@ -247,12 +254,50 @@
     const categorySelect = document.getElementById('categorySelect');
     const customCategoryWrap = document.getElementById('customCategoryWrap');
     const customCategoryInput = document.getElementById('customCategory');
-    const ongoingNow = document.getElementById('ongoingNow');
+    const startYear = document.getElementById('startYear');
+    const startMonth = document.getElementById('startMonth');
+    const startDay = document.getElementById('startDay');
+    const endMode = document.getElementById('endMode');
+    const endYear = document.getElementById('endYear');
+    const endMonth = document.getElementById('endMonth');
+    const endDay = document.getElementById('endDay');
 
     let imageData = '';
     let aiImageSelected = false;
 
     function noSpaceLen(v) { return String(v || '').replace(/\s/g, '').length; }
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+
+    function buildDate(y, m, d) {
+      return `${y}-${pad2(m)}-${pad2(d)}`;
+    }
+
+    function populateDateSelects(yearEl, monthEl, dayEl, baseDate) {
+      const nowYear = new Date().getFullYear();
+      yearEl.innerHTML = Array.from({ length: 8 }, (_, i) => {
+        const y = nowYear - 2 + i;
+        return `<option value="${y}">${y}년</option>`;
+      }).join('');
+      monthEl.innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i+1}">${i+1}월</option>`).join('');
+      dayEl.innerHTML = Array.from({ length: 31 }, (_, i) => `<option value="${i+1}">${i+1}일</option>`).join('');
+      yearEl.value = String(baseDate.getFullYear());
+      monthEl.value = String(baseDate.getMonth() + 1);
+      dayEl.value = String(baseDate.getDate());
+    }
+
+    function startDateValue() {
+      return buildDate(startYear.value, Number(startMonth.value), Number(startDay.value));
+    }
+
+    function endDateValue() {
+      if (endMode.value === 'current') return '';
+      return buildDate(endYear.value, Number(endMonth.value), Number(endDay.value));
+    }
+
+    function isOngoingNow() {
+      return endMode.value === 'current';
+    }
 
     function updateCounter(textarea) {
       const name = textarea.name;
@@ -292,7 +337,7 @@
       }
       setImageError('');
 
-      const requiredFields = ['title','category','description','motivation','output','plan','roles','teamSize','status','duration','startDate'];
+      const requiredFields = ['title','category','description','motivation','output','plan','roles','teamSize','status','duration'];
       for (const key of requiredFields) {
         const el = form.elements[key];
         if (!el || !String(el.value || '').trim()) {
@@ -306,8 +351,11 @@
         return false;
       }
 
-      const hasEndDate = !!String(form.elements.endDate.value || '').trim();
-      if (!ongoingNow.checked && !hasEndDate) {
+      if (!startDateValue()) {
+        if (showMessage) msg.textContent = '시작일을 선택해주세요.';
+        return false;
+      }
+      if (!isOngoingNow() && !endDateValue()) {
         if (showMessage) msg.textContent = '종료일을 입력하거나 "현재"를 선택해주세요.';
         return false;
       }
@@ -365,10 +413,11 @@
       if (!custom) customCategoryInput.value = '';
     });
 
-    ongoingNow.addEventListener('change', () => {
-      const endInput = form.elements.endDate;
-      endInput.disabled = ongoingNow.checked;
-      if (ongoingNow.checked) endInput.value = '';
+    endMode.addEventListener('change', () => {
+      const showDate = endMode.value === 'date';
+      endYear.style.display = showDate ? '' : 'none';
+      endMonth.style.display = showDate ? '' : 'none';
+      endDay.style.display = showDate ? '' : 'none';
     });
 
     async function generateAiImage() {
@@ -450,6 +499,11 @@
       updateCounter(textarea);
       textarea.addEventListener('input', () => updateCounter(textarea));
     });
+    const now = new Date();
+    populateDateSelects(startYear, startMonth, startDay, now);
+    populateDateSelects(endYear, endMonth, endDay, now);
+    endMode.value = 'current';
+    endMode.dispatchEvent(new Event('change'));
     setAiButtonState();
 
     const previewModal = document.getElementById('previewModal');
@@ -460,7 +514,7 @@
       document.getElementById('previewImage').src = imageData || fallbackPreview;
       document.getElementById('previewCategory').textContent = resolvedCategory();
       document.getElementById('previewTitle').textContent = fd.get('title');
-      document.getElementById('previewDate').textContent = dateRangeText(fd.get('startDate'), fd.get('endDate'), ongoingNow.checked);
+      document.getElementById('previewDate').textContent = dateRangeText(startDateValue(), endDateValue(), isOngoingNow());
       document.getElementById('previewSummary').textContent = String(fd.get('description')).slice(0, 120);
       document.getElementById('previewDesc').textContent = fd.get('description');
       document.getElementById('previewStatus').textContent = fd.get('status');
@@ -516,9 +570,9 @@
         teamSize: fd.get('teamSize'),
         roles: fd.get('roles'),
         duration: fd.get('duration'),
-        startDate: fd.get('startDate'),
-        endDate: ongoingNow.checked ? null : fd.get('endDate'),
-        ongoingNow: ongoingNow.checked,
+        startDate: startDateValue(),
+        endDate: isOngoingNow() ? null : endDateValue(),
+        ongoingNow: isOngoingNow(),
         image: finalImage,
         likes: 0,
         comments: []
@@ -532,8 +586,11 @@
       coverPreviewWrap.style.display = 'none';
       customCategoryWrap.style.display = 'none';
       customCategoryInput.required = false;
-      ongoingNow.checked = false;
-      form.elements.endDate.disabled = false;
+      const now = new Date();
+      populateDateSelects(startYear, startMonth, startDay, now);
+      populateDateSelects(endYear, endMonth, endDay, now);
+      endMode.value = 'current';
+      endMode.dispatchEvent(new Event('change'));
       setImageError('');
       imageActionMsg.textContent = '';
       form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
