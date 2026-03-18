@@ -41,11 +41,11 @@ a { color: inherit; text-decoration: none; }
 
 .nav {
   position: sticky; top: 0; z-index: 100;
-  background: linear-gradient(180deg, rgba(255,154,82,.24), rgba(255,126,42,.18));
-  border-bottom: 1px solid var(--glass-border);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,.12);
+  background: linear-gradient(180deg, rgba(12,12,14,.86), rgba(10,10,12,.78));
+  border-bottom: 1px solid rgba(255,255,255,.14);
+  backdrop-filter: blur(12px) saturate(110%);
+  -webkit-backdrop-filter: blur(12px) saturate(110%);
+  box-shadow: 0 8px 22px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.07);
 }
 .nav-inner { width: min(80vw, var(--container)); max-width: var(--container); margin: 0 auto; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
 .wordmark { font-size: 1.2rem; font-weight: 900; letter-spacing: .02em; }
@@ -78,7 +78,31 @@ a { color: inherit; text-decoration: none; }
 .profile-chip-texts { display:flex; flex-direction:column; align-items:flex-start; line-height:1.05; }
 .profile-chip-texts strong { font-size:.74rem; color:#fff; text-shadow: 0 1px 0 rgba(0,0,0,.25); }
 .profile-chip-texts em { font-style:normal; font-size:.62rem; color:#ffe7d2; opacity:.95; }
-.profile-chip-dropdown { right:0; width:240px; }
+.profile-chip-dropdown {
+  right:0;
+  width:240px;
+  background: linear-gradient(180deg, rgba(255,160,84,.20), rgba(255,126,42,.14));
+  border-color: rgba(255,224,194,.52);
+}
+.profile-chip-dropdown .notify-item { border-bottom:1px solid rgba(255,255,255,.14); }
+.profile-chip-dropdown .notify-item p { color:#d9d9d9; }
+.profile-chip-dropdown .notify-more {
+  display:block;
+  width: calc(100% - 16px);
+  margin: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,223,194,.55);
+  background: linear-gradient(135deg, rgba(255,142,60,.46), rgba(255,112,28,.36));
+  color: #fff5ea;
+  font-size: .82rem;
+  font-weight: 900;
+  letter-spacing: .01em;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.24), 0 6px 14px rgba(130,72,18,.18);
+}
+.profile-chip-dropdown .notify-more:hover { filter: brightness(1.04); }
 
 .menu-icon-btn {
   width:32px;
@@ -103,13 +127,13 @@ a { color: inherit; text-decoration: none; }
 .side-drawer {
   position: fixed; top:64px; right:16px; width:88px; height: 440px;
   overflow:auto;
-  background: linear-gradient(180deg, rgba(255,164,88,.34), rgba(255,112,30,.24));
-  border:1px solid rgba(255,214,170,.52);
+  background: linear-gradient(180deg, rgba(255,166,90,.62), rgba(255,112,30,.54));
+  border:1px solid rgba(255,228,198,.78);
   border-radius:14px;
   z-index:400;
-  backdrop-filter: blur(16px) saturate(122%);
-  -webkit-backdrop-filter: blur(16px) saturate(122%);
-  box-shadow: 0 12px 34px rgba(98,58,24,.2), inset 0 1px 0 rgba(255,255,255,.26);
+  backdrop-filter: blur(14px) saturate(118%);
+  -webkit-backdrop-filter: blur(14px) saturate(118%);
+  box-shadow: 0 12px 30px rgba(98,58,24,.24), inset 0 1px 0 rgba(255,255,255,.30);
 }
 .side-drawer-item {
   display:flex;
