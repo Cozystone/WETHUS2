@@ -13,11 +13,11 @@
   --container: 1200px;
 
   /* Liquid glass system tokens */
-  --glass-bg: rgba(255, 150, 74, 0.16);
-  --glass-bg-strong: rgba(255, 150, 74, 0.24);
-  --glass-border: rgba(255, 214, 178, 0.48);
-  --glass-inner: rgba(255, 246, 236, 0.44);
-  --glass-shadow: 0 10px 26px rgba(116, 58, 12, 0.20);
+  --glass-bg: rgba(255, 255, 255, 0.10);
+  --glass-bg-strong: rgba(255, 255, 255, 0.16);
+  --glass-border: rgba(255, 255, 255, 0.30);
+  --glass-inner: rgba(255, 255, 255, 0.24);
+  --glass-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
   --glass-blur: blur(14px) saturate(128%);
 }
 
@@ -270,12 +270,12 @@ a { color: inherit; text-decoration: none; }
 }
 .btn--primary:hover { transform: translateY(-1px); filter: brightness(1.04); }
 .btn--secondary {
-  background: rgba(255,148,70,.16);
+  background: rgba(255,255,255,.08);
   border: 1px solid var(--glass-border);
   color: var(--text-primary);
   backdrop-filter: blur(8px);
 }
-.btn--secondary:hover { border-color: rgba(255,224,196,.72); color: #fff; background: rgba(255,154,82,.24); }
+.btn--secondary:hover { border-color: rgba(255,255,255,.44); color: #fff; background: rgba(255,255,255,.14); }
 .btn--large { padding: 12px 18px; font-size: .9rem; }
 .founder-accent-btn {
   background: linear-gradient(135deg, color-mix(in srgb, var(--orange-glass-main) 64%, #fff), color-mix(in srgb, var(--orange-glass-main) 80%, #2f1707));
@@ -518,7 +518,7 @@ a { color: inherit; text-decoration: none; }
   position: relative;
   width: min(700px, 92vw);
   margin: 8vh auto 0;
-  background: linear-gradient(180deg, rgba(255,160,86,.24), rgba(255,124,40,.18));
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
   border: 1px solid var(--glass-border);
   border-radius: 14px;
   z-index: 2;
