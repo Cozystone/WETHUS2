@@ -11,6 +11,11 @@ cp .env.example .env
 - `GOOGLE_CLIENT_ID`: Google Cloud OAuth Web Client ID
 - `JWT_SECRET`: long random secret
 - `ALLOWED_ORIGINS`: comma-separated origins (local + vercel)
+- AI 선택:
+  - `AI_PROVIDER=openai` (권장)
+  - `OPENAI_API_KEY=...`
+  - `OPENAI_MODEL=gpt-4o-mini`
+  - (대안) `AI_PROVIDER=gemini` + `GEMINI_API_KEY=...`
 
 ## 3) Run
 ```bash

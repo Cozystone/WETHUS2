@@ -15,6 +15,9 @@ const app = express();
 const PORT = Number(process.env.PORT || 8787);
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me';
+const AI_PROVIDER = (process.env.AI_PROVIDER || 'openai').toLowerCase();
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const PASS_ENABLED = String(process.env.PASS_ENABLED || 'false').toLowerCase() === 'true';
 const NICE_SITE_CODE = process.env.NICE_SITE_CODE || '';
@@ -70,12 +73,57 @@ async function callGemini(prompt, retries = 2) {
   throw lastErr || new Error('ai failed');
 }
 
+async function callOpenAI(prompt, retries = 2) {
+  if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not configured');
+  const url = 'https://api.openai.com/v1/chat/completions';
+
+  let lastErr;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 18000 + i * 3000);
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: OPENAI_MODEL,
+          temperature: 0.25,
+          max_tokens: 260,
+          messages: [
+            { role: 'system', content: "You rewrite youth profile career notes into concise Korean bullets using only '-(전)' or '-(현)' prefixes." },
+            { role: 'user', content: prompt }
+          ]
+        })
+      });
+      clearTimeout(timeout);
+      if (!r.ok) throw new Error(await r.text());
+      const data = await r.json();
+      const text = data?.choices?.[0]?.message?.content?.trim();
+      if (!text) throw new Error('empty ai response');
+      return text;
+    } catch (e) {
+      lastErr = e;
+      if (i < retries) await new Promise(rs => setTimeout(rs, 500 * (i + 1)));
+    }
+  }
+  throw lastErr || new Error('openai failed');
+}
+
+async function callAi(prompt) {
+  if (AI_PROVIDER === 'openai') return callOpenAI(prompt, 2);
+  return callGemini(prompt, 2);
+}
+
 app.post('/ai/career-summary', async (req, res) => {
   try {
     const raw = String(req.body?.raw || '').trim();
     if (!raw) return res.status(400).json({ ok: false, error: 'raw is required' });
     const prompt = `다음 경력사항을 정확히 '-(전) ...' 또는 '-(현) ...' 형식의 불릿으로만 출력해줘. 최대 6줄. 원문 복붙 금지, 핵심만 간결히.\n${raw}`;
-    const text = await callGemini(prompt, 2);
+    const text = await callAi(prompt);
     return res.json({ ok: true, summary: text });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'career summary failed' });
