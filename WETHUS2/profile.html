@@ -103,7 +103,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-11"></script>
+  <script src="app.js?v=20260318-12"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
 
@@ -141,6 +141,7 @@
           </div>
           <p class="profile-bio">${user.bio || '아직 소개가 없습니다. 프로젝트를 시작해보세요.'}</p>
           <p class="meta" style="margin:0 0 6px;">${user.school ? user.school + ' · ' : ''}${user.age ? '만 ' + user.age + '세' : ''}</p>
+          ${user.careerSummary ? `<p class="meta" style="margin:0 0 8px;white-space:pre-line;">${user.careerSummary}</p>` : ''}
           <div class="profile-stats">
             <span><strong>${WETHUS.myProjects().length}</strong> 프로젝트</span>
             <span><strong>${WETHUS.listProjects().filter(p => p.founderId === (u ? u.id : 'dev-temp')).length}</strong> 등록</span>
@@ -160,7 +161,8 @@
         const careerSummaryEl = document.getElementById('careerSummary');
         const careerAiBtn = document.getElementById('careerAiBtn');
         const under22Confirm = document.getElementById('under22Confirm');
-        const ONBOARDING = new URLSearchParams(location.search).get('onboarding') === '1' || !u.onboardingComplete;
+        const onboardingParam = new URLSearchParams(location.search).get('onboarding') === '1';
+        const ONBOARDING = onboardingParam && !u.onboardingComplete;
         const NEIS_KEY = '5c4d13bf833b45ec8c97f9f0fe885d6b';
         const schoolModal = document.getElementById('schoolSearchModal');
         const schoolSearchClose = document.getElementById('schoolSearchClose');
