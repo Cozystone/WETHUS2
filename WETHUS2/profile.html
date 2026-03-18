@@ -59,9 +59,13 @@
         <h3 style="margin:0 0 12px;">프로필 수정</h3>
         <form id="profileForm" class="application-form">
           <label>프로필 사진
-            <div style="display:flex;align-items:center;gap:10px;">
-              <input id="profileImageFile" type="file" accept="image/*" />
-              <img id="profileImagePreview" alt="프로필 미리보기" style="width:44px;height:44px;border-radius:999px;object-fit:cover;border:1px solid #2a2a2a;" />
+            <input id="profileImageFile" type="file" accept="image/*" hidden />
+            <div id="profileDropzone" style="border:1px dashed #3a3a3a;border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+              <img id="profileImagePreview" alt="프로필 미리보기" style="width:48px;height:48px;border-radius:999px;object-fit:cover;border:1px solid #2a2a2a;" />
+              <div>
+                <strong style="font-size:.88rem;">드래그 앤 드롭 또는 파일 선택</strong>
+                <p style="margin:2px 0 0;color:#9a9a9a;font-size:.78rem;">JPG/PNG · 원형 프로필</p>
+              </div>
             </div>
           </label>
           <label>이름 <input name="name" required /></label>
@@ -109,7 +113,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-12"></script>
+  <script src="app.js?v=20260318-13"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
 
@@ -175,6 +179,7 @@
         const profileEditOpen = document.getElementById('profileEditOpen');
         const profileImageFile = document.getElementById('profileImageFile');
         const profileImagePreview = document.getElementById('profileImagePreview');
+        const profileDropzone = document.getElementById('profileDropzone');
         const schoolInput = document.getElementById('schoolInput');
         const schoolSearchBtn = document.getElementById('schoolSearchBtn');
         const careerRawEl = document.getElementById('careerRaw');
@@ -286,8 +291,7 @@
           }
         });
 
-        profileImageFile?.addEventListener('change', (e) => {
-          const file = e.target.files && e.target.files[0];
+        function applyProfileImageFile(file) {
           if (!file || !file.type.startsWith('image/')) return;
           const reader = new FileReader();
           reader.onload = () => {
@@ -295,6 +299,27 @@
             if (profileImagePreview) profileImagePreview.src = stagedProfileImage;
           };
           reader.readAsDataURL(file);
+        }
+
+        profileImageFile?.addEventListener('change', (e) => {
+          applyProfileImageFile(e.target.files && e.target.files[0]);
+        });
+        profileDropzone?.addEventListener('click', () => profileImageFile?.click());
+        ['dragenter','dragover'].forEach(evt => {
+          profileDropzone?.addEventListener(evt, (e) => {
+            e.preventDefault();
+            profileDropzone.style.borderColor = '#ff6a00';
+          });
+        });
+        ['dragleave','drop'].forEach(evt => {
+          profileDropzone?.addEventListener(evt, (e) => {
+            e.preventDefault();
+            profileDropzone.style.borderColor = '#3a3a3a';
+          });
+        });
+        profileDropzone?.addEventListener('drop', (e) => {
+          const file = e.dataTransfer.files && e.dataTransfer.files[0];
+          applyProfileImageFile(file);
         });
 
         careerAiBtn.addEventListener('click', async () => {

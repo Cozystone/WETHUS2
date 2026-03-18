@@ -228,7 +228,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-12"></script>
+  <script src="app.js?v=20260318-13"></script>
   <script>
     WETHUS.requireAuth();
     const authLink = document.querySelector('.js-auth-link');
@@ -444,17 +444,24 @@
         const k = await WETHUS.askGemini(`Create one concise English visual prompt (max 10 words) for a cinematic poster image. Category: ${category}. Title: ${title}. Description: ${desc.slice(0, 300)}`);
         keyword = String(k || '').replace(/[\n\r]/g, ' ').trim().slice(0, 120) || keyword;
       } catch (_) {}
-      imageData = `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword)}`;
-      coverPreview.onerror = () => {
-        imageData = `https://picsum.photos/seed/wethus-ai-${encodeURIComponent(title || 'project')}/1200/700`;
-        coverPreview.src = imageData;
-      };
+
+      const aiUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword)}`;
+      const fallbackUrl = `https://picsum.photos/seed/wethus-ai-${encodeURIComponent(title || 'project')}/1200/700`;
+
+      const loaded = await new Promise((resolve) => {
+        const testImg = new Image();
+        testImg.onload = () => resolve(true);
+        testImg.onerror = () => resolve(false);
+        testImg.src = aiUrl;
+      });
+
+      imageData = loaded ? aiUrl : fallbackUrl;
       coverPreview.src = imageData;
       coverPreviewWrap.style.display = 'block';
       aiImageSelected = true;
       setAiButtonState();
       setImageError('');
-      imageActionMsg.textContent = 'AI 이미지 생성 완료.';
+      imageActionMsg.textContent = loaded ? 'AI 이미지 생성 완료.' : 'AI 이미지 생성 실패로 기본 이미지를 적용했습니다.';
       return true;
     }
 
