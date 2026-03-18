@@ -899,13 +899,10 @@
       const menuWrap = document.createElement('div');
       menuWrap.className = 'notify-wrap js-side-menu';
       menuWrap.innerHTML = `
-        <button class="menu-icon-btn" type="button" aria-label="빠른 메뉴 열기">
+        <button class="menu-icon-btn" type="button" aria-label="빠른 메뉴 열기" aria-expanded="false">
           <span></span><span></span><span></span>
         </button>
         <aside class="side-drawer" style="display:none;">
-          <div class="side-drawer-head">
-            <button type="button" class="menu-close-btn" aria-label="닫기">×</button>
-          </div>
           <a href="dm.html" class="side-drawer-item">
             <span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
             <span>DM</span>
@@ -943,17 +940,17 @@
 
       const drawer = menuWrap.querySelector('.side-drawer');
       const openBtn = menuWrap.querySelector('.menu-icon-btn');
-      const closeBtn = menuWrap.querySelector('.menu-close-btn');
       const sideBadge = menuWrap.querySelector('.side-badge');
       const unread = listNotifications(99).filter(n => n.unread).length;
       sideBadge.textContent = unread > 99 ? '99+' : String(unread);
       sideBadge.style.display = unread ? 'inline-flex' : 'none';
-      openBtn?.addEventListener('click', () => {
-        drawer.style.display = 'block';
-      });
-      closeBtn?.addEventListener('click', () => {
-        drawer.style.display = 'none';
-      });
+
+      const toggleDrawer = () => {
+        const isOpen = drawer.style.display === 'block';
+        drawer.style.display = isOpen ? 'none' : 'block';
+        openBtn?.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+      };
+      openBtn?.addEventListener('click', toggleDrawer);
     });
   }
 
