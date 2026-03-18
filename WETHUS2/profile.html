@@ -78,7 +78,6 @@
             </div>
           </label>
           <label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input type="checkbox" id="under22Confirm" name="under22Confirm" style="width:auto;"/> 만 22세 미만 학생임을 확인합니다. (PASS 연동 전 임시)</label>
-          <label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input type="checkbox" name="founderVerified" style="width:auto;"/> Founder 인증서 보유(개발용)</label>
           <div style="display:flex;justify-content:flex-end;gap:8px;">
             <button class="btn btn--secondary" type="button" id="profileEditCancel">취소</button>
             <button class="btn btn--primary" type="submit">저장</button>
@@ -89,7 +88,22 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-3"></script>
+  <div id="schoolSearchModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-school="true"></div>
+    <article class="modal-panel" style="max-width:760px;">
+      <button class="modal-close" id="schoolSearchClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 style="margin:0 0 10px;">학교 검색</h3>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input id="schoolSearchInput" placeholder="학교명을 입력하세요" style="flex:1;background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;" />
+          <button id="schoolSearchRun" class="btn btn--primary" type="button">검색</button>
+        </div>
+        <div id="schoolSearchResult" class="list-grid"></div>
+      </div>
+    </article>
+  </div>
+
+  <script src="app.js?v=20260318-4"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
 
@@ -145,6 +159,11 @@
         const under22Confirm = document.getElementById('under22Confirm');
         const ONBOARDING = new URLSearchParams(location.search).get('onboarding') === '1' || !u.onboardingComplete;
         const NEIS_KEY = '5c4d13bf833b45ec8c97f9f0fe885d6b';
+        const schoolModal = document.getElementById('schoolSearchModal');
+        const schoolSearchClose = document.getElementById('schoolSearchClose');
+        const schoolSearchInput = document.getElementById('schoolSearchInput');
+        const schoolSearchRun = document.getElementById('schoolSearchRun');
+        const schoolSearchResult = document.getElementById('schoolSearchResult');
 
         function fillProfileForm(force = false) {
           profileForm.elements.name.value = u.name || '';
@@ -154,7 +173,6 @@
           profileForm.elements.school.value = u.school || '';
           profileForm.elements.careerRaw.value = u.careerRaw || '';
           profileForm.elements.careerSummary.value = u.careerSummary || '';
-          profileForm.elements.founderVerified.checked = !!u.founderVerified;
           under22Confirm.checked = !!u.onboardingComplete;
           profileMsg.textContent = force ? '초기 프로필 설정을 완료해주세요.' : '';
         }
@@ -172,27 +190,79 @@
           document.body.style.overflow = '';
         }
 
+        async function runSchoolSearch() {
+          const q = (schoolSearchInput.value || schoolInput.value || '').trim();
+          if (!q) { profileMsg.textContent = '학교명을 입력해주세요.'; return; }
+          schoolSearchResult.innerHTML = '<article class="list-item"><p class="page-sub">검색 중...</p></article>';
+          try {
+            const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=${NEIS_KEY}&Type=json&SCHUL_NM=${encodeURIComponent(q)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            const rows = data?.schoolInfo?.[1]?.row || [];
+            if (!rows.length) {
+              schoolSearchResult.innerHTML = '<article class="list-item"><p class="page-sub">검색 결과가 없습니다.</p></article>';
+              return;
+            }
+            schoolSearchResult.innerHTML = rows.slice(0, 15).map(r => `
+              <article class="list-item" data-school="${(r.SCHUL_NM || '').replace(/"/g,'&quot;')} (${r.ATPT_OFCDC_SC_NM || ''})">
+                <h3 style="margin:0 0 4px;">${r.SCHUL_NM || ''}</h3>
+                <p style="margin:0 0 6px;">${r.ATPT_OFCDC_SC_NM || ''} · ${r.SCHUL_KND_SC_NM || ''}</p>
+                <div class="meta">${r.ORG_RDNMA || ''}</div>
+              </article>
+            `).join('');
+            schoolSearchResult.querySelectorAll('.list-item[data-school]').forEach(el => {
+              el.addEventListener('click', () => {
+                schoolInput.value = el.getAttribute('data-school') || '';
+                schoolModal.classList.remove('open');
+                schoolModal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                profileMsg.textContent = '학교 정보를 선택했습니다.';
+              });
+            });
+          } catch {
+            schoolSearchResult.innerHTML = '<article class="list-item"><p class="page-sub">학교 검색 중 오류가 발생했습니다.</p></article>';
+          }
+        }
+
         schoolSearchBtn.addEventListener('click', () => {
-          const q = (schoolInput.value || '').trim();
-          const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=${NEIS_KEY}&Type=json${q ? `&SCHUL_NM=${encodeURIComponent(q)}` : ''}`;
-          window.open(url, 'neisSchoolSearch', 'width=900,height=720');
-          profileMsg.textContent = '새 창에서 학교 검색 결과를 확인하고 학교명을 입력해 저장해주세요.';
+          schoolSearchInput.value = schoolInput.value || '';
+          schoolModal.classList.add('open');
+          schoolModal.setAttribute('aria-hidden', 'false');
+          document.body.style.overflow = 'hidden';
+          runSchoolSearch();
+        });
+        schoolSearchRun.addEventListener('click', runSchoolSearch);
+        schoolSearchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSchoolSearch(); });
+        schoolSearchClose.addEventListener('click', () => {
+          schoolModal.classList.remove('open');
+          schoolModal.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+        });
+        schoolModal.addEventListener('click', (e) => {
+          if (e.target && e.target.getAttribute('data-close-school') === 'true') {
+            schoolModal.classList.remove('open');
+            schoolModal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+          }
         });
 
         careerAiBtn.addEventListener('click', async () => {
           const raw = (careerRawEl.value || '').trim();
           if (!raw) { profileMsg.textContent = '경력사항을 먼저 입력해주세요.'; return; }
           try {
-            const out = await WETHUS.askGemini(`다음 경력사항을 두괄식으로 3개 항목으로 나눠 한국어로 요약해줘. 각 항목은 '핵심역량: 내용' 형태.\n${raw}`);
+            const out = await WETHUS.askGemini(`다음 경력사항을 -(전) / -(현) 형식의 짧은 불릿으로 정리해줘. 현재 진행중인 활동은 -(현), 과거 이력은 -(전)으로 표기하고, 최대 6줄. 설명은 짧게.\n${raw}`);
             careerSummaryEl.value = out;
+            profileMsg.textContent = 'AI 요약이 완료되었습니다.';
           } catch {
-            const chunks = raw.split(/[,\n]/).map(s => s.trim()).filter(Boolean).slice(0, 6);
-            careerSummaryEl.value = [
-              `핵심역량: ${chunks.slice(0,2).join(' · ') || '프로젝트 실행 경험'}`,
-              `협업경험: ${chunks.slice(2,4).join(' · ') || '팀 기반 협업 및 커뮤니케이션'}`,
-              `실행성과: ${chunks.slice(4,6).join(' · ') || '지속적인 실행과 개선 경험'}`
-            ].join('\n');
-            profileMsg.textContent = 'AI 연결이 불안정해 임시 요약을 생성했습니다.';
+            const items = raw.split(/[\n,]/).map(s => s.trim()).filter(Boolean);
+            const current = items.filter(x => /(현|현재|재직|운영중|진행중)/.test(x));
+            const past = items.filter(x => !current.includes(x));
+            const lines = [
+              ...past.slice(0,3).map(x => `-(전) ${x.replace(/^(전|현)\s*/,'')}`),
+              ...current.slice(0,3).map(x => `-(현) ${x.replace(/^(전|현)\s*/,'')}`)
+            ];
+            careerSummaryEl.value = lines.length ? lines.join('\n') : `-(전) 프로젝트 실행 경험\n-(현) WETHUS 커뮤니티 활동`;
+            profileMsg.textContent = 'AI 연결 지연으로 규칙 기반 요약을 적용했습니다.';
           }
         });
 
@@ -245,7 +315,6 @@
             school: fd.get('school'),
             careerRaw: fd.get('careerRaw'),
             careerSummary: fd.get('careerSummary'),
-            founderVerified: fd.get('founderVerified') === 'on',
             onboardingComplete: true
           });
           closeProfileEdit();
