@@ -280,14 +280,14 @@ a { color: inherit; text-decoration: none; }
 .dev-row { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
 .note { font-size: .85rem; color: var(--text-secondary); }
 
-.profile-hero { display: flex; gap: 20px; align-items: center; background: var(--surface); border: 1px solid var(--border); padding: 18px; margin-bottom: 16px; }
-.profile-avatar { width: 88px; height: 88px; border-radius: 50%; background: #222; display: grid; place-items: center; font-size: 1.9rem; font-weight: 800; border: 2px solid var(--orange); }
-.profile-main h2 { margin: 0; font-size: 1.3rem; }
-.profile-topline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
-.profile-nickname { color: var(--text-secondary); font-weight: 700; }
-.profile-bio { margin: 0 0 8px; color: var(--text-secondary); }
-.profile-stats { display: flex; gap: 14px; flex-wrap: wrap; color: var(--text-secondary); font-size: .9rem; }
-.profile-stats strong { color: var(--text-primary); }
+.profile-hero { display: flex; gap: 20px; align-items: center; background: linear-gradient(180deg,#171717 0%,#101010 100%); border: 1px solid var(--border); padding: 20px; margin-bottom: 16px; border-radius: 14px; box-shadow: 0 10px 24px rgba(0,0,0,.22); }
+.profile-avatar { width: 92px; height: 92px; border-radius: 50%; background: radial-gradient(circle at 30% 25%, rgba(255,126,26,.28), rgba(255,106,0,.06)); display: grid; place-items: center; font-size: 1.95rem; font-weight: 900; border: 1px solid rgba(255,106,0,.45); color:#ff8f35; }
+.profile-main h2 { margin: 0; font-size: 1.46rem; letter-spacing: -.01em; }
+.profile-topline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 7px; }
+.profile-nickname { color: #b7b7b7; font-weight: 700; }
+.profile-bio { margin: 0 0 8px; color: #e2e2e2; line-height: 1.65; }
+.profile-stats { display: flex; gap: 14px; flex-wrap: wrap; color: #b6b6b6; font-size: .91rem; }
+.profile-stats strong { color: #f6f6f6; font-weight: 800; }
 .verify-badge { background: rgba(255,106,0,.12); border: 1px solid var(--orange); color: var(--orange); padding: 2px 8px; font-size: .75rem; font-weight: 800; border-radius: 999px; }
 .profile-card { background: var(--surface); border: 1px solid var(--border); padding: 18px; margin-bottom: 18px; }
 .projects-head-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
