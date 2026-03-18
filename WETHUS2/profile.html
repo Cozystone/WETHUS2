@@ -327,15 +327,23 @@
           if (!raw) { profileMsg.textContent = '경력사항을 먼저 입력해주세요.'; return; }
           profileMsg.textContent = 'AI가 경력을 요약 중입니다...';
 
-          const baseCandidates = [
-            window.WETHUS_AI_ENDPOINT,
-            'http://127.0.0.1:8787',
-            'http://localhost:8787'
-          ].filter(Boolean);
+          const isLocalHost = ['localhost', '127.0.0.1'].includes(location.hostname);
+          const baseCandidates = isLocalHost
+            ? [
+                window.WETHUS_AI_ENDPOINT,
+                window.WETHUS_API_BASE,
+                'http://127.0.0.1:8787',
+                'http://localhost:8787'
+              ]
+            : [
+                window.WETHUS_AI_ENDPOINT,
+                window.WETHUS_API_BASE || 'https://wethus-api.onrender.com'
+              ];
+          const candidates = Array.from(new Set(baseCandidates.filter(Boolean)));
           let backendErr = '';
           let success = false;
 
-          for (const base of baseCandidates) {
+          for (const base of candidates) {
             const aiEndpoint = base.replace(/\/$/, '') + '/ai/career-summary';
             try {
               let aiData = null;
@@ -365,7 +373,7 @@
           }
 
           if (!success) {
-            profileMsg.textContent = `AI 요약에 실패했습니다. (${backendErr || 'backend 연결 실패'})`;
+            profileMsg.textContent = `AI 요약에 실패했습니다. (${backendErr || '인증/AI 서버 연결 실패'})`;
           }
         });
 
