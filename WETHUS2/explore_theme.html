@@ -30,12 +30,12 @@
   </header>
 
   <main class="container page-main page-main--standard page-main--explore">
-    <section class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+    <section class="page-header" style="display:flex;align-items:flex-start;justify-content:flex-start;gap:12px;">
+      <a href="explore.html" class="btn btn--secondary" aria-label="뒤로가기" style="min-width:72px;padding:10px 18px;">← 뒤로</a>
       <div>
         <h1 class="page-title" id="themeTitle">카테고리 탐색</h1>
         <p class="page-sub" id="themeSub">지금 합류 가능한 팀을 빠르게 찾으세요.</p>
       </div>
-      <a href="explore.html" class="btn btn--secondary" aria-label="뒤로가기">←</a>
     </section>
 
     <section class="search-wrap">
@@ -146,7 +146,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-22"></script>
+  <script src="app.js?v=20260318-23"></script>
   <script>
     WETHUS.requireAuth();
     const authLink = document.querySelector('.js-auth-link');
