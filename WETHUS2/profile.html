@@ -146,7 +146,7 @@
         const ONBOARDING = new URLSearchParams(location.search).get('onboarding') === '1' || !u.onboardingComplete;
         const NEIS_KEY = '5c4d13bf833b45ec8c97f9f0fe885d6b';
 
-        function openProfileEdit(force = false) {
+        function fillProfileForm(force = false) {
           profileForm.elements.name.value = u.name || '';
           profileForm.elements.nickname.value = u.nickname || '';
           profileForm.elements.bio.value = u.bio || '';
@@ -157,6 +157,10 @@
           profileForm.elements.founderVerified.checked = !!u.founderVerified;
           under22Confirm.checked = !!u.onboardingComplete;
           profileMsg.textContent = force ? '초기 프로필 설정을 완료해주세요.' : '';
+        }
+
+        function openProfileEdit(force = false) {
+          fillProfileForm(force);
           profileEditModal.classList.add('open');
           profileEditModal.setAttribute('aria-hidden', 'false');
           document.body.style.overflow = 'hidden';
@@ -199,6 +203,28 @@
           if (!ONBOARDING && e.target && e.target.getAttribute('data-close-profile') === 'true') closeProfileEdit();
         });
 
+        if (ONBOARDING) {
+          // 팝업 대신 전체 페이지 온보딩 폼으로 전환
+          fillProfileForm(true);
+          const onboardingSection = document.createElement('section');
+          onboardingSection.className = 'profile-card';
+          onboardingSection.innerHTML = `
+            <h2 style="margin:0 0 8px;font-size:1.35rem;">초기 프로필 설정</h2>
+            <p class="page-sub" style="margin:0 0 14px;">홈으로 이동하기 전에 프로필 정보를 먼저 설정해주세요.</p>
+          `;
+
+          const pageHeader = document.querySelector('.page-header');
+          pageHeader?.insertAdjacentElement('afterend', onboardingSection);
+          onboardingSection.appendChild(profileForm);
+          onboardingSection.appendChild(profileMsg);
+
+          hero.style.display = 'none';
+          document.querySelectorAll('.projects-head-row, #myProjects, #participatingProjects').forEach(el => el.style.display = 'none');
+          profileEditModal.remove();
+          const cancelBtn = document.getElementById('profileEditCancel');
+          if (cancelBtn) cancelBtn.style.display = 'none';
+        }
+
         profileForm.addEventListener('submit', (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
@@ -226,7 +252,6 @@
           location.href = 'index.html';
         });
 
-        if (ONBOARDING) openProfileEdit(true);
       }
 
       const list = WETHUS.myProjects();
