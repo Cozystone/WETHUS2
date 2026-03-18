@@ -4,8 +4,12 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const PORT = Number(process.env.PORT || 8787);
