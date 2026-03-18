@@ -454,10 +454,18 @@
       reader.readAsDataURL(file);
     }
 
+    let lastFilePickerAt = 0;
+    function openFilePicker() {
+      const now = Date.now();
+      if (now - lastFilePickerAt < 350) return;
+      lastFilePickerAt = now;
+      coverFile.click();
+    }
+
     pickFileBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      coverFile.click();
+      openFilePicker();
     });
     coverFile.addEventListener('change', (e) => handleFile(e.target.files[0]));
 
@@ -554,7 +562,7 @@
     });
     dropzone.addEventListener('click', (e) => {
       if (e.target.closest('button')) return;
-      coverFile.click();
+      openFilePicker();
     });
 
     removeImageBtn.addEventListener('click', (e) => {
