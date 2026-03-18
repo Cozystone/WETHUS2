@@ -60,6 +60,7 @@ app.post('/auth/google', async (req, res) => {
 
     return res.json({ ok: true, user });
   } catch (err) {
+    console.error('[auth/google] failed:', err?.message || err);
     return res.status(401).json({ ok: false, error: err?.message || 'Google auth failed' });
   }
 });

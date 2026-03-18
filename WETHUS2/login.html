@@ -118,9 +118,9 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ credential })
         });
-        if (!res.ok) throw new Error('Google 인증 서버 검증에 실패했습니다.');
-        const data = await res.json();
-        if (!data?.ok || !data?.user) throw new Error('Google 사용자 정보를 불러오지 못했습니다.');
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || 'Google 인증 서버 검증에 실패했습니다.');
+        if (!data?.ok || !data?.user) throw new Error(data?.error || 'Google 사용자 정보를 불러오지 못했습니다.');
 
         WETHUS.oauthLoginGoogle(data.user);
         location.href = 'index.html';
