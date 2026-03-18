@@ -375,8 +375,10 @@
 
   function oauthLoginGoogle({ sub, email, name, picture }) {
     const s = load();
+    let isNew = false;
     let user = s.users.find(u => (u.googleSub && u.googleSub === sub) || (u.email && u.email === email));
     if (!user) {
+      isNew = true;
       user = {
         id: uid(),
         name: name || email?.split('@')[0] || 'Google User',
@@ -388,6 +390,11 @@
         profileImage: picture || '',
         plan: 'free',
         googleSub: sub,
+        age: null,
+        school: '',
+        careerRaw: '',
+        careerSummary: '',
+        onboardingComplete: false,
         createdAt: new Date().toISOString()
       };
       s.users.push(user);
@@ -399,7 +406,7 @@
     s.currentUserId = user.id;
     s.devMode = false;
     save(s);
-    return user;
+    return { user, isNew };
   }
 
   function registerUser({ name, nickname, email, password }) {
@@ -526,6 +533,15 @@
     Object.assign(target, patch || {});
     save(s);
     return target;
+  }
+
+  function updateCurrentUserProfile(patch) {
+    const s = load();
+    const u = s.users.find(x => x.id === s.currentUserId);
+    if (!u) return null;
+    Object.assign(u, patch || {});
+    save(s);
+    return u;
   }
 
   function listNotifications(limit = 30) {
@@ -933,6 +949,7 @@
     toggleLike,
     addComment,
     updateProject,
+    updateCurrentUserProfile,
     currentPlan,
     setCurrentUserPlan,
     listNotifications,

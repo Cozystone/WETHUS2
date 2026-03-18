@@ -61,6 +61,23 @@
           <label>이름 <input name="name" required /></label>
           <label>별명 <input name="nickname" required /></label>
           <label>자기소개 <textarea name="bio" placeholder="어떤 프로젝트를 왜 하는지 간단히 소개해보세요."></textarea></label>
+          <label>나이 <input name="age" type="number" min="10" max="30" placeholder="만 나이" required /></label>
+          <label>학교 정보
+            <div style="display:flex;gap:8px;">
+              <input id="schoolInput" name="school" placeholder="학교명 검색" />
+              <button id="schoolSearchBtn" class="btn btn--secondary" type="button">검색</button>
+            </div>
+          </label>
+          <label>경력사항(나열)
+            <textarea id="careerRaw" name="careerRaw" placeholder="예: 영화제 출품 2회, React 앱 제작, 동아리 회장"></textarea>
+          </label>
+          <label>경력 요약(AI 정리)
+            <div style="display:flex;gap:8px;align-items:flex-start;">
+              <textarea id="careerSummary" name="careerSummary" placeholder="AI가 두괄식으로 요약합니다."></textarea>
+              <button id="careerAiBtn" class="btn btn--secondary" type="button">AI 정리</button>
+            </div>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input type="checkbox" id="under22Confirm" name="under22Confirm" style="width:auto;"/> 만 22세 미만 학생임을 확인합니다. (PASS 연동 전 임시)</label>
           <label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input type="checkbox" name="founderVerified" style="width:auto;"/> Founder 인증서 보유(개발용)</label>
           <div style="display:flex;justify-content:flex-end;gap:8px;">
             <button class="btn btn--secondary" type="button" id="profileEditCancel">취소</button>
@@ -72,7 +89,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-1"></script>
+  <script src="app.js?v=20260318-2"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
 
@@ -93,7 +110,7 @@
       const profileEditClose = document.getElementById('profileEditClose');
       const profileEditCancel = document.getElementById('profileEditCancel');
 
-      const fallbackUser = { name: '개발자 모드', nickname: 'dev_mode', email: 'dev@local', bio: '임시 세션으로 로그인됨', founderVerified: false, profileImage: '' };
+      const fallbackUser = { name: '개발자 모드', nickname: 'dev_mode', email: 'dev@local', bio: '임시 세션으로 로그인됨', founderVerified: false, profileImage: '', age: 17, school: '', careerRaw: '', careerSummary: '', onboardingComplete: true };
       const user = u || fallbackUser;
       const founderBadge = user.founderVerified ? '<span class="verify-badge">Founder 인증</span>' : '';
 
@@ -106,6 +123,7 @@
             ${founderBadge}
           </div>
           <p class="profile-bio">${user.bio || '아직 소개가 없습니다. 프로젝트를 시작해보세요.'}</p>
+          <p class="meta" style="margin:0 0 6px;">${user.school ? user.school + ' · ' : ''}${user.age ? '만 ' + user.age + '세' : ''}</p>
           <div class="profile-stats">
             <span><strong>${WETHUS.myProjects().length}</strong> 프로젝트</span>
             <span><strong>${WETHUS.listProjects().filter(p => p.founderId === (u ? u.id : 'dev-temp')).length}</strong> 등록</span>
@@ -119,13 +137,26 @@
         const profileForm = document.getElementById('profileForm');
         const profileMsg = document.getElementById('profileMsg');
         const profileEditOpen = document.getElementById('profileEditOpen');
+        const schoolInput = document.getElementById('schoolInput');
+        const schoolSearchBtn = document.getElementById('schoolSearchBtn');
+        const careerRawEl = document.getElementById('careerRaw');
+        const careerSummaryEl = document.getElementById('careerSummary');
+        const careerAiBtn = document.getElementById('careerAiBtn');
+        const under22Confirm = document.getElementById('under22Confirm');
+        const ONBOARDING = new URLSearchParams(location.search).get('onboarding') === '1' || !u.onboardingComplete;
+        const NEIS_KEY = '5c4d13bf833b45ec8c97f9f0fe885d6b';
 
-        function openProfileEdit() {
+        function openProfileEdit(force = false) {
           profileForm.elements.name.value = u.name || '';
           profileForm.elements.nickname.value = u.nickname || '';
           profileForm.elements.bio.value = u.bio || '';
+          profileForm.elements.age.value = u.age || '';
+          profileForm.elements.school.value = u.school || '';
+          profileForm.elements.careerRaw.value = u.careerRaw || '';
+          profileForm.elements.careerSummary.value = u.careerSummary || '';
           profileForm.elements.founderVerified.checked = !!u.founderVerified;
-          profileMsg.textContent = '';
+          under22Confirm.checked = !!u.onboardingComplete;
+          profileMsg.textContent = force ? '초기 프로필 설정을 완료해주세요.' : '';
           profileEditModal.classList.add('open');
           profileEditModal.setAttribute('aria-hidden', 'false');
           document.body.style.overflow = 'hidden';
@@ -137,26 +168,71 @@
           document.body.style.overflow = '';
         }
 
-        profileEditOpen?.addEventListener('click', openProfileEdit);
-        profileEditClose?.addEventListener('click', closeProfileEdit);
-        profileEditCancel?.addEventListener('click', closeProfileEdit);
+        schoolSearchBtn.addEventListener('click', async () => {
+          const q = (schoolInput.value || '').trim();
+          if (!q) return;
+          try {
+            const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=${NEIS_KEY}&Type=json&SCHUL_NM=${encodeURIComponent(q)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            const row = data?.schoolInfo?.[1]?.row?.[0];
+            if (row) {
+              schoolInput.value = `${row.SCHUL_NM} (${row.ATPT_OFCDC_SC_NM})`;
+              profileMsg.textContent = '학교 정보를 찾았습니다.';
+            } else {
+              profileMsg.textContent = '일치하는 학교를 찾지 못했습니다.';
+            }
+          } catch {
+            profileMsg.textContent = '학교 검색 중 오류가 발생했습니다.';
+          }
+        });
+
+        careerAiBtn.addEventListener('click', async () => {
+          const raw = (careerRawEl.value || '').trim();
+          if (!raw) { profileMsg.textContent = '경력사항을 먼저 입력해주세요.'; return; }
+          try {
+            const out = await WETHUS.askGemini(`다음 경력사항을 두괄식으로 3개 항목으로 나눠 한국어로 요약해줘. 각 항목은 '핵심역량: 내용' 형태.\n${raw}`);
+            careerSummaryEl.value = out;
+          } catch {
+            profileMsg.textContent = 'AI 경력 요약에 실패했습니다.';
+          }
+        });
+
+        profileEditOpen?.addEventListener('click', () => openProfileEdit(false));
+        profileEditClose?.addEventListener('click', () => { if (!ONBOARDING) closeProfileEdit(); });
+        profileEditCancel?.addEventListener('click', () => { if (!ONBOARDING) closeProfileEdit(); });
         profileEditModal?.addEventListener('click', (e) => {
-          if (e.target && e.target.getAttribute('data-close-profile') === 'true') closeProfileEdit();
+          if (!ONBOARDING && e.target && e.target.getAttribute('data-close-profile') === 'true') closeProfileEdit();
         });
 
         profileForm.addEventListener('submit', (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
-          const s = WETHUS.getState();
-          const target = s.users.find(x => x.id === u.id);
-          target.name = fd.get('name');
-          target.nickname = fd.get('nickname');
-          target.bio = fd.get('bio');
-          target.founderVerified = fd.get('founderVerified') === 'on';
-          localStorage.setItem('wethus_v1', JSON.stringify(s));
+          const age = Number(fd.get('age') || 0);
+          if (!age || age >= 22) {
+            profileMsg.textContent = '현재는 만 22세 미만 학생만 가입 가능합니다.';
+            return;
+          }
+          if (!under22Confirm.checked) {
+            profileMsg.textContent = '학생/연령 확인에 동의해주세요.';
+            return;
+          }
+          WETHUS.updateCurrentUserProfile({
+            name: fd.get('name'),
+            nickname: fd.get('nickname'),
+            bio: fd.get('bio'),
+            age,
+            school: fd.get('school'),
+            careerRaw: fd.get('careerRaw'),
+            careerSummary: fd.get('careerSummary'),
+            founderVerified: fd.get('founderVerified') === 'on',
+            onboardingComplete: true
+          });
           closeProfileEdit();
-          location.reload();
+          location.href = 'index.html';
         });
+
+        if (ONBOARDING) openProfileEdit(true);
       }
 
       const list = WETHUS.myProjects();
