@@ -8,7 +8,7 @@
   --orange: #ff6a00;
   --orange-bright: #ff7e1a;
   --orange-deep: #d94f00;
-  --orange-glass-main: #ff741e;
+  --orange-glass-main: #FF6A00;
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --container: 1200px;
 
@@ -60,8 +60,8 @@ a { color: inherit; text-decoration: none; }
 
 .profile-chip-btn {
   display:flex; align-items:center; gap:8px;
-  background: linear-gradient(135deg, rgba(255,152,72,.56), rgba(255,110,22,.46));
-  color:#fff; border:1px solid rgba(255,214,170,.68); border-radius:999px; padding:5px 11px 5px 6px;
+  background: linear-gradient(135deg, rgba(255,122,26,.86), rgba(255,106,0,.78));
+  color:#fff; border:1px solid rgba(255,224,194,.76); border-radius:12px; padding:5px 11px 5px 6px;
   cursor:pointer; font:inherit;
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -70,8 +70,8 @@ a { color: inherit; text-decoration: none; }
 }
 .profile-chip-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.34); }
 .profile-chip-btn--premium {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--orange-glass-main) 82%, #ffd9bb), color-mix(in srgb, var(--orange-glass-main) 84%, #351b08));
-  border-color: rgba(255,212,184,.74);
+  background: linear-gradient(135deg, rgba(255,126,30,.88), rgba(255,106,0,.82));
+  border-color: rgba(255,220,190,.78);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.30), 0 10px 22px rgba(120,70,16,.26);
 }
 .profile-chip-btn--master {
