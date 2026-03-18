@@ -78,7 +78,7 @@
 
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=20260318-29"></script>
+  <script src="app.js?v=20260318-30"></script>
   <script>
     const msg = document.getElementById('authMsg');
     const tabLogin = document.getElementById('tabLogin');
@@ -87,7 +87,7 @@
     const GOOGLE_CLIENT_ID = window.WETHUS_GOOGLE_CLIENT_ID || '196934770979-6ntmgcrs6k6jkifskspasg4uie5irgec.apps.googleusercontent.com';
     const isLocalHost = ['localhost', '127.0.0.1'].includes(location.hostname);
     const localBases = ['http://127.0.0.1:8787', 'http://localhost:8787'];
-    const remoteBase = window.WETHUS_API_BASE || '';
+    const remoteBase = window.WETHUS_API_BASE || 'https://wethus-api.onrender.com';
     const AUTH_BASES = isLocalHost
       ? [remoteBase, `${location.protocol}//${location.hostname}:8787`, ...localBases].filter(Boolean)
       : [remoteBase].filter(Boolean);
