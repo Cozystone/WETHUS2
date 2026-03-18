@@ -86,11 +86,13 @@ a { color: inherit; text-decoration: none; }
 .profile-chip-dropdown {
   right:0;
   width:240px;
-  background: #ff8a2b;
-  border-color: #ffd7b0;
+  opacity: 1 !important;
+  background: #ff8a2b !important;
+  background-color: #ff8a2b !important;
+  border: 1px solid #ffd7b0 !important;
   box-shadow: 0 16px 30px rgba(88,52,14,.34), inset 0 1px 0 rgba(255,255,255,.36);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 .profile-chip-dropdown .notify-item { border-bottom:1px solid rgba(255,255,255,.14); }
 .profile-chip-dropdown .notify-item p { color:#d9d9d9; }
