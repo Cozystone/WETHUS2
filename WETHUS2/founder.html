@@ -883,15 +883,12 @@
         let finalImage = imageData;
         if (!finalImage && aiImageSelected) {
           msg.textContent = 'AI가 메인 이미지를 생성 중입니다...';
-          const category = resolvedCategory();
-          const title = String(fd.get('title') || '').trim();
-          const desc = String(fd.get('description') || '').trim();
-          let keyword = `${category} ${title} cinematic poster dark orange accent`;
-          try {
-            const k = await WETHUS.askGemini(`Create one concise English visual prompt (max 10 words) for a cinematic poster image. Category: ${category}. Title: ${title}. Description: ${desc.slice(0, 300)}`);
-            keyword = String(k || '').replace(/[\n\r]/g, ' ').trim().slice(0, 120) || keyword;
-          } catch (_) {}
-          finalImage = `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword)}`;
+          await generateAiImage();
+          finalImage = imageData;
+        }
+        if (!finalImage) {
+          const title = String(fd.get('title') || 'project').trim();
+          finalImage = `https://picsum.photos/seed/wethus-cover-${encodeURIComponent(title)}-${Date.now()}/1200/700`;
         }
 
         WETHUS.addProject({

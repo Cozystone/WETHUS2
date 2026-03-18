@@ -573,6 +573,53 @@
     return u;
   }
 
+  function upsertCloudUser(user) {
+    const s = load();
+    const email = String(user?.email || '').trim().toLowerCase();
+    let target = s.users.find(u => (user?.id && u.id === user.id) || (email && String(u.email || '').toLowerCase() === email));
+    if (!target) {
+      target = {
+        id: user?.id || uid(),
+        name: user?.name || 'User',
+        nickname: user?.nickname || user?.name || 'user',
+        email,
+        password: '',
+        bio: user?.bio || '',
+        founderVerified: !!user?.founderVerified,
+        profileImage: user?.profileImage || '',
+        plan: user?.plan || 'free',
+        age: user?.age ?? null,
+        school: user?.school || '',
+        careerRaw: user?.careerRaw || '',
+        careerSummary: user?.careerSummary || '',
+        onboardingComplete: user?.onboardingComplete === undefined ? false : !!user?.onboardingComplete,
+        createdAt: user?.createdAt || new Date().toISOString(),
+        googleSub: user?.googleSub || ''
+      };
+      s.users.push(target);
+    } else {
+      Object.assign(target, {
+        id: user?.id || target.id,
+        name: user?.name || target.name,
+        nickname: user?.nickname || target.nickname,
+        email: email || target.email,
+        bio: user?.bio ?? target.bio,
+        founderVerified: user?.founderVerified ?? target.founderVerified,
+        profileImage: user?.profileImage ?? target.profileImage,
+        plan: user?.plan || target.plan,
+        school: user?.school ?? target.school,
+        careerRaw: user?.careerRaw ?? target.careerRaw,
+        careerSummary: user?.careerSummary ?? target.careerSummary,
+        onboardingComplete: user?.onboardingComplete === undefined ? target.onboardingComplete : !!user.onboardingComplete,
+        googleSub: user?.googleSub ?? target.googleSub
+      });
+    }
+    s.currentUserId = target.id;
+    s.devMode = false;
+    save(s);
+    return target;
+  }
+
   function listNotifications(limit = 30) {
     const s = load();
     const actor = currentActorId();
@@ -1015,6 +1062,7 @@
     addComment,
     updateProject,
     updateCurrentUserProfile,
+    upsertCloudUser,
     currentPlan,
     setCurrentUserPlan,
     listNotifications,

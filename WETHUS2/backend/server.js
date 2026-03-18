@@ -6,6 +6,8 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import fs from 'fs';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +29,33 @@ const PASS_ERROR_URL = process.env.PASS_ERROR_URL || 'http://localhost:8787/pass
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:8080,http://127.0.0.1:8080').split(',').map(s => s.trim());
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+const DATA_DIR = path.join(__dirname, 'data');
+const USERS_DB = path.join(DATA_DIR, 'users.json');
+
+function ensureDb() {
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  if (!fs.existsSync(USERS_DB)) fs.writeFileSync(USERS_DB, JSON.stringify({ users: [] }, null, 2));
+}
+function readUsers() {
+  ensureDb();
+  try {
+    const raw = fs.readFileSync(USERS_DB, 'utf8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed.users) ? parsed.users : [];
+  } catch {
+    return [];
+  }
+}
+function writeUsers(users) {
+  ensureDb();
+  fs.writeFileSync(USERS_DB, JSON.stringify({ users }, null, 2));
+}
+function normEmail(email) {
+  return String(email || '').trim().toLowerCase();
+}
+function hashPw(pw) {
+  return crypto.createHash('sha256').update(String(pw || '')).digest('hex');
+}
 
 app.use(cors({
   origin: (origin, cb) => {
@@ -161,6 +190,56 @@ app.post('/pass/start', (req, res) => {
   });
 });
 
+app.post('/auth/register', (req, res) => {
+  try {
+    const name = String(req.body?.name || '').trim();
+    const nickname = String(req.body?.nickname || '').trim() || name;
+    const email = normEmail(req.body?.email);
+    const password = String(req.body?.password || '');
+    if (!name || !email || !password) return res.status(400).json({ ok: false, error: 'name/email/password required' });
+    const users = readUsers();
+    if (users.some(u => normEmail(u.email) === email)) return res.status(409).json({ ok: false, error: '이미 가입된 이메일입니다.' });
+    const now = new Date().toISOString();
+    const user = {
+      id: crypto.randomUUID(),
+      name,
+      nickname,
+      email,
+      passwordHash: hashPw(password),
+      plan: 'free',
+      founderVerified: false,
+      profileImage: '',
+      bio: '',
+      onboardingComplete: false,
+      school: '',
+      careerRaw: '',
+      careerSummary: '',
+      createdAt: now,
+      updatedAt: now
+    };
+    users.push(user);
+    writeUsers(users);
+    return res.json({ ok: true, user: { ...user, passwordHash: undefined } });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'register failed' });
+  }
+});
+
+app.post('/auth/login', (req, res) => {
+  try {
+    const email = normEmail(req.body?.email);
+    const password = String(req.body?.password || '');
+    if (!email || !password) return res.status(400).json({ ok: false, error: 'email/password required' });
+    const users = readUsers();
+    const user = users.find(u => normEmail(u.email) === email);
+    if (!user) return res.status(404).json({ ok: false, error: '가입된 계정이 없습니다.' });
+    if (user.passwordHash !== hashPw(password)) return res.status(401).json({ ok: false, error: '비밀번호가 일치하지 않습니다.' });
+    return res.json({ ok: true, user: { ...user, passwordHash: undefined } });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'login failed' });
+  }
+});
+
 app.post('/auth/google', async (req, res) => {
   try {
     if (!GOOGLE_CLIENT_ID) return res.status(500).json({ ok: false, error: 'GOOGLE_CLIENT_ID not configured' });
@@ -176,14 +255,39 @@ app.post('/auth/google', async (req, res) => {
       return res.status(401).json({ ok: false, error: 'Invalid Google token payload' });
     }
 
-    const user = {
-      sub: payload.sub,
-      email: payload.email,
-      name: payload.name || payload.email,
-      picture: payload.picture || ''
-    };
+    const email = normEmail(payload.email);
+    const users = readUsers();
+    let user = users.find(u => (u.googleSub && u.googleSub === payload.sub) || normEmail(u.email) === email);
+    const now = new Date().toISOString();
+    if (!user) {
+      user = {
+        id: crypto.randomUUID(),
+        name: payload.name || email,
+        nickname: String(payload.name || email.split('@')[0] || 'google_user').replace(/\s+/g, ''),
+        email,
+        passwordHash: '',
+        plan: 'free',
+        founderVerified: false,
+        profileImage: payload.picture || '',
+        bio: '',
+        onboardingComplete: false,
+        school: '',
+        careerRaw: '',
+        careerSummary: '',
+        googleSub: payload.sub,
+        createdAt: now,
+        updatedAt: now
+      };
+      users.push(user);
+    } else {
+      user.googleSub = payload.sub;
+      user.name = payload.name || user.name;
+      user.profileImage = payload.picture || user.profileImage || '';
+      user.updatedAt = now;
+    }
+    writeUsers(users);
 
-    const token = jwt.sign({ sub: user.sub, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ sub: payload.sub, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
     res.cookie('wethus_session', token, {
       httpOnly: true,
       secure: false,
@@ -191,7 +295,7 @@ app.post('/auth/google', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    return res.json({ ok: true, user });
+    return res.json({ ok: true, user: { ...user, passwordHash: undefined } });
   } catch (err) {
     console.error('[auth/google] failed:', err?.message || err);
     return res.status(401).json({ ok: false, error: err?.message || 'Google auth failed' });

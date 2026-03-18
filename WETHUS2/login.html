@@ -85,13 +85,11 @@
     const googleHint = document.getElementById('googleHint');
 
     const GOOGLE_CLIENT_ID = window.WETHUS_GOOGLE_CLIENT_ID || '196934770979-6ntmgcrs6k6jkifskspasg4uie5irgec.apps.googleusercontent.com';
-    const hostBasedEndpoint = `${location.protocol}//${location.hostname}:8787/auth/google`;
-    const GOOGLE_AUTH_ENDPOINTS = [
-      window.WETHUS_GOOGLE_AUTH_ENDPOINT,
-      hostBasedEndpoint,
-      'http://127.0.0.1:8787/auth/google',
-      'http://localhost:8787/auth/google'
-    ].filter(Boolean);
+    const hostBase = `${location.protocol}//${location.hostname}:8787`;
+    const AUTH_BASES = [window.WETHUS_API_BASE, hostBase, 'http://127.0.0.1:8787', 'http://localhost:8787'].filter(Boolean);
+    const GOOGLE_AUTH_ENDPOINTS = AUTH_BASES.map(b => `${b.replace(/\/$/, '')}/auth/google`);
+    const LOGIN_ENDPOINTS = AUTH_BASES.map(b => `${b.replace(/\/$/, '')}/auth/login`);
+    const REGISTER_ENDPOINTS = AUTH_BASES.map(b => `${b.replace(/\/$/, '')}/auth/register`);
     const tabSignup = document.getElementById('tabSignup');
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
@@ -126,33 +124,37 @@
       msg.textContent = '';
     }
 
+    async function postWithFallback(endpoints, body) {
+      let lastErr = null;
+      for (const endpoint of endpoints) {
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body || {})
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data?.error || `요청 실패 (${res.status})`);
+          return data;
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error('백엔드 연결 실패');
+    }
+
     async function handleGoogleCredential(response) {
       try {
         const credential = response?.credential;
         if (!credential) throw new Error('Google 인증 토큰이 비어 있습니다.');
 
-        let data = null;
-        let lastErr = null;
-        for (const endpoint of GOOGLE_AUTH_ENDPOINTS) {
-          try {
-            const res = await fetch(endpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ credential })
-            });
-            const json = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(json?.error || 'Google 인증 서버 검증에 실패했습니다.');
-            if (!json?.ok || !json?.user) throw new Error(json?.error || 'Google 사용자 정보를 불러오지 못했습니다.');
-            data = json;
-            break;
-          } catch (e) {
-            lastErr = e;
-          }
-        }
-        if (!data) throw new Error(lastErr?.message || 'Google 인증 서버에 연결하지 못했습니다.');
+        const data = await postWithFallback(GOOGLE_AUTH_ENDPOINTS, { credential });
+        if (!data?.ok || !data?.user) throw new Error(data?.error || 'Google 사용자 정보를 불러오지 못했습니다.');
 
-        const result = WETHUS.oauthLoginGoogle(data.user);
-        if (result?.isNew) {
+        const before = WETHUS.currentUser();
+        const user = WETHUS.upsertCloudUser(data.user);
+        const isNew = !before || before.email !== user.email;
+        if (!user?.onboardingComplete || isNew) {
           location.href = 'profile.html?onboarding=1';
           return;
         }
@@ -249,20 +251,21 @@
     });
     agreeChk.addEventListener('change', validateSignupForm);
 
-    loginForm.addEventListener('submit', (e) => {
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!window.WETHUS) return;
       const fd = new FormData(loginForm);
       const email = String(fd.get('email') || '').trim().toLowerCase();
       try {
-        WETHUS.loginUser({ email, password: fd.get('password') });
+        const data = await postWithFallback(LOGIN_ENDPOINTS, { email, password: fd.get('password') });
+        WETHUS.upsertCloudUser(data.user || {});
         if (rememberEmail.checked) localStorage.setItem('wethus_saved_email', email);
         else localStorage.removeItem('wethus_saved_email');
         location.href = 'index.html';
-      } catch (err) { msg.textContent = err.message; }
+      } catch (err) { msg.textContent = err.message || '로그인 실패'; }
     });
 
-    signupForm.addEventListener('submit', (e) => {
+    signupForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!window.WETHUS) return;
       if (!validateSignupForm()) {
@@ -272,14 +275,15 @@
       const fd = new FormData(signupForm);
       const email = String(fd.get('email') || '').trim().toLowerCase();
       try {
-        WETHUS.registerUser({
+        const data = await postWithFallback(REGISTER_ENDPOINTS, {
           name: fd.get('name'),
           nickname: fd.get('nickname'),
           email,
           password: fd.get('password')
         });
+        WETHUS.upsertCloudUser(data.user || {});
         location.href = 'profile.html?onboarding=1';
-      } catch (err) { msg.textContent = err.message; }
+      } catch (err) { msg.textContent = err.message || '회원가입 실패'; }
     });
 
     document.getElementById('devModeBtn').addEventListener('click', () => {
