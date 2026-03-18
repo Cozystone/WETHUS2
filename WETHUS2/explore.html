@@ -28,7 +28,7 @@
       top: 0;
       bottom: 0;
       right: var(--right);
-      width: 34%;
+      width: 30%;
       clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
       padding: 26px 16px 28px;
       color: #fff;
@@ -42,16 +42,26 @@
       justify-content: flex-end;
       gap: 8px;
       overflow: hidden;
+      isolation: isolate;
     }
-    .stack-card h3 { margin: 0; font-size: 1.22rem; letter-spacing: -.01em; text-shadow: 0 2px 10px rgba(0,0,0,.35); }
-    .stack-card p { margin: 3px 0 0; font-size: .82rem; color: #fff; opacity:.96; text-shadow: 0 1px 8px rgba(0,0,0,.35); }
-    .stack-card em { font-style: normal; color: #fff; font-size: .68rem; font-weight: 800; letter-spacing: .1em; opacity:.94; }
-    .stack-card:hover { transform: translateX(18px); filter: saturate(1.18) brightness(1.1); }
+    .stack-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,.02) 0%, rgba(0,0,0,.22) 68%, rgba(0,0,0,.36) 100%);
+      z-index: 0;
+      pointer-events: none;
+    }
+    .stack-card > * { position: relative; z-index: 1; }
+    .stack-card h3 { margin: 0; font-size: 1.22rem; letter-spacing: -.01em; text-shadow: 0 2px 10px rgba(0,0,0,.45); }
+    .stack-card p { margin: 3px 0 0; font-size: .82rem; color: #fff; opacity:.98; text-shadow: 0 1px 8px rgba(0,0,0,.45); }
+    .stack-card em { font-style: normal; color: #fff; font-size: .68rem; font-weight: 800; letter-spacing: .1em; opacity:.96; }
+    .stack-card:hover { transform: translateX(18px); filter: saturate(1.16) brightness(1.07); }
 
-    .stack-1 { --right: 66%; background: linear-gradient(130deg, rgba(0,224,255,.42), rgba(0,106,255,.32)); z-index: 4; }
-    .stack-2 { --right: 44%; background: linear-gradient(130deg, rgba(255,89,94,.42), rgba(255,143,0,.32)); z-index: 3; }
-    .stack-3 { --right: 22%; background: linear-gradient(130deg, rgba(255,232,0,.38), rgba(255,126,0,.30)); z-index: 2; }
-    .stack-4 { --right: 0%; background: linear-gradient(130deg, rgba(255,74,214,.4), rgba(123,97,255,.32)); z-index: 1; }
+    .stack-1 { --right: 70%; background: linear-gradient(130deg, rgba(0,224,255,.40), rgba(0,106,255,.30)); z-index: 4; }
+    .stack-2 { --right: 47%; background: linear-gradient(130deg, rgba(255,89,94,.40), rgba(255,143,0,.30)); z-index: 3; }
+    .stack-3 { --right: 24%; background: linear-gradient(130deg, rgba(255,232,0,.36), rgba(255,126,0,.28)); z-index: 2; }
+    .stack-4 { --right: 1%; background: linear-gradient(130deg, rgba(255,74,214,.38), rgba(123,97,255,.30)); z-index: 1; }
 
     .gateway-actions { margin-top: 14px; display:flex; gap:10px; }
   </style>
@@ -113,7 +123,7 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20260318-19"></script>
+  <script src="app.js?v=20260318-20"></script>
   <script>
     WETHUS.requireAuth();
     const authLink = document.querySelector('.js-auth-link');
