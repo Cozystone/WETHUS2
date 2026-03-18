@@ -75,21 +75,19 @@
     .stack-wrap::before { left:0; background: linear-gradient(90deg, rgba(5,5,7,.92), rgba(5,5,7,0)); }
     .stack-wrap::after { right:0; background: linear-gradient(270deg, rgba(5,5,7,.92), rgba(5,5,7,0)); }
 
+    .stack-topbar { display:flex; justify-content:flex-end; margin-bottom:8px; }
     .stack-total-btn {
-      position: absolute;
-      top: -18px;
-      right: 12px;
-      z-index: 30;
+      display:inline-flex;
       padding: 7px 12px;
       border-radius: 10px;
       border: 1px solid rgba(255,225,196,.82);
-      background: linear-gradient(135deg, rgba(255,124,22,.88), rgba(255,106,0,.80));
+      background: linear-gradient(135deg, rgba(255,118,14,.90), rgba(255,100,0,.82));
       color: #fff8ef;
       font-size: .74rem;
       font-weight: 900;
       letter-spacing: .03em;
-      backdrop-filter: blur(8px) saturate(112%);
-      -webkit-backdrop-filter: blur(8px) saturate(112%);
+      backdrop-filter: blur(8px) saturate(114%);
+      -webkit-backdrop-filter: blur(8px) saturate(114%);
       box-shadow: 0 8px 16px rgba(108,58,16,.24), inset 0 1px 0 rgba(255,255,255,.22);
     }
 
@@ -115,8 +113,10 @@
       <h1 class="gateway-title">카테고리 탐색</h1>
       <p class="gateway-sub">관심 분야를 선택하면 해당 테마의 프로젝트 탐색으로 이동합니다.</p>
 
-      <div class="stack-wrap" aria-label="카테고리 선택">
+      <div class="stack-topbar">
         <a class="stack-total-btn" href="explore_v1.html">TOTAL</a>
+      </div>
+      <div class="stack-wrap" aria-label="카테고리 선택">
         <a class="stack-card stack-1" href="explore_theme.html?cat=MathSci">
           <em>DISCOVER</em>
           <h3>Math & Sci</h3>
