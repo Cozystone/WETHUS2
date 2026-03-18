@@ -254,17 +254,27 @@
           if (!raw) { profileMsg.textContent = '경력사항을 먼저 입력해주세요.'; return; }
           profileMsg.textContent = 'AI가 경력을 요약 중입니다...';
           try {
-            let out = await WETHUS.askGemini(`다음 경력사항을 정확히 '-(전) ...' 또는 '-(현) ...' 형식의 불릿으로만 출력해줘. 최대 6줄. 원문 문장을 그대로 복붙하지 말고 핵심 명사/행동 중심으로 압축해.\n${raw}`);
-            let cleaned = String(out || '').trim();
-            if (!/^-\((전|현)\)/m.test(cleaned) || cleaned.replace(/\s/g,'').includes(raw.replace(/\s/g,''))) {
-              out = await WETHUS.askGemini(`아래 텍스트를 재작성해. 반드시 '-(전) ...' / '-(현) ...' 형식만 사용. 문장을 압축하고 불필요한 조사 제거.\n${raw}`);
-              cleaned = String(out || '').trim();
-            }
+            const aiRes = await fetch('http://127.0.0.1:8787/ai/career-summary', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ raw })
+            });
+            const aiData = await aiRes.json().catch(() => ({}));
+            if (!aiRes.ok || !aiData?.summary) throw new Error(aiData?.error || 'server ai failed');
+            const cleaned = String(aiData.summary).trim();
             if (!/^-\((전|현)\)/m.test(cleaned)) throw new Error('AI 형식화 실패');
             careerSummaryEl.value = cleaned;
             profileMsg.textContent = 'AI 요약이 완료되었습니다.';
           } catch {
-            profileMsg.textContent = 'AI 요약에 실패했습니다. 잠시 후 다시 시도해주세요.';
+            try {
+              const out = await WETHUS.askGemini(`다음 경력사항을 정확히 '-(전) ...' 또는 '-(현) ...' 형식의 불릿으로만 출력해줘. 최대 6줄. 원문 문장을 그대로 복붙하지 말고 핵심 명사/행동 중심으로 압축해.\n${raw}`);
+              const cleaned = String(out || '').trim();
+              if (!/^-\((전|현)\)/m.test(cleaned)) throw new Error('AI 형식화 실패');
+              careerSummaryEl.value = cleaned;
+              profileMsg.textContent = 'AI 요약이 완료되었습니다.';
+            } catch {
+              profileMsg.textContent = 'AI 요약에 실패했습니다. 잠시 후 다시 시도해주세요.';
+            }
           }
         });
 
