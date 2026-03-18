@@ -286,14 +286,14 @@ a { color: inherit; text-decoration: none; }
 }
 #pickFileBtn,
 #genImageBtn {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--orange-glass-main) 70%, #fff), color-mix(in srgb, var(--orange-glass-main) 86%, #2f1707)) !important;
-  border-color: rgba(255,206,172,.76) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--orange-glass-main) 76%, #fff), color-mix(in srgb, var(--orange-glass-main) 90%, #2f1707)) !important;
+  border-color: rgba(255,198,162,.82) !important;
   color: #fff8ef !important;
 }
 #pickFileBtn:hover,
 #genImageBtn:hover {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--orange-glass-main) 74%, #fff), color-mix(in srgb, var(--orange-glass-main) 90%, #2f1707)) !important;
-  border-color: rgba(255,214,184,.86) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--orange-glass-main) 80%, #fff), color-mix(in srgb, var(--orange-glass-main) 94%, #2f1707)) !important;
+  border-color: rgba(255,208,176,.90) !important;
 }
 
 .section { padding: 72px 0; }
