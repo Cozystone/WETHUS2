@@ -883,8 +883,9 @@
       const avatarHtml = u.profileImage
         ? `<img src="${u.profileImage}" alt="avatar" class="profile-chip-avatar"/>`
         : `<span class="profile-chip-avatar-fallback">${(u.name || 'U').slice(0, 1)}</span>`;
+      const plan = (u.plan || 'free').toLowerCase();
       chipWrap.innerHTML = `
-        <button class="profile-chip-btn" type="button" aria-label="프로필 메뉴">
+        <button class="profile-chip-btn ${plan === 'premium' ? 'profile-chip-btn--premium' : ''}" type="button" aria-label="프로필 메뉴">
           ${avatarHtml}
           <span class="profile-chip-texts"><strong>${u.name || '사용자'}</strong><em>${(u.plan || 'free').toUpperCase()}</em></span>
         </button>
@@ -903,7 +904,6 @@
         </button>
         <aside class="side-drawer" style="display:none;">
           <div class="side-drawer-head">
-            <strong>바로가기</strong>
             <button type="button" class="menu-close-btn" aria-label="닫기">×</button>
           </div>
           <a href="dm.html" class="side-drawer-item">

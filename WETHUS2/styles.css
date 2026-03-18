@@ -51,6 +51,11 @@ a { color: inherit; text-decoration: none; }
   -webkit-backdrop-filter: blur(10px) saturate(130%);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 8px 18px rgba(0,0,0,.24);
 }
+.profile-chip-btn--premium {
+  background: linear-gradient(135deg, rgba(168,125,255,.88), rgba(103,72,255,.72));
+  border-color: rgba(207,188,255,.7);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.34), 0 10px 22px rgba(74,56,160,.38);
+}
 .profile-chip-avatar { width:24px; height:24px; border-radius:999px; object-fit:cover; border:1px solid rgba(255,255,255,.35); }
 .profile-chip-avatar-fallback { width:24px; height:24px; border-radius:999px; display:grid; place-items:center; background:rgba(255,255,255,.88); color:#111; font-size:.72rem; font-weight:800; }
 .profile-chip-texts { display:flex; flex-direction:column; align-items:flex-start; line-height:1.05; }
@@ -61,7 +66,7 @@ a { color: inherit; text-decoration: none; }
 .menu-icon-btn { width:32px; height:28px; border:1px solid #2f2f2f; background:#111; border-radius:8px; display:grid; gap:3px; padding:6px; cursor:pointer; }
 .menu-icon-btn span { display:block; height:2px; background:#d8d8d8; border-radius:2px; }
 .side-drawer {
-  position: fixed; top:72px; right:16px; width:286px; max-height: calc(100vh - 92px);
+  position: fixed; top:72px; right:16px; width:248px; max-height: calc(100vh - 92px);
   overflow:auto;
   background: linear-gradient(180deg, rgba(24,24,24,.74), rgba(14,14,14,.64));
   border:1px solid rgba(255,255,255,.12);
@@ -71,8 +76,8 @@ a { color: inherit; text-decoration: none; }
   -webkit-backdrop-filter: blur(14px) saturate(120%);
   box-shadow: 0 12px 34px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.12);
 }
-.side-drawer-head { display:flex; justify-content:space-between; align-items:center; padding:14px 14px 10px; border-bottom:1px solid rgba(255,255,255,.08); }
-.menu-close-btn { border:0; background:transparent; color:#bbb; font-size:1.2rem; cursor:pointer; }
+.side-drawer-head { display:flex; justify-content:flex-end; align-items:center; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08); }
+.menu-close-btn { border:0; background:transparent; color:#bbb; font-size:1.2rem; cursor:pointer; line-height:1; }
 .side-drawer-item { display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.06); color:#eee; position:relative; }
 .side-drawer-item:hover { background: rgba(255,255,255,.06); }
 .side-badge { position: static; margin-left:auto; }

@@ -22,7 +22,7 @@
       position: absolute;
       inset: 0;
       clip-path: polygon(var(--l) 0, var(--r) 0, calc(var(--r) - 8%) 100%, calc(var(--l) - 8%) 100%);
-      padding: 38px 28px;
+      padding: 26px 26px 34px;
       color: #fff;
       text-decoration: none;
       transition: transform .28s ease, filter .28s ease;
@@ -31,7 +31,7 @@
       border-right: 1px solid rgba(255,255,255,.18);
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
+      justify-content: space-between;
       gap: 8px;
     }
     .stack-card h3 { margin: 0; font-size: 1.48rem; letter-spacing: -.02em; }
@@ -39,10 +39,10 @@
     .stack-card em { font-style: normal; color: #ffd7b8; font-size: .76rem; font-weight: 700; letter-spacing: .08em; }
     .stack-card:hover { transform: translateX(28px); filter: saturate(1.15) brightness(1.08); }
 
-    .stack-1 { --l: 0%; --r: 30%; background: linear-gradient(130deg, rgba(255,128,45,.46), rgba(173,70,8,.32)); z-index: 4; }
-    .stack-2 { --l: 23%; --r: 53%; background: linear-gradient(130deg, rgba(255,106,0,.42), rgba(145,52,8,.28)); z-index: 3; }
-    .stack-3 { --l: 46%; --r: 76%; background: linear-gradient(130deg, rgba(255,137,51,.38), rgba(129,48,8,.26)); z-index: 2; }
-    .stack-4 { --l: 69%; --r: 100%; background: linear-gradient(130deg, rgba(255,117,31,.34), rgba(108,42,7,.24)); z-index: 1; }
+    .stack-1 { --l: 0%; --r: 30%; background: linear-gradient(130deg, rgba(97,208,255,.52), rgba(45,118,255,.34)); z-index: 4; }
+    .stack-2 { --l: 23%; --r: 53%; background: linear-gradient(130deg, rgba(255,160,120,.52), rgba(255,94,48,.34)); z-index: 3; }
+    .stack-3 { --l: 46%; --r: 76%; background: linear-gradient(130deg, rgba(255,205,96,.52), rgba(255,143,48,.34)); z-index: 2; }
+    .stack-4 { --l: 69%; --r: 100%; background: linear-gradient(130deg, rgba(255,151,126,.52), rgba(255,87,131,.34)); z-index: 1; }
 
     .gateway-actions { margin-top: 14px; display:flex; gap:10px; }
   </style>
