@@ -284,6 +284,17 @@ a { color: inherit; text-decoration: none; }
   background: linear-gradient(135deg, color-mix(in srgb, var(--orange-glass-main) 68%, #fff), color-mix(in srgb, var(--orange-glass-main) 84%, #2f1707));
   border-color: rgba(255,220,194,.80);
 }
+#pickFileBtn,
+#genImageBtn {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--orange-glass-main) 64%, #fff), color-mix(in srgb, var(--orange-glass-main) 80%, #2f1707)) !important;
+  border-color: rgba(255,212,180,.68) !important;
+  color: #fff8ef !important;
+}
+#pickFileBtn:hover,
+#genImageBtn:hover {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--orange-glass-main) 68%, #fff), color-mix(in srgb, var(--orange-glass-main) 84%, #2f1707)) !important;
+  border-color: rgba(255,220,194,.80) !important;
+}
 
 .section { padding: 72px 0; }
 .section-kicker { margin: 0 0 8px; color: var(--orange); font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
