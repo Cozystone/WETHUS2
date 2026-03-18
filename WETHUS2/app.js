@@ -846,8 +846,7 @@
   function initNotificationNav() {
     const navs = document.querySelectorAll('.nav-links');
     if (!navs.length) return;
-    const isNotificationsPage = /\/notifications\.html$/i.test(location.pathname);
-    const isDmPage = /\/dm\.html$/i.test(location.pathname);
+    const actor = currentActorId();
 
     navs.forEach(nav => {
       const firstLink = nav.querySelector('a.nav-link');
@@ -859,96 +858,93 @@
         nav.insertBefore(home, firstLink || nav.firstChild);
       }
 
-      if (nav.querySelector('.js-nav-notify')) return;
+      // 기존 로그인 링크는 로그인 상태에서 숨긴다 (로그아웃은 프로필 드롭다운으로 통합)
+      const authLink = nav.querySelector('.js-auth-link');
+      if (actor && authLink) authLink.style.display = 'none';
+
       if (!actor) return;
-      const mentor = Array.from(nav.querySelectorAll('a')).find(a => (a.textContent || '').trim() === '멘토');
-      const profile = Array.from(nav.querySelectorAll('a')).find(a => (a.textContent || '').trim() === '프로필');
+      if (nav.querySelector('.js-profile-chip')) return;
 
-      const dmWrap = document.createElement('div');
-      dmWrap.className = 'notify-wrap js-nav-notify';
-      dmWrap.innerHTML = `
-        <a href="dm.html" class="nav-link notify-link notify-link--text ${isDmPage ? 'nav-link--cta' : ''}" title="DM" aria-label="DM">
-          <span class="nav-icon-svg" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-          </span>
-          <span>DM</span>
-        </a>
+      const u = currentUser() || { name: 'User', nickname: 'user', profileImage: '', plan: 'free' };
+      const profileAnchor = Array.from(nav.querySelectorAll('a')).find(a => (a.textContent || '').trim() === '프로필');
+      if (profileAnchor) profileAnchor.style.display = 'none';
+
+      const chipWrap = document.createElement('div');
+      chipWrap.className = 'notify-wrap js-profile-chip';
+      const avatarHtml = u.profileImage
+        ? `<img src="${u.profileImage}" alt="avatar" class="profile-chip-avatar"/>`
+        : `<span class="profile-chip-avatar-fallback">${(u.name || 'U').slice(0, 1)}</span>`;
+      chipWrap.innerHTML = `
+        <button class="profile-chip-btn" type="button" aria-label="프로필 메뉴">
+          ${avatarHtml}
+          <span class="profile-chip-texts"><strong>${u.name || '사용자'}</strong><em>${(u.plan || 'free').toUpperCase()}</em></span>
+        </button>
+        <div class="notify-dropdown profile-chip-dropdown" style="display:none;">
+          <a class="notify-item" href="#"><strong>요금제</strong><p>${(u.plan || 'free').toUpperCase()} Plan</p></a>
+          <a class="notify-item" href="profile.html"><strong>프로필</strong><p>내 프로필 보기 및 수정</p></a>
+          <button class="notify-more" type="button" id="chipLogoutBtn">로그아웃</button>
+        </div>
       `;
 
-      const wrap = document.createElement('div');
-      wrap.className = 'notify-wrap js-nav-notify';
-      wrap.innerHTML = `
-        <a href="notifications.html" class="nav-link notify-link notify-link--text ${isNotificationsPage ? 'nav-link--cta' : ''}" title="알림" aria-label="알림">
-          <span class="nav-icon-svg" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"/>
-              <path d="M9 17a3 3 0 0 0 6 0"/>
-            </svg>
-          </span>
-          <span>알림</span>
-          <span class="notify-badge" style="display:none;">0</span>
-        </a>
-        <div class="notify-dropdown" style="display:none;"></div>
-      `;
-
-      if (profile && profile.parentNode === nav) {
-        nav.insertBefore(wrap, profile);
-        nav.insertBefore(dmWrap, wrap);
-      } else if (mentor && mentor.parentNode === nav) {
-        mentor.insertAdjacentElement('afterend', dmWrap);
-        dmWrap.insertAdjacentElement('afterend', wrap);
-      } else {
-        nav.appendChild(dmWrap);
-        nav.appendChild(wrap);
-      }
-
-      const badge = wrap.querySelector('.notify-badge');
-      const dropdown = wrap.querySelector('.notify-dropdown');
-
-      function renderNotify() {
-        const items = listNotifications(5);
-        const unread = items.filter(n => n.unread).length;
-        badge.textContent = unread > 99 ? '99+' : String(unread);
-        badge.style.display = unread ? 'inline-flex' : 'none';
-        if (!items.length) {
-          dropdown.innerHTML = `<div class="notify-empty">새 알림이 없습니다.</div><a class="notify-more" href="notifications.html">전체 알림 보기</a>`;
-          return;
-        }
-        dropdown.innerHTML = items.map(n => `
-          <a class="notify-item ${n.unread ? 'unread' : ''}" href="notifications.html?n=${encodeURIComponent(n.id)}" data-id="${n.id}">
-            <strong>${n.title}</strong>
-            <em>${n.sender || 'WETHUS'}</em>
-            <p>${n.body || ''}</p>
-            <span>${formatTimeAgo(n.createdAt)}</span>
+      const menuWrap = document.createElement('div');
+      menuWrap.className = 'notify-wrap js-side-menu';
+      menuWrap.innerHTML = `
+        <button class="menu-icon-btn" type="button" aria-label="빠른 메뉴 열기">
+          <span></span><span></span><span></span>
+        </button>
+        <aside class="side-drawer" style="display:none;">
+          <div class="side-drawer-head">
+            <strong>바로가기</strong>
+            <button type="button" class="menu-close-btn" aria-label="닫기">×</button>
+          </div>
+          <a href="dm.html" class="side-drawer-item">
+            <span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+            <span>DM</span>
           </a>
-        `).join('') + `<a class="notify-more" href="notifications.html">전체 알림 보기</a>`;
+          <a href="notifications.html" class="side-drawer-item">
+            <span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"/><path d="M9 17a3 3 0 0 0 6 0"/></svg></span>
+            <span>알림</span>
+            <span class="notify-badge side-badge" style="display:none;">0</span>
+          </a>
+        </aside>
+      `;
 
-        dropdown.querySelectorAll('.notify-item').forEach(el => {
-          el.addEventListener('click', () => {
-            const id = el.getAttribute('data-id');
-            if (id) markNotificationRead(id);
-          });
-        });
-      }
+      nav.appendChild(chipWrap);
+      nav.appendChild(menuWrap);
 
+      const chipDrop = chipWrap.querySelector('.profile-chip-dropdown');
+      const chipBtn = chipWrap.querySelector('.profile-chip-btn');
+      const chipLogoutBtn = chipWrap.querySelector('#chipLogoutBtn');
       let closeTimer = null;
       const openDrop = () => {
         if (closeTimer) clearTimeout(closeTimer);
-        renderNotify();
-        dropdown.style.display = 'block';
+        chipDrop.style.display = 'block';
       };
       const closeDrop = () => {
         if (closeTimer) clearTimeout(closeTimer);
-        closeTimer = setTimeout(() => { dropdown.style.display = 'none'; }, 160);
+        closeTimer = setTimeout(() => { chipDrop.style.display = 'none'; }, 140);
       };
+      chipBtn?.addEventListener('mouseenter', openDrop);
+      chipWrap?.addEventListener('mouseenter', openDrop);
+      chipWrap?.addEventListener('mouseleave', closeDrop);
+      chipLogoutBtn?.addEventListener('click', () => {
+        logout();
+        location.href = 'login.html';
+      });
 
-      renderNotify();
-      wrap.addEventListener('mouseenter', openDrop);
-      wrap.addEventListener('mouseleave', closeDrop);
-      dropdown.addEventListener('mouseenter', openDrop);
-      dropdown.addEventListener('mouseleave', closeDrop);
+      const drawer = menuWrap.querySelector('.side-drawer');
+      const openBtn = menuWrap.querySelector('.menu-icon-btn');
+      const closeBtn = menuWrap.querySelector('.menu-close-btn');
+      const sideBadge = menuWrap.querySelector('.side-badge');
+      const unread = listNotifications(99).filter(n => n.unread).length;
+      sideBadge.textContent = unread > 99 ? '99+' : String(unread);
+      sideBadge.style.display = unread ? 'inline-flex' : 'none';
+      openBtn?.addEventListener('click', () => {
+        drawer.style.display = 'block';
+      });
+      closeBtn?.addEventListener('click', () => {
+        drawer.style.display = 'none';
+      });
     });
   }
 
