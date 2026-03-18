@@ -11,7 +11,7 @@ const app = express();
 const PORT = Number(process.env.PORT || 8787);
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me';
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:8080').split(',').map(s => s.trim());
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:8080,http://127.0.0.1:8080').split(',').map(s => s.trim());
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 

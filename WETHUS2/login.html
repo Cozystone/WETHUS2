@@ -19,12 +19,6 @@
         <button id="tabSignup" class="btn btn--secondary auth-tab" type="button">회원가입</button>
       </div>
 
-      <div id="googleAuthWrap" style="display:grid;gap:8px;margin-bottom:12px;">
-        <div id="g_id_onload" style="display:none;"></div>
-        <div id="googleBtn" style="display:flex;justify-content:center;"></div>
-        <p id="googleHint" class="note" style="margin:0;text-align:center;"></p>
-      </div>
-
       <form class="auth-form" id="loginForm" novalidate>
         <input name="email" type="email" placeholder="이메일" required />
         <input name="password" type="password" placeholder="비밀번호" required />
@@ -49,6 +43,18 @@
 
         <button id="signupSubmit" class="btn btn--primary" type="submit" disabled>회원가입</button>
       </form>
+
+      <div class="auth-sep" style="display:flex;align-items:center;gap:10px;margin:14px 0 10px;color:#8f8f8f;font-size:.82rem;">
+        <span style="flex:1;height:1px;background:#2a2a2a;"></span>
+        <span>또는 소셜 로그인</span>
+        <span style="flex:1;height:1px;background:#2a2a2a;"></span>
+      </div>
+
+      <div id="googleAuthWrap" style="display:grid;gap:8px;margin-bottom:12px;">
+        <div id="g_id_onload" style="display:none;"></div>
+        <div id="googleBtn" style="display:flex;justify-content:center;"></div>
+        <p id="googleHint" class="note" style="margin:0;text-align:center;"></p>
+      </div>
 
       <div class="dev-row">
         <button id="devModeBtn" class="btn btn--secondary" type="button">개발자모드</button>
