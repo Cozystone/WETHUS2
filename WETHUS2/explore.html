@@ -15,34 +15,47 @@
       height: 480px;
       border-radius: 18px;
       overflow: hidden;
-      border: 1px solid rgba(255,255,255,.12);
-      background: radial-gradient(1200px 420px at 10% 0%, rgba(255,125,38,.18), transparent 60%), #0f0f0f;
+      border: 1px solid rgba(255,255,255,.22);
+      background:
+        radial-gradient(1100px 420px at 8% -8%, rgba(252,70,107,.45), transparent 62%),
+        radial-gradient(900px 460px at 85% 110%, rgba(63,94,251,.42), transparent 58%),
+        linear-gradient(130deg, rgba(252,70,107,.22), rgba(63,94,251,.22));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 18px 36px rgba(23,20,40,.24);
+      backdrop-filter: blur(6px) saturate(130%);
     }
     .stack-card {
       position: absolute;
       inset: 0;
       clip-path: polygon(var(--l) 0, var(--r) 0, calc(var(--r) - 8%) 100%, calc(var(--l) - 8%) 100%);
-      padding: 26px 26px 34px;
+      padding: 26px 18px 28px;
       color: #fff;
       text-decoration: none;
       transition: transform .28s ease, filter .28s ease;
-      backdrop-filter: blur(10px) saturate(130%);
-      -webkit-backdrop-filter: blur(10px) saturate(130%);
-      border-right: 1px solid rgba(255,255,255,.18);
+      backdrop-filter: blur(14px) saturate(150%);
+      -webkit-backdrop-filter: blur(14px) saturate(150%);
+      border-right: 1px solid rgba(255,255,255,.24);
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: flex-end;
       gap: 8px;
     }
-    .stack-card h3 { margin: 0; font-size: 1.48rem; letter-spacing: -.02em; }
-    .stack-card p { margin: 0; font-size: .92rem; color: #ffe5d2; }
-    .stack-card em { font-style: normal; color: #ffd7b8; font-size: .76rem; font-weight: 700; letter-spacing: .08em; }
+    .stack-meta {
+      background: rgba(8, 10, 22, .24);
+      border: 1px solid rgba(255,255,255,.24);
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.26);
+      max-width: 250px;
+    }
+    .stack-card h3 { margin: 0; font-size: 1.26rem; letter-spacing: -.01em; text-shadow: 0 2px 10px rgba(0,0,0,.35); }
+    .stack-card p { margin: 3px 0 0; font-size: .84rem; color: #fff; opacity:.95; text-shadow: 0 1px 8px rgba(0,0,0,.35); }
+    .stack-card em { font-style: normal; color: #fff; font-size: .68rem; font-weight: 800; letter-spacing: .1em; opacity:.92; }
     .stack-card:hover { transform: translateX(28px); filter: saturate(1.15) brightness(1.08); }
 
-    .stack-1 { --l: 0%; --r: 30%; background: linear-gradient(130deg, rgba(97,208,255,.52), rgba(45,118,255,.34)); z-index: 4; }
-    .stack-2 { --l: 23%; --r: 53%; background: linear-gradient(130deg, rgba(255,160,120,.52), rgba(255,94,48,.34)); z-index: 3; }
-    .stack-3 { --l: 46%; --r: 76%; background: linear-gradient(130deg, rgba(255,205,96,.52), rgba(255,143,48,.34)); z-index: 2; }
-    .stack-4 { --l: 69%; --r: 100%; background: linear-gradient(130deg, rgba(255,151,126,.52), rgba(255,87,131,.34)); z-index: 1; }
+    .stack-1 { --l: 0%; --r: 30%; background: linear-gradient(130deg, rgba(0,224,255,.38), rgba(0,106,255,.28)); z-index: 4; }
+    .stack-2 { --l: 23%; --r: 53%; background: linear-gradient(130deg, rgba(255,89,94,.38), rgba(255,143,0,.28)); z-index: 3; }
+    .stack-3 { --l: 46%; --r: 76%; background: linear-gradient(130deg, rgba(255,232,0,.34), rgba(255,126,0,.26)); z-index: 2; }
+    .stack-4 { --l: 69%; --r: 100%; background: linear-gradient(130deg, rgba(255,74,214,.36), rgba(123,97,255,.28)); z-index: 1; }
 
     .gateway-actions { margin-top: 14px; display:flex; gap:10px; }
   </style>
@@ -68,24 +81,32 @@
 
       <div class="stack-wrap" aria-label="카테고리 선택">
         <a class="stack-card stack-1" href="explore_theme.html?cat=MathSci">
-          <em>DISCOVER</em>
-          <h3>Math & Sci</h3>
-          <p>수학, 과학, 연구 기반 프로젝트</p>
+          <div class="stack-meta">
+            <em>DISCOVER</em>
+            <h3>Math & Sci</h3>
+            <p>수학, 과학, 연구 기반 프로젝트</p>
+          </div>
         </a>
         <a class="stack-card stack-2" href="explore_theme.html?cat=ArtCulture">
-          <em>DISCOVER</em>
-          <h3>Art & Culture</h3>
-          <p>영화, 전시, 출판, 크리에이티브</p>
+          <div class="stack-meta">
+            <em>DISCOVER</em>
+            <h3>Art & Culture</h3>
+            <p>영화, 전시, 출판, 크리에이티브</p>
+          </div>
         </a>
         <a class="stack-card stack-3" href="explore_theme.html?cat=StartupBusiness">
-          <em>DISCOVER</em>
-          <h3>Startup & Business</h3>
-          <p>서비스 실험, 팀 빌드, 비즈니스 검증</p>
+          <div class="stack-meta">
+            <em>DISCOVER</em>
+            <h3>Startup & Business</h3>
+            <p>서비스 실험, 팀 빌드, 비즈니스 검증</p>
+          </div>
         </a>
         <a class="stack-card stack-4" href="explore_theme.html?cat=SocietyLaw">
-          <em>DISCOVER</em>
-          <h3>Society & Law</h3>
-          <p>정책, 캠페인, 사회문제 해결 프로젝트</p>
+          <div class="stack-meta">
+            <em>DISCOVER</em>
+            <h3>Society & Law</h3>
+            <p>정책, 캠페인, 사회문제 해결 프로젝트</p>
+          </div>
         </a>
       </div>
 
@@ -104,7 +125,7 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20260318-16"></script>
+  <script src="app.js?v=20260318-17"></script>
   <script>
     WETHUS.requireAuth();
     const authLink = document.querySelector('.js-auth-link');

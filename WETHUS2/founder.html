@@ -228,7 +228,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-16"></script>
+  <script src="app.js?v=20260318-17"></script>
   <script>
     WETHUS.requireAuth();
     const authLink = document.querySelector('.js-auth-link');
@@ -442,11 +442,14 @@
       let keyword = `${category} ${title} cinematic poster dark orange accent`;
       try {
         const endpoint = (window.WETHUS_AI_ENDPOINT || 'http://127.0.0.1:8787') + '/ai/image-prompt';
+        const ctl = new AbortController();
+        const t = setTimeout(() => ctl.abort(), 5000);
         const r = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, description: desc, category })
-        });
+          body: JSON.stringify({ title, description: desc, category }),
+          signal: ctl.signal
+        }).finally(() => clearTimeout(t));
         const d = await r.json().catch(() => ({}));
         if (r.ok && d?.prompt) keyword = String(d.prompt).trim().slice(0, 120);
       } catch (_) {
@@ -462,8 +465,9 @@
 
       const loaded = await new Promise((resolve) => {
         const testImg = new Image();
-        testImg.onload = () => resolve(true);
-        testImg.onerror = () => resolve(false);
+        const timeout = setTimeout(() => resolve(false), 6500);
+        testImg.onload = () => { clearTimeout(timeout); resolve(true); };
+        testImg.onerror = () => { clearTimeout(timeout); resolve(false); };
         testImg.src = aiUrl;
       });
 

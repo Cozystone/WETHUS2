@@ -63,8 +63,22 @@ a { color: inherit; text-decoration: none; }
 .profile-chip-texts em { font-style:normal; font-size:.62rem; color:#ffe7d2; opacity:.95; }
 .profile-chip-dropdown { right:0; width:240px; }
 
-.menu-icon-btn { width:32px; height:28px; border:1px solid #2f2f2f; background:#111; border-radius:8px; display:grid; gap:3px; padding:6px; cursor:pointer; }
-.menu-icon-btn span { display:block; height:2px; background:#d8d8d8; border-radius:2px; }
+.menu-icon-btn {
+  width: 24px;
+  height: 40px;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.04);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+.menu-icon-btn span { display:block; width: 12px; height:1px; background:#f0f0f0; border-radius:2px; }
 .side-drawer {
   position: fixed; top:72px; right:16px; width:248px; max-height: calc(100vh - 92px);
   overflow:auto;
