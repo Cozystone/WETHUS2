@@ -58,6 +58,12 @@
       <div class="modal-content">
         <h3 style="margin:0 0 12px;">프로필 수정</h3>
         <form id="profileForm" class="application-form">
+          <label>프로필 사진
+            <div style="display:flex;align-items:center;gap:10px;">
+              <input id="profileImageFile" type="file" accept="image/*" />
+              <img id="profileImagePreview" alt="프로필 미리보기" style="width:44px;height:44px;border-radius:999px;object-fit:cover;border:1px solid #2a2a2a;" />
+            </div>
+          </label>
           <label>이름 <input name="name" required /></label>
           <label>별명 <input name="nickname" required /></label>
           <label>자기소개 <textarea name="bio" placeholder="어떤 프로젝트를 왜 하는지 간단히 소개해보세요."></textarea></label>
@@ -131,30 +137,44 @@
       const user = u || fallbackUser;
       const founderBadge = user.founderVerified ? '<span class="verify-badge">Founder 인증</span>' : '';
 
+      const careerLines = String(user.careerSummary || '').split('\n').filter(Boolean);
+      const collapsedCareer = careerLines.slice(0, 3).join('\n');
+      const fullCareer = careerLines.join('\n');
+      const avatarSrc = user.profileImage ? `<img src="${user.profileImage}" alt="프로필" class="profile-mini-avatar"/>` : `<span class="profile-avatar-fallback">${(user.name || 'U').slice(0,1)}</span>`;
+
       hero.innerHTML = `
-        <div class="profile-avatar">${(user.name || 'U').slice(0,1)}</div>
-        <div class="profile-main">
-          <div class="profile-topline">
-            <h2>${user.name}</h2>
-            <span class="profile-nickname">@${user.nickname || (user.name || '').replace(/\s+/g,'').toLowerCase()}</span>
-            ${founderBadge}
+        <div class="profile-main" style="width:100%;">
+          <div class="profile-topline" style="justify-content:space-between;align-items:flex-start;">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+              ${avatarSrc}
+              <div>
+                <h2 style="margin:0;">${user.name}</h2>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <span class="profile-nickname">@${user.nickname || (user.name || '').replace(/\s+/g,'').toLowerCase()}</span>
+                  ${founderBadge}
+                </div>
+              </div>
+            </div>
+            ${u ? '<button id="profileEditOpen" class="btn btn--secondary" style="display:inline-flex;align-items:center;gap:6px;">✎ 수정</button>' : ''}
           </div>
           <p class="profile-bio">${user.bio || '아직 소개가 없습니다. 프로젝트를 시작해보세요.'}</p>
           <p class="meta" style="margin:0 0 6px;">${user.school ? user.school + ' · ' : ''}${user.age ? '만 ' + user.age + '세' : ''}</p>
-          ${user.careerSummary ? `<p class="meta" style="margin:0 0 8px;white-space:pre-line;">${user.careerSummary}</p>` : ''}
-          <div class="profile-stats">
+          ${careerLines.length ? `<p id="careerSummaryText" class="meta" style="margin:0 0 4px;white-space:pre-line;">${careerLines.length > 3 ? collapsedCareer : fullCareer}</p>
+          ${careerLines.length > 3 ? '<button id="careerToggleBtn" class="btn btn--secondary" type="button" style="padding:4px 10px;font-size:.75rem;">더보기</button>' : ''}` : ''}
+          <div class="profile-stats" style="margin-top:10px;">
             <span><strong>${WETHUS.myProjects().length}</strong> 프로젝트</span>
             <span><strong>${WETHUS.listProjects().filter(p => p.founderId === (u ? u.id : 'dev-temp')).length}</strong> 등록</span>
             <span><strong>${u ? '일반' : '개발'}</strong> 모드</span>
           </div>
         </div>
-        ${u ? '<button id="profileEditOpen" class="btn btn--secondary" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;">✎ 수정</button>' : ''}
       `;
 
       if (u) {
         const profileForm = document.getElementById('profileForm');
         const profileMsg = document.getElementById('profileMsg');
         const profileEditOpen = document.getElementById('profileEditOpen');
+        const profileImageFile = document.getElementById('profileImageFile');
+        const profileImagePreview = document.getElementById('profileImagePreview');
         const schoolInput = document.getElementById('schoolInput');
         const schoolSearchBtn = document.getElementById('schoolSearchBtn');
         const careerRawEl = document.getElementById('careerRaw');
@@ -169,6 +189,20 @@
         const schoolSearchInput = document.getElementById('schoolSearchInput');
         const schoolSearchRun = document.getElementById('schoolSearchRun');
         const schoolSearchResult = document.getElementById('schoolSearchResult');
+        let stagedProfileImage = u.profileImage || '';
+
+        const careerToggleBtn = document.getElementById('careerToggleBtn');
+        const careerSummaryText = document.getElementById('careerSummaryText');
+        if (careerToggleBtn && careerSummaryText) {
+          let expanded = false;
+          const collapsed = careerSummaryText.textContent;
+          const full = String(user.careerSummary || '');
+          careerToggleBtn.addEventListener('click', () => {
+            expanded = !expanded;
+            careerSummaryText.textContent = expanded ? full : collapsed;
+            careerToggleBtn.textContent = expanded ? '접기' : '더보기';
+          });
+        }
 
         function fillProfileForm(force = false) {
           profileForm.elements.name.value = u.name || '';
@@ -178,6 +212,7 @@
           profileForm.elements.school.value = u.school || '';
           profileForm.elements.careerRaw.value = u.careerRaw || '';
           profileForm.elements.careerSummary.value = u.careerSummary || '';
+          if (profileImagePreview) profileImagePreview.src = stagedProfileImage || u.profileImage || '';
           under22Confirm.checked = !!u.onboardingComplete;
           profileMsg.textContent = force ? '초기 프로필 설정을 완료해주세요.' : '';
         }
@@ -249,6 +284,17 @@
             schoolModal.setAttribute('aria-hidden', 'true');
             document.body.style.overflow = '';
           }
+        });
+
+        profileImageFile?.addEventListener('change', (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file || !file.type.startsWith('image/')) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            stagedProfileImage = reader.result;
+            if (profileImagePreview) profileImagePreview.src = stagedProfileImage;
+          };
+          reader.readAsDataURL(file);
         });
 
         careerAiBtn.addEventListener('click', async () => {
@@ -363,6 +409,7 @@
             school: fd.get('school'),
             careerRaw: fd.get('careerRaw'),
             careerSummary: fd.get('careerSummary'),
+            profileImage: stagedProfileImage || u.profileImage || '',
             onboardingComplete: true
           });
           closeProfileEdit();
