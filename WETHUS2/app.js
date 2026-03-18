@@ -373,6 +373,35 @@
     return true;
   }
 
+  function oauthLoginGoogle({ sub, email, name, picture }) {
+    const s = load();
+    let user = s.users.find(u => (u.googleSub && u.googleSub === sub) || (u.email && u.email === email));
+    if (!user) {
+      user = {
+        id: uid(),
+        name: name || email?.split('@')[0] || 'Google User',
+        nickname: (name || email?.split('@')[0] || 'google_user').replace(/\s+/g, ''),
+        email,
+        password: '',
+        bio: '',
+        founderVerified: false,
+        profileImage: picture || '',
+        plan: 'free',
+        googleSub: sub,
+        createdAt: new Date().toISOString()
+      };
+      s.users.push(user);
+    } else {
+      user.googleSub = sub || user.googleSub;
+      user.name = name || user.name;
+      user.profileImage = picture || user.profileImage;
+    }
+    s.currentUserId = user.id;
+    s.devMode = false;
+    save(s);
+    return user;
+  }
+
   function registerUser({ name, nickname, email, password }) {
     const s = load();
     const exists = s.users.find(u => u.email === email);
@@ -895,6 +924,7 @@
     registerUser,
     loginUser,
     registerOrLogin,
+    oauthLoginGoogle,
     setCurrentUser,
     logout,
     addProject,
