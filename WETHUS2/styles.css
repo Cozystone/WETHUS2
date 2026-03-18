@@ -8,6 +8,7 @@
   --orange: #ff6a00;
   --orange-bright: #ff7e1a;
   --orange-deep: #d94f00;
+  --orange-glass-main: #ff741e;
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --container: 1200px;
 
@@ -69,7 +70,7 @@ a { color: inherit; text-decoration: none; }
 }
 .profile-chip-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.34); }
 .profile-chip-btn--premium {
-  background: linear-gradient(135deg, rgba(255,164,88,.72), rgba(255,112,26,.62));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--orange-glass-main) 88%, #ffd9bb), color-mix(in srgb, var(--orange-glass-main) 82%, #351b08));
   border-color: rgba(255,220,190,.78);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.34), 0 10px 22px rgba(120,70,16,.28);
 }
@@ -272,14 +273,16 @@ a { color: inherit; text-decoration: none; }
 .btn--secondary:hover { border-color: rgba(255,224,196,.72); color: #fff; background: rgba(255,154,82,.24); }
 .btn--large { padding: 12px 18px; font-size: .9rem; }
 .founder-accent-btn {
-  background: linear-gradient(135deg, rgba(255,142,54,.44), rgba(255,106,18,.36));
-  border-color: rgba(255,220,190,.66);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--orange-glass-main) 72%, #fff), color-mix(in srgb, var(--orange-glass-main) 78%, #2f1707));
+  border-color: rgba(255,220,190,.72);
   color: #fff8ef;
   font-weight: 800;
+  backdrop-filter: blur(6px) saturate(112%);
+  -webkit-backdrop-filter: blur(6px) saturate(112%);
 }
 .founder-accent-btn:hover {
-  background: linear-gradient(135deg, rgba(255,152,64,.54), rgba(255,112,24,.44));
-  border-color: rgba(255,228,204,.82);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--orange-glass-main) 76%, #fff), color-mix(in srgb, var(--orange-glass-main) 84%, #2f1707));
+  border-color: rgba(255,228,204,.86);
 }
 
 .section { padding: 72px 0; }
