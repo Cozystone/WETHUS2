@@ -258,8 +258,14 @@
 
     if (Array.isArray(parsed.users)) {
       parsed.users = parsed.users.map(u => {
-        if (!u.plan) return { ...u, plan: 'free' };
-        return u;
+        const next = { ...u };
+        if (!next.plan) next.plan = 'free';
+        if (next.onboardingComplete === undefined) next.onboardingComplete = false;
+        if (next.age === undefined) next.age = null;
+        if (next.school === undefined) next.school = '';
+        if (next.careerRaw === undefined) next.careerRaw = '';
+        if (next.careerSummary === undefined) next.careerSummary = '';
+        return next;
       });
     }
 
@@ -426,6 +432,11 @@
       founderVerified: false,
       profileImage: '',
       plan: 'free',
+      age: null,
+      school: '',
+      careerRaw: '',
+      careerSummary: '',
+      onboardingComplete: false,
       createdAt: new Date().toISOString()
     };
     s.users.push(user);
@@ -685,6 +696,13 @@
     const s = load();
     if (!s.currentUserId && !s.devMode) {
       location.href = 'login.html';
+      return;
+    }
+    const user = s.users.find(u => u.id === s.currentUserId);
+    const path = String(location.pathname || '');
+    const isProfile = /\/profile\.html$/i.test(path);
+    if (user && !user.onboardingComplete && !isProfile) {
+      location.href = 'profile.html?onboarding=1';
     }
   }
 

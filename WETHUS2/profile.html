@@ -89,7 +89,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-2"></script>
+  <script src="app.js?v=20260318-3"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
 
@@ -168,23 +168,11 @@
           document.body.style.overflow = '';
         }
 
-        schoolSearchBtn.addEventListener('click', async () => {
+        schoolSearchBtn.addEventListener('click', () => {
           const q = (schoolInput.value || '').trim();
-          if (!q) return;
-          try {
-            const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=${NEIS_KEY}&Type=json&SCHUL_NM=${encodeURIComponent(q)}`;
-            const res = await fetch(url);
-            const data = await res.json();
-            const row = data?.schoolInfo?.[1]?.row?.[0];
-            if (row) {
-              schoolInput.value = `${row.SCHUL_NM} (${row.ATPT_OFCDC_SC_NM})`;
-              profileMsg.textContent = '학교 정보를 찾았습니다.';
-            } else {
-              profileMsg.textContent = '일치하는 학교를 찾지 못했습니다.';
-            }
-          } catch {
-            profileMsg.textContent = '학교 검색 중 오류가 발생했습니다.';
-          }
+          const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=${NEIS_KEY}&Type=json${q ? `&SCHUL_NM=${encodeURIComponent(q)}` : ''}`;
+          window.open(url, 'neisSchoolSearch', 'width=900,height=720');
+          profileMsg.textContent = '새 창에서 학교 검색 결과를 확인하고 학교명을 입력해 저장해주세요.';
         });
 
         careerAiBtn.addEventListener('click', async () => {
@@ -194,7 +182,13 @@
             const out = await WETHUS.askGemini(`다음 경력사항을 두괄식으로 3개 항목으로 나눠 한국어로 요약해줘. 각 항목은 '핵심역량: 내용' 형태.\n${raw}`);
             careerSummaryEl.value = out;
           } catch {
-            profileMsg.textContent = 'AI 경력 요약에 실패했습니다.';
+            const chunks = raw.split(/[,\n]/).map(s => s.trim()).filter(Boolean).slice(0, 6);
+            careerSummaryEl.value = [
+              `핵심역량: ${chunks.slice(0,2).join(' · ') || '프로젝트 실행 경험'}`,
+              `협업경험: ${chunks.slice(2,4).join(' · ') || '팀 기반 협업 및 커뮤니케이션'}`,
+              `실행성과: ${chunks.slice(4,6).join(' · ') || '지속적인 실행과 개선 경험'}`
+            ].join('\n');
+            profileMsg.textContent = 'AI 연결이 불안정해 임시 요약을 생성했습니다.';
           }
         });
 

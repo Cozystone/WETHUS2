@@ -20,8 +20,11 @@
       </div>
 
       <form class="auth-form" id="loginForm" novalidate>
-        <input name="email" type="email" placeholder="이메일" required />
+        <input id="loginEmail" name="email" type="email" placeholder="이메일" required />
         <input name="password" type="password" placeholder="비밀번호" required />
+        <label style="display:flex;gap:8px;align-items:center;color:#a3a3a3;font-size:.85rem;">
+          <input id="rememberEmail" type="checkbox" /> 아이디(이메일) 저장
+        </label>
         <button class="btn btn--primary" type="submit">로그인</button>
       </form>
 
@@ -37,8 +40,9 @@
         <input id="signupPwConfirm" name="passwordConfirm" type="password" placeholder="비밀번호 확인" required />
         <small id="pwConfirmHint" class="note"></small>
 
-        <label style="display:flex;gap:8px;align-items:center;color:#a3a3a3;font-size:.85rem;">
-          <input id="agreeChk" type="checkbox" /> 이용약관 및 개인정보 처리방침에 동의합니다.
+        <label style="display:flex;gap:8px;align-items:flex-start;color:#a3a3a3;font-size:.85rem;line-height:1.5;">
+          <input id="agreeChk" type="checkbox" style="margin-top:2px;" />
+          <span>만 22세 미만 학생임을 확인하며, WETHUS 이용약관/커뮤니티 가이드/개인정보 수집 및 AI 기반 신청서 검토에 동의합니다.</span>
         </label>
 
         <button id="signupSubmit" class="btn btn--primary" type="submit" disabled>회원가입</button>
@@ -74,7 +78,7 @@
 
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=20260318-2"></script>
+  <script src="app.js?v=20260318-3"></script>
   <script>
     const msg = document.getElementById('authMsg');
     const tabLogin = document.getElementById('tabLogin');
@@ -86,6 +90,8 @@
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
 
+    const loginEmail = document.getElementById('loginEmail');
+    const rememberEmail = document.getElementById('rememberEmail');
     const signupEmail = document.getElementById('signupEmail');
     const signupPw = document.getElementById('signupPw');
     const signupPwConfirm = document.getElementById('signupPwConfirm');
@@ -97,6 +103,12 @@
 
     if (!window.WETHUS) {
       msg.textContent = '앱 로딩 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.';
+    }
+
+    const remembered = localStorage.getItem('wethus_saved_email') || '';
+    if (remembered) {
+      loginEmail.value = remembered;
+      rememberEmail.checked = true;
     }
 
     function setTab(mode) {
@@ -166,8 +178,12 @@
 
       let ok = true;
 
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
       if (!email) {
         emailHint.textContent = '';
+        ok = false;
+      } else if (!emailPattern.test(email)) {
+        emailHint.textContent = '이메일 형식이 올바르지 않습니다.';
         ok = false;
       } else if (s.users.some(u => u.email === email)) {
         emailHint.textContent = '이미 가입된 이메일입니다.';
@@ -217,6 +233,8 @@
       const fd = new FormData(loginForm);
       try {
         WETHUS.loginUser({ email: fd.get('email'), password: fd.get('password') });
+        if (rememberEmail.checked) localStorage.setItem('wethus_saved_email', String(fd.get('email') || ''));
+        else localStorage.removeItem('wethus_saved_email');
         location.href = 'index.html';
       } catch (err) { msg.textContent = err.message; }
     });
@@ -236,7 +254,7 @@
           email: fd.get('email'),
           password: fd.get('password')
         });
-        location.href = 'index.html';
+        location.href = 'profile.html?onboarding=1';
       } catch (err) { msg.textContent = err.message; }
     });
 
