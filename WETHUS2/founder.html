@@ -69,6 +69,19 @@
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
     }
+    .founder-ghost-btn {
+      background: rgba(255,255,255,.03);
+      border-color: rgba(255,255,255,.26);
+      color: #f1f1f1;
+    }
+    .draft-version-list { display:grid; gap:8px; max-height: 52vh; overflow:auto; }
+    .draft-version-item {
+      display:grid; grid-template-columns: 1fr auto auto; gap:8px; align-items:center;
+      border:1px solid #2b2b2b; border-radius:10px; padding:10px; background:#101010;
+    }
+    .draft-version-meta strong { display:block; font-size:.84rem; }
+    .draft-version-meta span { font-size:.76rem; color:#9f9f9f; }
+    .draft-del-btn { border:1px solid #503030; background:#1a1010; color:#ff8b8b; border-radius:8px; padding:6px 8px; font-size:.74rem; }
   </style>
 </head>
 <body>
@@ -86,9 +99,12 @@
   </header>
 
   <main class="container">
-    <section class="page-header">
-      <h1 class="page-title" id="founderPageTitle">Founder 신청</h1>
-      <p class="page-sub" id="founderPageSub">Founder 신청이 승인되면 프로젝트가 공개되고, 신청자는 Founder로 인증됩니다.</p>
+    <section class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+      <div>
+        <h1 class="page-title" id="founderPageTitle">Founder 신청</h1>
+        <p class="page-sub" id="founderPageSub">Founder 신청이 승인되면 프로젝트가 공개되고, 신청자는 Founder로 인증됩니다.</p>
+      </div>
+      <button id="draftHistoryBtn" class="btn btn--secondary founder-ghost-btn" type="button">임시저장함</button>
     </section>
 
     <section class="founder-form">
@@ -196,7 +212,8 @@
           <input name="duration" placeholder="예: 8주" required />
         </label>
 
-        <div class="form-row">
+        <div class="form-row" style="justify-content:flex-end;">
+          <button id="resetFormBtn" class="btn btn--secondary founder-ghost-btn" type="button">초기화</button>
           <button id="draftSaveBtn" class="btn btn--secondary" type="button">임시저장</button>
           <button id="previewBtn" class="btn preview-trigger" type="button">미리보기</button>
           <button id="submitBtn" class="btn btn--primary" type="submit">신청하기</button>
@@ -231,6 +248,17 @@
           <div class="card-social"><span>♡ 0</span><span>💬 0</span></div>
           <button class="apply-btn" type="button" disabled>지원하기</button>
         </div>
+      </div>
+    </article>
+  </div>
+
+  <div id="draftVersionsModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-drafts="true"></div>
+    <article class="modal-panel" style="max-width:560px;">
+      <button class="modal-close" id="draftVersionsClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 style="margin:0 0 10px;">임시저장 버전</h3>
+        <div id="draftVersionList" class="draft-version-list"></div>
       </div>
     </article>
   </div>
@@ -552,10 +580,17 @@
     setAiButtonState();
 
     const DRAFT_KEY = 'wethus_founder_draft_v1';
+    const DRAFT_VERSIONS_KEY = 'wethus_founder_draft_versions_v1';
 
-    function saveDraft() {
+    const resetFormBtn = document.getElementById('resetFormBtn');
+    const draftHistoryBtn = document.getElementById('draftHistoryBtn');
+    const draftVersionsModal = document.getElementById('draftVersionsModal');
+    const draftVersionsClose = document.getElementById('draftVersionsClose');
+    const draftVersionList = document.getElementById('draftVersionList');
+
+    function collectDraftFromForm() {
       const fd = new FormData(form);
-      const draft = {
+      return {
         title: fd.get('title') || '',
         category: categorySelect.value || 'Film',
         customCategory: customCategoryInput.value || '',
@@ -573,55 +608,162 @@
         aiImageSelected,
         imageData
       };
+    }
+
+    function applyDraft(d) {
+      form.elements.title.value = d.title || '';
+      categorySelect.value = d.category || 'Film';
+      categorySelect.dispatchEvent(new Event('change'));
+      customCategoryInput.value = d.customCategory || '';
+      form.elements.description.value = d.description || '';
+      form.elements.motivation.value = d.motivation || '';
+      form.elements.output.value = d.output || '';
+      form.elements.plan.value = d.plan || '';
+      form.elements.roles.value = d.roles || '';
+      form.elements.teamSize.value = d.teamSize || '3인';
+      form.elements.status.value = d.status || '기획 중';
+      form.elements.duration.value = d.duration || '';
+
+      const sd = new Date(d.startDate || new Date());
+      startYear.value = String(sd.getFullYear());
+      startMonth.value = String(sd.getMonth() + 1);
+      startDay.value = String(sd.getDate());
+
+      endMode.value = d.endMode || 'current';
+      endMode.dispatchEvent(new Event('change'));
+      if (d.endDate) {
+        const ed = new Date(d.endDate);
+        endYear.value = String(ed.getFullYear());
+        endMonth.value = String(ed.getMonth() + 1);
+        endDay.value = String(ed.getDate());
+      }
+
+      aiImageSelected = !!d.aiImageSelected;
+      imageData = d.imageData || '';
+      if (imageData) {
+        coverPreview.src = imageData;
+        coverPreviewWrap.style.display = 'block';
+      } else {
+        coverPreview.src = '';
+        coverPreviewWrap.style.display = 'none';
+      }
+      setAiButtonState();
+      form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
+    }
+
+    function clearFormAll() {
+      form.reset();
+      imageData = '';
+      aiImageSelected = false;
+      setAiButtonState();
+      coverPreview.src = '';
+      coverPreviewWrap.style.display = 'none';
+      customCategoryWrap.style.display = 'none';
+      customCategoryInput.required = false;
+      const now = new Date();
+      populateDateSelects(startYear, startMonth, startDay, now);
+      populateDateSelects(endYear, endMonth, endDay, now);
+      endMode.value = 'current';
+      endMode.dispatchEvent(new Event('change'));
+      setImageError('');
+      imageActionMsg.textContent = '';
+      msg.textContent = '';
+      form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
+    }
+
+    function getDraftVersions() {
+      try { return JSON.parse(localStorage.getItem(DRAFT_VERSIONS_KEY) || '[]'); }
+      catch (_) { return []; }
+    }
+
+    function saveDraftVersions(items) {
+      localStorage.setItem(DRAFT_VERSIONS_KEY, JSON.stringify(items));
+    }
+
+    function saveDraft() {
+      const draft = collectDraftFromForm();
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      const versions = getDraftVersions();
+      versions.unshift({ id: String(Date.now()), savedAt: new Date().toISOString(), draft });
+      saveDraftVersions(versions.slice(0, 30));
       msg.textContent = '임시저장되었습니다.';
     }
 
-    function loadDraft() {
+    function renderDraftVersions() {
+      const versions = getDraftVersions();
+      if (!versions.length) {
+        draftVersionList.innerHTML = '<p style="color:#9f9f9f;">저장된 임시버전이 없습니다.</p>';
+        return;
+      }
+      draftVersionList.innerHTML = versions.map(v => `
+        <div class="draft-version-item" data-id="${v.id}">
+          <div class="draft-version-meta">
+            <strong>${(v.draft?.title || '제목 없음').slice(0, 40)}</strong>
+            <span>${new Date(v.savedAt).toLocaleString('ko-KR')}</span>
+          </div>
+          <button class="btn btn--secondary" data-load-id="${v.id}" type="button">불러오기</button>
+          <button class="draft-del-btn" data-del-id="${v.id}" type="button">×</button>
+        </div>
+      `).join('');
+
+      draftVersionList.querySelectorAll('[data-load-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-load-id');
+          const item = getDraftVersions().find(x => x.id === id);
+          if (!item) return;
+          applyDraft(item.draft || {});
+          draftVersionsModal.classList.remove('open');
+          draftVersionsModal.setAttribute('aria-hidden', 'true');
+          msg.textContent = '임시저장 버전을 불러왔습니다.';
+        });
+      });
+
+      draftVersionList.querySelectorAll('[data-del-id]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-del-id');
+          const ok = await WETHUS.uiConfirm('삭제하시겠습니까?', { title: '임시저장 삭제' });
+          if (!ok) return;
+          const next = getDraftVersions().filter(x => x.id !== id);
+          saveDraftVersions(next);
+          renderDraftVersions();
+        });
+      });
+    }
+
+    function openDraftVersions() {
+      renderDraftVersions();
+      draftVersionsModal.classList.add('open');
+      draftVersionsModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeDraftVersions() {
+      draftVersionsModal.classList.remove('open');
+      draftVersionsModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    draftSaveBtn.addEventListener('click', saveDraft);
+    resetFormBtn.addEventListener('click', async () => {
+      const ok = await WETHUS.uiConfirm('작성 중인 내용을 초기화할까요?', { title: '초기화' });
+      if (!ok) return;
+      clearFormAll();
+    });
+    draftHistoryBtn.addEventListener('click', openDraftVersions);
+    draftVersionsClose.addEventListener('click', closeDraftVersions);
+    draftVersionsModal.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close-drafts') === 'true') closeDraftVersions();
+    });
+
+    clearFormAll();
+    (async () => {
       try {
         const raw = localStorage.getItem(DRAFT_KEY);
         if (!raw) return;
         const d = JSON.parse(raw);
-        form.elements.title.value = d.title || '';
-        categorySelect.value = d.category || 'Film';
-        categorySelect.dispatchEvent(new Event('change'));
-        customCategoryInput.value = d.customCategory || '';
-        form.elements.description.value = d.description || '';
-        form.elements.motivation.value = d.motivation || '';
-        form.elements.output.value = d.output || '';
-        form.elements.plan.value = d.plan || '';
-        form.elements.roles.value = d.roles || '';
-        form.elements.teamSize.value = d.teamSize || '3인';
-        form.elements.status.value = d.status || '기획 중';
-        form.elements.duration.value = d.duration || '';
-
-        const sd = new Date(d.startDate || new Date());
-        startYear.value = String(sd.getFullYear());
-        startMonth.value = String(sd.getMonth() + 1);
-        startDay.value = String(sd.getDate());
-
-        endMode.value = d.endMode || 'current';
-        endMode.dispatchEvent(new Event('change'));
-        if (d.endDate) {
-          const ed = new Date(d.endDate);
-          endYear.value = String(ed.getFullYear());
-          endMonth.value = String(ed.getMonth() + 1);
-          endDay.value = String(ed.getDate());
-        }
-
-        aiImageSelected = !!d.aiImageSelected;
-        imageData = d.imageData || '';
-        if (imageData) {
-          coverPreview.src = imageData;
-          coverPreviewWrap.style.display = 'block';
-        }
-        setAiButtonState();
-        form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
+        const ok = await WETHUS.uiConfirm('마지막 임시저장 버전을 불러오시겠습니까?', { title: '임시저장 불러오기' });
+        if (ok) applyDraft(d);
       } catch (_) {}
-    }
-
-    draftSaveBtn.addEventListener('click', saveDraft);
-    loadDraft();
+    })();
 
     const previewModal = document.getElementById('previewModal');
     function openPreview() {
