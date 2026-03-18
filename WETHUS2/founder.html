@@ -715,6 +715,7 @@
           applyDraft(item.draft || {});
           draftVersionsModal.classList.remove('open');
           draftVersionsModal.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
           msg.textContent = '임시저장 버전을 불러왔습니다.';
         });
       });
