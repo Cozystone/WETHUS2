@@ -78,15 +78,17 @@
 
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=20260318-26"></script>
+  <script src="app.js?v=20260318-27"></script>
   <script>
     const msg = document.getElementById('authMsg');
     const tabLogin = document.getElementById('tabLogin');
     const googleHint = document.getElementById('googleHint');
 
     const GOOGLE_CLIENT_ID = window.WETHUS_GOOGLE_CLIENT_ID || '196934770979-6ntmgcrs6k6jkifskspasg4uie5irgec.apps.googleusercontent.com';
+    const hostBasedEndpoint = `${location.protocol}//${location.hostname}:8787/auth/google`;
     const GOOGLE_AUTH_ENDPOINTS = [
       window.WETHUS_GOOGLE_AUTH_ENDPOINT,
+      hostBasedEndpoint,
       'http://127.0.0.1:8787/auth/google',
       'http://localhost:8787/auth/google'
     ].filter(Boolean);
@@ -156,7 +158,12 @@
         }
         location.href = 'index.html';
       } catch (err) {
-        msg.textContent = err.message || 'Google 로그인 중 오류가 발생했습니다.';
+        const m = String(err?.message || '');
+        if (/Failed to fetch/i.test(m)) {
+          msg.textContent = '인증 서버 연결에 실패했습니다. 백엔드(8787) 실행 상태와 주소(127.0.0.1/localhost)를 확인해주세요.';
+        } else {
+          msg.textContent = m || 'Google 로그인 중 오류가 발생했습니다.';
+        }
       }
     }
 
