@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260318-3" />
   <style>
-    .explore-gateway { padding: 34px 0 24px; }
+    .explore-gateway { padding: 34px 0 24px; position: relative; }
     .gateway-title { margin: 0 0 8px; font-size: 1.85rem; font-weight: 900; letter-spacing: -.02em; }
     .gateway-sub { margin: 0 0 18px; color: #b8b8b8; }
     .stack-wrap {
@@ -75,20 +75,27 @@
     .stack-wrap::before { left:0; background: linear-gradient(90deg, rgba(5,5,7,.92), rgba(5,5,7,0)); }
     .stack-wrap::after { right:0; background: linear-gradient(270deg, rgba(5,5,7,.92), rgba(5,5,7,0)); }
 
-    .stack-topbar { display:flex; justify-content:flex-end; margin-bottom:8px; }
+    .stack-topbar {
+      position: absolute;
+      top: 6px;
+      right: 0;
+      z-index: 30;
+      display:flex;
+      justify-content:flex-end;
+    }
     .stack-total-btn {
       display:inline-flex;
       padding: 7px 12px;
       border-radius: 10px;
-      border: 1px solid rgba(255,225,196,.82);
-      background: linear-gradient(135deg, rgba(255,118,14,.90), rgba(255,100,0,.82));
-      color: #fff8ef;
+      border: 1px solid rgba(255,255,255,.36);
+      background: rgba(255,255,255,.08);
+      color: #f5f5f5;
       font-size: .74rem;
       font-weight: 900;
-      letter-spacing: .03em;
-      backdrop-filter: blur(8px) saturate(114%);
-      -webkit-backdrop-filter: blur(8px) saturate(114%);
-      box-shadow: 0 8px 16px rgba(108,58,16,.24), inset 0 1px 0 rgba(255,255,255,.22);
+      letter-spacing: .01em;
+      backdrop-filter: blur(8px) saturate(106%);
+      -webkit-backdrop-filter: blur(8px) saturate(106%);
+      box-shadow: 0 8px 16px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.18);
     }
 
     .gateway-actions { margin-top: 14px; display:flex; gap:10px; }
@@ -114,7 +121,7 @@
       <p class="gateway-sub">관심 분야를 선택하면 해당 테마의 프로젝트 탐색으로 이동합니다.</p>
 
       <div class="stack-topbar">
-        <a class="stack-total-btn" href="explore_v1.html">TOTAL</a>
+        <a class="stack-total-btn" href="explore_v1.html">전체보기 -&gt;</a>
       </div>
       <div class="stack-wrap" aria-label="카테고리 선택">
         <a class="stack-card stack-1" href="explore_theme.html?cat=MathSci">
