@@ -228,7 +228,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-15"></script>
+  <script src="app.js?v=20260318-16"></script>
   <script>
     WETHUS.requireAuth();
     const authLink = document.querySelector('.js-auth-link');
@@ -441,9 +441,20 @@
       imageActionMsg.textContent = 'AI가 메인 이미지를 생성 중입니다...';
       let keyword = `${category} ${title} cinematic poster dark orange accent`;
       try {
-        const k = await WETHUS.askGemini(`Create one concise English visual prompt (max 10 words) for a cinematic poster image. Category: ${category}. Title: ${title}. Description: ${desc.slice(0, 300)}`);
-        keyword = String(k || '').replace(/[\n\r]/g, ' ').trim().slice(0, 120) || keyword;
-      } catch (_) {}
+        const endpoint = (window.WETHUS_AI_ENDPOINT || 'http://127.0.0.1:8787') + '/ai/image-prompt';
+        const r = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, description: desc, category })
+        });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok && d?.prompt) keyword = String(d.prompt).trim().slice(0, 120);
+      } catch (_) {
+        try {
+          const k = await WETHUS.askGemini(`Create one concise English visual prompt (max 10 words) for a cinematic poster image. Category: ${category}. Title: ${title}. Description: ${desc.slice(0, 300)}`);
+          keyword = String(k || '').replace(/[\n\r]/g, ' ').trim().slice(0, 120) || keyword;
+        } catch (_) {}
+      }
 
       const nonce = Date.now();
       const aiUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword)}?n=${nonce}`;

@@ -130,6 +130,20 @@ app.post('/ai/career-summary', async (req, res) => {
   }
 });
 
+app.post('/ai/image-prompt', async (req, res) => {
+  try {
+    const title = String(req.body?.title || '').trim();
+    const description = String(req.body?.description || '').trim();
+    const category = String(req.body?.category || '').trim();
+    if (!title || !description) return res.status(400).json({ ok: false, error: 'title/description required' });
+    const prompt = `Create one concise English visual prompt (max 12 words) for a cinematic poster image. Category: ${category}. Title: ${title}. Description: ${description.slice(0,300)}`;
+    const text = await callAi(prompt);
+    return res.json({ ok: true, prompt: String(text).replace(/[\n\r]/g, ' ').trim().slice(0, 140) });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'image prompt failed' });
+  }
+});
+
 app.post('/pass/start', (req, res) => {
   if (!PASS_ENABLED || !NICE_SITE_CODE || !NICE_SITE_PASSWORD) {
     return res.status(501).json({
