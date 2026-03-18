@@ -113,7 +113,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-30"></script>
+  <script src="app.js?v=20260318-31"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
 
@@ -339,7 +339,8 @@
                 window.WETHUS_AI_ENDPOINT,
                 window.WETHUS_API_BASE || 'https://wethus-api.onrender.com'
               ];
-          const candidates = Array.from(new Set(baseCandidates.filter(Boolean)));
+          const candidates = Array.from(new Set(baseCandidates.filter(Boolean)))
+            .filter(base => isLocalHost || !/(127\.0\.0\.1|localhost):8787/.test(base));
           let backendErr = '';
           let success = false;
 
@@ -434,14 +435,16 @@
             profileMsg.textContent = '학생/연령 확인에 동의해주세요.';
             return;
           }
+          const careerRaw = String(fd.get('careerRaw') || '').trim();
+          const careerSummary = String(fd.get('careerSummary') || '').trim() || careerRaw;
           WETHUS.updateCurrentUserProfile({
             name: fd.get('name'),
             nickname: fd.get('nickname'),
             bio: fd.get('bio'),
             age,
             school: fd.get('school'),
-            careerRaw: fd.get('careerRaw'),
-            careerSummary: fd.get('careerSummary'),
+            careerRaw,
+            careerSummary,
             profileImage: stagedProfileImage || u.profileImage || '',
             onboardingComplete: true
           });
