@@ -260,7 +260,8 @@
       parsed.users = parsed.users.map(u => {
         const next = { ...u };
         if (!next.plan) next.plan = 'free';
-        if (next.onboardingComplete === undefined) next.onboardingComplete = false;
+        // 기존 사용자 데이터(과거 버전)는 온보딩 완료로 간주해 강제 리다이렉트를 방지
+        if (next.onboardingComplete === undefined) next.onboardingComplete = true;
         if (next.age === undefined) next.age = null;
         if (next.school === undefined) next.school = '';
         if (next.careerRaw === undefined) next.careerRaw = '';
@@ -698,12 +699,8 @@
       location.href = 'login.html';
       return;
     }
-    const user = s.users.find(u => u.id === s.currentUserId);
-    const path = String(location.pathname || '');
-    const isProfile = /\/profile\.html$/i.test(path);
-    if (user && !user.onboardingComplete && !isProfile) {
-      location.href = 'profile.html?onboarding=1';
-    }
+    // 온보딩 진입은 회원가입/신규 소셜로그인 직후 profile.html?onboarding=1로 유도한다.
+    // 페이지 공통 가드에서 강제 리다이렉트하면 기존 사용자 흐름이 꼬일 수 있어 여기서는 로그인만 검사.
   }
 
   function setGeminiApiKey(apiKey) {
