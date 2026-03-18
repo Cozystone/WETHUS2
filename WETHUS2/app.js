@@ -735,22 +735,40 @@
     const apiKey = getGeminiApiKey();
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.6, maxOutputTokens: 500 }
-      })
-    });
+    async function once() {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 9000);
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.35, maxOutputTokens: 220 }
+          })
+        });
 
-    if (!res.ok) {
-      const t = await res.text();
-      throw new Error(`Gemini 호출 실패: ${t.slice(0, 180)}`);
+        if (!res.ok) {
+          const t = await res.text();
+          throw new Error(`Gemini 호출 실패: ${t.slice(0, 180)}`);
+        }
+
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (!text) throw new Error('응답이 비어 있습니다.');
+        return text;
+      } finally {
+        clearTimeout(timeout);
+      }
     }
 
-    const data = await res.json();
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text || '응답이 비어 있습니다.';
+    try {
+      return await once();
+    } catch {
+      await new Promise(r => setTimeout(r, 350));
+      return await once();
+    }
   }
 
   function formatTimeAgo(iso) {
