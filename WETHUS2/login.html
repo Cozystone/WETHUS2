@@ -85,8 +85,12 @@
     const googleHint = document.getElementById('googleHint');
 
     const GOOGLE_CLIENT_ID = window.WETHUS_GOOGLE_CLIENT_ID || '196934770979-6ntmgcrs6k6jkifskspasg4uie5irgec.apps.googleusercontent.com';
-    const hostBase = `${location.protocol}//${location.hostname}:8787`;
-    const AUTH_BASES = [window.WETHUS_API_BASE, hostBase, 'http://127.0.0.1:8787', 'http://localhost:8787'].filter(Boolean);
+    const isLocalHost = ['localhost', '127.0.0.1'].includes(location.hostname);
+    const localBases = ['http://127.0.0.1:8787', 'http://localhost:8787'];
+    const remoteBase = window.WETHUS_API_BASE || '';
+    const AUTH_BASES = isLocalHost
+      ? [remoteBase, `${location.protocol}//${location.hostname}:8787`, ...localBases].filter(Boolean)
+      : [remoteBase].filter(Boolean);
     const GOOGLE_AUTH_ENDPOINTS = AUTH_BASES.map(b => `${b.replace(/\/$/, '')}/auth/google`);
     const LOGIN_ENDPOINTS = AUTH_BASES.map(b => `${b.replace(/\/$/, '')}/auth/login`);
     const REGISTER_ENDPOINTS = AUTH_BASES.map(b => `${b.replace(/\/$/, '')}/auth/register`);
@@ -108,6 +112,9 @@
     if (!window.WETHUS) {
       msg.textContent = '앱 로딩 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.';
     }
+    if (!isLocalHost && !window.WETHUS_API_BASE) {
+      msg.textContent = '배포 환경에서는 인증 API 주소(WETHUS_API_BASE) 설정이 필요합니다.';
+    }
 
     const remembered = localStorage.getItem('wethus_saved_email') || '';
     if (remembered) {
@@ -125,6 +132,7 @@
     }
 
     async function postWithFallback(endpoints, body) {
+      if (!endpoints.length) throw new Error('인증 API 주소가 설정되지 않았습니다.');
       let lastErr = null;
       for (const endpoint of endpoints) {
         try {
@@ -169,6 +177,7 @@
       }
     }
 
+    let gsiInitialized = false;
     function initGoogleSignIn() {
       if (!GOOGLE_CLIENT_ID) {
         googleHint.textContent = 'Google 로그인은 아직 설정되지 않았습니다. (Client ID 필요)';
@@ -178,6 +187,8 @@
         googleHint.textContent = 'Google 로그인 SDK 로딩 중입니다. 잠시 후 새로고침해주세요.';
         return;
       }
+      if (gsiInitialized) return;
+      gsiInitialized = true;
       google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleCredential,
@@ -260,9 +271,13 @@
       try {
         const data = await postWithFallback(LOGIN_ENDPOINTS, { email, password });
         WETHUS.upsertCloudUser(data.user || {});
-      } catch (_) {
-        // 백엔드가 구버전이거나 연결 실패하면 로컬 로그인으로 폴백
-        WETHUS.loginUser({ email, password });
+      } catch (err) {
+        if (isLocalHost) {
+          // 로컬 개발 환경에서만 폴백 허용
+          WETHUS.loginUser({ email, password });
+        } else {
+          throw err;
+        }
       }
       if (rememberEmail.checked) localStorage.setItem('wethus_saved_email', email);
       else localStorage.removeItem('wethus_saved_email');
@@ -287,8 +302,12 @@
       try {
         const data = await postWithFallback(REGISTER_ENDPOINTS, payload);
         WETHUS.upsertCloudUser(data.user || {});
-      } catch (_) {
-        WETHUS.registerUser(payload);
+      } catch (err) {
+        if (isLocalHost) {
+          WETHUS.registerUser(payload);
+        } else {
+          throw err;
+        }
       }
       location.href = 'profile.html?onboarding=1';
     });

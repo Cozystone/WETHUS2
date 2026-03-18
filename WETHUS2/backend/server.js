@@ -26,7 +26,7 @@ const NICE_SITE_CODE = process.env.NICE_SITE_CODE || '';
 const NICE_SITE_PASSWORD = process.env.NICE_SITE_PASSWORD || '';
 const PASS_RETURN_URL = process.env.PASS_RETURN_URL || 'http://localhost:8787/pass/success';
 const PASS_ERROR_URL = process.env.PASS_ERROR_URL || 'http://localhost:8787/pass/fail';
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:8080,http://127.0.0.1:8080').split(',').map(s => s.trim());
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:8080,http://127.0.0.1:8080,https://wethus-2.vercel.app').split(',').map(s => s.trim());
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 const DATA_DIR = path.join(__dirname, 'data');
