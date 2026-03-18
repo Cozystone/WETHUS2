@@ -735,9 +735,9 @@
     const apiKey = getGeminiApiKey();
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-    async function once() {
+    async function once(timeoutMs = 15000) {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 9000);
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
       try {
         const res = await fetch(url, {
           method: 'POST',
@@ -745,7 +745,7 @@
           signal: controller.signal,
           body: JSON.stringify({
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.35, maxOutputTokens: 220 }
+            generationConfig: { temperature: 0.3, maxOutputTokens: 320 }
           })
         });
 
@@ -763,12 +763,17 @@
       }
     }
 
-    try {
-      return await once();
-    } catch {
-      await new Promise(r => setTimeout(r, 350));
-      return await once();
+    let lastErr;
+    const delays = [0, 500, 1200];
+    for (let i = 0; i < delays.length; i++) {
+      try {
+        if (delays[i]) await new Promise(r => setTimeout(r, delays[i]));
+        return await once(15000 + i * 3000);
+      } catch (e) {
+        lastErr = e;
+      }
     }
+    throw lastErr || new Error('Gemini 호출 실패');
   }
 
   function formatTimeAgo(iso) {

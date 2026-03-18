@@ -103,7 +103,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-5"></script>
+  <script src="app.js?v=20260318-6"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
 
@@ -281,9 +281,10 @@
           if (pageSubEl) pageSubEl.textContent = '홈으로 이동하기 전에 프로필 정보를 먼저 입력해주세요.';
           if (navEl) {
             const links = navEl.querySelector('.nav-links');
-            if (links) links.style.display = 'none';
-            const inner = navEl.querySelector('.nav-inner');
-            if (inner) inner.style.justifyContent = 'center';
+            if (links) {
+              links.style.visibility = 'hidden';
+              links.style.pointerEvents = 'none';
+            }
           }
 
           const onboardingSection = document.createElement('section');
