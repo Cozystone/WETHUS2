@@ -505,13 +505,23 @@
     return s.projects.filter(p => p.founderId === s.currentUserId || (s.devMode && p.founderId === 'dev-temp'));
   }
 
+  function goLoginIfGuest() {
+    const actor = currentActorId();
+    if (actor) return false;
+    if (typeof location !== 'undefined') location.href = 'login.html';
+    return true;
+  }
+
   function toggleLike(projectId) {
     const s = load();
     const target = s.projects.find(p => p.id === projectId);
     if (!target) return null;
 
     const actorId = s.currentUserId || (s.devMode ? 'dev-temp' : null);
-    if (!actorId) return { likes: target.likes || 0, liked: false };
+    if (!actorId) {
+      goLoginIfGuest();
+      return { likes: target.likes || 0, liked: false };
+    }
 
     if (!Array.isArray(target.likedBy)) target.likedBy = [];
     const idx = target.likedBy.indexOf(actorId);
@@ -534,6 +544,7 @@
     const s = load();
     const target = s.projects.find(p => p.id === projectId);
     if (!target) return null;
+    if (goLoginIfGuest()) throw new Error('로그인이 필요합니다.');
     const author = currentUser()?.nickname || currentUser()?.name || '익명';
     if (!Array.isArray(target.comments)) target.comments = [];
     target.comments.push({ id: uid(), author, text, createdAt: new Date().toISOString() });
@@ -652,7 +663,10 @@
   function applyToProject(projectId, motivation) {
     const s = load();
     const actor = currentActorId();
-    if (!actor) throw new Error('로그인이 필요합니다.');
+    if (!actor) {
+      goLoginIfGuest();
+      throw new Error('로그인이 필요합니다.');
+    }
     const exists = s.applications.find(a => a.projectId === projectId && a.userId === actor && a.status === 'applied');
     if (exists) return exists;
     const app = { id: uid(), projectId, userId: actor, motivation: motivation || '', status: 'applied', createdAt: new Date().toISOString() };
