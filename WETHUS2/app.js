@@ -386,14 +386,15 @@
   function oauthLoginGoogle({ sub, email, name, picture }) {
     const s = load();
     let isNew = false;
-    let user = s.users.find(u => (u.googleSub && u.googleSub === sub) || (u.email && u.email === email));
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    let user = s.users.find(u => (u.googleSub && u.googleSub === sub) || (u.email && String(u.email).toLowerCase() === normalizedEmail));
     if (!user) {
       isNew = true;
       user = {
         id: uid(),
         name: name || email?.split('@')[0] || 'Google User',
         nickname: (name || email?.split('@')[0] || 'google_user').replace(/\s+/g, ''),
-        email,
+        email: normalizedEmail,
         password: '',
         bio: '',
         founderVerified: false,
@@ -421,7 +422,8 @@
 
   function registerUser({ name, nickname, email, password }) {
     const s = load();
-    const exists = s.users.find(u => u.email === email);
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const exists = s.users.find(u => String(u.email || '').toLowerCase() === normalizedEmail);
     if (exists) throw new Error('이미 가입된 이메일입니다.');
     if (String(password || '').length < 8) throw new Error('비밀번호는 8자 이상이어야 합니다.');
     if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) throw new Error('비밀번호는 영문+숫자를 포함해야 합니다.');
@@ -430,7 +432,7 @@
       id: uid(),
       name,
       nickname: nickname || name,
-      email,
+      email: normalizedEmail,
       password,
       bio: '',
       founderVerified: false,
@@ -452,7 +454,8 @@
 
   function loginUser({ email, password }) {
     const s = load();
-    const user = s.users.find(u => u.email === email);
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const user = s.users.find(u => String(u.email || '').toLowerCase() === normalizedEmail);
     if (!user) throw new Error('가입된 계정이 없습니다.');
     if (user.password !== password) throw new Error('비밀번호가 일치하지 않습니다.');
     s.currentUserId = user.id;

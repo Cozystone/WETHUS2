@@ -78,14 +78,18 @@
 
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=20260318-25"></script>
+  <script src="app.js?v=20260318-26"></script>
   <script>
     const msg = document.getElementById('authMsg');
     const tabLogin = document.getElementById('tabLogin');
     const googleHint = document.getElementById('googleHint');
 
     const GOOGLE_CLIENT_ID = window.WETHUS_GOOGLE_CLIENT_ID || '196934770979-6ntmgcrs6k6jkifskspasg4uie5irgec.apps.googleusercontent.com';
-    const GOOGLE_AUTH_ENDPOINT = window.WETHUS_GOOGLE_AUTH_ENDPOINT || 'http://localhost:8787/auth/google';
+    const GOOGLE_AUTH_ENDPOINTS = [
+      window.WETHUS_GOOGLE_AUTH_ENDPOINT,
+      'http://127.0.0.1:8787/auth/google',
+      'http://localhost:8787/auth/google'
+    ].filter(Boolean);
     const tabSignup = document.getElementById('tabSignup');
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
@@ -125,14 +129,25 @@
         const credential = response?.credential;
         if (!credential) throw new Error('Google 인증 토큰이 비어 있습니다.');
 
-        const res = await fetch(GOOGLE_AUTH_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ credential })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data?.error || 'Google 인증 서버 검증에 실패했습니다.');
-        if (!data?.ok || !data?.user) throw new Error(data?.error || 'Google 사용자 정보를 불러오지 못했습니다.');
+        let data = null;
+        let lastErr = null;
+        for (const endpoint of GOOGLE_AUTH_ENDPOINTS) {
+          try {
+            const res = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ credential })
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(json?.error || 'Google 인증 서버 검증에 실패했습니다.');
+            if (!json?.ok || !json?.user) throw new Error(json?.error || 'Google 사용자 정보를 불러오지 못했습니다.');
+            data = json;
+            break;
+          } catch (e) {
+            lastErr = e;
+          }
+        }
+        if (!data) throw new Error(lastErr?.message || 'Google 인증 서버에 연결하지 못했습니다.');
 
         const result = WETHUS.oauthLoginGoogle(data.user);
         if (result?.isNew) {
@@ -231,9 +246,10 @@
       e.preventDefault();
       if (!window.WETHUS) return;
       const fd = new FormData(loginForm);
+      const email = String(fd.get('email') || '').trim().toLowerCase();
       try {
-        WETHUS.loginUser({ email: fd.get('email'), password: fd.get('password') });
-        if (rememberEmail.checked) localStorage.setItem('wethus_saved_email', String(fd.get('email') || ''));
+        WETHUS.loginUser({ email, password: fd.get('password') });
+        if (rememberEmail.checked) localStorage.setItem('wethus_saved_email', email);
         else localStorage.removeItem('wethus_saved_email');
         location.href = 'index.html';
       } catch (err) { msg.textContent = err.message; }
@@ -247,11 +263,12 @@
         return;
       }
       const fd = new FormData(signupForm);
+      const email = String(fd.get('email') || '').trim().toLowerCase();
       try {
         WETHUS.registerUser({
           name: fd.get('name'),
           nickname: fd.get('nickname'),
-          email: fd.get('email'),
+          email,
           password: fd.get('password')
         });
         location.href = 'profile.html?onboarding=1';
