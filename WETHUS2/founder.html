@@ -80,8 +80,8 @@
 
   <main class="container">
     <section class="page-header">
-      <h1 class="page-title">Founder 신청</h1>
-      <p class="page-sub">Founder 신청이 승인되면 프로젝트가 공개되고, 신청자는 Founder로 인증됩니다.</p>
+      <h1 class="page-title" id="founderPageTitle">Founder 신청</h1>
+      <p class="page-sub" id="founderPageSub">Founder 신청이 승인되면 프로젝트가 공개되고, 신청자는 Founder로 인증됩니다.</p>
     </section>
 
     <section class="founder-form">
@@ -92,8 +92,8 @@
             <div class="dropzone-title">드래그 앤 드롭 또는 파일 선택</div>
             <p class="dropzone-sub">권장 비율 16:9 · JPG/PNG/WebP</p>
             <div class="form-row" style="justify-content:center;margin-top:10px;">
-              <button id="pickFileBtn" class="btn btn--secondary" type="button">파일에서 찾기</button>
-              <button id="genImageBtn" class="btn btn--secondary" type="button">AI 이미지 생성</button>
+              <button id="pickFileBtn" class="btn btn--secondary founder-accent-btn" type="button">파일에서 찾기</button>
+              <button id="genImageBtn" class="btn btn--secondary founder-accent-btn" type="button">AI 이미지 생성</button>
               <button id="regenImageBtn" class="btn btn--primary" type="button" style="display:none;">다시 생성</button>
             </div>
             <div class="dropzone-preview" id="coverPreviewWrap">
@@ -190,7 +190,7 @@
         </label>
 
         <div class="form-row">
-          <button id="draftSaveBtn" class="btn btn--secondary" type="button">임시저장</button>
+          <button id="draftSaveBtn" class="btn btn--secondary founder-accent-btn" type="button">임시저장</button>
           <button id="previewBtn" class="btn preview-trigger" type="button">미리보기</button>
           <button id="submitBtn" class="btn btn--primary" type="submit">신청하기</button>
         </div>
@@ -228,7 +228,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-21"></script>
+  <script src="app.js?v=20260318-22"></script>
   <script>
     WETHUS.requireAuth();
     const authLink = document.querySelector('.js-auth-link');
@@ -237,6 +237,15 @@
       authLink.textContent = '로그아웃';
       authLink.href = '#';
       authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
+    }
+
+    const me = WETHUS.currentUser();
+    const founderPageTitle = document.getElementById('founderPageTitle');
+    const founderPageSub = document.getElementById('founderPageSub');
+    if (me?.founderVerified) {
+      founderPageTitle.textContent = '프로젝트 시작하기';
+      founderPageSub.textContent = 'Founder 인증이 완료되어 바로 프로젝트를 등록할 수 있습니다.';
+      document.title = 'WETHUS | 프로젝트 시작하기';
     }
 
     const form = document.getElementById('founderForm');

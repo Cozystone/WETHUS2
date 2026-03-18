@@ -375,7 +375,10 @@
     const s = load();
     const u = s.users.find(x => x.id === s.currentUserId);
     if (!u) return false;
-    u.plan = plan === 'premium' ? 'premium' : 'free';
+    const p = String(plan || 'free').toLowerCase();
+    if (p === 'premium') u.plan = 'premium';
+    else if (p === 'master' || p === 'pro') u.plan = 'master';
+    else u.plan = 'free';
     save(s);
     return true;
   }
@@ -622,9 +625,13 @@
     const s = load();
     const actor = currentActorId();
     const u = s.users.find(x => x.id === s.currentUserId);
-    if ((u?.plan || 'free') !== 'premium') throw new Error('프리 플랜은 DM 수신만 가능합니다.');
+    const plan = (u?.plan || 'free').toLowerCase();
+    if (plan === 'free') throw new Error('Free 플랜은 DM 수신만 가능합니다.');
     const t = (s.dmThreads || []).find(x => x.id === threadId);
     if (!t) throw new Error('대화방을 찾을 수 없습니다.');
+    if ((t.targetRole === 'mentor') && plan !== 'master') {
+      throw new Error('멘토에게 먼저 메시지를 보내려면 Master 플랜이 필요합니다.');
+    }
     t.messages.push({ id: uid(), from: u?.nickname || u?.name || actor || 'Me', text: text || '', createdAt: new Date().toISOString() });
     save(s);
     return t.messages;
@@ -884,15 +891,16 @@
         ? `<img src="${u.profileImage}" alt="avatar" class="profile-chip-avatar"/>`
         : `<span class="profile-chip-avatar-fallback">${(u.name || 'U').slice(0, 1)}</span>`;
       const plan = (u.plan || 'free').toLowerCase();
+      const planClass = plan === 'premium' ? 'profile-chip-btn--premium' : (plan === 'master' ? 'profile-chip-btn--master' : '');
       chipWrap.innerHTML = `
-        <button class="profile-chip-btn ${plan === 'premium' ? 'profile-chip-btn--premium' : ''}" type="button" aria-label="프로필 메뉴">
+        <button class="profile-chip-btn ${planClass}" type="button" aria-label="프로필 메뉴">
           ${avatarHtml}
           <span class="profile-chip-texts"><strong>${u.name || '사용자'}</strong><em>${(u.plan || 'free').toUpperCase()}</em></span>
         </button>
         <div class="notify-dropdown profile-chip-dropdown" style="display:none;">
-          <a class="notify-item" href="#"><strong>요금제</strong><p>${(u.plan || 'free').toUpperCase()} Plan</p></a>
+          <a class="notify-item" href="pricing.html"><strong>요금제</strong><p>${(u.plan || 'free').toUpperCase()} Plan</p></a>
           <a class="notify-item" href="profile.html"><strong>프로필</strong><p>내 프로필 보기 및 수정</p></a>
-          <button class="notify-more" type="button" id="chipLogoutBtn">로그아웃</button>
+          <button class="notify-more logout-btn" type="button" id="chipLogoutBtn">로그아웃</button>
         </div>
       `;
 
