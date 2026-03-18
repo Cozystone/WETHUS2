@@ -103,7 +103,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-7"></script>
+  <script src="app.js?v=20260318-8"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
 
@@ -253,30 +253,44 @@
           const raw = (careerRawEl.value || '').trim();
           if (!raw) { profileMsg.textContent = '경력사항을 먼저 입력해주세요.'; return; }
           profileMsg.textContent = 'AI가 경력을 요약 중입니다...';
+
+          const aiEndpoint = (window.WETHUS_AI_ENDPOINT || 'http://127.0.0.1:8787') + '/ai/career-summary';
+          let backendErr = '';
+
           try {
-            const aiRes = await fetch('http://127.0.0.1:8787/ai/career-summary', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ raw })
-            });
-            const aiData = await aiRes.json().catch(() => ({}));
-            if (!aiRes.ok || !aiData?.summary) throw new Error(aiData?.error || 'server ai failed');
+            let aiData = null;
+            for (let i = 0; i < 2; i++) {
+              const aiRes = await fetch(aiEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ raw })
+              });
+              aiData = await aiRes.json().catch(() => ({}));
+              if (aiRes.ok && aiData?.summary) break;
+              backendErr = aiData?.error || `backend ${aiRes.status}`;
+              await new Promise(r => setTimeout(r, 350));
+            }
+
+            if (!aiData?.summary) throw new Error(backendErr || 'server ai failed');
             const cleaned = String(aiData.summary).trim();
             const normalized = cleaned.replace(/^-\s*\((전|현)\)/gm, '-($1)');
             if (!/^-\((전|현)\)/m.test(normalized)) throw new Error('AI 형식화 실패');
             careerSummaryEl.value = normalized;
             profileMsg.textContent = 'AI 요약이 완료되었습니다.';
-          } catch {
-            try {
-              const out = await WETHUS.askGemini(`다음 경력사항을 정확히 '-(전) ...' 또는 '-(현) ...' 형식의 불릿으로만 출력해줘. 최대 6줄. 원문 문장을 그대로 복붙하지 말고 핵심 명사/행동 중심으로 압축해.\n${raw}`);
-              const cleaned = String(out || '').trim();
-              const normalized = cleaned.replace(/^-\s*\((전|현)\)/gm, '-($1)');
-              if (!/^-\((전|현)\)/m.test(normalized)) throw new Error('AI 형식화 실패');
-              careerSummaryEl.value = normalized;
-              profileMsg.textContent = 'AI 요약이 완료되었습니다.';
-            } catch {
-              profileMsg.textContent = 'AI 요약에 실패했습니다. 잠시 후 다시 시도해주세요.';
-            }
+            return;
+          } catch (e) {
+            backendErr = e?.message || backendErr;
+          }
+
+          try {
+            const out = await WETHUS.askGemini(`다음 경력사항을 정확히 '-(전) ...' 또는 '-(현) ...' 형식의 불릿으로만 출력해줘. 최대 6줄. 원문 문장을 그대로 복붙하지 말고 핵심 명사/행동 중심으로 압축해.\n${raw}`);
+            const cleaned = String(out || '').trim();
+            const normalized = cleaned.replace(/^-\s*\((전|현)\)/gm, '-($1)');
+            if (!/^-\((전|현)\)/m.test(normalized)) throw new Error('AI 형식화 실패');
+            careerSummaryEl.value = normalized;
+            profileMsg.textContent = 'AI 요약이 완료되었습니다.';
+          } catch (e2) {
+            profileMsg.textContent = `AI 요약에 실패했습니다. (${backendErr || 'backend fail'} / ${e2?.message || 'fallback fail'})`;
           }
         });
 
