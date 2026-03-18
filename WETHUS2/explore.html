@@ -75,6 +75,24 @@
     .stack-wrap::before { left:0; background: linear-gradient(90deg, rgba(5,5,7,.92), rgba(5,5,7,0)); }
     .stack-wrap::after { right:0; background: linear-gradient(270deg, rgba(5,5,7,.92), rgba(5,5,7,0)); }
 
+    .stack-total-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 20;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,224,196,.78);
+      background: linear-gradient(135deg, rgba(255,144,58,.82), rgba(255,108,24,.76));
+      color: #fff8ef;
+      font-size: .74rem;
+      font-weight: 900;
+      letter-spacing: .03em;
+      backdrop-filter: blur(8px) saturate(112%);
+      -webkit-backdrop-filter: blur(8px) saturate(112%);
+      box-shadow: 0 8px 16px rgba(108,58,16,.24), inset 0 1px 0 rgba(255,255,255,.22);
+    }
+
     .gateway-actions { margin-top: 14px; display:flex; gap:10px; }
   </style>
 </head>
@@ -98,6 +116,7 @@
       <p class="gateway-sub">관심 분야를 선택하면 해당 테마의 프로젝트 탐색으로 이동합니다.</p>
 
       <div class="stack-wrap" aria-label="카테고리 선택">
+        <a class="stack-total-btn" href="explore_v1.html">TOTAL</a>
         <a class="stack-card stack-1" href="explore_theme.html?cat=MathSci">
           <em>DISCOVER</em>
           <h3>Math & Sci</h3>
