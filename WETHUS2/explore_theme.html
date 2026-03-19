@@ -6,6 +6,7 @@
   <title>WETHUS | 카테고리 탐색</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260319-2" />
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
   <style>
     :root {
       --theme-tint: #ffb27a;
@@ -217,97 +218,208 @@
     document.documentElement.style.setProperty('--theme-tint', currentTheme.tint);
     document.documentElement.style.setProperty('--theme-tint-2', currentTheme.tint2 || currentTheme.tint);
 
-    // Mouse-reactive liquid gradient background for detailed explore page
+    // WebGL liquid gradient (mouse-reactive) for detailed explore page
     (function setupThemeLiquidBackground(){
-      const canvas = document.getElementById('themeLiquidBg');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d', { alpha: true });
-      if (!ctx) return;
+      if (!window.THREE) return;
+      const canvasEl = document.getElementById('themeLiquidBg');
+      if (!canvasEl) return;
 
-      const hexToRgb = (hex) => {
-        const h = String(hex || '').replace('#','').trim();
-        const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
-        const v = parseInt(n || 'ffffff', 16);
-        return { r: (v >> 16) & 255, g: (v >> 8) & 255, b: v & 255 };
-      };
-
-      const c1 = hexToRgb(currentTheme.tint || '#ffb27a');
-      const c2 = hexToRgb(currentTheme.tint2 || currentTheme.tint || '#ff8f45');
-      const c3 = { r: 106, g: 174, b: 255 };
-      const mouse = { x: 0.5, y: 0.5, tx: 0.5, ty: 0.5 };
-      const trail = [];
-      const MAX_TRAIL = 22;
-      let w = 0;
-      let h = 0;
-
-      const resize = () => {
-        const dpr = Math.min(2, window.devicePixelRatio || 1);
-        w = window.innerWidth;
-        h = window.innerHeight;
-        canvas.width = Math.floor(w * dpr);
-        canvas.height = Math.floor(h * dpr);
-        canvas.style.width = w + 'px';
-        canvas.style.height = h + 'px';
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      };
-      resize();
-      window.addEventListener('resize', resize);
-
-      const onMove = (clientX, clientY) => {
-        mouse.tx = Math.max(0, Math.min(1, clientX / Math.max(1, w)));
-        mouse.ty = Math.max(0, Math.min(1, clientY / Math.max(1, h)));
-        trail.push({ x: mouse.tx, y: mouse.ty, life: 1 });
-        if (trail.length > MAX_TRAIL) trail.shift();
-      };
-
-      window.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY), { passive: true });
-      window.addEventListener('touchmove', (e) => {
-        const t = e.touches && e.touches[0];
-        if (t) onMove(t.clientX, t.clientY);
-      }, { passive: true });
-
-      const drawBlob = (x, y, r, color, alpha) => {
-        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-        g.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`);
-        g.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fill();
-      };
-
-      let tick = 0;
-      const render = () => {
-        tick += 0.008;
-        mouse.x += (mouse.tx - mouse.x) * 0.08;
-        mouse.y += (mouse.ty - mouse.y) * 0.08;
-
-        ctx.clearRect(0, 0, w, h);
-
-        // base liquid motion
-        drawBlob((0.2 + Math.sin(tick * 0.7) * 0.06) * w, (0.18 + Math.cos(tick * 0.9) * 0.07) * h, Math.max(w, h) * 0.42, c1, 0.22);
-        drawBlob((0.78 + Math.cos(tick * 0.6) * 0.08) * w, (0.28 + Math.sin(tick * 0.8) * 0.06) * h, Math.max(w, h) * 0.36, c2, 0.20);
-        drawBlob((0.62 + Math.sin(tick * 0.5) * 0.05) * w, (0.78 + Math.cos(tick * 0.75) * 0.05) * h, Math.max(w, h) * 0.32, c3, 0.16);
-
-        // mouse reactive bloom
-        const mx = mouse.x * w;
-        const my = mouse.y * h;
-        drawBlob(mx, my, Math.max(w, h) * 0.30, c2, 0.24);
-        drawBlob(mx + Math.sin(tick * 2.2) * 30, my + Math.cos(tick * 2.0) * 30, Math.max(w, h) * 0.20, c1, 0.14);
-
-        for (let i = trail.length - 1; i >= 0; i--) {
-          const p = trail[i];
-          p.life *= 0.94;
-          if (p.life < 0.05) {
-            trail.splice(i, 1);
-            continue;
-          }
-          drawBlob(p.x * w, p.y * h, Math.max(w, h) * (0.08 + p.life * 0.08), c3, 0.1 * p.life);
+      class TouchTexture {
+        constructor() {
+          this.size = 64;
+          this.width = this.height = this.size;
+          this.maxAge = 64;
+          this.radius = 0.25 * this.size;
+          this.speed = 1 / this.maxAge;
+          this.trail = [];
+          this.last = null;
+          this.initTexture();
         }
+        initTexture() {
+          this.canvas = document.createElement('canvas');
+          this.canvas.width = this.width;
+          this.canvas.height = this.height;
+          this.ctx = this.canvas.getContext('2d');
+          this.ctx.fillStyle = 'black';
+          this.ctx.fillRect(0, 0, this.width, this.height);
+          this.texture = new THREE.Texture(this.canvas);
+        }
+        clear() {
+          this.ctx.fillStyle = 'black';
+          this.ctx.fillRect(0, 0, this.width, this.height);
+        }
+        addTouch(point) {
+          let force = 0, vx = 0, vy = 0;
+          const last = this.last;
+          if (last) {
+            const dx = point.x - last.x;
+            const dy = point.y - last.y;
+            if (dx === 0 && dy === 0) return;
+            const dd = dx * dx + dy * dy;
+            const d = Math.sqrt(dd);
+            vx = dx / d;
+            vy = dy / d;
+            force = Math.min(dd * 20000, 2.0);
+          }
+          this.last = { x: point.x, y: point.y };
+          this.trail.push({ x: point.x, y: point.y, age: 0, force, vx, vy });
+        }
+        drawPoint(point) {
+          const pos = { x: point.x * this.width, y: (1 - point.y) * this.height };
+          let intensity = 1;
+          if (point.age < this.maxAge * 0.3) {
+            intensity = Math.sin((point.age / (this.maxAge * 0.3)) * (Math.PI / 2));
+          } else {
+            const t = 1 - (point.age - this.maxAge * 0.3) / (this.maxAge * 0.7);
+            intensity = -t * (t - 2);
+          }
+          intensity *= point.force;
+          const radius = this.radius;
+          const color = `${((point.vx + 1) / 2) * 255}, ${((point.vy + 1) / 2) * 255}, ${intensity * 255}`;
+          const offset = this.size * 5;
+          this.ctx.shadowOffsetX = offset;
+          this.ctx.shadowOffsetY = offset;
+          this.ctx.shadowBlur = radius;
+          this.ctx.shadowColor = `rgba(${color},${0.2 * intensity})`;
+          this.ctx.beginPath();
+          this.ctx.fillStyle = 'rgba(255,0,0,1)';
+          this.ctx.arc(pos.x - offset, pos.y - offset, radius, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
+        update() {
+          this.clear();
+          const speed = this.speed;
+          for (let i = this.trail.length - 1; i >= 0; i--) {
+            const p = this.trail[i];
+            const f = p.force * speed * (1 - p.age / this.maxAge);
+            p.x += p.vx * f;
+            p.y += p.vy * f;
+            p.age++;
+            if (p.age > this.maxAge) this.trail.splice(i, 1);
+            else this.drawPoint(p);
+          }
+          this.texture.needsUpdate = true;
+        }
+      }
 
-        requestAnimationFrame(render);
+      const h2v3 = (hex) => {
+        const h = (hex || '#ffffff').replace('#','');
+        const v = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+        return new THREE.Vector3(((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255);
       };
-      requestAnimationFrame(render);
+
+      class App {
+        constructor() {
+          this.renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, alpha: true, powerPreference: 'high-performance' });
+          this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+          this.renderer.setSize(window.innerWidth, window.innerHeight);
+          this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+          this.camera.position.z = 50;
+          this.scene = new THREE.Scene();
+          this.scene.background = null;
+          this.clock = new THREE.Clock();
+          this.touchTexture = new TouchTexture();
+          this.uniforms = {
+            uTime: { value: 0 },
+            uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+            uColor1: { value: h2v3(currentTheme.tint || '#ffb27a') },
+            uColor2: { value: h2v3(currentTheme.tint2 || '#ff8f45') },
+            uColor3: { value: new THREE.Vector3(0.251, 0.878, 0.816) },
+            uTouchTexture: { value: this.touchTexture.texture },
+            uSpeed: { value: 1.45 },
+            uIntensity: { value: 1.45 },
+            uGrainIntensity: { value: 0.06 },
+            uDarkNavy: { value: new THREE.Vector3(0.039, 0.055, 0.153) }
+          };
+          this.init();
+          window.addEventListener('resize', () => this.onResize());
+          window.addEventListener('mousemove', (e) => this.onPointer(e.clientX, e.clientY), { passive: true });
+          window.addEventListener('touchmove', (e) => {
+            const t = e.touches && e.touches[0];
+            if (t) this.onPointer(t.clientX, t.clientY);
+          }, { passive: true });
+          this.tick();
+        }
+        getViewSize() {
+          const fov = (this.camera.fov * Math.PI) / 180;
+          const height = Math.abs(this.camera.position.z * Math.tan(fov / 2) * 2);
+          return { width: height * this.camera.aspect, height };
+        }
+        init() {
+          const view = this.getViewSize();
+          const geometry = new THREE.PlaneGeometry(view.width, view.height, 1, 1);
+          const material = new THREE.ShaderMaterial({
+            uniforms: this.uniforms,
+            vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+            fragmentShader: `
+              uniform float uTime; uniform vec2 uResolution; uniform vec3 uColor1; uniform vec3 uColor2; uniform vec3 uColor3;
+              uniform float uSpeed; uniform float uIntensity; uniform sampler2D uTouchTexture; uniform float uGrainIntensity; uniform vec3 uDarkNavy;
+              varying vec2 vUv;
+              float grain(vec2 uv, float t){ return fract(sin(dot((uv*uResolution*0.5)+t, vec2(12.9898,78.233))) * 43758.5453) * 2.0 - 1.0; }
+              vec3 grad(vec2 uv, float t){
+                vec2 c1 = vec2(0.5 + sin(t*uSpeed*0.40)*0.40, 0.5 + cos(t*uSpeed*0.50)*0.40);
+                vec2 c2 = vec2(0.5 + cos(t*uSpeed*0.60)*0.50, 0.5 + sin(t*uSpeed*0.45)*0.50);
+                vec2 c3 = vec2(0.5 + sin(t*uSpeed*0.35)*0.45, 0.5 + cos(t*uSpeed*0.55)*0.45);
+                vec2 c4 = vec2(0.5 + cos(t*uSpeed*0.50)*0.40, 0.5 + sin(t*uSpeed*0.40)*0.40);
+                vec2 c5 = vec2(0.5 + sin(t*uSpeed*0.70)*0.35, 0.5 + cos(t*uSpeed*0.60)*0.35);
+                vec2 c6 = vec2(0.5 + cos(t*uSpeed*0.45)*0.50, 0.5 + sin(t*uSpeed*0.65)*0.50);
+                float r = 0.45;
+                float i1 = 1.0 - smoothstep(0.0, r, length(uv-c1)); float i2 = 1.0 - smoothstep(0.0, r, length(uv-c2));
+                float i3 = 1.0 - smoothstep(0.0, r, length(uv-c3)); float i4 = 1.0 - smoothstep(0.0, r, length(uv-c4));
+                float i5 = 1.0 - smoothstep(0.0, r, length(uv-c5)); float i6 = 1.0 - smoothstep(0.0, r, length(uv-c6));
+                vec3 color = vec3(0.0);
+                color += uColor1 * i1 * (0.55 + 0.45*sin(t*uSpeed));
+                color += uColor2 * i2 * (0.55 + 0.45*cos(t*uSpeed*1.2));
+                color += uColor3 * i3 * (0.55 + 0.45*sin(t*uSpeed*0.8));
+                color += uColor1 * i4 * (0.55 + 0.45*cos(t*uSpeed*1.3));
+                color += uColor2 * i5 * (0.55 + 0.45*sin(t*uSpeed*1.1));
+                color += uColor3 * i6 * (0.55 + 0.45*cos(t*uSpeed*0.9));
+                color = clamp(color, vec3(0.0), vec3(1.0)) * uIntensity;
+                float l = dot(color, vec3(0.299,0.587,0.114));
+                color = mix(vec3(l), color, 1.3);
+                float b = length(color);
+                color = mix(uDarkNavy, color, max(b*1.2, 0.15));
+                return color;
+              }
+              void main(){
+                vec2 uv = vUv;
+                vec4 tt = texture2D(uTouchTexture, uv);
+                float vx = -(tt.r*2.0-1.0); float vy = -(tt.g*2.0-1.0); float ii = tt.b;
+                uv.x += vx * 0.8 * ii; uv.y += vy * 0.8 * ii;
+                float dist = length(uv-vec2(0.5));
+                uv += vec2(sin(dist*20.0-uTime*3.0)*0.04*ii + sin(dist*15.0-uTime*2.0)*0.03*ii);
+                vec3 color = grad(uv, uTime);
+                color += grain(uv, uTime) * uGrainIntensity;
+                color = clamp(color, vec3(0.0), vec3(1.0));
+                gl_FragColor = vec4(color, 1.0);
+              }
+            `
+          });
+          this.mesh = new THREE.Mesh(geometry, material);
+          this.scene.add(this.mesh);
+        }
+        onPointer(x, y) {
+          this.touchTexture.addTouch({ x: x / window.innerWidth, y: 1 - y / window.innerHeight });
+        }
+        onResize() {
+          this.camera.aspect = window.innerWidth / window.innerHeight;
+          this.camera.updateProjectionMatrix();
+          this.renderer.setSize(window.innerWidth, window.innerHeight);
+          this.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+          const view = this.getViewSize();
+          this.mesh.geometry.dispose();
+          this.mesh.geometry = new THREE.PlaneGeometry(view.width, view.height, 1, 1);
+        }
+        tick() {
+          const delta = Math.min(this.clock.getDelta(), 0.1);
+          this.uniforms.uTime.value += delta;
+          this.touchTexture.update();
+          this.renderer.render(this.scene, this.camera);
+          requestAnimationFrame(() => this.tick());
+        }
+      }
+
+      new App();
     })();
 
     function actorId() {
