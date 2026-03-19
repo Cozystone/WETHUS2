@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WETHUS | 프로필</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
-  <link rel="stylesheet" href="styles.css?v=20260319-16" />
+  <link rel="stylesheet" href="styles.css?v=20260319-17" />
 </head>
 <body>
   <header class="nav">
@@ -46,7 +46,7 @@
       </div>
     </section>
 
-    <section id="myProjects" class="list-grid scroll-four"></section>
+    <section id="myProjects" class="list-grid"></section>
 
     <section class="projects-head-row" style="margin-top:4px;">
       <h2 class="section-title" style="font-size:1.4rem;margin:0;">참여중인 프로젝트</h2>
@@ -112,15 +112,16 @@
 
   <div id="myProjectModal" class="modal" aria-hidden="true">
     <div class="modal-backdrop" data-close-myproject="true"></div>
-    <article class="modal-panel" style="max-width:560px;">
+    <article class="modal-panel" style="max-width:760px;">
       <button class="modal-close" id="myProjectClose" aria-label="닫기">×</button>
+      <div class="modal-media-wrap"><img id="myProjectImage" class="modal-image" alt="프로젝트 이미지" /></div>
       <div class="modal-content">
         <p id="myProjectCategory" class="section-kicker" style="margin:0 0 4px;"></p>
         <h3 id="myProjectTitle" style="margin:0 0 8px;"></h3>
         <p id="myProjectMeta" class="meta" style="margin:0 0 8px;"></p>
         <p id="myProjectTeam" class="meta" style="margin:0 0 8px;"></p>
         <p id="myProjectSocial" class="meta" style="margin:0 0 10px;"></p>
-        <textarea id="myProjectSummaryInput" style="width:100%;min-height:100px;background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;"></textarea>
+        <textarea id="myProjectSummaryInput" style="width:100%;min-height:100px;background:rgba(255,255,255,.06);color:#f5f5f5;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:10px;"></textarea>
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
           <button id="myProjectDelete" class="btn btn--secondary" type="button">삭제</button>
           <button id="myProjectSave" class="btn btn--primary" type="button">수정 저장</button>
@@ -144,7 +145,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-41"></script>
+  <script src="app.js?v=20260318-42"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
 
@@ -511,6 +512,7 @@
       const myProjectViewList = document.getElementById('myProjectViewList');
       const myProjectModal = document.getElementById('myProjectModal');
       const myProjectClose = document.getElementById('myProjectClose');
+      const myProjectImage = document.getElementById('myProjectImage');
       const myProjectCategory = document.getElementById('myProjectCategory');
       const myProjectTitle = document.getElementById('myProjectTitle');
       const myProjectMeta = document.getElementById('myProjectMeta');
@@ -532,15 +534,17 @@
         }
 
         if (myProjectView === 'album') {
-          mine.className = 'project-cards scroll-four';
+          mine.className = 'project-cards';
           mine.innerHTML = list.map(p => `
             <article class="card" data-myproject="${p.id}">
-              <div class="card-media"><img src="${p.image || 'https://picsum.photos/seed/wethus-profile-'+encodeURIComponent(p.title)+'/900/560'}" class="card-img" alt="${p.title}" /></div>
+              <div class="card-media">
+                <img src="${p.image || 'https://picsum.photos/seed/wethus-profile-'+encodeURIComponent(p.title)+'/900/560'}" class="card-img" alt="${p.title}" />
+              </div>
               <span class="card-chip">${p.category || ''}</span>
               <h3 class="card-title">${p.title}</h3>
               <p class="card-summary">${p.summary || ''}</p>
               <div class="team-row">${(p.teamMembers||[]).slice(0,3).map(m=>`<span class='member-pill'><span class='member-name'>${m.name||'팀원'}</span> <span class='member-role'>${m.role||''}</span></span>`).join('')}</div>
-              <div class="meta">${p.status || ''} · ${p.teamSize || ''} · ${p.duration || ''}</div>
+              <div class="meta">${p.status || ''} · ${p.teamSize || ''} · ${p.roles || ''}</div>
               <div class="card-bottom-row">
                 <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments||[]).length}</span></div>
                 <div style="display:flex;gap:6px;">
@@ -551,7 +555,7 @@
             </article>
           `).join('');
         } else {
-          mine.className = 'list-grid scroll-four';
+          mine.className = 'list-grid';
           mine.innerHTML = list.map(p => `
             <article class="list-item" data-myproject="${p.id}">
               <h3>${p.title}</h3>
@@ -571,6 +575,7 @@
         const p = WETHUS.myProjects().find(x => x.id === id);
         if (!p) return;
         currentMyProjectId = id;
+        myProjectImage.src = p.image || `https://picsum.photos/seed/wethus-profile-${encodeURIComponent(p.title || 'project')}/900/560`;
         myProjectCategory.textContent = p.category || '';
         myProjectTitle.textContent = p.title || '';
         myProjectMeta.textContent = `${p.status || ''} · ${p.teamSize || ''} · ${p.duration || ''}`;
