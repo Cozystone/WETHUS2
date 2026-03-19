@@ -9,7 +9,7 @@ class RootTabScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoTabScaffold(
-      tabBar: const CupertinoTabBar(items: [
+      tabBar: CupertinoTabBar(items: const [
         BottomNavigationBarItem(icon: Icon(CupertinoIcons.home), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(CupertinoIcons.list_bullet), label: 'Ledger'),
         BottomNavigationBarItem(icon: Icon(CupertinoIcons.chart_bar), label: 'Stats'),
