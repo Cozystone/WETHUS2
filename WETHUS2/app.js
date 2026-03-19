@@ -2,6 +2,7 @@
 (function () {
   const KEY = 'wethus_v1';
   const DEFAULT_GEMINI_KEY = 'AIzaSyBb5uOh7OMbtR-Mm4GwT6IU2zSwVUqdnL8';
+  const DEFAULT_OPENAI_KEY = '';
   const ADMIN_MODE_USER_ID = 'admin-mode';
 
   function uid() {
@@ -930,7 +931,7 @@
   }
 
   function getOpenAIApiKey() {
-    return load().openaiApiKey || '';
+    return load().openaiApiKey || DEFAULT_OPENAI_KEY;
   }
 
   function fakeAiSearch(projects, query) {
