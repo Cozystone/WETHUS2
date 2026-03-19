@@ -80,8 +80,8 @@
     .bloom-toggle {
       position: absolute;
       right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
+      top: -14px;
+      transform: none;
       z-index: 2;
       border: 1px solid rgba(255,255,255,.30);
       background: rgba(255,255,255,.08);
@@ -314,7 +314,7 @@
         if (!bloomOn) return;
         const f = document.createElement('span');
         const c = palette[Math.floor(Math.random() * palette.length)];
-        const size = opts.size || (48 + Math.random() * 40);
+        const size = opts.size || (11 + Math.random() * 2.2);
         f.className = 'bloom-flower';
         f.style.left = `${x}px`;
         f.style.top = `${y}px`;
@@ -333,20 +333,20 @@
         for (let i = 0; i < count; i++) {
           const a = (Math.PI * 2 * i) / count;
           const r = spread * (0.25 + Math.random() * 0.95);
-          spawnFlower(layer, x + Math.cos(a) * r, y + Math.sin(a) * r, { size: 44 + Math.random() * 28, life });
+          spawnFlower(layer, x + Math.cos(a) * r, y + Math.sin(a) * r, { size: 10.5 + Math.random() * 2.6, life });
         }
       }
 
       const rect = header.getBoundingClientRect();
-      bloomCluster(titleLayer, rect.width * 0.42, rect.height * 0.30, 6, 42, 3800);
-      bloomCluster(titleLayer, rect.width * 0.58, rect.height * 0.58, 5, 32, 4200);
+      bloomCluster(titleLayer, rect.width * 0.42, rect.height * 0.30, 18, 24, 3800);
+      bloomCluster(titleLayer, rect.width * 0.58, rect.height * 0.58, 16, 20, 4200);
 
       searchWrap.addEventListener('click', (e) => {
         const box = searchWrap.getBoundingClientRect();
         const localX = e.clientX - box.left;
         const localY = e.clientY - box.top;
         if (localY > 86) return;
-        bloomCluster(clickLayer, localX, localY, 7, 34, 3600);
+        bloomCluster(clickLayer, localX, localY, 20, 22, 3600);
       });
 
       const toggle = document.createElement('button');
@@ -368,7 +368,7 @@
           header.classList.remove('bloom-off');
           searchWrap.classList.remove('bloom-off');
           const h = header.getBoundingClientRect();
-          bloomCluster(titleLayer, h.width * 0.5, h.height * 0.4, 4, 26, 2600);
+          bloomCluster(titleLayer, h.width * 0.5, h.height * 0.4, 14, 18, 2600);
         }
       });
     })();
