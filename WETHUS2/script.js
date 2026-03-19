@@ -131,7 +131,7 @@
     }
     if (bookmarkBtn && window.WETHUS) {
       var marked = WETHUS.isBookmarked(data.id);
-      bookmarkBtn.textContent = marked ? '북마크됨' : '북마크';
+      bookmarkBtn.classList.toggle('active', !!marked);
     }
     if (commentPanel) commentPanel.style.display = 'none';
     modal.classList.add('open');
@@ -197,7 +197,7 @@
       if (!currentProjectId || !window.WETHUS) return;
       try {
         var result = WETHUS.toggleBookmark(currentProjectId);
-        bookmarkBtn.textContent = result && result.bookmarked ? '북마크됨' : '북마크';
+        bookmarkBtn.classList.toggle('active', !!(result && result.bookmarked));
         var cardBtn = document.querySelector('.bookmark-btn[data-bm="' + currentProjectId + '"]');
         if (cardBtn) cardBtn.classList.toggle('active', !!(result && result.bookmarked));
       } catch (_) {}
