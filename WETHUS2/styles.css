@@ -242,16 +242,16 @@ a { color: inherit; text-decoration: none; }
   line-height:1.1;
   font-weight:800;
 }
-.side-drawer-item .nav-icon-svg { width: 18px; height: 18px; }
+.side-drawer-item .nav-icon-svg { width: 18px; height: 18px; position: relative; }
 .side-drawer-item .nav-icon-svg svg { width: 18px; height: 18px; stroke-width: 2.6; }
 .side-drawer-item:hover {
   background: linear-gradient(135deg, rgba(255,173,98,.28), rgba(255,120,30,.22));
 }
 .notify-badge.side-badge {
   position: absolute;
-  top: 40px;
-  left: calc(50% + 2px);
-  right: auto;
+  top: -7px;
+  right: -8px;
+  left: auto;
   margin: 0;
   min-width: 16px;
   width: 16px;
