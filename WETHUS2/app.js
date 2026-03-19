@@ -811,6 +811,16 @@
     save(s);
   }
 
+  function removeNotification(id) {
+    const s = load();
+    const actor = currentActorId();
+    const idx = (s.notifications || []).findIndex(n => n.id === id && (!n.userId || n.userId === actor));
+    if (idx === -1) return false;
+    s.notifications.splice(idx, 1);
+    save(s);
+    return true;
+  }
+
   function listDmThreads() {
     const s = load();
     return s.dmThreads || [];
@@ -1321,6 +1331,7 @@
     addNotification,
     markNotificationRead,
     markAllNotificationsRead,
+    removeNotification,
     listDmThreads,
     listDmMessages,
     sendDm,

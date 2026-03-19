@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WETHUS | 알림</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
-  <link rel="stylesheet" href="styles.css?v=20260319-17" />
+  <link rel="stylesheet" href="styles.css?v=20260319-18" />
 </head>
 <body>
   <header class="nav">
@@ -56,7 +56,7 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20260318-42"></script>
+  <script src="app.js?v=20260318-43"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
     const st = WETHUS.getState();
@@ -108,13 +108,23 @@
               <p style="margin:0 0 6px;">${n.body || ''}</p>
               <div class="meta">${timeText(n.createdAt)}</div>
             </div>
-            ${n.unread ? '<span class="verify-badge" style="padding:2px 7px;">NEW</span>' : ''}
+            <div style="display:flex;gap:6px;align-items:center;">
+              ${n.unread ? '<span class="verify-badge" style="padding:2px 7px;">NEW</span>' : '<button class="btn btn--secondary notify-delete" data-del="'+n.id+'" style="padding:3px 8px;font-size:.72rem;">삭제</button>'}
+            </div>
           </div>
         </article>
       `).join('');
 
       listEl.querySelectorAll('.list-item[data-id]').forEach(el => {
-        el.addEventListener('click', () => {
+        el.addEventListener('click', (e) => {
+          const delBtn = e.target.closest('.notify-delete');
+          if (delBtn) {
+            e.stopPropagation();
+            WETHUS.removeNotification(delBtn.dataset.del);
+            WETHUS.refreshNavBadges?.();
+            render();
+            return;
+          }
           const id = el.getAttribute('data-id');
           WETHUS.markNotificationRead(id);
           WETHUS.refreshNavBadges?.();

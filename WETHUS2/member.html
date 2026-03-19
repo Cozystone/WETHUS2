@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WETHUS | 팀원 프로필</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
-  <link rel="stylesheet" href="styles.css?v=20260319-17" />
+  <link rel="stylesheet" href="styles.css?v=20260319-18" />
 </head>
 <body>
   <header class="nav">
@@ -43,7 +43,7 @@
   </footer>
 
 
-  <script src="app.js?v=20260318-42"></script>
+  <script src="app.js?v=20260318-43"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
     const state = WETHUS.getState();
@@ -67,6 +67,12 @@
       founder: params.get('founder') === '1'
     };
 
+    const me = WETHUS.currentUser();
+    const plan = String(me?.plan || 'free').toLowerCase();
+    const paid = ['premium', 'pro', 'master'].includes(plan);
+    const myTeamNames = new Set((WETHUS.myProjects() || []).flatMap(p => (p.teamMembers || []).map(m => m.name)));
+    const canViewDetail = paid || myTeamNames.has(member.name) || me?.name === member.name || me?.nickname === member.name;
+
     document.getElementById('memberHero').innerHTML = `
       <div class="profile-avatar">${member.name.slice(0,1)}</div>
       <div class="profile-main">
@@ -75,7 +81,8 @@
           <span class="profile-nickname">@${member.name.replace(/\s+/g,'').toLowerCase()}</span>
           ${member.founder ? '<span class="verify-badge">Founder 인증</span>' : ''}
         </div>
-        <p class="profile-bio">${member.bio}</p>
+        <p class="profile-bio">${canViewDetail ? member.bio : '상세 프로필은 Premium/Pro 플랜에서 확인할 수 있습니다. (내 팀원 제외)'}</p>
+        ${canViewDetail ? '' : '<p class="meta" style="margin-top:6px;">요금제 업그레이드 시 경력/상세 정보를 확인할 수 있어요.</p>'}
       </div>
     `;
 

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WETHUS | 프로필</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
-  <link rel="stylesheet" href="styles.css?v=20260319-17" />
+  <link rel="stylesheet" href="styles.css?v=20260319-18" />
 </head>
 <body>
   <header class="nav">
@@ -121,6 +121,15 @@
         <p id="myProjectMeta" class="meta" style="margin:0 0 8px;"></p>
         <p id="myProjectTeam" class="meta" style="margin:0 0 8px;"></p>
         <p id="myProjectSocial" class="meta" style="margin:0 0 10px;"></p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <select id="myProjectStatusInput" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:10px;border-radius:8px;">
+            <option>모집 중</option><option>기획 중</option><option>진행 중</option><option>피보팅</option>
+          </select>
+          <select id="myProjectTeamSizeInput" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:10px;border-radius:8px;">
+            <option>1인</option><option>2인</option><option>3인</option><option>4인이상</option>
+          </select>
+        </div>
+        <input id="myProjectRolesInput" style="width:100%;margin-bottom:8px;background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:8px;padding:10px;" placeholder="역할" />
         <textarea id="myProjectSummaryInput" style="width:100%;min-height:100px;background:rgba(255,255,255,.06);color:#f5f5f5;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:10px;"></textarea>
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
           <button id="myProjectDelete" class="btn btn--secondary" type="button">삭제</button>
@@ -145,7 +154,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-42"></script>
+  <script src="app.js?v=20260318-43"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
 
@@ -518,6 +527,9 @@
       const myProjectMeta = document.getElementById('myProjectMeta');
       const myProjectTeam = document.getElementById('myProjectTeam');
       const myProjectSocial = document.getElementById('myProjectSocial');
+      const myProjectStatusInput = document.getElementById('myProjectStatusInput');
+      const myProjectTeamSizeInput = document.getElementById('myProjectTeamSizeInput');
+      const myProjectRolesInput = document.getElementById('myProjectRolesInput');
       const myProjectSummaryInput = document.getElementById('myProjectSummaryInput');
       const myProjectSave = document.getElementById('myProjectSave');
       const myProjectDelete = document.getElementById('myProjectDelete');
@@ -534,7 +546,7 @@
         }
 
         if (myProjectView === 'album') {
-          mine.className = 'project-cards';
+          mine.className = 'project-cards scroll-four';
           mine.innerHTML = list.map(p => `
             <article class="card" data-myproject="${p.id}">
               <div class="card-media">
@@ -555,7 +567,7 @@
             </article>
           `).join('');
         } else {
-          mine.className = 'list-grid';
+          mine.className = 'list-grid scroll-four';
           mine.innerHTML = list.map(p => `
             <article class="list-item" data-myproject="${p.id}">
               <h3>${p.title}</h3>
@@ -581,6 +593,9 @@
         myProjectMeta.textContent = `${p.status || ''} · ${p.teamSize || ''} · ${p.duration || ''}`;
         myProjectTeam.textContent = `팀원: ${(p.teamMembers||[]).map(m => `${m.name||'팀원'}(${m.role||''})`).join(', ') || '-'}`;
         myProjectSocial.textContent = `좋아요 ${p.likes || 0} · 댓글 ${(p.comments||[]).length}`;
+        myProjectStatusInput.value = p.status || '기획 중';
+        myProjectTeamSizeInput.value = p.teamSize || '3인';
+        myProjectRolesInput.value = p.roles || '';
         myProjectSummaryInput.value = p.summary || '';
         myProjectModal.classList.add('open');
         myProjectModal.setAttribute('aria-hidden','false');
@@ -619,7 +634,12 @@
       myProjectModal?.addEventListener('click', (e) => { if (e.target && e.target.getAttribute('data-close-myproject') === 'true') closeMyProjectModal(); });
       myProjectSave?.addEventListener('click', () => {
         if (!currentMyProjectId) return;
-        WETHUS.updateProject(currentMyProjectId, { summary: (myProjectSummaryInput.value || '').trim() });
+        WETHUS.updateProject(currentMyProjectId, {
+          status: myProjectStatusInput.value,
+          teamSize: myProjectTeamSizeInput.value,
+          roles: (myProjectRolesInput.value || '').trim(),
+          summary: (myProjectSummaryInput.value || '').trim()
+        });
         closeMyProjectModal();
         renderMyProjects();
       });
