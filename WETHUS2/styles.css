@@ -53,6 +53,8 @@ a { color: inherit; text-decoration: none; }
 .nav-links { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin-left: 14px; }
 .nav-link { font-size: .82rem; color: var(--text-secondary); font-weight: 700; position: relative; padding-bottom: 3px; }
 .notify-wrap { position: relative; }
+.nav-links .js-profile-chip { margin-right: -4px; }
+.nav-links .js-side-menu { margin-left: 4px; margin-right: -6px; }
 .notify-link { display:inline-flex; align-items:center; justify-content:center; position:relative; }
 .notify-link--text { gap: 5px; }
 .nav-icon-svg { width: 14px; height: 14px; display:inline-flex; align-items:center; justify-content:center; opacity:.92; }
