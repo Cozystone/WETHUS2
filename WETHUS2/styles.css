@@ -660,6 +660,15 @@ a { color: inherit; text-decoration: none; }
 #participatingProjects.project-cards {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+#myProjects.project-cards .card,
+#participatingProjects.project-cards .card { min-height: 372px; padding: 12px; }
+#myProjects .card-summary,
+#participatingProjects .card-summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 @media (max-width: 980px) {
   #myProjects.project-cards,
   #participatingProjects.project-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
