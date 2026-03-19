@@ -1198,6 +1198,13 @@
   }
 
   function initNotifyToast() {
+    const pendingToast = sessionStorage.getItem('wethus_pending_toast');
+    if (pendingToast) {
+      sessionStorage.removeItem('wethus_pending_toast');
+      showTopToast(pendingToast);
+      return;
+    }
+
     const latest = listNotifications(20).find(n => n.unread && (n.type === 'founder_submitted' || n.type === 'review_result'));
     if (!latest) return;
     const seenKey = 'wethus_last_toast_notification';

@@ -456,7 +456,7 @@ a { color: inherit; text-decoration: none; }
   transform: translateX(-50%);
   z-index: 1200;
   width: min(92vw, 540px);
-  min-height: 96px;
+  min-height: 56px;
   display:flex;
   align-items:center;
   justify-content:center;
