@@ -1198,16 +1198,18 @@
   }
 
   function initNotifyToast() {
+    const seenKey = 'wethus_last_toast_notification';
+    const latest = listNotifications(20).find(n => n.unread && (n.type === 'founder_submitted' || n.type === 'review_result'));
+
     const pendingToast = sessionStorage.getItem('wethus_pending_toast');
     if (pendingToast) {
       sessionStorage.removeItem('wethus_pending_toast');
+      if (latest?.id) sessionStorage.setItem(seenKey, latest.id);
       showTopToast(pendingToast);
       return;
     }
 
-    const latest = listNotifications(20).find(n => n.unread && (n.type === 'founder_submitted' || n.type === 'review_result'));
     if (!latest) return;
-    const seenKey = 'wethus_last_toast_notification';
     const seen = sessionStorage.getItem(seenKey);
     if (seen === latest.id) return;
     sessionStorage.setItem(seenKey, latest.id);
