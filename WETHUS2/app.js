@@ -967,51 +967,56 @@
   }
 
   async function askChatGPT(prompt) {
-    const apiKey = getOpenAIApiKey();
-    if (!apiKey) throw new Error('OpenAI API 키가 설정되지 않았습니다.');
-
-    async function once(timeoutMs = 15000) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), timeoutMs);
-      try {
-        const res = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          signal: controller.signal,
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.2,
-            max_tokens: 300
-          })
-        });
-        if (!res.ok) {
-          const t = await res.text();
-          throw new Error(`ChatGPT 호출 실패: ${t.slice(0, 180)}`);
-        }
-        const data = await res.json();
-        const text = data?.choices?.[0]?.message?.content?.trim();
-        if (!text) throw new Error('응답이 비어 있습니다.');
-        return text;
-      } finally {
-        clearTimeout(timeout);
-      }
-    }
+    const localBases = ['http://127.0.0.1:8787', 'http://localhost:8787'];
+    const remoteBase = window.WETHUS_AI_ENDPOINT || window.WETHUS_API_BASE || 'https://wethus-api.onrender.com';
+    const isLocalHost = ['localhost', '127.0.0.1'].includes(location.hostname);
+    const apiBases = (isLocalHost
+      ? [remoteBase, `${location.protocol}//${location.hostname}:8787`, ...localBases]
+      : [remoteBase])
+      .filter(Boolean)
+      .map(b => b.replace(/\/$/, ''));
 
     let lastErr;
-    const delays = [0, 500, 1200];
-    for (let i = 0; i < delays.length; i++) {
+    for (const base of apiBases) {
       try {
-        if (delays[i]) await new Promise(r => setTimeout(r, delays[i]));
-        return await once(15000 + i * 3000);
+        const res = await fetch(`${base}/ai/moderate-project`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: prompt })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        if (!data?.ok) throw new Error(data?.error || 'moderate failed');
+        return JSON.stringify({ decision: data.decision, reason: data.reason || '' });
       } catch (e) {
         lastErr = e;
       }
     }
-    throw lastErr || new Error('ChatGPT 호출 실패');
+
+    // fallback: direct browser call when backend unavailable
+    const apiKey = getOpenAIApiKey();
+    if (!apiKey) throw lastErr || new Error('OpenAI API 키가 설정되지 않았습니다.');
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2,
+        max_tokens: 300
+      })
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`ChatGPT 호출 실패: ${t.slice(0, 180)}`);
+    }
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content?.trim();
+    if (!text) throw new Error('응답이 비어 있습니다.');
+    return text;
   }
 
   async function askGemini(prompt) {
