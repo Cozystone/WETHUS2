@@ -159,6 +159,43 @@ app.post('/ai/career-summary', async (req, res) => {
   }
 });
 
+app.post('/ai/moderate-project', async (req, res) => {
+  try {
+    const text = String(req.body?.text || '').trim();
+    if (!text) return res.status(400).json({ ok: false, error: 'text is required' });
+    const prompt = `You are a strict but low-false-positive safety reviewer for a teen project platform. Return JSON only: {"decision":"allow|review|block","reason":"..."}. Block only if clearly harmful/sexual abuse/hate/violent extremism. Review if ambiguous. Text:\n${text.slice(0, 2400)}`;
+
+    let out = '';
+    if (AI_PROVIDER === 'openai') {
+      if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not configured');
+      const r = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: OPENAI_MODEL,
+          temperature: 0.2,
+          max_tokens: 300,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      if (!r.ok) throw new Error(await r.text());
+      const data = await r.json();
+      out = data?.choices?.[0]?.message?.content?.trim() || '';
+    } else {
+      out = await callGemini(prompt, 2);
+    }
+
+    const parsed = JSON.parse(String(out).match(/\{[\s\S]*\}/)?.[0] || '{}');
+    const decision = ['allow','review','block'].includes(parsed.decision) ? parsed.decision : 'review';
+    return res.json({ ok: true, decision, reason: parsed.reason || '' });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'moderation failed' });
+  }
+});
+
 app.post('/ai/image-prompt', async (req, res) => {
   try {
     const title = String(req.body?.title || '').trim();

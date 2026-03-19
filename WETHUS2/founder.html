@@ -297,7 +297,7 @@
   </div>
 
   <script src="local-config.js"></script>
-  <script src="app.js?v=20260318-46"></script>
+  <script src="app.js?v=20260318-47"></script>
   <script>
     WETHUS.requireAuth();
     const authLink = document.querySelector('.js-auth-link');
@@ -874,8 +874,7 @@
       if (hardBlock.test(text)) return { blocked: true, review: false, reason: '안전 정책 위반 가능성이 높은 내용이 감지되었습니다.' };
 
       try {
-        const prompt = `You are a strict but low-false-positive safety reviewer for a teen project platform. Return JSON only: {"decision":"allow|review|block","reason":"..."}. Block only if clearly harmful/sexual abuse/hate/violent extremism. Review if ambiguous. Text:\n${text.slice(0, 2400)}`;
-        const out = await WETHUS.askChatGPT(prompt);
+        const out = await WETHUS.askChatGPT(text.slice(0, 2400));
         const json = JSON.parse(String(out).match(/\{[\s\S]*\}/)?.[0] || '{}');
         if (json.decision === 'block') return { blocked: true, review: false, reason: json.reason || '안전 정책 위반 가능성으로 자동 반려되었습니다.' };
         if (json.decision === 'review') return { blocked: false, review: true, reason: json.reason || '수동 검토가 필요합니다.' };
