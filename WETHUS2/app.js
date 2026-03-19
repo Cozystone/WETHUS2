@@ -215,6 +215,7 @@
         currentUserId: null,
         devMode: false,
         applications: [],
+        bookmarks: [],
         notifications: seedNotifications,
         dmThreads: [
           {
@@ -231,6 +232,7 @@
     const parsed = JSON.parse(raw);
     if (!parsed.geminiApiKey) parsed.geminiApiKey = DEFAULT_GEMINI_KEY;
     if (!Array.isArray(parsed.applications)) parsed.applications = [];
+    if (!Array.isArray(parsed.bookmarks)) parsed.bookmarks = [];
     if (!Array.isArray(parsed.notifications)) parsed.notifications = [];
     if (!parsed.notifications.length) {
       parsed.notifications = seedNotifications.slice();
@@ -572,6 +574,48 @@
     target._liked = liked;
     save(s);
     return { likes: target.likes, liked };
+  }
+
+  function isBookmarked(projectId) {
+    const s = load();
+    const actor = currentActorId();
+    if (!actor) return false;
+    return (s.bookmarks || []).some(b => b.projectId === projectId && b.userId === actor);
+  }
+
+  function toggleBookmark(projectId) {
+    const s = load();
+    const actor = currentActorId();
+    if (!actor) {
+      goLoginIfGuest();
+      throw new Error('로그인이 필요합니다.');
+    }
+    s.bookmarks = s.bookmarks || [];
+    const idx = s.bookmarks.findIndex(b => b.projectId === projectId && b.userId === actor);
+    let bookmarked = false;
+    if (idx === -1) {
+      s.bookmarks.push({ id: uid(), projectId, userId: actor, createdAt: new Date().toISOString() });
+      bookmarked = true;
+    } else {
+      s.bookmarks.splice(idx, 1);
+      bookmarked = false;
+    }
+    save(s);
+    return { bookmarked };
+  }
+
+  function myBookmarkedProjects() {
+    const s = load();
+    const actor = currentActorId();
+    if (!actor) return [];
+    const ids = new Set((s.bookmarks || []).filter(b => b.userId === actor).map(b => b.projectId));
+    return s.projects.filter(p => ids.has(p.id));
+  }
+
+  function myLikedProjects() {
+    const actor = currentActorId();
+    if (!actor) return [];
+    return load().projects.filter(p => Array.isArray(p.likedBy) && p.likedBy.includes(actor));
   }
 
   function addComment(projectId, text) {
@@ -1154,6 +1198,10 @@
     listProjects,
     myProjects,
     toggleLike,
+    isBookmarked,
+    toggleBookmark,
+    myBookmarkedProjects,
+    myLikedProjects,
     addComment,
     updateProject,
     deleteProject,
