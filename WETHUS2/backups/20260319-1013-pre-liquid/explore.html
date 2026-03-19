@@ -7,30 +7,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260319-2" />
   <style>
-    .explore-gateway { padding: 34px 0 24px; position: relative; overflow: hidden; isolation: isolate; }
-    .explore-gateway::before,
-    .explore-gateway::after {
-      content: "";
-      position: absolute;
-      inset: -18% -12%;
-      z-index: -2;
-      pointer-events: none;
-      filter: blur(54px) saturate(126%);
-      opacity: .68;
-      background:
-        radial-gradient(circle at 16% 24%, rgba(54, 182, 255, .34) 0%, transparent 42%),
-        radial-gradient(circle at 82% 18%, rgba(255, 102, 46, .30) 0%, transparent 44%),
-        radial-gradient(circle at 68% 78%, rgba(255, 206, 64, .26) 0%, transparent 46%),
-        radial-gradient(circle at 26% 74%, rgba(176, 108, 255, .28) 0%, transparent 45%);
-      animation: liquidFloatA 20s ease-in-out infinite alternate;
-    }
-    .explore-gateway::after {
-      z-index: -1;
-      opacity: .52;
-      filter: blur(72px) saturate(122%);
-      transform: scale(1.08);
-      animation: liquidFloatB 28s ease-in-out infinite alternate;
-    }
+    .explore-gateway { padding: 34px 0 24px; position: relative; }
     .gateway-title { margin: 0 0 8px; font-size: 1.85rem; font-weight: 900; letter-spacing: -.02em; }
     .gateway-sub { margin: 0 0 18px; color: #b8b8b8; }
     .stack-wrap {
@@ -40,11 +17,10 @@
       overflow: hidden;
       border: 1px solid rgba(255,255,255,.16);
       background:
-        radial-gradient(860px 320px at 56% 16%, rgba(255,255,255,.10), transparent 66%),
-        radial-gradient(540px 260px at 84% 88%, rgba(255,182,102,.18), transparent 70%),
-        linear-gradient(145deg, rgba(10,12,18,.92), rgba(8,10,14,.86));
+        radial-gradient(760px 280px at 50% 20%, rgba(255,128,22,.22), transparent 62%),
+        #0a0a0c;
       box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 18px 36px rgba(0,0,0,.30);
-      backdrop-filter: blur(8px) saturate(128%);
+      backdrop-filter: blur(6px) saturate(126%);
     }
     .stack-card {
       position: absolute;
@@ -106,17 +82,6 @@
       z-index: 30;
       display:flex;
       justify-content:flex-end;
-    }
-
-    @keyframes liquidFloatA {
-      0% { transform: translate3d(-2%, -1%, 0) scale(1.02) rotate(0deg); }
-      50% { transform: translate3d(2%, 2%, 0) scale(1.08) rotate(3deg); }
-      100% { transform: translate3d(-1%, 3%, 0) scale(1.04) rotate(-2deg); }
-    }
-    @keyframes liquidFloatB {
-      0% { transform: translate3d(2%, -2%, 0) scale(1.1) rotate(0deg); }
-      50% { transform: translate3d(-3%, 2%, 0) scale(1.15) rotate(-4deg); }
-      100% { transform: translate3d(1%, 4%, 0) scale(1.12) rotate(2deg); }
     }
     .stack-total-btn {
       display:inline-flex;
