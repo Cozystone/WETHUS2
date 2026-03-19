@@ -1112,6 +1112,7 @@
       menuWrap.innerHTML = `
         <button class="menu-icon-btn" type="button" aria-label="빠른 메뉴 열기" aria-expanded="false">
           <span></span><span></span><span></span>
+          <span class="notify-badge menu-badge" style="display:none;">0</span>
         </button>
         <aside class="side-drawer" style="display:none;">
           <a href="dm.html" class="side-drawer-item">
@@ -1152,9 +1153,15 @@
       const drawer = menuWrap.querySelector('.side-drawer');
       const openBtn = menuWrap.querySelector('.menu-icon-btn');
       const sideBadge = menuWrap.querySelector('.side-badge');
+      const menuBadge = menuWrap.querySelector('.menu-badge');
       const unread = listNotifications(99).filter(n => n.unread).length;
-      sideBadge.textContent = unread > 99 ? '99+' : String(unread);
+      const unreadText = unread > 99 ? '99+' : String(unread);
+      sideBadge.textContent = unreadText;
       sideBadge.style.display = unread ? 'inline-flex' : 'none';
+      if (menuBadge) {
+        menuBadge.textContent = unreadText;
+        menuBadge.style.display = unread ? 'inline-flex' : 'none';
+      }
 
       const toggleDrawer = () => {
         const isOpen = drawer.style.display === 'block';
