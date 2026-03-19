@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WETHUS | 프로필</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
-  <link rel="stylesheet" href="styles.css?v=20260319-13" />
+  <link rel="stylesheet" href="styles.css?v=20260319-14" />
 </head>
 <body>
   <header class="nav">
@@ -39,7 +39,11 @@
 
     <section class="projects-head-row" style="margin-top:8px;">
       <h2 class="section-title" style="font-size:1.4rem;margin:0;">내 프로젝트</h2>
-      <a class="btn btn--primary" href="founder.html">+ 프로젝트 추가</a>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="myProjectViewAlbum" class="view-icon-btn active" type="button" aria-label="앨범형"><span class="icon-grid"></span></button>
+        <button id="myProjectViewList" class="view-icon-btn" type="button" aria-label="리스트형"><span class="icon-list"></span></button>
+        <a class="btn btn--primary" href="founder.html">+ 프로젝트 추가</a>
+      </div>
     </section>
 
     <section id="myProjects" class="list-grid"></section>
@@ -106,6 +110,22 @@
     </article>
   </div>
 
+  <div id="myProjectModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-myproject="true"></div>
+    <article class="modal-panel" style="max-width:560px;">
+      <button class="modal-close" id="myProjectClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 id="myProjectTitle" style="margin:0 0 8px;"></h3>
+        <p id="myProjectMeta" class="meta" style="margin:0 0 10px;"></p>
+        <textarea id="myProjectSummaryInput" style="width:100%;min-height:100px;background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;"></textarea>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
+          <button id="myProjectDelete" class="btn btn--secondary" type="button">삭제</button>
+          <button id="myProjectSave" class="btn btn--primary" type="button">수정 저장</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
   <div id="schoolSearchModal" class="modal" aria-hidden="true">
     <div class="modal-backdrop" data-close-school="true"></div>
     <article class="modal-panel" style="max-width:760px;">
@@ -121,7 +141,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-39"></script>
+  <script src="app.js?v=20260318-40"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
 
@@ -483,33 +503,94 @@
       });
       renderActivity('liked');
 
-      const list = WETHUS.myProjects();
-      mine.innerHTML = list.length ? list.map(p => `
-        <article class="list-item">
-          <h3>${p.title}</h3>
-          <p>${p.summary}</p>
-          <div class="meta"><span class="badge">${p.category}</span> · ${p.status} · ${p.teamSize || ''} · ${p.duration || ''}</div>
-          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-            <select class="project-status-select" data-id="${p.id}" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:8px;border-radius:8px;">
-              ${['모집 중','기획 중','진행 중','피보팅'].map(s => `<option ${p.status===s?'selected':''}>${s}</option>`).join('')}
-            </select>
-            <select class="project-size-select" data-id="${p.id}" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:8px;border-radius:8px;">
-              ${['1인','2인','3인','4인이상'].map(s => `<option ${p.teamSize===s?'selected':''}>${s}</option>`).join('')}
-            </select>
-          </div>
-        </article>
-      `).join('') : '<article class="list-item"><h3>프로젝트 없음</h3><p>아직 등록한 프로젝트가 없습니다. + 프로젝트 추가를 눌러 시작해보세요.</p></article>';
+      let myProjectView = localStorage.getItem('wethus_profile_my_view') || 'album';
+      const myProjectViewAlbum = document.getElementById('myProjectViewAlbum');
+      const myProjectViewList = document.getElementById('myProjectViewList');
+      const myProjectModal = document.getElementById('myProjectModal');
+      const myProjectClose = document.getElementById('myProjectClose');
+      const myProjectTitle = document.getElementById('myProjectTitle');
+      const myProjectMeta = document.getElementById('myProjectMeta');
+      const myProjectSummaryInput = document.getElementById('myProjectSummaryInput');
+      const myProjectSave = document.getElementById('myProjectSave');
+      const myProjectDelete = document.getElementById('myProjectDelete');
+      let currentMyProjectId = null;
 
-      document.querySelectorAll('.project-status-select').forEach(sel => {
-        sel.addEventListener('change', () => {
-          WETHUS.updateProject(sel.dataset.id, { status: sel.value });
-        });
+      function renderMyProjects() {
+        const list = WETHUS.myProjects();
+        myProjectViewAlbum?.classList.toggle('active', myProjectView === 'album');
+        myProjectViewList?.classList.toggle('active', myProjectView === 'list');
+        if (!list.length) {
+          mine.className = 'list-grid';
+          mine.innerHTML = '<article class="list-item"><h3>프로젝트 없음</h3><p>아직 등록한 프로젝트가 없습니다. + 프로젝트 추가를 눌러 시작해보세요.</p></article>';
+          return;
+        }
+
+        if (myProjectView === 'album') {
+          mine.className = 'project-cards';
+          mine.innerHTML = list.map(p => `
+            <article class="card" data-myproject="${p.id}">
+              <div class="card-media"><img src="${p.image || 'https://picsum.photos/seed/wethus-profile-'+encodeURIComponent(p.title)+'/900/560'}" class="card-img" alt="${p.title}" /></div>
+              <span class="card-chip">${p.category || ''}</span>
+              <h3 class="card-title">${p.title}</h3>
+              <p class="card-summary">${p.summary || ''}</p>
+              <div class="meta">${p.status || ''} · ${p.teamSize || ''} · ${p.duration || ''}</div>
+            </article>
+          `).join('');
+        } else {
+          mine.className = 'list-grid';
+          mine.innerHTML = list.map(p => `
+            <article class="list-item" data-myproject="${p.id}">
+              <h3>${p.title}</h3>
+              <p>${p.summary}</p>
+              <div class="meta"><span class="badge">${p.category}</span> · ${p.status} · ${p.teamSize || ''} · ${p.duration || ''}</div>
+            </article>
+          `).join('');
+        }
+      }
+
+      function openMyProjectModal(id) {
+        const p = WETHUS.myProjects().find(x => x.id === id);
+        if (!p) return;
+        currentMyProjectId = id;
+        myProjectTitle.textContent = p.title || '';
+        myProjectMeta.textContent = `${p.category || ''} · ${p.status || ''} · ${p.teamSize || ''}`;
+        myProjectSummaryInput.value = p.summary || '';
+        myProjectModal.classList.add('open');
+        myProjectModal.setAttribute('aria-hidden','false');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeMyProjectModal() {
+        myProjectModal.classList.remove('open');
+        myProjectModal.setAttribute('aria-hidden','true');
+        document.body.style.overflow = '';
+      }
+
+      myProjectViewAlbum?.addEventListener('click', () => { myProjectView = 'album'; localStorage.setItem('wethus_profile_my_view', myProjectView); renderMyProjects(); });
+      myProjectViewList?.addEventListener('click', () => { myProjectView = 'list'; localStorage.setItem('wethus_profile_my_view', myProjectView); renderMyProjects(); });
+      mine.addEventListener('click', (e) => {
+        const card = e.target.closest('[data-myproject]');
+        if (!card) return;
+        openMyProjectModal(card.getAttribute('data-myproject'));
       });
-      document.querySelectorAll('.project-size-select').forEach(sel => {
-        sel.addEventListener('change', () => {
-          WETHUS.updateProject(sel.dataset.id, { teamSize: sel.value });
-        });
+      myProjectClose?.addEventListener('click', closeMyProjectModal);
+      myProjectModal?.addEventListener('click', (e) => { if (e.target && e.target.getAttribute('data-close-myproject') === 'true') closeMyProjectModal(); });
+      myProjectSave?.addEventListener('click', () => {
+        if (!currentMyProjectId) return;
+        WETHUS.updateProject(currentMyProjectId, { summary: (myProjectSummaryInput.value || '').trim() });
+        closeMyProjectModal();
+        renderMyProjects();
       });
+      myProjectDelete?.addEventListener('click', async () => {
+        if (!currentMyProjectId) return;
+        const ok = await WETHUS.uiConfirm('프로젝트를 삭제할까요?', { title: '프로젝트 삭제' });
+        if (!ok) return;
+        WETHUS.deleteProject(currentMyProjectId);
+        closeMyProjectModal();
+        renderMyProjects();
+      });
+
+      renderMyProjects();
 
       const participating = WETHUS.myParticipatingProjects();
       participatingEl.innerHTML = participating.length ? participating.map(p => `
