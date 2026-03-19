@@ -2,6 +2,7 @@
 (function () {
   const KEY = 'wethus_v1';
   const DEFAULT_GEMINI_KEY = 'AIzaSyBb5uOh7OMbtR-Mm4GwT6IU2zSwVUqdnL8';
+  const ADMIN_MODE_USER_ID = 'admin-mode';
 
   function uid() {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -312,6 +313,14 @@
         next.status = stages[Math.floor(Math.random() * stages.length)];
         changed = true;
       }
+      if (!next.moderationStatus) {
+        next.moderationStatus = 'approved';
+        changed = true;
+      }
+      if (next.moderationReason === undefined) {
+        next.moderationReason = '';
+        changed = true;
+      }
       if (!next.startDate) {
         next.startDate = String(next.createdAt || new Date().toISOString()).slice(0, 10);
         changed = true;
@@ -474,12 +483,17 @@
   function addProject(payload) {
     const s = load();
     if (!s.currentUserId && !s.devMode) throw new Error('로그인이 필요합니다.');
+    const actor = s.currentUserId || 'dev-temp';
     const me = s.users.find(u => u.id === s.currentUserId);
+    const moderationStatus = payload?.moderationStatus || 'approved';
     const project = {
       id: uid(),
-      founderId: s.currentUserId || 'dev-temp',
+      founderId: actor,
       teamMembers: [{ id: uid(), name: me?.nickname || me?.name || '대표', role: '대표', bio: '프로젝트 대표', isLeader: true }],
       createdAt: new Date().toISOString(),
+      moderationStatus,
+      moderationReason: payload?.moderationReason || '',
+      moderationReviewedAt: payload?.moderationReviewedAt || null,
       ...payload
     };
     s.projects.unshift(project);
@@ -487,14 +501,31 @@
     s.notifications.unshift({
       id: uid(),
       type: 'founder_submitted',
-      title: 'Founder 신청이 완료되었습니다',
-      body: '운영자 검토 후 승인 여부가 알림으로 전달됩니다.',
+      title: '신청 완료',
+      body: moderationStatus === 'manual_review'
+        ? 'AI가 수동 검토 필요로 판단했습니다. 운영자 확인 후 승인 여부가 안내됩니다.'
+        : 'AI 검토 중입니다. 보통 2~3분 내 반영되며, 운영자 확인이 필요하면 1일 내 승인 여부를 확인할 수 있습니다.',
       href: 'notifications.html',
       sender: 'WETHUS',
       unread: true,
       createdAt: new Date().toISOString(),
-      userId: s.currentUserId || 'dev-temp'
+      userId: actor
     });
+
+    if (moderationStatus === 'manual_review') {
+      s.notifications.unshift({
+        id: uid(),
+        type: 'manual_review_required',
+        title: '수동 검수 요청',
+        body: `${project.title} 프로젝트에 수동 검수가 필요합니다.`,
+        href: `admin.html?projectId=${encodeURIComponent(project.id)}`,
+        sender: me?.nickname || me?.name || '신청자',
+        unread: true,
+        createdAt: new Date().toISOString(),
+        userId: ADMIN_MODE_USER_ID
+      });
+    }
+
     save(s);
     return project;
   }
@@ -555,11 +586,71 @@
     return target.comments;
   }
 
+  function isAdminActor() {
+    const s = load();
+    const actor = s.currentUserId || (s.devMode ? 'dev-temp' : null);
+    if (!actor) return false;
+    if (actor === ADMIN_MODE_USER_ID) return true;
+    const u = s.users.find(x => x.id === actor);
+    const email = String(u?.email || '').toLowerCase();
+    return email === 'admin@wethus.ai' || u?.role === 'admin';
+  }
+
   function updateProject(projectId, patch) {
     const s = load();
     const target = s.projects.find(p => p.id === projectId);
     if (!target) return null;
+    const actor = s.currentUserId || (s.devMode ? 'dev-temp' : null);
+    const admin = isAdminActor();
+    if (!admin && target.founderId !== actor) throw new Error('수정 권한이 없습니다.');
     Object.assign(target, patch || {});
+    save(s);
+    return target;
+  }
+
+  function deleteProject(projectId) {
+    const s = load();
+    const actor = s.currentUserId || (s.devMode ? 'dev-temp' : null);
+    const admin = isAdminActor();
+    const idx = s.projects.findIndex(p => p.id === projectId);
+    if (idx === -1) return false;
+    const target = s.projects[idx];
+    if (!admin && target.founderId !== actor) throw new Error('삭제 권한이 없습니다.');
+    s.projects.splice(idx, 1);
+    s.applications = (s.applications || []).filter(a => a.projectId !== projectId);
+    save(s);
+    return true;
+  }
+
+  function reviewProject(projectId, decision, note) {
+    const s = load();
+    if (!isAdminActor()) throw new Error('관리자 권한이 필요합니다.');
+    const target = s.projects.find(p => p.id === projectId);
+    if (!target) return null;
+    if (decision === 'approve') {
+      target.moderationStatus = 'approved';
+      target.moderationReason = note || '';
+    } else if (decision === 'reject') {
+      target.moderationStatus = 'rejected';
+      target.moderationReason = note || '운영자 검토 결과 반려되었습니다.';
+    } else {
+      return null;
+    }
+    target.moderationReviewedAt = new Date().toISOString();
+    s.notifications = s.notifications || [];
+    s.notifications.unshift({
+      id: uid(),
+      type: 'review_result',
+      title: decision === 'approve' ? '프로젝트 승인 완료' : '프로젝트 반려 안내',
+      body: decision === 'approve'
+        ? '운영자 검토를 통과했습니다. 탐색 탭에서 확인할 수 있습니다.'
+        : `운영자 검토 결과: ${target.moderationReason || '반려'}`,
+      href: `explore_theme.html`,
+      sender: 'WETHUS 운영팀',
+      unread: true,
+      createdAt: new Date().toISOString(),
+      userId: target.founderId || null
+    });
     save(s);
     return target;
   }
@@ -618,6 +709,10 @@
     s.devMode = false;
     save(s);
     return target;
+  }
+
+  function listReviewProjects() {
+    return load().projects.filter(p => p.moderationStatus === 'manual_review');
   }
 
   function listNotifications(limit = 30) {
@@ -1061,6 +1156,10 @@
     toggleLike,
     addComment,
     updateProject,
+    deleteProject,
+    reviewProject,
+    listReviewProjects,
+    isAdminActor,
     updateCurrentUserProfile,
     upsertCloudUser,
     currentPlan,

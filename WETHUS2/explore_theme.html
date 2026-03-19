@@ -76,7 +76,7 @@
         </div>
       </div>
 
-      <div id="filterPanel" class="filter-panel" style="display:none;">
+      <div id="filterPanel" class="filter-panel" style="display:none;grid-template-columns:1fr 1fr 1fr auto;">
         <label>인원
           <select id="teamSizeFilter">
             <option value="">전체</option>
@@ -87,6 +87,15 @@
           <select id="stageFilter">
             <option value="">전체</option>
             <option>모집 중</option><option>기획 중</option><option>진행 중</option><option>피보팅</option>
+          </select>
+        </label>
+        <label>정렬/보기
+          <select id="sortFilter">
+            <option value="mixed">추천 믹스</option>
+            <option value="latest">업로드 순</option>
+            <option value="oldest">과거 순</option>
+            <option value="popular">인기 순</option>
+            <option value="mine">내 프로젝트</option>
           </select>
         </label>
         <button id="resetFilter" class="btn btn--secondary" type="button">초기화</button>
@@ -127,6 +136,8 @@
         <div class="modal-social-row">
           <button id="modalLikeBtn" class="btn btn--secondary">♡ <span id="modalLikeCount">0</span></button>
           <button id="modalCommentBtn" class="btn btn--secondary">💬 <span id="modalCommentCount">0</span></button>
+          <button id="modalEditBtn" class="btn btn--secondary" type="button" style="display:none;">수정</button>
+          <button id="modalDeleteBtn" class="btn btn--secondary" type="button" style="display:none;">삭제</button>
           <button id="modalApplyBtn" class="apply-btn" type="button">지원하기</button>
         </div>
         <div id="modalCommentPanel" class="comment-panel" style="display:none;">
@@ -180,6 +191,7 @@
     const filterPanel = document.getElementById('filterPanel');
     const teamSizeFilter = document.getElementById('teamSizeFilter');
     const stageFilter = document.getElementById('stageFilter');
+    const sortFilter = document.getElementById('sortFilter');
     const resetFilter = document.getElementById('resetFilter');
     const categoryChips = document.getElementById('categoryChips');
     const loadMoreBtn = document.getElementById('loadMoreBtn');
@@ -322,7 +334,18 @@
     }
 
     function sourceProjects() {
-      return WETHUS.listProjects().slice().filter(p => !WETHUS.hasApplied(p.id)).filter(inTheme);
+      const st = WETHUS.getState();
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+      const visible = WETHUS.listProjects().slice().filter(p => {
+        const approved = p.moderationStatus !== 'manual_review' && p.moderationStatus !== 'rejected';
+        if (approved) return true;
+        return !!actor && p.founderId === actor;
+      }).filter(inTheme);
+
+      const mineApproved = visible.filter(p => actor && p.founderId === actor && p.moderationStatus === 'approved')
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const others = visible.filter(p => !mineApproved.includes(p));
+      return mineApproved.concat(others);
     }
 
     function applyFilters() {
@@ -334,6 +357,34 @@
       if (teamSizeFilter.value) items = items.filter(p => p.teamSize === teamSizeFilter.value);
       if (stageFilter.value) items = items.filter(p => p.status === stageFilter.value);
       if (query) items = WETHUS.fakeAiSearch(items, query);
+
+      const st = WETHUS.getState();
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+      const sortMode = sortFilter?.value || 'mixed';
+      if (sortMode === 'mine') {
+        items = items.filter(p => actor && p.founderId === actor)
+          .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      } else if (sortMode === 'popular') {
+        items = items.sort((a,b) => (b.likes||0) - (a.likes||0));
+      } else if (sortMode === 'oldest') {
+        items = items.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
+      } else if (sortMode === 'mixed') {
+        const newest = items.slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+        const oldest = items.slice().sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
+        const popular = items.slice().sort((a,b)=>(b.likes||0)-(a.likes||0));
+        const mixed = [];
+        const seen = new Set();
+        let i = 0;
+        while (mixed.length < items.length && i < items.length + 4) {
+          [newest[i], popular[i], oldest[i]].forEach(p => {
+            if (p && !seen.has(p.id)) { seen.add(p.id); mixed.push(p); }
+          });
+          i++;
+        }
+        items = mixed;
+      } else {
+        items = items.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }
 
       buildCategoryChips(allProjects);
       render(items);
@@ -386,9 +437,11 @@
     });
     teamSizeFilter.addEventListener('change', () => { visibleCount = 6; applyFilters(); });
     stageFilter.addEventListener('change', () => { visibleCount = 6; applyFilters(); });
+    sortFilter?.addEventListener('change', () => { visibleCount = 6; applyFilters(); });
     resetFilter.addEventListener('click', () => {
       teamSizeFilter.value = '';
       stageFilter.value = '';
+      if (sortFilter) sortFilter.value = 'mixed';
       selectedCategory = null;
       q.value = '';
       visibleCount = 6;
@@ -416,6 +469,8 @@
     const modalLikeCount = document.getElementById('modalLikeCount');
     const modalCommentCount = document.getElementById('modalCommentCount');
     const modalCommentBtn = document.getElementById('modalCommentBtn');
+    const modalEditBtn = document.getElementById('modalEditBtn');
+    const modalDeleteBtn = document.getElementById('modalDeleteBtn');
     const modalApplyBtn = document.getElementById('modalApplyBtn');
     const modalCommentPanel = document.getElementById('modalCommentPanel');
     const modalCommentClose = document.getElementById('modalCommentClose');
@@ -478,6 +533,13 @@
         modalApplyBtn.classList.toggle('applied', applied);
         modalApplyBtn.textContent = applied ? '지원완료' : '지원하기';
       }
+      const st = WETHUS.getState();
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+      const mine = !!actor && data.founderId === actor;
+      if (modalEditBtn) modalEditBtn.style.display = mine ? 'inline-flex' : 'none';
+      if (modalDeleteBtn) modalDeleteBtn.style.display = mine ? 'inline-flex' : 'none';
+      if (data.moderationStatus === 'manual_review') modalStatus.textContent = '검수중';
+      if (data.moderationStatus === 'rejected') modalStatus.textContent = '반려';
       renderComments(data.comments || []);
       modalCommentPanel.style.display = 'none';
       modal.classList.add('open');
@@ -562,6 +624,36 @@
       applyProjectId = currentProjectId;
       applyModal.classList.add('open');
       applyModal.setAttribute('aria-hidden', 'false');
+    });
+
+    modalEditBtn?.addEventListener('click', async () => {
+      if (!currentProjectId) return;
+      const target = currentItems.find(p => p.id === currentProjectId);
+      if (!target) return;
+      const nextTitle = prompt('프로젝트 제목 수정', target.title || '');
+      if (nextTitle == null) return;
+      const nextSummary = prompt('요약 수정', target.summary || '');
+      if (nextSummary == null) return;
+      try {
+        WETHUS.updateProject(currentProjectId, { title: nextTitle.trim() || target.title, summary: nextSummary.trim() || target.summary, updatedAt: new Date().toISOString() });
+        closeModal();
+        applyFilters();
+      } catch (err) {
+        await WETHUS.uiAlert(err?.message || '수정에 실패했습니다.', { title: '수정 실패' });
+      }
+    });
+
+    modalDeleteBtn?.addEventListener('click', async () => {
+      if (!currentProjectId) return;
+      const ok = await WETHUS.uiConfirm('내 프로젝트를 삭제할까요?', { title: '프로젝트 삭제' });
+      if (!ok) return;
+      try {
+        WETHUS.deleteProject(currentProjectId);
+        closeModal();
+        applyFilters();
+      } catch (err) {
+        await WETHUS.uiAlert(err?.message || '삭제에 실패했습니다.', { title: '삭제 실패' });
+      }
     });
 
     modalCommentClose.addEventListener('click', () => {
