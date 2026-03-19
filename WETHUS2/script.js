@@ -147,7 +147,7 @@
 
   document.querySelectorAll('.card[data-project]').forEach(function (card) {
     card.addEventListener('click', function (e) {
-      if (e.target.closest('.team-toggle') || e.target.closest('.member-pill')) return;
+      if (e.target.closest('.team-toggle') || e.target.closest('.member-pill') || e.target.closest('.bookmark-btn')) return;
       var raw = card.getAttribute('data-project');
       try {
         openModal(JSON.parse(raw));
@@ -193,7 +193,9 @@
   }
 
   if (bookmarkBtn) {
-    bookmarkBtn.addEventListener('click', function () {
+    bookmarkBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
       if (!currentProjectId || !window.WETHUS) return;
       try {
         var result = WETHUS.toggleBookmark(currentProjectId);
