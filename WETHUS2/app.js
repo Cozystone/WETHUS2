@@ -941,7 +941,14 @@
   }
 
   function getOpenAIApiKey() {
-    return load().openaiApiKey || DEFAULT_OPENAI_KEY;
+    const s = load();
+    if (s.openaiApiKey) return s.openaiApiKey;
+    if (typeof window !== 'undefined' && window.WETHUS_OPENAI_KEY) {
+      s.openaiApiKey = String(window.WETHUS_OPENAI_KEY || '').trim();
+      save(s);
+      return s.openaiApiKey;
+    }
+    return DEFAULT_OPENAI_KEY;
   }
 
   function fakeAiSearch(projects, query) {
