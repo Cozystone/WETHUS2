@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WETHUS | 모든 청소년 프로젝트 플랫폼</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
-  <link rel="stylesheet" href="styles.css?v=20260319-10" />
+  <link rel="stylesheet" href="styles.css?v=20260319-11" />
 </head>
 <body>
   <header class="nav">
@@ -130,6 +130,7 @@
         <div class="modal-social-row">
           <button id="modalLikeBtn" class="btn btn--secondary">♡ <span id="modalLikeCount">0</span></button>
           <button id="modalCommentBtn" class="btn btn--secondary">💬 <span id="modalCommentCount">0</span></button>
+          <button id="modalBookmarkBtn" class="btn btn--secondary" type="button">북마크</button>
           <button id="modalApplyBtn" class="apply-btn" type="button">지원하기</button>
         </div>
         <div id="modalCommentPanel" class="comment-panel" style="display:none;">
@@ -163,7 +164,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-35"></script>
+  <script src="app.js?v=20260318-36"></script>
   <script>
     (function(){
       if (!window.WETHUS) return;
@@ -242,7 +243,7 @@
           <span class="card-chip">${p.category || ''}</span>
           <div class="card-title-row">
             <h3 class="card-title">${p.title}</h3>
-            <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크">🔖</button>
+            <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
           </div>
           <p class="card-summary">${p.summary || ''}</p>
           ${renderTeam(p.teamMembers)}
@@ -312,6 +313,6 @@
       });
     })();
   </script>
-  <script src="script.js"></script>
+  <script src="script.js?v=20260319-1"></script>
 </body>
 </html>

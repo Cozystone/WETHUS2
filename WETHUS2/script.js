@@ -30,6 +30,7 @@
   var likeCountEl = document.getElementById('modalLikeCount');
   var commentCountEl = document.getElementById('modalCommentCount');
   var commentBtn = document.getElementById('modalCommentBtn');
+  var bookmarkBtn = document.getElementById('modalBookmarkBtn');
   var applyBtn = document.getElementById('modalApplyBtn');
   var commentPanel = document.getElementById('modalCommentPanel');
   var commentCloseBtn = document.getElementById('modalCommentClose');
@@ -128,6 +129,10 @@
       applyBtn.classList.toggle('applied', !!applied);
       applyBtn.textContent = applied ? '지원완료' : '지원하기';
     }
+    if (bookmarkBtn && window.WETHUS) {
+      var marked = WETHUS.isBookmarked(data.id);
+      bookmarkBtn.textContent = marked ? '북마크됨' : '북마크';
+    }
     if (commentPanel) commentPanel.style.display = 'none';
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
@@ -184,6 +189,18 @@
       if (!commentPanel) return;
       commentPanel.style.display = 'block';
       if (commentInput) commentInput.focus();
+    });
+  }
+
+  if (bookmarkBtn) {
+    bookmarkBtn.addEventListener('click', function () {
+      if (!currentProjectId || !window.WETHUS) return;
+      try {
+        var result = WETHUS.toggleBookmark(currentProjectId);
+        bookmarkBtn.textContent = result && result.bookmarked ? '북마크됨' : '북마크';
+        var cardBtn = document.querySelector('.bookmark-btn[data-bm="' + currentProjectId + '"]');
+        if (cardBtn) cardBtn.classList.toggle('active', !!(result && result.bookmarked));
+      } catch (_) {}
     });
   }
 

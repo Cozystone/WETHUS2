@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WETHUS | 알림</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
-  <link rel="stylesheet" href="styles.css?v=20260319-10" />
+  <link rel="stylesheet" href="styles.css?v=20260319-11" />
 </head>
 <body>
   <header class="nav">
@@ -56,7 +56,7 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20260318-35"></script>
+  <script src="app.js?v=20260318-36"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
     const st = WETHUS.getState();
@@ -117,6 +117,7 @@
         el.addEventListener('click', () => {
           const id = el.getAttribute('data-id');
           WETHUS.markNotificationRead(id);
+          WETHUS.refreshNavBadges?.();
           const picked = WETHUS.listNotifications(200).find(x => x.id === id);
           render(id);
           openDetail(picked);
@@ -135,6 +136,7 @@
 
     markAllBtn.addEventListener('click', () => {
       WETHUS.markAllNotificationsRead();
+      WETHUS.refreshNavBadges?.();
       render();
     });
 

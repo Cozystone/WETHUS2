@@ -1053,6 +1053,31 @@
     return uiConfirm(message, { ...opts, cancelText: '', confirmText: opts.confirmText || '확인' });
   }
 
+  function refreshNavBadges() {
+    const unread = listNotifications(99).filter(n => n.unread).length;
+    const unreadText = unread > 99 ? '99+' : String(unread);
+    document.querySelectorAll('.menu-badge, .side-badge').forEach(el => {
+      el.textContent = unreadText;
+      el.style.display = unread ? 'inline-grid' : 'none';
+    });
+  }
+
+  function showTopToast(text) {
+    if (!text) return;
+    let toast = document.querySelector('.top-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.className = 'top-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = text;
+    toast.classList.add('show');
+    clearTimeout(showTopToast._t1);
+    clearTimeout(showTopToast._t2);
+    showTopToast._t1 = setTimeout(() => toast.classList.remove('show'), 1700);
+    showTopToast._t2 = setTimeout(() => toast.remove(), 2300);
+  }
+
   function initNotificationNav() {
     const navs = document.querySelectorAll('.nav-links');
     if (!navs.length) return;
@@ -1151,16 +1176,7 @@
 
       const drawer = menuWrap.querySelector('.side-drawer');
       const openBtn = menuWrap.querySelector('.menu-icon-btn');
-      const sideBadge = menuWrap.querySelector('.side-badge');
-      const menuBadge = menuWrap.querySelector('.menu-badge');
-      const unread = listNotifications(99).filter(n => n.unread).length;
-      const unreadText = unread > 99 ? '99+' : String(unread);
-      sideBadge.textContent = unreadText;
-      sideBadge.style.display = unread ? 'inline-flex' : 'none';
-      if (menuBadge) {
-        menuBadge.textContent = unreadText;
-        menuBadge.style.display = unread ? 'inline-flex' : 'none';
-      }
+      refreshNavBadges();
 
       const toggleDrawer = () => {
         const isOpen = drawer.style.display === 'block';
@@ -1181,14 +1197,26 @@
     });
   }
 
+  function initNotifyToast() {
+    const latest = listNotifications(20).find(n => n.unread && (n.type === 'founder_submitted' || n.type === 'review_result'));
+    if (!latest) return;
+    const seenKey = 'wethus_last_toast_notification';
+    const seen = sessionStorage.getItem(seenKey);
+    if (seen === latest.id) return;
+    sessionStorage.setItem(seenKey, latest.id);
+    showTopToast(latest.title || '새 알림');
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       initGuestNavGuard();
       initNotificationNav();
+      initNotifyToast();
     });
   } else {
     initGuestNavGuard();
     initNotificationNav();
+    initNotifyToast();
   }
 
   window.WETHUS = {
@@ -1220,6 +1248,8 @@
     setCurrentUserPlan,
     listNotifications,
     unreadNotificationCount,
+    refreshNavBadges,
+    showTopToast,
     addNotification,
     markNotificationRead,
     markAllNotificationsRead,
