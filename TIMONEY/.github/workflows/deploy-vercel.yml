@@ -2,7 +2,9 @@ name: Deploy TIMONEY Web to Vercel
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'feature/**'
   workflow_dispatch:
 
 jobs:
@@ -11,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -27,21 +29,37 @@ jobs:
         run: flutter build web --release
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
 
       - name: Install Vercel CLI
         run: npm i -g vercel
 
-      - name: Pull Vercel env
+      - name: Pull Vercel env (production)
+        if: github.ref == 'refs/heads/main'
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Deploy build/web to Vercel
+      - name: Pull Vercel env (preview)
+        if: github.ref != 'refs/heads/main'
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy build/web to Vercel (production)
+        if: github.ref == 'refs/heads/main'
         run: vercel deploy build/web --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy build/web to Vercel (preview)
+        if: github.ref != 'refs/heads/main'
+        run: vercel deploy build/web --yes --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
