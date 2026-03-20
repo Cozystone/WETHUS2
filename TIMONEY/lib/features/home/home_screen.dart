@@ -3,8 +3,15 @@ import '../../core/design/app_colors.dart';
 import '../../core/widgets/mini_line_chart.dart';
 import '../../data/mock/timevest_mock_data.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String status = '지난주 같은 화요일 이 시점보다 12T 절약 중';
 
   @override
   Widget build(BuildContext context) {
@@ -31,8 +38,22 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text('오늘 +${MockTimevestData.todayExpectedT}T 예상', style: const TextStyle(fontSize: 16, color: AppColors.accent, fontWeight: FontWeight.w600)),
             const SizedBox(height: 2),
-            Text('지난주 같은 화요일 이 시점보다 ${MockTimevestData.comparedT}T 절약 중', style: const TextStyle(fontSize: 13, color: AppColors.subText)),
-            const SizedBox(height: 24),
+            Text(status, style: const TextStyle(fontSize: 13, color: AppColors.subText)),
+            const SizedBox(height: 16),
+            CupertinoButton(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              color: CupertinoColors.white,
+              borderRadius: BorderRadius.circular(12),
+              onPressed: _showOveruseSheet,
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('기준 초과 시뮬레이션', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+                  Icon(CupertinoIcons.chevron_up_chevron_down, color: AppColors.subText, size: 18),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
             _Card(
               child: Row(
                 children: [
@@ -63,15 +84,61 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  void _showOveruseSheet() {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (_) => CupertinoActionSheet(
+        title: const Text('기준을 넘겼어요. 어떻게 할까요?'),
+        message: const Text('선택은 언제든 바꿀 수 있어요.'),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() => status = '30분 잠금 선택 · 오늘 -2T로 방어 중');
+            },
+            child: const Text('30분 잠그기'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() => status = '5T로 20분 연장 · 현재 보유 143T');
+            },
+            child: const Text('5T로 20분 더 사용하기'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() => status = '광고 1회 사용 · 오늘 남은 비상열기 0회');
+            },
+            child: const Text('광고 보고 한 번 더 열기'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('닫기'),
+        ),
+      ),
+    );
+  }
+
   void _showProfileSheet(BuildContext context) {
     showCupertinoModalPopup(
       context: context,
       builder: (_) => CupertinoActionSheet(
         title: const Text('프로필 & 설정'),
-        actions: const [
-          CupertinoActionSheetAction(onPressed: null, child: Text('리그 상세 (준비중)')),
-          CupertinoActionSheetAction(onPressed: null, child: Text('권한 설정 (준비중)')),
-          CupertinoActionSheetAction(onPressed: null, child: Text('보상 광고 (준비중)')),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('리그 상세 (준비중)'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('권한 설정 (준비중)'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('보상 광고 (준비중)'),
+          ),
         ],
         cancelButton: CupertinoActionSheetAction(
           onPressed: () => Navigator.pop(context),

@@ -10,10 +10,10 @@ class RootTabScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return CupertinoTabScaffold(
       backgroundColor: AppColors.bg,
-      tabBar: const CupertinoTabBar(
+      tabBar: CupertinoTabBar(
         activeColor: AppColors.accent,
         inactiveColor: AppColors.subText,
-        items: [
+        items: const [
           BottomNavigationBarItem(icon: Icon(CupertinoIcons.house), label: '홈'),
           BottomNavigationBarItem(icon: Icon(CupertinoIcons.chart_bar_alt_fill), label: '시장'),
         ],
