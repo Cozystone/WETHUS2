@@ -161,8 +161,15 @@
 
         const existingLocal = (WETHUS.getState().users || []).find(u => String(u.email || '').toLowerCase() === String(data?.user?.email || '').toLowerCase());
         let user = WETHUS.upsertCloudUser(data.user);
-        if (!user?.onboardingComplete && existingLocal?.onboardingComplete) {
-          user = WETHUS.updateCurrentUserProfile({ onboardingComplete: true }) || user;
+        if (existingLocal) {
+          user = WETHUS.updateCurrentUserProfile({
+            onboardingComplete: true,
+            bio: existingLocal.bio ?? user.bio,
+            school: existingLocal.school ?? user.school,
+            careerRaw: existingLocal.careerRaw ?? user.careerRaw,
+            careerSummary: existingLocal.careerSummary ?? user.careerSummary,
+            age: existingLocal.age ?? user.age
+          }) || user;
         }
         if (!user?.onboardingComplete) {
           location.href = 'profile.html?onboarding=1';
