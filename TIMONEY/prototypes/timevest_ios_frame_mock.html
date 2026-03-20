@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timevest iPhone Frame Mock</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --card: #ffffff;
+      --text: #0f1217;
+      --sub: #6f7785;
+      --accent: #2f6bff;
+      --up: #e74c3c;
+      --down: #2f7dff;
+      --line: #e8edf5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, #eef2fb, #f8f9fc);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Noto Sans KR", sans-serif;
+      color: var(--text);
+    }
+    .iphone {
+      width: 390px;
+      height: 844px;
+      border-radius: 44px;
+      background: #111;
+      padding: 12px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.25);
+      position: relative;
+    }
+    .notch {
+      width: 150px;
+      height: 32px;
+      border-radius: 18px;
+      background: #111;
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+    }
+    .screen {
+      height: 100%;
+      border-radius: 34px;
+      overflow: hidden;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .topbar {
+      padding: 56px 20px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+    }
+    .tabs {
+      display: flex;
+      margin: 8px 20px 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      font-size: 13px;
+      color: var(--sub);
+      cursor: pointer;
+    }
+    .tab.active { background: var(--text); color: #fff; font-weight: 600; }
+    .view { flex: 1; overflow: auto; padding: 0 20px 90px; display: none; }
+    .view.active { display: block; }
+    .label { font-size: 13px; color: var(--sub); margin-top: 6px; }
+    .big { font-size: 56px; font-weight: 800; letter-spacing: -1.2px; margin: 4px 0; }
+    .subblue { color: var(--accent); font-weight: 600; font-size: 16px; }
+    .muted { color: var(--sub); font-size: 13px; margin-top: 4px; }
+    .card {
+      margin-top: 14px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .row { display: flex; justify-content: space-between; align-items: center; }
+    .league { font-size: 14px; font-weight: 600; }
+    .spark {
+      margin-top: 12px;
+      height: 82px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(to right, transparent 0%, transparent 100%),
+                  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='82' viewBox='0 0 320 82'%3E%3Cpath d='M4 62 C24 58 36 52 52 54 C76 58 90 40 112 37 C136 34 146 23 170 21 C188 20 202 12 220 14 C245 16 268 8 316 4' stroke='%232f6bff' fill='none' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center/100% 100% no-repeat;
+    }
+    .ticker {
+      margin-top: 10px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      cursor: pointer;
+    }
+    .name { font-size: 17px; font-weight: 700; }
+    .price { font-size: 15px; font-weight: 700; }
+    .delta.up { color: var(--up); }
+    .delta.down { color: var(--down); }
+    .sparkmini { margin-top: 8px; height: 32px; border-bottom: 1px solid var(--line); }
+    .detail-chart { height: 220px; border-bottom: 1px solid var(--line); margin-top: 12px; }
+    .chips { display: flex; gap: 8px; margin-top: 12px; }
+    .chip { padding: 8px 12px; border-radius: 10px; background: #fff; border: 1px solid var(--line); font-size: 13px; }
+    .chip.active { background: var(--text); color:#fff; border-color: var(--text); }
+    .cta-wrap {
+      position: absolute;
+      left: 20px; right: 20px; bottom: 24px;
+      display: flex; gap: 10px;
+    }
+    .btn {
+      flex: 1; border: 0; border-radius: 14px; padding: 14px 0; font-weight: 700; cursor: pointer;
+    }
+    .btn.sell { background: #e9ecf3; color: #111; }
+    .btn.buy { background: var(--accent); color: #fff; }
+    .bottombar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 76px;
+      background: rgba(255,255,255,.92);
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      font-size: 12px;
+      color: var(--sub);
+    }
+    .bottombar .active { color: var(--accent); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="iphone">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="topbar">
+        <div>Timevest</div>
+        <div>◯</div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-view="home">Home</div>
+        <div class="tab" data-view="market">Market</div>
+        <div class="tab" data-view="detail">Detail</div>
+      </div>
+
+      <section class="view active" id="home">
+        <div class="label">보유 자산</div>
+        <div class="big">148T</div>
+        <div class="subblue">오늘 +12T 예상</div>
+        <div class="muted">지난주 같은 화요일 이 시점보다 12T 절약 중</div>
+
+        <div class="card">
+          <div class="league">골드 리그 6위 · 승급까지 18점</div>
+        </div>
+
+        <div class="card">
+          <div class="label">최근 7일 자산 변화</div>
+          <div style="font-size:28px;font-weight:800;color:var(--up);margin-top:2px;">+27T</div>
+          <div class="spark"></div>
+        </div>
+      </section>
+
+      <section class="view" id="market">
+        <div class="label">지금 벌고 있는 시간</div>
+        <div class="big" style="font-size:52px;">+9T</div>
+        <div class="muted">오늘 확정 전 예상 수익</div>
+
+        <div class="ticker" onclick="show('detail')">
+          <div class="row"><div class="name">YouTube</div><div class="price">103 <span class="delta up">+2</span></div></div>
+          <div class="sparkmini"></div>
+        </div>
+        <div class="ticker" onclick="show('detail')">
+          <div class="row"><div class="name">Instagram</div><div class="price">97 <span class="delta down">-4</span></div></div>
+          <div class="sparkmini"></div>
+        </div>
+        <div class="ticker" onclick="show('detail')">
+          <div class="row"><div class="name">TikTok</div><div class="price">110 <span class="delta up">+3</span></div></div>
+          <div class="sparkmini"></div>
+        </div>
+
+        <div class="muted" style="margin-top:12px;">오늘 거래 3/5회 · 광고로 1회 추가 가능</div>
+      </section>
+
+      <section class="view" id="detail">
+        <div class="name">YouTube</div>
+        <div class="big" style="font-size:50px;">103</div>
+        <div class="delta up" style="font-weight:700;">+2</div>
+
+        <div class="chips">
+          <div class="chip active">1D</div>
+          <div class="chip">1W</div>
+          <div class="chip">1M</div>
+        </div>
+        <div class="detail-chart spark"></div>
+
+        <div class="card">
+          <div style="font-weight:700;">보유 8T</div>
+          <div class="muted">평균 진입 101</div>
+          <div class="delta up" style="font-weight:700;margin-top:4px;">평가손익 +3T</div>
+        </div>
+      </section>
+
+      <div class="cta-wrap" id="detail-cta" style="display:none;">
+        <button class="btn sell">팔기</button>
+        <button class="btn buy">사기</button>
+      </div>
+
+      <div class="bottombar">
+        <div class="active">홈</div>
+        <div>시장</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    function show(id) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.view === id));
+      document.getElementById('detail-cta').style.display = id === 'detail' ? 'flex' : 'none';
+    }
+    tabs.forEach(tab => tab.addEventListener('click', () => show(tab.dataset.view)));
+  </script>
+</body>
+</html>
