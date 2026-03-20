@@ -12,7 +12,15 @@ class SymbolDetailScreen extends StatefulWidget {
 }
 
 class _SymbolDetailScreenState extends State<SymbolDetailScreen> {
-  int selected = 0; // 0 1D, 1 1W, 2 1M
+  int selected = 0; // 0:1D 1:1W 2:1M
+  int tradesUsed = 3;
+  bool adUsed = false;
+  int positionT = 8;
+  int avgEntry = 101;
+  DateTime? cooldownUntil;
+
+  bool get canTrade => cooldownUntil == null || DateTime.now().isAfter(cooldownUntil!);
+  int get maxTrades => adUsed ? 6 : 5;
 
   @override
   Widget build(BuildContext context) {
@@ -30,27 +38,47 @@ class _SymbolDetailScreenState extends State<SymbolDetailScreen> {
         child: Stack(
           children: [
             ListView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 130),
               children: [
                 Text('${widget.symbol.price}', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w800, letterSpacing: -1.0)),
                 Text('${widget.symbol.delta >= 0 ? '+' : ''}${widget.symbol.delta}', style: TextStyle(fontSize: 16, color: deltaColor, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                Text('오늘 거래 $tradesUsed/$maxTrades회', style: const TextStyle(fontSize: 13, color: AppColors.subText)),
+                if (!canTrade) ...[
+                  const SizedBox(height: 4),
+                  const Text('쿨다운 중 · 약 5분 후 다시 거래 가능', style: TextStyle(fontSize: 13, color: AppColors.subText)),
+                ],
                 const SizedBox(height: 16),
                 _periodTabs(),
                 const SizedBox(height: 12),
                 MiniLineChart(points: _periodSeries(widget.symbol.spark), color: deltaColor, height: 210),
                 const SizedBox(height: 18),
-                _PositionCard(symbol: widget.symbol),
+                _PositionCard(positionT: positionT, avgEntry: avgEntry),
+                const SizedBox(height: 12),
+                if (!adUsed)
+                  CupertinoButton(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    color: CupertinoColors.systemGrey6,
+                    borderRadius: BorderRadius.circular(12),
+                    onPressed: () {
+                      setState(() => adUsed = true);
+                      _toast('광고 보상으로 당일 거래권 +1회 지급');
+                    },
+                    child: const Text('광고 보고 거래 1회 추가', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+                  ),
               ],
             ),
             Positioned(
               left: 16,
               right: 16,
               bottom: 16,
-              child: Row(children: [
-                Expanded(child: _actionButton('팔기', CupertinoColors.systemGrey2, () => _tradeSheet(false))),
-                const SizedBox(width: 10),
-                Expanded(child: _actionButton('사기', AppColors.accent, () => _tradeSheet(true), textColor: CupertinoColors.white)),
-              ]),
+              child: Row(
+                children: [
+                  Expanded(child: _actionButton('팔기', CupertinoColors.systemGrey2, () => _tradeSheet(false))),
+                  const SizedBox(width: 10),
+                  Expanded(child: _actionButton('사기', AppColors.accent, () => _tradeSheet(true), textColor: CupertinoColors.white)),
+                ],
+              ),
             ),
           ],
         ),
@@ -95,16 +123,53 @@ class _SymbolDetailScreenState extends State<SymbolDetailScreen> {
   }
 
   void _tradeSheet(bool isBuy) {
+    if (tradesUsed >= maxTrades) {
+      _toast('오늘 거래 한도를 모두 사용했어요');
+      return;
+    }
+    if (!canTrade) {
+      _toast('쿨다운 중입니다. 잠시 후 다시 시도해주세요');
+      return;
+    }
+
     showCupertinoModalPopup(
       context: context,
-      builder: (_) => _TradeSheet(symbol: widget.symbol, isBuy: isBuy),
+      builder: (_) => _TradeSheet(
+        symbol: widget.symbol,
+        isBuy: isBuy,
+        onTrade: (t) {
+          setState(() {
+            tradesUsed += 1;
+            cooldownUntil = DateTime.now().add(const Duration(minutes: 5));
+            if (isBuy) {
+              positionT += t;
+            } else {
+              positionT = (positionT - t).clamp(0, 9999);
+            }
+          });
+          _toast('${t}T ${isBuy ? '매수' : '매도'} 체결');
+        },
+      ),
+    );
+  }
+
+  void _toast(String text) {
+    showCupertinoDialog(
+      context: context,
+      builder: (_) => CupertinoAlertDialog(
+        content: Text(text),
+        actions: [
+          CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: const Text('확인')),
+        ],
+      ),
     );
   }
 }
 
 class _PositionCard extends StatelessWidget {
-  final SymbolQuote symbol;
-  const _PositionCard({required this.symbol});
+  final int positionT;
+  final int avgEntry;
+  const _PositionCard({required this.positionT, required this.avgEntry});
 
   @override
   Widget build(BuildContext context) {
@@ -115,14 +180,14 @@ class _PositionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.line),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('보유 8T', style: TextStyle(fontWeight: FontWeight.w700)),
-          SizedBox(height: 6),
-          Text('평균 진입 101', style: TextStyle(color: AppColors.subText)),
-          SizedBox(height: 4),
-          Text('평가손익 +3T', style: TextStyle(color: AppColors.up, fontWeight: FontWeight.w600)),
+          Text('보유 ${positionT}T', style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          Text('평균 진입 $avgEntry', style: const TextStyle(color: AppColors.subText)),
+          const SizedBox(height: 4),
+          const Text('평가손익 +3T', style: TextStyle(color: AppColors.up, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -132,7 +197,8 @@ class _PositionCard extends StatelessWidget {
 class _TradeSheet extends StatelessWidget {
   final bool isBuy;
   final SymbolQuote symbol;
-  const _TradeSheet({required this.symbol, required this.isBuy});
+  final void Function(int t) onTrade;
+  const _TradeSheet({required this.symbol, required this.isBuy, required this.onTrade});
 
   @override
   Widget build(BuildContext context) {
@@ -163,7 +229,7 @@ class _TradeSheet extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                           onPressed: () {
                             Navigator.pop(context);
-                            _toast(context, '${v}T ${isBuy ? '매수' : '매도'} 체결');
+                            onTrade(v);
                           },
                           child: Text('${v}T', style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w700)),
                         ))
@@ -182,18 +248,6 @@ class _TradeSheet extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _toast(BuildContext context, String text) {
-    showCupertinoDialog(
-      context: context,
-      builder: (_) => CupertinoAlertDialog(
-        content: Text(text),
-        actions: [
-          CupertinoDialogAction(onPressed: () => Navigator.pop(context), child: const Text('확인')),
-        ],
       ),
     );
   }
