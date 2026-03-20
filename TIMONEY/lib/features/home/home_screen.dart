@@ -12,7 +12,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String status = '지난주 같은 화요일 이 시점보다 12T 절약 중';
+  String status = '지난주 같은 화요일 이 시점보다 12분 절약 중';
 
   @override
   Widget build(BuildContext context) {
@@ -42,9 +42,9 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Text('보유 자산', style: TextStyle(fontSize: 14, color: AppColors.subText)),
             const SizedBox(height: 4),
-            Text('${MockTimevestData.walletT}T', style: const TextStyle(fontSize: 54, fontWeight: FontWeight.w800, letterSpacing: -1.2)),
+            Text('${MockTimevestData.walletT}분', style: const TextStyle(fontSize: 54, fontWeight: FontWeight.w800, letterSpacing: -1.2)),
             const SizedBox(height: 8),
-            Text('오늘 +${MockTimevestData.todayExpectedT}T 예상', style: const TextStyle(fontSize: 16, color: AppColors.accent, fontWeight: FontWeight.w600)),
+            Text('오늘 +${MockTimevestData.todayExpectedT}분 예상', style: const TextStyle(fontSize: 16, color: AppColors.accent, fontWeight: FontWeight.w600)),
             const SizedBox(height: 2),
             Text(status, style: const TextStyle(fontSize: 13, color: AppColors.subText)),
             const SizedBox(height: 16),
@@ -80,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   const Text('최근 7일 자산 변화', style: TextStyle(fontSize: 13, color: AppColors.subText)),
                   const SizedBox(height: 12),
-                  const Text('+27T', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.up)),
+                  const Text('+27분', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.up)),
                   const SizedBox(height: 10),
                   MiniLineChart(points: trend, color: AppColors.accent, height: 90),
                 ],
@@ -102,14 +102,14 @@ class _HomeScreenState extends State<HomeScreen> {
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.pop(context);
-              setState(() => status = '30분 잠금 선택 · 오늘 -2T로 방어 중');
+              setState(() => status = '30분 잠금 선택 · 오늘 -2분으로 방어 중');
             },
             child: const Text('30분 잠그기'),
           ),
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.pop(context);
-              setState(() => status = '5T로 20분 연장 · 현재 보유 143T');
+              setState(() => status = '5T로 20분 연장 · 현재 보유 143분');
             },
             child: const Text('5T로 20분 더 사용하기'),
           ),
