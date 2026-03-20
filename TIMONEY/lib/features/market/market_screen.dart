@@ -22,7 +22,7 @@ class MarketScreen extends StatelessWidget {
           children: [
             const Text('지금 벌고 있는 시간', style: TextStyle(fontSize: 14, color: AppColors.subText)),
             const SizedBox(height: 4),
-            const Text('+9T', style: TextStyle(fontSize: 48, fontWeight: FontWeight.w800, letterSpacing: -1.0)),
+            const Text('+9분', style: TextStyle(fontSize: 48, fontWeight: FontWeight.w800, letterSpacing: -1.0)),
             const SizedBox(height: 4),
             const Text('오늘 확정 전 예상 수익', style: TextStyle(fontSize: 13, color: AppColors.subText)),
             const SizedBox(height: 18),
