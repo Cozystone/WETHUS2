@@ -1272,8 +1272,11 @@
     const actor = currentActorId();
     if (actor) return;
     const protectedHrefs = new Set(['founder.html', 'mentor.html', 'profile.html', 'notifications.html', 'dm.html', 'pricing.html']);
-    document.querySelectorAll('.nav-links a[href]').forEach(a => {
-      const href = a.getAttribute('href') || '';
+    const publicHrefs = new Set(['index.html', 'explore.html', 'explore_theme.html', 'explore_v1.html', 'login.html']);
+    document.querySelectorAll('a[href]').forEach(a => {
+      const href = (a.getAttribute('href') || '').trim();
+      if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto:')) return;
+      if (publicHrefs.has(href)) return;
       if (protectedHrefs.has(href)) a.setAttribute('href', 'login.html');
     });
   }
