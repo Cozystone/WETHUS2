@@ -20,8 +20,8 @@
       </div>
 
       <form class="auth-form" id="loginForm" novalidate>
-        <input id="loginEmail" name="email" type="email" placeholder="이메일" required />
-        <input name="password" type="password" placeholder="비밀번호" required />
+        <input id="loginEmail" name="email" type="email" placeholder="이메일" autocomplete="username email" required />
+        <input name="password" type="password" placeholder="비밀번호" autocomplete="current-password" required />
         <label style="display:flex;gap:8px;align-items:center;color:#a3a3a3;font-size:.85rem;">
           <input id="rememberEmail" type="checkbox" /> 아이디(이메일) 저장
         </label>
@@ -29,9 +29,9 @@
       </form>
 
       <form class="auth-form" id="signupForm" style="display:none;" novalidate>
-        <input name="name" placeholder="이름" required />
+        <input name="name" placeholder="이름" autocomplete="name" required />
         <input name="nickname" placeholder="닉네임" required />
-        <input id="signupEmail" name="email" type="email" placeholder="이메일" required />
+        <input id="signupEmail" name="email" type="email" placeholder="이메일" autocomplete="email" required />
         <small id="emailHint" class="note"></small>
 
         <input id="signupPw" name="password" type="password" placeholder="비밀번호 (영문+숫자 포함 8자 이상)" required />
