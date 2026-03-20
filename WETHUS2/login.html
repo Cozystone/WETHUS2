@@ -159,10 +159,8 @@
         const data = await postWithFallback(GOOGLE_AUTH_ENDPOINTS, { credential });
         if (!data?.ok || !data?.user) throw new Error(data?.error || 'Google 사용자 정보를 불러오지 못했습니다.');
 
-        const before = WETHUS.currentUser();
         const user = WETHUS.upsertCloudUser(data.user);
-        const isNew = !before || before.email !== user.email;
-        if (!user?.onboardingComplete || isNew) {
+        if (!user?.onboardingComplete) {
           location.href = 'profile.html?onboarding=1';
           return;
         }
@@ -273,8 +271,9 @@
         const data = await postWithFallback(LOGIN_ENDPOINTS, { email, password });
         WETHUS.upsertCloudUser(data.user || {});
       } catch (err) {
-        if (isLocalHost) {
-          // 로컬 개발 환경에서만 폴백 허용
+        const allowLocalFallback = !!window.WETHUS_ALLOW_LOCAL_AUTH_FALLBACK;
+        if (isLocalHost && allowLocalFallback) {
+          // 명시적으로 허용된 경우에만 로컬 폴백
           WETHUS.loginUser({ email, password });
         } else {
           throw err;
