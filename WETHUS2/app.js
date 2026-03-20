@@ -1283,8 +1283,8 @@
 
     // safety: keep explore links public in all guest states
     document.querySelectorAll('a.nav-link, a.btn').forEach(a => {
-      const label = (a.textContent || '').trim();
-      if (label === '탐색' || label === '프로젝트 탐색하기') a.setAttribute('href', 'explore.html');
+      const label = (a.textContent || '').replace(/\s+/g, ' ').trim();
+      if (label.includes('탐색')) a.setAttribute('href', 'explore.html');
     });
   }
 
