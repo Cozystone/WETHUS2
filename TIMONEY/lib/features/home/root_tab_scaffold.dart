@@ -14,8 +14,8 @@ class RootTabScaffold extends StatelessWidget {
         activeColor: AppColors.accent,
         inactiveColor: AppColors.subText,
         items: const [
-          BottomNavigationBarItem(icon: Icon(CupertinoIcons.house), label: '홈'),
-          BottomNavigationBarItem(icon: Icon(CupertinoIcons.chart_bar_alt_fill), label: '시장'),
+          BottomNavigationBarItem(icon: Text('⌂', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)), label: '홈'),
+          BottomNavigationBarItem(icon: Text('▤', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)), label: '시장'),
         ],
       ),
       tabBuilder: (context, index) {

@@ -33,7 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => _showProfileSheet(context),
-          child: const Icon(CupertinoIcons.person_crop_circle, color: AppColors.text),
+          child: const Text('◎', style: TextStyle(color: AppColors.text, fontSize: 18, fontWeight: FontWeight.w700)),
         ),
       ),
       child: SafeArea(
@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('기준 초과 시뮬레이션', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
-                  Icon(CupertinoIcons.chevron_up_chevron_down, color: AppColors.subText, size: 18),
+                  Text('▾', style: TextStyle(color: AppColors.subText, fontSize: 16, fontWeight: FontWeight.w700)),
                 ],
               ),
             ),
@@ -65,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _Card(
               child: Row(
                 children: [
-                  const Icon(CupertinoIcons.rosette, color: AppColors.accent),
+                  const Text('★', style: TextStyle(color: AppColors.accent, fontSize: 16, fontWeight: FontWeight.w700)),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text('${MockTimevestData.league} · ${MockTimevestData.leagueSub}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
