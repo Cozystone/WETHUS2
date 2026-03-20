@@ -1280,6 +1280,12 @@
       if (publicHrefs.has(base)) return;
       if (protectedHrefs.has(base)) a.setAttribute('href', 'login.html');
     });
+
+    // safety: keep explore links public in all guest states
+    document.querySelectorAll('a.nav-link, a.btn').forEach(a => {
+      const label = (a.textContent || '').trim();
+      if (label === '탐색' || label === '프로젝트 탐색하기') a.setAttribute('href', 'explore.html');
+    });
   }
 
   function initNotifyToast() {
