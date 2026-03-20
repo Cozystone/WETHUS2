@@ -89,7 +89,7 @@
     const localBases = ['http://127.0.0.1:8787', 'http://localhost:8787'];
     const remoteBase = window.WETHUS_API_BASE || 'https://wethus-api.onrender.com';
     const AUTH_BASES = isLocalHost
-      ? [remoteBase, `${location.protocol}//${location.hostname}:8787`, ...localBases].filter(Boolean)
+      ? [`${location.protocol}//${location.hostname}:8787`, ...localBases, remoteBase].filter(Boolean)
       : [remoteBase].filter(Boolean);
     const GOOGLE_AUTH_ENDPOINTS = AUTH_BASES.map(b => `${b.replace(/\/$/, '')}/auth/google`);
     const LOGIN_ENDPOINTS = AUTH_BASES.map(b => `${b.replace(/\/$/, '')}/auth/login`);
@@ -159,7 +159,11 @@
         const data = await postWithFallback(GOOGLE_AUTH_ENDPOINTS, { credential });
         if (!data?.ok || !data?.user) throw new Error(data?.error || 'Google 사용자 정보를 불러오지 못했습니다.');
 
-        const user = WETHUS.upsertCloudUser(data.user);
+        const existingLocal = (WETHUS.getState().users || []).find(u => String(u.email || '').toLowerCase() === String(data?.user?.email || '').toLowerCase());
+        let user = WETHUS.upsertCloudUser(data.user);
+        if (!user?.onboardingComplete && existingLocal?.onboardingComplete) {
+          user = WETHUS.updateCurrentUserProfile({ onboardingComplete: true }) || user;
+        }
         if (!user?.onboardingComplete) {
           location.href = 'profile.html?onboarding=1';
           return;
