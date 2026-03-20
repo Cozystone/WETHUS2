@@ -1276,8 +1276,9 @@
     document.querySelectorAll('a[href]').forEach(a => {
       const href = (a.getAttribute('href') || '').trim();
       if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto:')) return;
-      if (publicHrefs.has(href)) return;
-      if (protectedHrefs.has(href)) a.setAttribute('href', 'login.html');
+      const base = href.split('?')[0].split('#')[0];
+      if (publicHrefs.has(base)) return;
+      if (protectedHrefs.has(base)) a.setAttribute('href', 'login.html');
     });
   }
 
