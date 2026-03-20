@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import '../../core/design/app_colors.dart';
+import '../../core/state/app_prefs.dart';
 import '../../core/widgets/mini_line_chart.dart';
 import '../../data/mock/timevest_mock_data.dart';
 import 'symbol_detail_screen.dart';
@@ -9,29 +10,35 @@ class MarketScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: AppColors.bg,
-      navigationBar: const CupertinoNavigationBar(
-        backgroundColor: AppColors.bg,
-        border: null,
-        middle: Text('시장', style: TextStyle(fontWeight: FontWeight.w700)),
-      ),
-      child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          children: [
-            const Text('지금 벌고 있는 시간', style: TextStyle(fontSize: 14, color: AppColors.subText)),
-            const SizedBox(height: 4),
-            const Text('+9분', style: TextStyle(fontSize: 48, fontWeight: FontWeight.w800, letterSpacing: -1.0)),
-            const SizedBox(height: 4),
-            const Text('오늘 확정 전 예상 수익', style: TextStyle(fontSize: 13, color: AppColors.subText)),
-            const SizedBox(height: 18),
-            ...MockTimevestData.symbols.map((s) => _SymbolCell(symbol: s)).toList(),
-            const SizedBox(height: 14),
-            const Text('오늘 거래 3/5회 · 광고로 1회 추가 가능', style: TextStyle(fontSize: 13, color: AppColors.subText)),
-          ],
-        ),
-      ),
+    return ValueListenableBuilder<String>(
+      valueListenable: AppPrefs.lang,
+      builder: (context, lang, _) {
+        final isKo = lang == 'ko';
+        return CupertinoPageScaffold(
+          backgroundColor: AppColors.bg,
+          navigationBar: CupertinoNavigationBar(
+            backgroundColor: AppColors.bg,
+            border: null,
+            middle: Text(isKo ? '시장' : 'Market', style: const TextStyle(fontWeight: FontWeight.w700)),
+          ),
+          child: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              children: [
+                Text(isKo ? '지금 벌고 있는 시간' : 'Time earned now', style: const TextStyle(fontSize: 14, color: AppColors.subText)),
+                const SizedBox(height: 4),
+                Text(isKo ? '+9분' : '+9 min', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w800, letterSpacing: -1.0)),
+                const SizedBox(height: 4),
+                Text(isKo ? '오늘 확정 전 예상 수익' : 'Estimated before daily settlement', style: const TextStyle(fontSize: 13, color: AppColors.subText)),
+                const SizedBox(height: 18),
+                ...MockTimevestData.symbols.map((s) => _SymbolCell(symbol: s)).toList(),
+                const SizedBox(height: 14),
+                Text(isKo ? '오늘 거래 3/5회 · 광고로 1회 추가 가능' : 'Trades today 3/5 · +1 with ad', style: const TextStyle(fontSize: 13, color: AppColors.subText)),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
