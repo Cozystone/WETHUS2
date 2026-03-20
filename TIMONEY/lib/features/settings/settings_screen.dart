@@ -1,4 +1,6 @@
 import 'package:flutter/cupertino.dart';
+import '../../core/design/app_colors.dart';
+import '../../core/state/app_prefs.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -6,35 +8,38 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(middle: Text('Settings')),
+      backgroundColor: AppColors.bg,
+      navigationBar: const CupertinoNavigationBar(
+        backgroundColor: AppColors.bg,
+        border: null,
+        middle: Text('Settings'),
+      ),
       child: SafeArea(
-        child: ListView(
-          children: const [
-            _SettingRow('Currency', 'KRW'),
-            _SettingRow('Language', 'Korean'),
-            _SettingRow('Theme', 'iOS Light'),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: ValueListenableBuilder<String>(
+            valueListenable: AppPrefs.lang,
+            builder: (context, lang, _) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Language', style: TextStyle(fontSize: 14, color: AppColors.subText)),
+                  const SizedBox(height: 10),
+                  CupertinoSlidingSegmentedControl<String>(
+                    groupValue: lang,
+                    children: const {
+                      'ko': Padding(padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8), child: Text('한국어')),
+                      'en': Padding(padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8), child: Text('English')),
+                    },
+                    onValueChanged: (value) {
+                      if (value != null) AppPrefs.lang.value = value;
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
         ),
-      ),
-    );
-  }
-}
-
-class _SettingRow extends StatelessWidget {
-  final String title;
-  final String value;
-  const _SettingRow(this.title, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: CupertinoColors.separator, width: 0.5)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [Text(title), Text(value, style: const TextStyle(color: CupertinoColors.systemGrey))],
       ),
     );
   }
