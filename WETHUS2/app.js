@@ -1271,7 +1271,7 @@
   function initGuestNavGuard() {
     const actor = currentActorId();
     if (actor) return;
-    const protectedHrefs = new Set(['explore.html', 'founder.html', 'mentor.html', 'profile.html', 'notifications.html', 'dm.html']);
+    const protectedHrefs = new Set(['founder.html', 'mentor.html', 'profile.html', 'notifications.html', 'dm.html', 'pricing.html']);
     document.querySelectorAll('.nav-links a[href]').forEach(a => {
       const href = a.getAttribute('href') || '';
       if (protectedHrefs.has(href)) a.setAttribute('href', 'login.html');
