@@ -78,7 +78,7 @@
 
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=20260318-54"></script>
+  <script src="app.js?v=20260318-55"></script>
   <script>
     const msg = document.getElementById('authMsg');
     const tabLogin = document.getElementById('tabLogin');
@@ -269,12 +269,18 @@
 
     authCloseBtn?.addEventListener('click', (e) => {
       e.preventDefault();
-      if (history.length > 1) {
-        history.back();
-      } else {
-        const next = new URLSearchParams(location.search).get('next');
-        if (next) location.href = next;
+      const next = new URLSearchParams(location.search).get('next');
+      let state = null;
+      try { state = JSON.parse(sessionStorage.getItem('wethus_auth_return_state') || 'null'); } catch (_) {}
+      if (next) {
+        location.href = next;
+        return;
       }
+      if (state?.path) {
+        location.href = state.path + (state.search || '');
+        return;
+      }
+      if (history.length > 1) history.back();
     });
 
     [signupEmail, signupPw, signupPwConfirm].forEach(el => {

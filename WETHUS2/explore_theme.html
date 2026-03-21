@@ -173,7 +173,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-54"></script>
+  <script src="app.js?v=20260318-55"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
     const st = WETHUS.getState();
@@ -535,6 +535,7 @@
       modalImage.src = data.image || imageFor(data, 0);
       renderTeamMini(data.teamMembers || []);
       currentProjectId = data.id || null;
+      if (currentProjectId) WETHUS.setAuthReturnState?.({ modalProjectId: currentProjectId });
       modalLikeBtn.classList.toggle('liked', !!data._liked);
       modalLikeBtn.innerHTML = (data._liked ? '♥ ' : '♡ ') + '<span id=\"modalLikeCount\">' + (data.likes || 0) + '</span>';
       modalLikeCount.textContent = data.likes || 0;
@@ -585,6 +586,7 @@
         e.stopPropagation();
         const st = WETHUS.getState();
         if (!(st.currentUserId || st.devMode)) {
+          WETHUS.setAuthReturnState?.({ modalProjectId: applyBtn.dataset.apply });
           location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
           return;
         }
@@ -657,6 +659,7 @@
       if (!currentProjectId) return;
       const st = WETHUS.getState();
       if (!(st.currentUserId || st.devMode)) {
+        WETHUS.setAuthReturnState?.({ modalProjectId: currentProjectId });
         location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
         return;
       }
@@ -735,6 +738,7 @@
       if (!applyProjectId) return;
       const st = WETHUS.getState();
       if (!(st.currentUserId || st.devMode)) {
+        WETHUS.setAuthReturnState?.({ modalProjectId: applyProjectId });
         location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
         return;
       }
@@ -756,6 +760,20 @@
 
     buildCategoryChips(allProjects);
     applyFilters();
+    const returnRaw = sessionStorage.getItem('wethus_auth_return_state');
+    if (returnRaw) {
+      try {
+        const rs = JSON.parse(returnRaw);
+        if (rs?.path === location.pathname) {
+          if (typeof rs.scrollY === 'number') setTimeout(() => window.scrollTo(0, rs.scrollY), 0);
+          if (rs.modalProjectId) {
+            const p = (currentItems || []).find(x => x.id === rs.modalProjectId) || WETHUS.listProjects().find(x => x.id === rs.modalProjectId);
+            if (p) openModal(p);
+          }
+          sessionStorage.removeItem('wethus_auth_return_state');
+        }
+      } catch (_) {}
+    }
     if (openProjectId) {
       const p = (currentItems || []).find(x => x.id === openProjectId) || WETHUS.listProjects().find(x => x.id === openProjectId);
       if (p) openModal(p);

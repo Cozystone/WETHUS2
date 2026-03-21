@@ -117,6 +117,7 @@
     imageEl.src = data.image || 'https://picsum.photos/seed/wethus-default/1200/700';
     imageEl.alt = (data.title || '프로젝트') + ' 이미지';
     currentProjectId = data.id || null;
+    if (currentProjectId) WETHUS.setAuthReturnState?.({ modalProjectId: currentProjectId });
     if (likeCountEl) likeCountEl.textContent = data.likes || 0;
     if (commentCountEl) commentCountEl.textContent = (data.comments || []).length;
     if (likeBtn) likeBtn.classList.toggle('liked', !!data._liked);
@@ -295,4 +296,25 @@
   window.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') { closeModal(); }
   });
+
+  (function restoreAfterAuth(){
+    try {
+      var raw = sessionStorage.getItem('wethus_auth_return_state');
+      if (!raw) return;
+      var state = JSON.parse(raw);
+      if (!state || state.path !== location.pathname) return;
+      if (typeof state.scrollY === 'number') setTimeout(function(){ window.scrollTo(0, state.scrollY); }, 0);
+      if (state.modalProjectId) {
+        var cards = document.querySelectorAll('[data-project]');
+        for (var i=0;i<cards.length;i++) {
+          var data = JSON.parse(cards[i].getAttribute('data-project') || '{}');
+          if (data.id === state.modalProjectId) {
+            openModal(data);
+            break;
+          }
+        }
+      }
+      sessionStorage.removeItem('wethus_auth_return_state');
+    } catch (_) {}
+  })();
 })();
