@@ -545,7 +545,10 @@
   function goLoginIfGuest() {
     const actor = currentActorId();
     if (actor) return false;
-    if (typeof location !== 'undefined') location.href = 'login.html';
+    if (typeof location !== 'undefined') {
+      setAuthReturnState();
+      location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
+    }
     return true;
   }
 
@@ -1268,6 +1271,27 @@
     });
   }
 
+  function setAuthReturnState(extra = {}) {
+    try {
+      const payload = {
+        path: location.pathname,
+        search: location.search,
+        scrollY: window.scrollY || 0,
+        ...extra
+      };
+      sessionStorage.setItem('wethus_auth_return_state', JSON.stringify(payload));
+    } catch (_) {}
+  }
+
+  function consumeAuthReturnState() {
+    try {
+      const raw = sessionStorage.getItem('wethus_auth_return_state');
+      if (!raw) return null;
+      sessionStorage.removeItem('wethus_auth_return_state');
+      return JSON.parse(raw);
+    } catch (_) { return null; }
+  }
+
   function initGuestNavGuard() {
     const actor = currentActorId();
     if (actor) return;
@@ -1278,7 +1302,10 @@
       if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto:')) return;
       const base = href.split('?')[0].split('#')[0];
       if (publicHrefs.has(base)) return;
-      if (protectedHrefs.has(base)) a.setAttribute('href', 'login.html');
+      if (protectedHrefs.has(base)) {
+        a.addEventListener('click', () => setAuthReturnState());
+        a.setAttribute('href', 'login.html?next=' + encodeURIComponent(location.pathname + location.search));
+      }
     });
 
     // safety: keep explore links public in all guest states
@@ -1299,6 +1326,18 @@
       const next = location.pathname + location.search;
       location.href = 'login.html?next=' + encodeURIComponent(next);
     }, true);
+  }
+
+  function applyAuthReturnState() {
+    try {
+      const raw = sessionStorage.getItem('wethus_auth_return_state');
+      if (!raw) return;
+      const st = JSON.parse(raw);
+      if (!st || st.path !== location.pathname) return;
+      if (typeof st.scrollY === 'number') {
+        setTimeout(() => window.scrollTo(0, st.scrollY), 0);
+      }
+    } catch (_) {}
   }
 
   function initNotifyToast() {
@@ -1325,12 +1364,14 @@
       initGuestNavGuard();
       initGuestApplyGuard();
       initNotificationNav();
+      applyAuthReturnState();
       initNotifyToast();
     });
   } else {
     initGuestNavGuard();
     initGuestApplyGuard();
     initNotificationNav();
+    applyAuthReturnState();
     initNotifyToast();
   }
 
@@ -1365,6 +1406,8 @@
     unreadNotificationCount,
     refreshNavBadges,
     showTopToast,
+    setAuthReturnState,
+    consumeAuthReturnState,
     addNotification,
     markNotificationRead,
     markAllNotificationsRead,

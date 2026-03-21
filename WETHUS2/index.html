@@ -166,7 +166,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260318-54"></script>
+  <script src="app.js?v=20260318-55"></script>
   <script>
     (function(){
       if (!window.WETHUS) return;
@@ -277,7 +277,8 @@
         e.stopPropagation();
         const st = WETHUS.getState();
         if (!(st.currentUserId || st.devMode)) {
-          location.href = 'login.html?next=' + encodeURIComponent('index.html');
+          WETHUS.setAuthReturnState?.({ modalProjectId: applyBtn.dataset.apply });
+          location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
           return;
         }
         applyProjectId = applyBtn.dataset.apply;
@@ -306,7 +307,8 @@
         if (!applyProjectId) return;
         const st = WETHUS.getState();
         if (!(st.currentUserId || st.devMode)) {
-          location.href = 'login.html?next=' + encodeURIComponent('index.html');
+          WETHUS.setAuthReturnState?.({ modalProjectId: applyProjectId });
+          location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
           return;
         }
         const motivation = (applyMotivation.value || '').trim();
@@ -325,7 +327,7 @@
       });
     })();
   </script>
-  <script src="app.js?v=20260318-54"></script>
+  <script src="app.js?v=20260318-55"></script>
   <script>
     (function forceExplorePublicFromHome(){
       const go = (e) => {
@@ -336,6 +338,6 @@
       document.getElementById('homeExploreCta')?.addEventListener('click', go);
     })();
   </script>
-  <script src="script.js?v=20260319-5"></script>
+  <script src="script.js?v=20260319-6"></script>
 </body>
 </html>
