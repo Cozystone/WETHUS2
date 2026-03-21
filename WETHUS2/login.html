@@ -10,7 +10,7 @@
 <body>
   <main class="auth-wrap">
     <section class="auth-card">
-      <a href="index.html" class="auth-close" aria-label="닫기">×</a>
+      <a href="#" id="authCloseBtn" class="auth-close" aria-label="닫기">×</a>
       <h1>WETHUS 계정</h1>
       <p>로그인하거나, 회원가입 후 바로 프로젝트를 시작할 수 있습니다.</p>
 
@@ -97,6 +97,7 @@
     const tabSignup = document.getElementById('tabSignup');
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
+    const authCloseBtn = document.getElementById('authCloseBtn');
 
     const loginEmail = document.getElementById('loginEmail');
     const rememberEmail = document.getElementById('rememberEmail');
@@ -265,6 +266,16 @@
 
     tabLogin.addEventListener('click', () => setTab('login'));
     tabSignup.addEventListener('click', () => setTab('signup'));
+
+    authCloseBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (history.length > 1) {
+        history.back();
+      } else {
+        const next = new URLSearchParams(location.search).get('next');
+        if (next) location.href = next;
+      }
+    });
 
     [signupEmail, signupPw, signupPwConfirm].forEach(el => {
       el.addEventListener('input', validateSignupForm);
