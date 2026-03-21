@@ -733,6 +733,11 @@
     });
     document.getElementById('applySubmit').addEventListener('click', async () => {
       if (!applyProjectId) return;
+      const st = WETHUS.getState();
+      if (!(st.currentUserId || st.devMode)) {
+        location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
+        return;
+      }
       const motivation = (applyMotivation.value || '').trim();
       if (!motivation) { await WETHUS.uiAlert('지원동기를 입력해주세요.', { title: '입력 필요' }); return; }
       const ok = await WETHUS.uiConfirm('지원하시겠습니까?', { title: '프로젝트 지원' });
