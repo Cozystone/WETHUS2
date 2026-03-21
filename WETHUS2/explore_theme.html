@@ -583,6 +583,11 @@
       const applyBtn = e.target.closest('.apply-btn');
       if (applyBtn) {
         e.stopPropagation();
+        const st = WETHUS.getState();
+        if (!(st.currentUserId || st.devMode)) {
+          location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
+          return;
+        }
         applyProjectId = applyBtn.dataset.apply;
         if (applyBtn.classList.contains('applied')) {
           const ok = await WETHUS.uiConfirm('지원을 취소하겠습니까?', { title: '지원 취소' });
@@ -650,6 +655,11 @@
 
     modalApplyBtn.addEventListener('click', async () => {
       if (!currentProjectId) return;
+      const st = WETHUS.getState();
+      if (!(st.currentUserId || st.devMode)) {
+        location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
+        return;
+      }
       if (WETHUS.hasApplied(currentProjectId)) {
         const ok = await WETHUS.uiConfirm('지원을 취소하겠습니까?', { title: '지원 취소' });
         if (!ok) return;
