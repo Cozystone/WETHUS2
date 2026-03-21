@@ -209,6 +209,11 @@
   if (applyBtn) {
     applyBtn.addEventListener('click', async function () {
       if (!currentProjectId || !window.WETHUS) return;
+      var st = WETHUS.getState();
+      if (!(st.currentUserId || st.devMode)) {
+        location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
+        return;
+      }
       if (WETHUS.hasApplied(currentProjectId)) {
         var okCancel = await WETHUS.uiConfirm('지원을 취소하겠습니까?', { title: '지원 취소' });
         if (!okCancel) return;

@@ -275,6 +275,11 @@
         const applyBtn = e.target.closest('.apply-btn');
         if (!applyBtn) return;
         e.stopPropagation();
+        const st = WETHUS.getState();
+        if (!(st.currentUserId || st.devMode)) {
+          location.href = 'login.html?next=' + encodeURIComponent('index.html');
+          return;
+        }
         applyProjectId = applyBtn.dataset.apply;
         if (applyBtn.classList.contains('applied')) {
           const ok = await WETHUS.uiConfirm('지원을 취소하겠습니까?', { title: '지원 취소' });
@@ -326,6 +331,6 @@
       document.getElementById('homeExploreCta')?.addEventListener('click', go);
     })();
   </script>
-  <script src="script.js?v=20260319-3"></script>
+  <script src="script.js?v=20260319-4"></script>
 </body>
 </html>
