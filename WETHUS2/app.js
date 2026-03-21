@@ -1288,6 +1288,19 @@
     });
   }
 
+  function initGuestApplyGuard() {
+    const actor = currentActorId();
+    if (actor) return;
+    document.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest && e.target.closest('.apply-btn');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const next = location.pathname + location.search;
+      location.href = 'login.html?next=' + encodeURIComponent(next);
+    }, true);
+  }
+
   function initNotifyToast() {
     const seenKey = 'wethus_last_toast_notification';
     const latest = listNotifications(20).find(n => n.unread && (n.type === 'founder_submitted' || n.type === 'review_result'));
@@ -1310,11 +1323,13 @@
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       initGuestNavGuard();
+      initGuestApplyGuard();
       initNotificationNav();
       initNotifyToast();
     });
   } else {
     initGuestNavGuard();
+    initGuestApplyGuard();
     initNotificationNav();
     initNotifyToast();
   }
