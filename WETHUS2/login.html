@@ -88,7 +88,7 @@
 
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=20260318-55"></script>
+  <script src="app.js?v=20260318-56"></script>
   <script>
     const msg = document.getElementById('authMsg');
     const tabLogin = document.getElementById('tabLogin');
@@ -327,10 +327,28 @@
         location.href = 'index.html';
       } catch (err) {
         const m = String(err?.message || '로그인에 실패했습니다.');
+        const localUser = (WETHUS.getState().users || []).find(u => String(u.email || '').toLowerCase() === email);
+
+        if (/가입된 계정이 없습니다/.test(m) && localUser?.password) {
+          try {
+            WETHUS.loginUser({ email, password });
+            if (rememberEmail.checked) localStorage.setItem('wethus_saved_email', email);
+            else localStorage.removeItem('wethus_saved_email');
+            location.href = 'index.html';
+            return;
+          } catch (_) {}
+        }
+
+        if (localUser && !localUser.password) {
+          msg.textContent = '이 이메일은 Google로 가입된 계정입니다. 아래 Google 로그인 버튼을 이용해주세요.';
+          return;
+        }
+
         if (/구글 가입 계정|Google 로그인/i.test(m)) {
           msg.textContent = '이 이메일은 Google로 가입된 계정입니다. 아래 Google 로그인 버튼을 이용해주세요.';
           return;
         }
+
         msg.textContent = /Failed to fetch|CORS|NetworkError/i.test(m)
           ? '인증 서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.'
           : m;
