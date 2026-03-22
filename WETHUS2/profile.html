@@ -669,7 +669,7 @@
           const ok = await WETHUS.uiConfirm('프로젝트를 삭제할까요?', { title: '프로젝트 삭제' });
           if (!ok) return;
           WETHUS.deleteProject(delBtn.dataset.id);
-          renderMyProjects();
+          renderCurrentPane();
           return;
         }
         const card = e.target.closest('[data-myproject]');
@@ -687,7 +687,7 @@
           summary: (myProjectSummaryInput.value || '').trim()
         });
         closeMyProjectModal();
-        renderMyProjects();
+        renderCurrentPane();
       });
       myProjectDelete?.addEventListener('click', async () => {
         if (!currentMyProjectId) return;
@@ -695,7 +695,7 @@
         if (!ok) return;
         WETHUS.deleteProject(currentMyProjectId);
         closeMyProjectModal();
-        renderMyProjects();
+        renderCurrentPane();
       });
 
       function renderParticipatingProjects() {
