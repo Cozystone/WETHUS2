@@ -275,6 +275,7 @@ app.post('/auth/login', (req, res) => {
     const users = readUsers();
     const user = users.find(u => normEmail(u.email) === email);
     if (!user) return res.status(404).json({ ok: false, error: '가입된 계정이 없습니다.' });
+    if (!user.passwordHash) return res.status(400).json({ ok: false, error: '구글 가입 계정입니다. Google 로그인으로 이용해주세요.' });
     if (user.passwordHash !== hashPw(password)) return res.status(401).json({ ok: false, error: '비밀번호가 일치하지 않습니다.' });
     return res.json({ ok: true, user: { ...user, passwordHash: undefined } });
   } catch (e) {
