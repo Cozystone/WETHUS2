@@ -264,6 +264,7 @@
       parsed.users = parsed.users.map(u => {
         const next = { ...u };
         if (!next.plan) next.plan = 'free';
+        if (next.plan === 'master') next.plan = 'pro';
         // 기존 사용자 데이터(과거 버전)는 온보딩 완료로 간주해 강제 리다이렉트를 방지
         if (next.onboardingComplete === undefined) next.onboardingComplete = true;
         if (next.age === undefined) next.age = null;
@@ -389,7 +390,8 @@
     if (!u) return false;
     const p = String(plan || 'free').toLowerCase();
     if (p === 'premium') u.plan = 'premium';
-    else if (p === 'master' || p === 'pro') u.plan = 'master';
+    else if (p === 'pro') u.plan = 'pro';
+    else if (p === 'master') u.plan = 'master';
     else u.plan = 'free';
     save(s);
     return true;
@@ -843,8 +845,8 @@
     if (plan === 'free') throw new Error('Free 플랜은 DM 수신만 가능합니다.');
     const t = (s.dmThreads || []).find(x => x.id === threadId);
     if (!t) throw new Error('대화방을 찾을 수 없습니다.');
-    if ((t.targetRole === 'mentor') && plan !== 'master') {
-      throw new Error('멘토에게 먼저 메시지를 보내려면 Master 플랜이 필요합니다.');
+    if ((t.targetRole === 'mentor') && !['pro','master'].includes(plan)) {
+      throw new Error('멘토에게 먼저 메시지를 보내려면 Pro 이상 플랜이 필요합니다.');
     }
     t.messages.push({ id: uid(), from: u?.nickname || u?.name || actor || 'Me', text: text || '', createdAt: new Date().toISOString() });
     save(s);
@@ -1203,7 +1205,9 @@
         ? `<img src="${u.profileImage}" alt="avatar" class="profile-chip-avatar"/>`
         : `<span class="profile-chip-avatar-fallback">${(u.name || 'U').slice(0, 1)}</span>`;
       const plan = (u.plan || 'free').toLowerCase();
-      const planClass = plan === 'premium' ? 'profile-chip-btn--premium' : (plan === 'master' ? 'profile-chip-btn--master' : '');
+      const planClass = plan === 'premium'
+        ? 'profile-chip-btn--premium'
+        : ((plan === 'pro' || plan === 'master') ? 'profile-chip-btn--master' : '');
       chipWrap.innerHTML = `
         <button class="profile-chip-btn ${planClass}" type="button" aria-label="프로필 메뉴">
           ${avatarHtml}
