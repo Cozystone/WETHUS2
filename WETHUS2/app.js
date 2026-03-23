@@ -1346,7 +1346,7 @@
 
   function initNotifyToast() {
     const seenKey = 'wethus_last_toast_notification';
-    const latest = listNotifications(20).find(n => n.unread && (n.type === 'founder_submitted' || n.type === 'review_result'));
+    const latest = listNotifications(20).find(n => n.unread && n.type === 'review_result');
 
     const pendingToast = sessionStorage.getItem('wethus_pending_toast');
     if (pendingToast) {
