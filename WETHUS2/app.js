@@ -733,7 +733,7 @@
         school: user?.school || '',
         careerRaw: user?.careerRaw || '',
         careerSummary: user?.careerSummary || '',
-        onboardingComplete: user?.onboardingComplete === undefined ? false : !!user?.onboardingComplete,
+        onboardingComplete: user?.onboardingComplete === undefined ? true : !!user?.onboardingComplete,
         createdAt: user?.createdAt || new Date().toISOString(),
         googleSub: user?.googleSub || ''
       };
