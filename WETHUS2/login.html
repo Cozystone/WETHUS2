@@ -88,7 +88,7 @@
 
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=20260318-57"></script>
+  <script src="app.js?v=20260318-58"></script>
   <script>
     const msg = document.getElementById('authMsg');
     const tabLogin = document.getElementById('tabLogin');
@@ -149,16 +149,21 @@
       if (!endpoints.length) throw new Error('인증 API 주소가 설정되지 않았습니다.');
       let lastErr = null;
       for (const endpoint of endpoints) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4500);
         try {
           const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body || {})
+            body: JSON.stringify(body || {}),
+            signal: controller.signal
           });
           const data = await res.json().catch(() => ({}));
+          clearTimeout(timeout);
           if (!res.ok) throw new Error(data?.error || `요청 실패 (${res.status})`);
           return data;
         } catch (e) {
+          clearTimeout(timeout);
           lastErr = e;
         }
       }
@@ -185,10 +190,7 @@
             age: existingLocal.age ?? user.age
           }) || user;
         }
-        if (!user?.onboardingComplete) {
-          location.href = 'profile.html?onboarding=1';
-          return;
-        }
+        // 기존 계정 인식 실패로 온보딩으로 튀는 문제 방지: Google 로그인은 기본 index로 진입
         location.href = 'index.html';
       } catch (err) {
         const m = String(err?.message || '');
