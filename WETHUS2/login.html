@@ -52,10 +52,10 @@
 
         <label style="display:flex;gap:8px;align-items:flex-start;color:#a3a3a3;font-size:.85rem;line-height:1.5;">
           <input id="agreeChk" type="checkbox" style="margin-top:2px;" />
-          <span>만 22세 미만 학생임을 확인하며, <a href="terms.html" target="_blank" rel="noopener">이용약관</a>, <a href="operations-policy.html" target="_blank" rel="noopener">운영방침</a>, <a href="privacy.html" target="_blank" rel="noopener">개인정보 처리방침</a> 및 AI 기반 신청서 검토에 동의합니다.</span>
+          <span>[필수] 만 22세 미만 학생임을 확인하며, <a href="terms.html" target="_blank" rel="noopener">이용약관</a> · <a href="operations-policy.html" target="_blank" rel="noopener">운영방침</a> · <a href="privacy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · AI 기반 신청서 검토 안내에 동의합니다.</span>
         </label>
 
-        <button id="signupSubmit" class="btn btn--primary" type="submit" disabled>회원가입</button>
+        <button id="signupSubmit" class="btn btn--primary" type="submit">회원가입</button>
       </form>
 
       <div class="auth-sep" style="display:flex;align-items:center;gap:10px;margin:14px 0 10px;color:#8f8f8f;font-size:.82rem;">
@@ -275,7 +275,7 @@
 
       if (!agreeChk.checked) ok = false;
 
-      signupSubmit.disabled = !ok;
+      signupSubmit.style.opacity = ok ? '1' : '.72';
       return ok;
     }
 
