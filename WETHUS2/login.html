@@ -50,10 +50,13 @@
         <input id="signupPwConfirm" name="passwordConfirm" type="password" placeholder="비밀번호 확인" required />
         <small id="pwConfirmHint" class="note"></small>
 
-        <label style="display:flex;gap:8px;align-items:flex-start;color:#a3a3a3;font-size:.85rem;line-height:1.5;">
-          <input id="agreeChk" type="checkbox" style="margin-top:2px;" />
-          <span>[필수] 만 22세 미만 학생임을 확인하며, <a href="terms.html" target="_blank" rel="noopener">이용약관</a> · <a href="operations-policy.html" target="_blank" rel="noopener">운영방침</a> · <a href="privacy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · AI 기반 신청서 검토 안내에 동의합니다.</span>
-        </label>
+        <div style="display:grid;gap:8px;">
+          <button id="openPolicyModal" class="btn btn--secondary" type="button">약관 확인 및 동의하기</button>
+          <label style="display:flex;gap:8px;align-items:flex-start;color:#a3a3a3;font-size:.85rem;line-height:1.5;">
+            <input id="agreeChk" type="checkbox" style="margin-top:2px;" disabled />
+            <span>[필수] 만 22세 미만 학생임 확인 및 필수 약관 전체 동의</span>
+          </label>
+        </div>
 
         <button id="signupSubmit" class="btn btn--primary" type="submit">회원가입</button>
       </form>
@@ -76,6 +79,47 @@
       <p id="authMsg" class="form-message"></p>
     </section>
   </main>
+
+  <div id="policyModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-policy="true"></div>
+    <article class="modal-panel" style="max-width:780px;">
+      <button class="modal-close" id="policyCloseBtn" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 style="margin-top:0;">필수 약관 동의</h3>
+        <p class="page-sub" style="margin-top:0;">각 항목을 끝까지 스크롤하면 체크가 활성화됩니다.</p>
+
+        <div style="display:grid;gap:10px;">
+          <section>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <strong>[필수] 이용약관</strong>
+              <label><input id="policyTermsChk" type="checkbox" disabled /> 동의</label>
+            </div>
+            <iframe id="policyTermsFrame" src="terms.html" style="width:100%;height:190px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
+          </section>
+
+          <section>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <strong>[필수] 운영방침</strong>
+              <label><input id="policyOpsChk" type="checkbox" disabled /> 동의</label>
+            </div>
+            <iframe id="policyOpsFrame" src="operations-policy.html" style="width:100%;height:190px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
+          </section>
+
+          <section>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <strong>[필수] 개인정보 처리방침</strong>
+              <label><input id="policyPrivacyChk" type="checkbox" disabled /> 동의</label>
+            </div>
+            <iframe id="policyPrivacyFrame" src="privacy.html" style="width:100%;height:190px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
+          </section>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+          <button id="policyConfirmBtn" class="btn btn--primary" type="button" disabled>전체 동의 적용</button>
+        </div>
+      </div>
+    </article>
+  </div>
 
   <footer class="footer">
     <div class="container">
@@ -123,6 +167,13 @@
     const pwConfirmHint = document.getElementById('pwConfirmHint');
     const agreeChk = document.getElementById('agreeChk');
     const signupSubmit = document.getElementById('signupSubmit');
+    const openPolicyModal = document.getElementById('openPolicyModal');
+    const policyModal = document.getElementById('policyModal');
+    const policyCloseBtn = document.getElementById('policyCloseBtn');
+    const policyConfirmBtn = document.getElementById('policyConfirmBtn');
+    const policyTermsChk = document.getElementById('policyTermsChk');
+    const policyOpsChk = document.getElementById('policyOpsChk');
+    const policyPrivacyChk = document.getElementById('policyPrivacyChk');
 
     if (!window.WETHUS) {
       msg.textContent = '앱 로딩 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.';
@@ -143,6 +194,39 @@
       loginForm.style.display = isLogin ? 'grid' : 'none';
       signupForm.style.display = isLogin ? 'none' : 'grid';
       msg.textContent = '';
+    }
+
+    function syncPolicyConfirmState() {
+      const allChecked = !!(policyTermsChk?.checked && policyOpsChk?.checked && policyPrivacyChk?.checked);
+      if (policyConfirmBtn) policyConfirmBtn.disabled = !allChecked;
+      if (agreeChk) {
+        agreeChk.disabled = !allChecked;
+        agreeChk.checked = allChecked;
+      }
+      validateSignupForm();
+    }
+
+    function enableOnScrollBottom(frameId, checkboxEl) {
+      const frame = document.getElementById(frameId);
+      if (!frame || !checkboxEl) return;
+      frame.addEventListener('load', () => {
+        try {
+          const doc = frame.contentDocument || frame.contentWindow?.document;
+          if (!doc) return;
+          const target = doc.scrollingElement || doc.documentElement || doc.body;
+          const onScroll = () => {
+            const atBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - 2;
+            if (atBottom) {
+              checkboxEl.disabled = false;
+              target.removeEventListener('scroll', onScroll);
+            }
+          };
+          target.addEventListener('scroll', onScroll, { passive: true });
+          onScroll();
+        } catch (_) {
+          checkboxEl.disabled = false;
+        }
+      });
     }
 
     async function postWithFallback(endpoints, body) {
@@ -281,6 +365,36 @@
 
     tabLogin.addEventListener('click', () => setTab('login'));
     tabSignup.addEventListener('click', () => setTab('signup'));
+
+    openPolicyModal?.addEventListener('click', () => {
+      policyModal.classList.add('open');
+      policyModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    });
+    policyCloseBtn?.addEventListener('click', () => {
+      policyModal.classList.remove('open');
+      policyModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    });
+    policyModal?.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close-policy') === 'true') {
+        policyModal.classList.remove('open');
+        policyModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+    });
+    [policyTermsChk, policyOpsChk, policyPrivacyChk].forEach(chk => chk?.addEventListener('change', syncPolicyConfirmState));
+    policyConfirmBtn?.addEventListener('click', () => {
+      agreeChk.checked = true;
+      policyModal.classList.remove('open');
+      policyModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      validateSignupForm();
+    });
+
+    enableOnScrollBottom('policyTermsFrame', policyTermsChk);
+    enableOnScrollBottom('policyOpsFrame', policyOpsChk);
+    enableOnScrollBottom('policyPrivacyFrame', policyPrivacyChk);
 
     authCloseBtn?.addEventListener('click', (e) => {
       e.preventDefault();
