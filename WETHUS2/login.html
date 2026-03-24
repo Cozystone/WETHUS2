@@ -86,31 +86,41 @@
       <button class="modal-close" id="policyCloseBtn" aria-label="닫기">×</button>
       <div class="modal-content">
         <h3 style="margin-top:0;">필수 약관 동의</h3>
-        <p class="page-sub" style="margin-top:0;">각 항목을 끝까지 스크롤하면 체크가 활성화됩니다.</p>
+        <p class="page-sub" style="margin-top:0;">아래 문서를 각각 끝까지 읽으면 체크박스가 활성화됩니다.</p>
+        <div id="policyReadProgress" style="margin:8px 0 12px;padding:10px 12px;border:1px solid #2d2d2d;border-radius:10px;background:#111;color:#d4d4d4;font-size:.88rem;">문서 읽음 0/3 · 모두 읽은 뒤 동의 가능</div>
 
         <div style="display:grid;gap:10px;">
           <section>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;">
               <strong>[필수] 이용약관</strong>
-              <label><input id="policyTermsChk" type="checkbox" disabled /> 동의</label>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span id="policyTermsStatus" style="font-size:.78rem;color:#9ca3af;">읽기 필요</span>
+                <label><input id="policyTermsChk" type="checkbox" disabled /> 동의</label>
+              </div>
             </div>
-            <iframe id="policyTermsFrame" src="terms.html" style="width:100%;height:190px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
+            <iframe id="policyTermsFrame" src="terms.html" style="width:100%;height:220px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
           </section>
 
           <section>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;">
               <strong>[필수] 운영방침</strong>
-              <label><input id="policyOpsChk" type="checkbox" disabled /> 동의</label>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span id="policyOpsStatus" style="font-size:.78rem;color:#9ca3af;">읽기 필요</span>
+                <label><input id="policyOpsChk" type="checkbox" disabled /> 동의</label>
+              </div>
             </div>
-            <iframe id="policyOpsFrame" src="operations-policy.html" style="width:100%;height:190px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
+            <iframe id="policyOpsFrame" src="operations-policy.html" style="width:100%;height:220px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
           </section>
 
           <section>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;">
               <strong>[필수] 개인정보 처리방침</strong>
-              <label><input id="policyPrivacyChk" type="checkbox" disabled /> 동의</label>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span id="policyPrivacyStatus" style="font-size:.78rem;color:#9ca3af;">읽기 필요</span>
+                <label><input id="policyPrivacyChk" type="checkbox" disabled /> 동의</label>
+              </div>
             </div>
-            <iframe id="policyPrivacyFrame" src="privacy.html" style="width:100%;height:190px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
+            <iframe id="policyPrivacyFrame" src="privacy.html" style="width:100%;height:220px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
           </section>
         </div>
 
@@ -174,6 +184,10 @@
     const policyTermsChk = document.getElementById('policyTermsChk');
     const policyOpsChk = document.getElementById('policyOpsChk');
     const policyPrivacyChk = document.getElementById('policyPrivacyChk');
+    const policyReadProgress = document.getElementById('policyReadProgress');
+    const policyTermsStatus = document.getElementById('policyTermsStatus');
+    const policyOpsStatus = document.getElementById('policyOpsStatus');
+    const policyPrivacyStatus = document.getElementById('policyPrivacyStatus');
 
     if (!window.WETHUS) {
       msg.textContent = '앱 로딩 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.';
@@ -196,6 +210,13 @@
       msg.textContent = '';
     }
 
+    function syncReadProgress() {
+      const readDone = [policyTermsChk, policyOpsChk, policyPrivacyChk].filter(chk => chk && !chk.disabled).length;
+      if (policyReadProgress) {
+        policyReadProgress.textContent = `문서 읽음 ${readDone}/3 · ${readDone === 3 ? '모든 문서를 읽었습니다. 체크 후 적용하세요.' : '모두 읽은 뒤 동의 가능'}`;
+      }
+    }
+
     function syncPolicyConfirmState() {
       const allChecked = !!(policyTermsChk?.checked && policyOpsChk?.checked && policyPrivacyChk?.checked);
       if (policyConfirmBtn) policyConfirmBtn.disabled = !allChecked;
@@ -206,7 +227,16 @@
       validateSignupForm();
     }
 
-    function enableOnScrollBottom(frameId, checkboxEl) {
+    function markReadable(checkboxEl, statusEl) {
+      if (checkboxEl && checkboxEl.disabled) checkboxEl.disabled = false;
+      if (statusEl) {
+        statusEl.textContent = '읽음 완료';
+        statusEl.style.color = '#34d399';
+      }
+      syncReadProgress();
+    }
+
+    function enableOnScrollBottom(frameId, checkboxEl, statusEl) {
       const frame = document.getElementById(frameId);
       if (!frame || !checkboxEl) return;
       frame.addEventListener('load', () => {
@@ -217,14 +247,14 @@
           const onScroll = () => {
             const atBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - 2;
             if (atBottom) {
-              checkboxEl.disabled = false;
+              markReadable(checkboxEl, statusEl);
               target.removeEventListener('scroll', onScroll);
             }
           };
           target.addEventListener('scroll', onScroll, { passive: true });
           onScroll();
         } catch (_) {
-          checkboxEl.disabled = false;
+          markReadable(checkboxEl, statusEl);
         }
       });
     }
@@ -392,9 +422,10 @@
       validateSignupForm();
     });
 
-    enableOnScrollBottom('policyTermsFrame', policyTermsChk);
-    enableOnScrollBottom('policyOpsFrame', policyOpsChk);
-    enableOnScrollBottom('policyPrivacyFrame', policyPrivacyChk);
+    enableOnScrollBottom('policyTermsFrame', policyTermsChk, policyTermsStatus);
+    enableOnScrollBottom('policyOpsFrame', policyOpsChk, policyOpsStatus);
+    enableOnScrollBottom('policyPrivacyFrame', policyPrivacyChk, policyPrivacyStatus);
+    syncReadProgress();
 
     authCloseBtn?.addEventListener('click', (e) => {
       e.preventDefault();
