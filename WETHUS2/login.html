@@ -102,39 +102,46 @@
         <h3 style="margin-top:0;">필수 약관 동의</h3>
         <p class="page-sub" style="margin-top:0;">아래 항목에 동의 후 전체 동의를 적용하세요.</p>
 
-        <div style="display:grid;gap:10px;">
+        <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:8px;">
+          <label style="display:flex;align-items:center;gap:8px;color:#f5f5f5;font-weight:600;">
+            <input id="policyAllChk" class="policy-check" type="checkbox" /> 전체 동의
+          </label>
+        </div>
+
+        <div style="display:grid;gap:12px;">
           <section>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;">
               <strong>[필수] 이용약관</strong>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <label><input id="policyTermsChk" class="policy-check" type="checkbox" /> 동의</label>
-              </div>
+              <label><input id="policyTermsChk" class="policy-check" type="checkbox" /> 동의</label>
             </div>
-            <iframe id="policyTermsFrame" src="terms.html" style="width:100%;height:220px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
+            <div style="padding:0 10px;">
+              <iframe id="policyTermsFrame" src="terms.html" style="width:100%;height:260px;border:1px solid #cfcfcf;border-radius:10px;background:#fff;"></iframe>
+            </div>
           </section>
 
           <section>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;">
               <strong>[필수] 운영방침</strong>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <label><input id="policyOpsChk" class="policy-check" type="checkbox" /> 동의</label>
-              </div>
+              <label><input id="policyOpsChk" class="policy-check" type="checkbox" /> 동의</label>
             </div>
-            <iframe id="policyOpsFrame" src="operations-policy.html" style="width:100%;height:220px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
+            <div style="padding:0 10px;">
+              <iframe id="policyOpsFrame" src="operations-policy.html" style="width:100%;height:260px;border:1px solid #cfcfcf;border-radius:10px;background:#fff;"></iframe>
+            </div>
           </section>
 
           <section>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;">
               <strong>[필수] 개인정보 처리방침</strong>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <label><input id="policyPrivacyChk" class="policy-check" type="checkbox" /> 동의</label>
-              </div>
+              <label><input id="policyPrivacyChk" class="policy-check" type="checkbox" /> 동의</label>
             </div>
-            <iframe id="policyPrivacyFrame" src="privacy.html" style="width:100%;height:220px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
+            <div style="padding:0 10px;">
+              <iframe id="policyPrivacyFrame" src="privacy.html" style="width:100%;height:260px;border:1px solid #cfcfcf;border-radius:10px;background:#fff;"></iframe>
+            </div>
           </section>
         </div>
 
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;align-items:center;">
+          <button id="policyBackBtn" class="btn btn--secondary" type="button">돌아가기</button>
           <button id="policyConfirmBtn" class="btn btn--primary" type="button" disabled>전체 동의 적용</button>
           <span id="policyDoneLabel" class="policy-done">완료</span>
         </div>
@@ -191,7 +198,9 @@
     const openPolicyModal = document.getElementById('openPolicyModal');
     const policyModal = document.getElementById('policyModal');
     const policyCloseBtn = document.getElementById('policyCloseBtn');
+    const policyBackBtn = document.getElementById('policyBackBtn');
     const policyConfirmBtn = document.getElementById('policyConfirmBtn');
+    const policyAllChk = document.getElementById('policyAllChk');
     const policyTermsChk = document.getElementById('policyTermsChk');
     const policyOpsChk = document.getElementById('policyOpsChk');
     const policyPrivacyChk = document.getElementById('policyPrivacyChk');
@@ -219,7 +228,14 @@
     }
 
     function syncPolicyConfirmState() {
-      const allChecked = !!(policyTermsChk?.checked && policyOpsChk?.checked && policyPrivacyChk?.checked);
+      const checks = [policyTermsChk, policyOpsChk, policyPrivacyChk].filter(Boolean);
+      const checkedCount = checks.filter(chk => chk.checked).length;
+      const allChecked = checkedCount === checks.length && checks.length > 0;
+
+      if (policyAllChk) {
+        policyAllChk.checked = allChecked;
+        policyAllChk.indeterminate = checkedCount > 0 && !allChecked;
+      }
       if (policyConfirmBtn) policyConfirmBtn.disabled = !allChecked;
       if (agreeChk) {
         agreeChk.disabled = !allChecked;
@@ -365,30 +381,35 @@
     tabLogin.addEventListener('click', () => setTab('login'));
     tabSignup.addEventListener('click', () => setTab('signup'));
 
+    function closePolicyModal() {
+      policyModal.classList.remove('open');
+      policyModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
     openPolicyModal?.addEventListener('click', () => {
       policyModal.classList.add('open');
       policyModal.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
       policyDoneLabel?.classList.remove('show');
+      syncPolicyConfirmState();
     });
-    policyCloseBtn?.addEventListener('click', () => {
-      policyModal.classList.remove('open');
-      policyModal.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
-    });
+    policyCloseBtn?.addEventListener('click', closePolicyModal);
+    policyBackBtn?.addEventListener('click', closePolicyModal);
     policyModal?.addEventListener('click', (e) => {
-      if (e.target && e.target.getAttribute('data-close-policy') === 'true') {
-        policyModal.classList.remove('open');
-        policyModal.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
-      }
+      if (e.target && e.target.getAttribute('data-close-policy') === 'true') closePolicyModal();
     });
+
     [policyTermsChk, policyOpsChk, policyPrivacyChk].forEach(chk => chk?.addEventListener('change', syncPolicyConfirmState));
+    policyAllChk?.addEventListener('change', () => {
+      const checked = !!policyAllChk.checked;
+      [policyTermsChk, policyOpsChk, policyPrivacyChk].forEach(chk => { if (chk) chk.checked = checked; });
+      syncPolicyConfirmState();
+    });
+
     policyConfirmBtn?.addEventListener('click', () => {
       agreeChk.checked = true;
-      policyModal.classList.remove('open');
-      policyModal.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
+      closePolicyModal();
       policyDoneLabel?.classList.add('show');
       validateSignupForm();
     });
@@ -419,6 +440,7 @@
       if (!agreeChk.checked) policyDoneLabel?.classList.remove('show');
       validateSignupForm();
     });
+    syncPolicyConfirmState();
 
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
