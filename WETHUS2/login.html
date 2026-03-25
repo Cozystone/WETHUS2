@@ -21,6 +21,8 @@
       accent-color: #ffffff;
       opacity: 1;
       cursor: pointer;
+      width: 16px;
+      height: 16px;
     }
     .policy-done {
       display: none;
@@ -29,6 +31,61 @@
       align-self: center;
     }
     .policy-done.show { display: inline; }
+    .policy-modal-panel {
+      max-width: 840px;
+      width: calc(100vw - 40px);
+    }
+    .policy-modal-content {
+      padding: 16px 18px 14px;
+    }
+    .policy-doc-wrap {
+      padding: 0 14px;
+      margin-bottom: 10px;
+    }
+    .policy-doc-frame {
+      width: 100%;
+      height: 320px;
+      border: 1px solid #d7d7d7;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .policy-check-list {
+      display: grid;
+      gap: 8px;
+      padding: 0 14px;
+      margin-top: 2px;
+    }
+    .policy-check-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: #f5f5f5;
+      font-size: .92rem;
+      padding: 8px 10px;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      background: #151515;
+    }
+    .policy-check-row--all {
+      color: #fff;
+      font-weight: 700;
+      border-color: #3a3a3a;
+      background: #1b1b1b;
+    }
+    .policy-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 10px;
+      align-items: center;
+      padding: 0 14px;
+    }
+    @media (max-width: 640px) {
+      .policy-modal-panel { width: calc(100vw - 20px); }
+      .policy-doc-frame { height: 260px; }
+      .policy-check-row { font-size: .88rem; padding: 7px 8px; }
+    }
   </style>
 </head>
 <body>
@@ -96,32 +153,32 @@
 
   <div id="policyModal" class="modal" aria-hidden="true">
     <div class="modal-backdrop" data-close-policy="true"></div>
-    <article class="modal-panel" style="max-width:960px;width:calc(100vw - 48px);">
+    <article class="modal-panel policy-modal-panel">
       <button class="modal-close" id="policyCloseBtn" aria-label="닫기">×</button>
-      <div class="modal-content">
+      <div class="modal-content policy-modal-content">
         <h3 style="margin-top:0;">필수 약관 동의</h3>
         <p class="page-sub" style="margin-top:0;">한 번에 전체 문서를 확인하고 동의할 수 있습니다.</p>
 
-        <div style="padding:0 24px 8px;">
-          <iframe id="policyAllFrame" src="legal-all.html" style="width:100%;height:420px;border:1px solid #cfcfcf;border-radius:10px;background:#fff;"></iframe>
+        <div class="policy-doc-wrap">
+          <iframe id="policyAllFrame" class="policy-doc-frame" src="legal-all.html"></iframe>
         </div>
 
-        <div style="display:grid;gap:10px;padding:0 24px;">
-          <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;color:#f5f5f5;">
+        <div class="policy-check-list">
+          <label class="policy-check-row">
             <span>[필수] 이용약관 동의</span><input id="policyTermsChk" class="policy-check" type="checkbox" />
           </label>
-          <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;color:#f5f5f5;">
+          <label class="policy-check-row">
             <span>[필수] 운영방침 동의</span><input id="policyOpsChk" class="policy-check" type="checkbox" />
           </label>
-          <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;color:#f5f5f5;">
+          <label class="policy-check-row">
             <span>[필수] 개인정보 처리방침 동의</span><input id="policyPrivacyChk" class="policy-check" type="checkbox" />
           </label>
-          <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;color:#fff;font-weight:700;padding-top:4px;border-top:1px solid #2a2a2a;">
+          <label class="policy-check-row policy-check-row--all">
             <span>전체 동의</span><input id="policyAllChk" class="policy-check" type="checkbox" />
           </label>
         </div>
 
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;align-items:center;">
+        <div class="policy-actions">
           <button id="policyBackBtn" class="btn btn--secondary" type="button">돌아가기</button>
           <span id="policyDoneLabel" class="policy-done">완료</span>
         </div>
