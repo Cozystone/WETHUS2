@@ -96,48 +96,29 @@
 
   <div id="policyModal" class="modal" aria-hidden="true">
     <div class="modal-backdrop" data-close-policy="true"></div>
-    <article class="modal-panel" style="max-width:780px;">
+    <article class="modal-panel" style="max-width:960px;width:calc(100vw - 48px);">
       <button class="modal-close" id="policyCloseBtn" aria-label="닫기">×</button>
       <div class="modal-content">
         <h3 style="margin-top:0;">필수 약관 동의</h3>
-        <p class="page-sub" style="margin-top:0;">아래 항목에 동의 후 전체 동의를 적용하세요.</p>
+        <p class="page-sub" style="margin-top:0;">한 번에 전체 문서를 확인하고 동의할 수 있습니다.</p>
 
-        <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:8px;">
-          <label style="display:flex;align-items:center;gap:8px;color:#f5f5f5;font-weight:600;">
-            <input id="policyAllChk" class="policy-check" type="checkbox" /> 전체 동의
-          </label>
+        <div style="padding:0 24px 8px;">
+          <iframe id="policyAllFrame" src="legal-all.html" style="width:100%;height:420px;border:1px solid #cfcfcf;border-radius:10px;background:#fff;"></iframe>
         </div>
 
-        <div style="display:grid;gap:12px;">
-          <section>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;">
-              <strong>[필수] 이용약관</strong>
-              <label><input id="policyTermsChk" class="policy-check" type="checkbox" /> 동의</label>
-            </div>
-            <div style="padding:0 10px;">
-              <iframe id="policyTermsFrame" src="terms.html" style="width:100%;height:260px;border:1px solid #cfcfcf;border-radius:10px;background:#fff;"></iframe>
-            </div>
-          </section>
-
-          <section>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;">
-              <strong>[필수] 운영방침</strong>
-              <label><input id="policyOpsChk" class="policy-check" type="checkbox" /> 동의</label>
-            </div>
-            <div style="padding:0 10px;">
-              <iframe id="policyOpsFrame" src="operations-policy.html" style="width:100%;height:260px;border:1px solid #cfcfcf;border-radius:10px;background:#fff;"></iframe>
-            </div>
-          </section>
-
-          <section>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;">
-              <strong>[필수] 개인정보 처리방침</strong>
-              <label><input id="policyPrivacyChk" class="policy-check" type="checkbox" /> 동의</label>
-            </div>
-            <div style="padding:0 10px;">
-              <iframe id="policyPrivacyFrame" src="privacy.html" style="width:100%;height:260px;border:1px solid #cfcfcf;border-radius:10px;background:#fff;"></iframe>
-            </div>
-          </section>
+        <div style="display:grid;gap:10px;padding:0 24px;">
+          <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;color:#f5f5f5;">
+            <span>[필수] 이용약관 동의</span><input id="policyTermsChk" class="policy-check" type="checkbox" />
+          </label>
+          <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;color:#f5f5f5;">
+            <span>[필수] 운영방침 동의</span><input id="policyOpsChk" class="policy-check" type="checkbox" />
+          </label>
+          <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;color:#f5f5f5;">
+            <span>[필수] 개인정보 처리방침 동의</span><input id="policyPrivacyChk" class="policy-check" type="checkbox" />
+          </label>
+          <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;color:#fff;font-weight:700;padding-top:4px;border-top:1px solid #2a2a2a;">
+            <span>전체 동의</span><input id="policyAllChk" class="policy-check" type="checkbox" />
+          </label>
         </div>
 
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;align-items:center;">
