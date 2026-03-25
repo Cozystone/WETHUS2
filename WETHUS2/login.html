@@ -16,6 +16,24 @@
   <title>WETHUS | 로그인</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260319-23" />
+  <style>
+    .policy-check {
+      accent-color: #ffffff;
+      opacity: .45;
+      transition: opacity .2s ease;
+    }
+    .policy-check:enabled {
+      opacity: 1;
+      cursor: pointer;
+    }
+    .policy-done {
+      display: none;
+      color: #34d399;
+      font-size: .85rem;
+      align-self: center;
+    }
+    .policy-done.show { display: inline; }
+  </style>
 </head>
 <body>
   <main class="auth-wrap">
@@ -95,7 +113,7 @@
               <strong>[필수] 이용약관</strong>
               <div style="display:flex;align-items:center;gap:8px;">
                 <span id="policyTermsStatus" style="font-size:.78rem;color:#9ca3af;">읽기 필요</span>
-                <label><input id="policyTermsChk" type="checkbox" disabled /> 동의</label>
+                <label><input id="policyTermsChk" class="policy-check" type="checkbox" disabled /> 동의</label>
               </div>
             </div>
             <iframe id="policyTermsFrame" src="terms.html" style="width:100%;height:220px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
@@ -106,7 +124,7 @@
               <strong>[필수] 운영방침</strong>
               <div style="display:flex;align-items:center;gap:8px;">
                 <span id="policyOpsStatus" style="font-size:.78rem;color:#9ca3af;">읽기 필요</span>
-                <label><input id="policyOpsChk" type="checkbox" disabled /> 동의</label>
+                <label><input id="policyOpsChk" class="policy-check" type="checkbox" disabled /> 동의</label>
               </div>
             </div>
             <iframe id="policyOpsFrame" src="operations-policy.html" style="width:100%;height:220px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
@@ -117,7 +135,7 @@
               <strong>[필수] 개인정보 처리방침</strong>
               <div style="display:flex;align-items:center;gap:8px;">
                 <span id="policyPrivacyStatus" style="font-size:.78rem;color:#9ca3af;">읽기 필요</span>
-                <label><input id="policyPrivacyChk" type="checkbox" disabled /> 동의</label>
+                <label><input id="policyPrivacyChk" class="policy-check" type="checkbox" disabled /> 동의</label>
               </div>
             </div>
             <iframe id="policyPrivacyFrame" src="privacy.html" style="width:100%;height:220px;border:1px solid #2d2d2d;border-radius:10px;background:#0d0d0d;"></iframe>
@@ -126,6 +144,7 @@
 
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
           <button id="policyConfirmBtn" class="btn btn--primary" type="button" disabled>전체 동의 적용</button>
+          <span id="policyDoneLabel" class="policy-done">완료</span>
         </div>
       </div>
     </article>
@@ -188,6 +207,7 @@
     const policyTermsStatus = document.getElementById('policyTermsStatus');
     const policyOpsStatus = document.getElementById('policyOpsStatus');
     const policyPrivacyStatus = document.getElementById('policyPrivacyStatus');
+    const policyDoneLabel = document.getElementById('policyDoneLabel');
 
     if (!window.WETHUS) {
       msg.textContent = '앱 로딩 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.';
@@ -244,16 +264,18 @@
           const doc = frame.contentDocument || frame.contentWindow?.document;
           if (!doc) return;
           const target = doc.scrollingElement || doc.documentElement || doc.body;
+          let hasScrolled = false;
           const onScroll = () => {
+            if (target.scrollTop > 0) hasScrolled = true;
             const atBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - 2;
-            if (atBottom) {
+            if (hasScrolled && atBottom) {
               markReadable(checkboxEl, statusEl);
               target.removeEventListener('scroll', onScroll);
             }
           };
           target.addEventListener('scroll', onScroll, { passive: true });
-          onScroll();
         } catch (_) {
+          // 교차 출처 등으로 스크롤 추적이 불가한 경우에만 예외적으로 활성화
           markReadable(checkboxEl, statusEl);
         }
       });
@@ -400,6 +422,7 @@
       policyModal.classList.add('open');
       policyModal.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
+      policyDoneLabel?.classList.remove('show');
     });
     policyCloseBtn?.addEventListener('click', () => {
       policyModal.classList.remove('open');
@@ -419,6 +442,7 @@
       policyModal.classList.remove('open');
       policyModal.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
+      policyDoneLabel?.classList.add('show');
       validateSignupForm();
     });
 
@@ -447,7 +471,10 @@
       el.addEventListener('input', validateSignupForm);
       el.addEventListener('blur', validateSignupForm);
     });
-    agreeChk.addEventListener('change', validateSignupForm);
+    agreeChk.addEventListener('change', () => {
+      if (!agreeChk.checked) policyDoneLabel?.classList.remove('show');
+      validateSignupForm();
+    });
 
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
