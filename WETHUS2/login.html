@@ -123,7 +123,6 @@
 
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;align-items:center;">
           <button id="policyBackBtn" class="btn btn--secondary" type="button">돌아가기</button>
-          <button id="policyConfirmBtn" class="btn btn--primary" type="button" disabled>전체 동의 적용</button>
           <span id="policyDoneLabel" class="policy-done">완료</span>
         </div>
       </div>
@@ -180,7 +179,6 @@
     const policyModal = document.getElementById('policyModal');
     const policyCloseBtn = document.getElementById('policyCloseBtn');
     const policyBackBtn = document.getElementById('policyBackBtn');
-    const policyConfirmBtn = document.getElementById('policyConfirmBtn');
     const policyAllChk = document.getElementById('policyAllChk');
     const policyTermsChk = document.getElementById('policyTermsChk');
     const policyOpsChk = document.getElementById('policyOpsChk');
@@ -217,10 +215,12 @@
         policyAllChk.checked = allChecked;
         policyAllChk.indeterminate = checkedCount > 0 && !allChecked;
       }
-      if (policyConfirmBtn) policyConfirmBtn.disabled = !allChecked;
       if (agreeChk) {
         agreeChk.disabled = !allChecked;
         agreeChk.checked = allChecked;
+      }
+      if (policyDoneLabel) {
+        policyDoneLabel.classList.toggle('show', allChecked);
       }
       validateSignupForm();
     }
@@ -388,12 +388,7 @@
       syncPolicyConfirmState();
     });
 
-    policyConfirmBtn?.addEventListener('click', () => {
-      agreeChk.checked = true;
-      closePolicyModal();
-      policyDoneLabel?.classList.add('show');
-      validateSignupForm();
-    });
+
 
 
 
