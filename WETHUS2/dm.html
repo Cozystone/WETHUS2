@@ -1,21 +1,39 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
   <script>
    window.dataLayer = window.dataLayer || [];
-   function gtag(){dataLayer.push(arguments);}
-   gtag('js', new Date());
-  
-   gtag('config', 'G-PKF58GJC08');
+   function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-PKF58GJC08');
   </script>
-  
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WETHUS | DM</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260319-23" />
+  <style>
+    .dm-shell{margin-top:24px;border:1px solid #2a2a2a;border-radius:16px;overflow:hidden;background:#111;display:grid;grid-template-columns:320px 1fr;min-height:68vh}
+    .dm-left{border-right:1px solid #232323;background:#0f0f0f;display:grid;grid-template-rows:auto 1fr}
+    .dm-search{padding:12px;border-bottom:1px solid #232323}
+    .dm-search input{width:100%;background:#171717;border:1px solid #2c2c2c;border-radius:12px;color:#fff;padding:10px 12px}
+    .dm-threads{overflow:auto;padding:6px}
+    .dm-thread{padding:10px 12px;border-radius:12px;cursor:pointer;border:1px solid transparent}
+    .dm-thread:hover{background:#171717}
+    .dm-thread.active{background:#1f1f1f;border-color:#343434}
+    .dm-thread-name{margin:0;font-size:.93rem}
+    .dm-thread-last{margin:3px 0 0;color:#9a9a9a;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .dm-main{display:grid;grid-template-rows:auto 1fr auto;background:#141414}
+    .dm-head{padding:14px 16px;border-bottom:1px solid #232323;display:flex;justify-content:space-between;align-items:center}
+    .dm-messages{padding:14px;overflow:auto;display:grid;gap:8px;align-content:start}
+    .dm-bubble{max-width:min(78%,680px);padding:10px 12px;border-radius:14px;line-height:1.45;word-break:break-word}
+    .dm-bubble.me{justify-self:end;background:#f5f5f5;color:#111;border-bottom-right-radius:4px}
+    .dm-bubble.other{justify-self:start;background:#232323;color:#f5f5f5;border-bottom-left-radius:4px}
+    .dm-meta{font-size:.72rem;color:#8c8c8c;margin-top:4px}
+    .dm-compose{padding:12px;border-top:1px solid #232323;display:grid;grid-template-columns:1fr auto;gap:8px}
+    .dm-compose textarea{min-height:52px;max-height:140px;resize:vertical;border-radius:12px;padding:10px;background:#101010;border:1px solid #2a2a2a;color:#fff}
+    .dm-empty{display:grid;place-items:center;color:#8f8f8f}
+    @media (max-width: 960px){.dm-shell{grid-template-columns:1fr;min-height:76vh}.dm-left{max-height:220px;border-right:0;border-bottom:1px solid #232323}}
+  </style>
 </head>
 <body>
   <header class="nav">
@@ -32,40 +50,39 @@
   </header>
 
   <main class="container page-main page-main--standard">
-    <section class="projects-head-row" style="padding-top:28px;">
+    <section class="projects-head-row" style="padding-top:10px;">
       <div>
         <h1 class="page-title" style="margin:0;">DM</h1>
-        <p class="page-sub" id="dmPlanDesc">팀과의 소통을 위한 메시지함</p>
+        <p class="page-sub" id="dmPlanDesc">사람들과 직접 프로젝트 대화를 나눠보세요.</p>
       </div>
       <button id="upgradeBtn" class="btn btn--primary" style="display:none;">Premium으로 전환</button>
     </section>
 
-    <section class="profile-card" style="display:grid;grid-template-columns:280px 1fr;gap:14px;">
-      <div>
-        <h3 style="margin:0 0 8px;">대화 목록</h3>
-        <div id="dmThreads" class="list-grid"></div>
-      </div>
-      <div>
-        <h3 id="dmThreadTitle" style="margin:0 0 8px;">대화를 선택하세요</h3>
-        <div id="dmMessages" class="list-grid" style="max-height:360px;overflow:auto;"></div>
-        <div id="dmComposerWrap" style="margin-top:10px;display:none;">
-          <textarea id="dmInput" placeholder="메시지를 입력하세요" style="width:100%;min-height:90px;background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;"></textarea>
-          <div style="display:flex;justify-content:flex-end;margin-top:8px;">
-            <button id="dmSend" class="btn btn--primary">보내기</button>
+    <section class="dm-shell">
+      <aside class="dm-left">
+        <div class="dm-search"><input id="dmSearch" placeholder="대화 상대 검색" /></div>
+        <div id="dmThreads" class="dm-threads"></div>
+      </aside>
+      <section class="dm-main">
+        <div class="dm-head">
+          <div>
+            <h3 id="dmThreadTitle" style="margin:0;font-size:1rem;">대화를 선택하세요</h3>
+            <p id="dmThreadSub" class="meta" style="margin:2px 0 0;">최근 대화를 이어갈 수 있어요.</p>
           </div>
         </div>
-        <p id="dmInfo" class="form-message"></p>
-      </div>
+        <div id="dmMessages" class="dm-messages"><div class="dm-empty">왼쪽에서 대화를 선택하세요.</div></div>
+        <div id="dmComposerWrap" class="dm-compose" style="display:none;">
+          <textarea id="dmInput" placeholder="메시지를 입력하세요"></textarea>
+          <button id="dmSend" class="btn btn--primary">보내기</button>
+        </div>
+      </section>
     </section>
+
+    <p id="dmInfo" class="form-message"></p>
   </main>
 
   <footer class="footer">
-    <div class="container">
-      <div class="footer-inner">
-        <span class="wordmark">WETHUS</span>
-        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:anseokkim@gmail.com">anseokkim@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
-      </div>
-    </div>
+    <div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:anseokkim@gmail.com">anseokkim@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p></div></div>
   </footer>
 
   <script src="app.js?v=20260318-58"></script>
@@ -73,80 +90,94 @@
     const authLink = document.querySelector('.js-auth-link');
     const st = WETHUS.getState();
     if (authLink && (st.currentUserId || st.devMode)) {
-      authLink.textContent = '로그아웃';
-      authLink.href = '#';
+      authLink.textContent = '로그아웃'; authLink.href = '#';
       authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
     }
-
     WETHUS.requireAuth();
 
     const threadEl = document.getElementById('dmThreads');
     const msgEl = document.getElementById('dmMessages');
     const titleEl = document.getElementById('dmThreadTitle');
+    const subEl = document.getElementById('dmThreadSub');
     const planDesc = document.getElementById('dmPlanDesc');
     const upgradeBtn = document.getElementById('upgradeBtn');
     const composerWrap = document.getElementById('dmComposerWrap');
     const dmInfo = document.getElementById('dmInfo');
+    const dmSearch = document.getElementById('dmSearch');
 
-    let currentThreadId = null;
+    const initialThreadId = new URLSearchParams(location.search).get('threadId');
+    let currentThreadId = initialThreadId || null;
+    let currentThreads = [];
 
-    function renderThreads() {
-      const threads = WETHUS.listDmThreads();
-      threadEl.innerHTML = threads.map(t => `<article class="list-item" data-id="${t.id}"><h3 style="margin:0 0 4px;">${t.targetName}</h3><p class="meta">${(t.messages||[]).length}개 메시지</p></article>`).join('');
-      threadEl.querySelectorAll('.list-item').forEach(el => {
-        el.addEventListener('click', () => {
-          currentThreadId = el.getAttribute('data-id');
-          renderMessages();
-        });
-      });
-      if (!currentThreadId && threads[0]) {
-        currentThreadId = threads[0].id;
-        renderMessages();
-      }
-    }
-
-    function renderMessages() {
-      const threads = WETHUS.listDmThreads();
-      const t = threads.find(x => x.id === currentThreadId);
-      if (!t) { msgEl.innerHTML = ''; return; }
-      titleEl.textContent = t.targetName;
-      const msgs = WETHUS.listDmMessages(t.id);
-      msgEl.innerHTML = msgs.map(m => `<article class="list-item"><p style="margin:0 0 4px;"><strong>${m.from}</strong></p><p style="margin:0;">${m.text}</p></article>`).join('');
-    }
+    function formatTime(ts){ try { return new Date(ts).toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }); } catch { return ''; } }
 
     function applyPlanUi() {
       const isPremium = WETHUS.currentPlan() === 'premium';
-      if (isPremium) {
-        planDesc.textContent = 'Premium 플랜: DM 수신/발신 모두 사용 가능';
-        composerWrap.style.display = 'block';
-        upgradeBtn.style.display = 'none';
-        dmInfo.textContent = '';
-      } else {
-        planDesc.textContent = 'Free 플랜: DM 수신만 가능 (발신은 Premium)';
-        composerWrap.style.display = 'none';
-        upgradeBtn.style.display = 'inline-flex';
-        dmInfo.textContent = '프리 플랜에서는 메시지 발신이 잠겨 있습니다.';
-      }
+      composerWrap.style.display = isPremium ? 'grid' : 'none';
+      upgradeBtn.style.display = isPremium ? 'none' : 'inline-flex';
+      planDesc.textContent = isPremium ? 'Premium 플랜: DM 수신/발신 가능' : 'Free 플랜: DM 수신만 가능 (발신은 Premium)';
+      dmInfo.textContent = isPremium ? '' : '프리 플랜에서는 메시지 발신이 잠겨 있습니다.';
     }
 
-    upgradeBtn.addEventListener('click', () => {
-      WETHUS.setCurrentUserPlan('premium');
-      applyPlanUi();
+    function renderThreads(list = currentThreads) {
+      if (!list.length) { threadEl.innerHTML = '<div class="dm-empty" style="height:100%;">대화가 없습니다.</div>'; return; }
+      threadEl.innerHTML = list.map(t => `
+        <article class="dm-thread ${currentThreadId === t.id ? 'active' : ''}" data-id="${t.id}">
+          <h4 class="dm-thread-name">${t.peerName || t.targetName || '대화 상대'}</h4>
+          <p class="dm-thread-last">${t.lastMessage || '메시지가 없습니다.'}</p>
+        </article>
+      `).join('');
+      threadEl.querySelectorAll('.dm-thread').forEach(el => el.addEventListener('click', async () => {
+        currentThreadId = el.getAttribute('data-id');
+        renderThreads();
+        await renderMessages();
+      }));
+    }
+
+    async function renderMessages() {
+      const thread = currentThreads.find(t => t.id === currentThreadId);
+      if (!thread) { msgEl.innerHTML = '<div class="dm-empty">대화를 선택하세요.</div>'; return; }
+      titleEl.textContent = thread.peerName || thread.targetName || '대화';
+      subEl.textContent = `${thread.messageCount || 0}개 메시지`;
+      const msgs = await WETHUS.listDmMessages(thread.id);
+      const me = WETHUS.currentUser();
+      const myName = me?.nickname || me?.name || WETHUS.getState().currentUserId || '';
+      msgEl.innerHTML = msgs.length ? msgs.map(m => {
+        const mine = String(m.from || '').trim() === String(myName).trim();
+        return `<article class="dm-bubble ${mine ? 'me' : 'other'}"><div>${m.text || ''}</div><div class="dm-meta">${m.from || ''} · ${formatTime(m.createdAt)}</div></article>`;
+      }).join('') : '<div class="dm-empty">아직 메시지가 없습니다.</div>';
+      msgEl.scrollTop = msgEl.scrollHeight;
+    }
+
+    async function refreshThreads() {
+      currentThreads = await WETHUS.listDmThreads();
+      if (!currentThreadId && currentThreads[0]) currentThreadId = currentThreads[0].id;
+      renderThreads();
+      await renderMessages();
+    }
+
+    dmSearch.addEventListener('input', () => {
+      const q = dmSearch.value.trim().toLowerCase();
+      if (!q) return renderThreads(currentThreads);
+      renderThreads(currentThreads.filter(t => String(t.peerName || t.targetName || '').toLowerCase().includes(q)));
     });
 
-    document.getElementById('dmSend').addEventListener('click', () => {
-      const text = (document.getElementById('dmInput').value || '').trim();
+    upgradeBtn.addEventListener('click', () => { WETHUS.setCurrentUserPlan('premium'); applyPlanUi(); });
+
+    document.getElementById('dmSend').addEventListener('click', async () => {
+      const input = document.getElementById('dmInput');
+      const text = (input.value || '').trim();
       if (!text || !currentThreadId) return;
       try {
-        WETHUS.sendDm(currentThreadId, text);
-        document.getElementById('dmInput').value = '';
-        renderMessages();
+        await WETHUS.sendDm(currentThreadId, text);
+        input.value = '';
+        await refreshThreads();
       } catch (e) {
-        dmInfo.textContent = e.message;
+        dmInfo.textContent = e?.message || '메시지 전송에 실패했습니다.';
       }
     });
 
-    renderThreads();
+    refreshThreads();
     applyPlanUi();
   </script>
 </body>
