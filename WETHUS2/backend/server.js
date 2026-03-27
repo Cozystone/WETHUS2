@@ -36,10 +36,12 @@ const ALLOWED_ORIGINS = Array.from(new Set([
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 const DATA_DIR = path.join(__dirname, 'data');
 const USERS_DB = path.join(DATA_DIR, 'users.json');
+const DM_DB = path.join(DATA_DIR, 'dm.json');
 
 function ensureDb() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   if (!fs.existsSync(USERS_DB)) fs.writeFileSync(USERS_DB, JSON.stringify({ users: [] }, null, 2));
+  if (!fs.existsSync(DM_DB)) fs.writeFileSync(DM_DB, JSON.stringify({ threads: [] }, null, 2));
 }
 function readUsers() {
   ensureDb();
@@ -55,11 +57,52 @@ function writeUsers(users) {
   ensureDb();
   fs.writeFileSync(USERS_DB, JSON.stringify({ users }, null, 2));
 }
+function readDmThreads() {
+  ensureDb();
+  try {
+    const raw = fs.readFileSync(DM_DB, 'utf8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed.threads) ? parsed.threads : [];
+  } catch {
+    return [];
+  }
+}
+function writeDmThreads(threads) {
+  ensureDb();
+  fs.writeFileSync(DM_DB, JSON.stringify({ threads }, null, 2));
+}
 function normEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
 function hashPw(pw) {
   return crypto.createHash('sha256').update(String(pw || '')).digest('hex');
+}
+
+function getActorId(req) {
+  return String(req.headers['x-user-id'] || req.body?.actorId || req.query?.actorId || '').trim();
+}
+
+function requireActor(req, res) {
+  const actorId = getActorId(req);
+  if (!actorId) {
+    res.status(401).json({ ok: false, error: 'actor required' });
+    return null;
+  }
+  return actorId;
+}
+
+function getUserNameById(userId) {
+  const users = readUsers();
+  const user = users.find(u => String(u.id) === String(userId));
+  return user?.nickname || user?.name || user?.email || '사용자';
+}
+
+function threadPeer(thread, actorId) {
+  if (!thread) return { peerId: '', peerName: '알 수 없음' };
+  const participants = Array.isArray(thread.participants) ? thread.participants : [];
+  const peer = participants.find(p => p !== actorId) || thread.targetId || '';
+  const peerName = thread.targetName || getUserNameById(peer) || '대화 상대';
+  return { peerId: peer, peerName };
 }
 
 app.use(cors({
@@ -74,6 +117,105 @@ app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
 app.get('/health', (_, res) => res.json({ ok: true }));
+
+app.get('/dm/threads', (req, res) => {
+  const actorId = requireActor(req, res);
+  if (!actorId) return;
+  const threads = readDmThreads()
+    .filter(t => Array.isArray(t.participants) && t.participants.includes(actorId))
+    .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
+    .map(t => {
+      const { peerId, peerName } = threadPeer(t, actorId);
+      return {
+        id: t.id,
+        peerId,
+        peerName,
+        lastMessage: t.lastMessage || '',
+        updatedAt: t.updatedAt || t.createdAt,
+        unreadCount: 0,
+        messageCount: Array.isArray(t.messages) ? t.messages.length : 0
+      };
+    });
+  return res.json({ ok: true, threads });
+});
+
+app.post('/dm/threads', (req, res) => {
+  const actorId = requireActor(req, res);
+  if (!actorId) return;
+  const rawTargetUserId = String(req.body?.targetUserId || '').trim();
+  const rawTargetName = String(req.body?.targetName || '').trim();
+  if (!rawTargetUserId && !rawTargetName) return res.status(400).json({ ok: false, error: 'target required' });
+
+  const targetUserId = rawTargetUserId || `alias:${rawTargetName.toLowerCase().replace(/\s+/g, '_')}`;
+  const targetName = rawTargetName || getUserNameById(targetUserId);
+  if (targetUserId === actorId) return res.status(400).json({ ok: false, error: 'self dm not allowed' });
+
+  const threads = readDmThreads();
+  let thread = threads.find(t => {
+    const p = Array.isArray(t.participants) ? t.participants : [];
+    return p.length === 2 && p.includes(actorId) && p.includes(targetUserId);
+  });
+
+  if (!thread) {
+    const now = new Date().toISOString();
+    thread = {
+      id: crypto.randomUUID(),
+      participants: [actorId, targetUserId],
+      targetId: targetUserId,
+      targetName,
+      createdAt: now,
+      updatedAt: now,
+      lastMessage: '',
+      messages: []
+    };
+    threads.push(thread);
+    writeDmThreads(threads);
+  }
+
+  const { peerId, peerName } = threadPeer(thread, actorId);
+  return res.json({ ok: true, thread: { id: thread.id, peerId, peerName, messageCount: thread.messages.length } });
+});
+
+app.get('/dm/threads/:threadId/messages', (req, res) => {
+  const actorId = requireActor(req, res);
+  if (!actorId) return;
+  const threadId = String(req.params.threadId || '').trim();
+  const thread = readDmThreads().find(t => t.id === threadId);
+  if (!thread) return res.status(404).json({ ok: false, error: 'thread not found' });
+  if (!Array.isArray(thread.participants) || !thread.participants.includes(actorId)) {
+    return res.status(403).json({ ok: false, error: 'forbidden' });
+  }
+  return res.json({ ok: true, messages: Array.isArray(thread.messages) ? thread.messages : [] });
+});
+
+app.post('/dm/threads/:threadId/messages', (req, res) => {
+  const actorId = requireActor(req, res);
+  if (!actorId) return;
+  const text = String(req.body?.text || '').trim();
+  if (!text) return res.status(400).json({ ok: false, error: 'text required' });
+
+  const threadId = String(req.params.threadId || '').trim();
+  const threads = readDmThreads();
+  const thread = threads.find(t => t.id === threadId);
+  if (!thread) return res.status(404).json({ ok: false, error: 'thread not found' });
+  if (!Array.isArray(thread.participants) || !thread.participants.includes(actorId)) {
+    return res.status(403).json({ ok: false, error: 'forbidden' });
+  }
+
+  const message = {
+    id: crypto.randomUUID(),
+    fromId: actorId,
+    from: getUserNameById(actorId),
+    text,
+    createdAt: new Date().toISOString()
+  };
+  thread.messages = Array.isArray(thread.messages) ? thread.messages : [];
+  thread.messages.push(message);
+  thread.lastMessage = text;
+  thread.updatedAt = message.createdAt;
+  writeDmThreads(threads);
+  return res.json({ ok: true, message });
+});
 
 async function callGemini(prompt, retries = 2) {
   if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');

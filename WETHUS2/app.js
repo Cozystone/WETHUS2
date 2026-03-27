@@ -826,18 +826,51 @@
     return true;
   }
 
-  function listDmThreads() {
+  function dmApiBases() {
+    const localBases = ['http://127.0.0.1:8787', 'http://localhost:8787'];
+    const remoteBase = window.WETHUS_API_BASE || 'https://wethus-api.onrender.com';
+    const isLocalHost = ['localhost', '127.0.0.1'].includes(location.hostname);
+    return (isLocalHost
+      ? [remoteBase, `${location.protocol}//${location.hostname}:8787`, ...localBases]
+      : [remoteBase]).filter(Boolean).map(b => b.replace(/\/$/, ''));
+  }
+
+  async function dmFetch(path, options = {}) {
+    const actorId = currentActorId();
+    const bases = dmApiBases();
+    let lastErr;
+    for (const base of bases) {
+      try {
+        const res = await fetch(`${base}${path}`, {
+          ...options,
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': actorId || '',
+            ...(options.headers || {})
+          }
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data?.ok === false) throw new Error(data?.error || `dm request failed (${res.status})`);
+        return data;
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error('dm api unavailable');
+  }
+
+  function listDmThreadsLocal() {
     const s = load();
     return s.dmThreads || [];
   }
 
-  function listDmMessages(threadId) {
+  function listDmMessagesLocal(threadId) {
     const s = load();
     const t = (s.dmThreads || []).find(x => x.id === threadId);
     return t?.messages || [];
   }
 
-  function sendDm(threadId, text) {
+  function sendDmLocal(threadId, text) {
     const s = load();
     const actor = currentActorId();
     const u = s.users.find(x => x.id === s.currentUserId);
@@ -845,12 +878,65 @@
     if (plan === 'free') throw new Error('Free 플랜은 DM 수신만 가능합니다.');
     const t = (s.dmThreads || []).find(x => x.id === threadId);
     if (!t) throw new Error('대화방을 찾을 수 없습니다.');
-    if ((t.targetRole === 'mentor') && !['pro','master'].includes(plan)) {
-      throw new Error('멘토에게 먼저 메시지를 보내려면 Pro 이상 플랜이 필요합니다.');
-    }
     t.messages.push({ id: uid(), from: u?.nickname || u?.name || actor || 'Me', text: text || '', createdAt: new Date().toISOString() });
     save(s);
     return t.messages;
+  }
+
+  async function listDmThreads() {
+    try {
+      const data = await dmFetch('/dm/threads');
+      return data?.threads || [];
+    } catch {
+      return listDmThreadsLocal();
+    }
+  }
+
+  async function listDmMessages(threadId) {
+    try {
+      const data = await dmFetch(`/dm/threads/${encodeURIComponent(threadId)}/messages`);
+      return data?.messages || [];
+    } catch {
+      return listDmMessagesLocal(threadId);
+    }
+  }
+
+  async function createDmThread({ targetUserId, targetName } = {}) {
+    if (!targetUserId && !targetName) throw new Error('대화 상대가 필요합니다.');
+    try {
+      const data = await dmFetch('/dm/threads', {
+        method: 'POST',
+        body: JSON.stringify({ targetUserId, targetName })
+      });
+      return data?.thread;
+    } catch {
+      const s = load();
+      const actor = currentActorId();
+      const peerName = targetName || '대화 상대';
+      let thread = (s.dmThreads || []).find(t => String(t.targetName || '') === String(peerName));
+      if (!thread) {
+        thread = { id: uid(), targetName: peerName, messages: [] };
+        s.dmThreads.unshift(thread);
+        save(s);
+      }
+      return { id: thread.id, peerName };
+    }
+  }
+
+  async function sendDm(threadId, text) {
+    const s = load();
+    const u = s.users.find(x => x.id === s.currentUserId);
+    const plan = (u?.plan || 'free').toLowerCase();
+    if (plan === 'free') throw new Error('Free 플랜은 DM 수신만 가능합니다.');
+    try {
+      await dmFetch(`/dm/threads/${encodeURIComponent(threadId)}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ text: String(text || '') })
+      });
+      return listDmMessages(threadId);
+    } catch {
+      return sendDmLocal(threadId, text);
+    }
   }
 
   function currentActorId() {
@@ -1418,6 +1504,7 @@
     removeNotification,
     listDmThreads,
     listDmMessages,
+    createDmThread,
     sendDm,
     uiConfirm,
     uiAlert,
