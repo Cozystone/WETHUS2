@@ -38,6 +38,13 @@
     .theme-shell .project-tile:hover {
       border-color: rgba(255,255,255,.28) !important;
     }
+    .mentor-stack { display:grid; gap:8px; margin:8px 0 12px; }
+    .mentor-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid #2c2c2c; border-radius:10px; background:#101010; }
+    .mentor-item small { color:#9b9b9b; }
+    .agent-pill { display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:999px; background:#1f1f1f; color:#cfcfcf; font-size:.72rem; border:1px solid #333; }
+    .help-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:10px; }
+    .help-opt { padding:11px 10px; border-radius:10px; border:1px solid #353535; background:#141414; color:#f5f5f5; cursor:pointer; }
+    .help-opt:hover { background:#1b1b1b; border-color:#4a4a4a; }
   </style>
 </head>
 <body class="theme-shell">
@@ -144,9 +151,12 @@
         <p id="modalDateRange" class="modal-date-range" style="margin:0 0 10px;"></p>
         <p id="modalSummary" style="margin:0 0 12px;color:#f5f5f5;"></p>
         <p id="modalDesc" style="margin:0 0 18px;color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p>
-        <div id="modalTeam" class="team-row" style="margin-bottom:12px;"></div>
+        <div id="modalTeam" class="team-row" style="margin-bottom:8px;"></div>
+        <h4 style="margin:8px 0 6px;font-size:.92rem;color:#e8e8e8;">Mentors</h4>
+        <div id="modalMentors" class="mentor-stack"></div>
         <div class="meta"><span class="badge" id="modalCategoryBadge"></span> · <span id="modalStatus"></span> · <span id="modalRoles"></span> · <span id="modalDuration"></span></div>
         <div class="modal-social-row">
+          <button id="modalHelpBtn" class="btn btn--primary" type="button">도움 요청하기</button>
           <button id="modalLikeBtn" class="btn btn--secondary">♡ <span id="modalLikeCount">0</span></button>
           <button id="modalCommentBtn" class="btn btn--secondary">💬 <span id="modalCommentCount">0</span></button>
           <button id="modalEditBtn" class="btn btn--secondary" type="button" style="display:none;">수정</button>
@@ -179,6 +189,18 @@
         <div style="display:flex;justify-content:flex-end;margin-top:10px;">
           <button id="applySubmit" class="btn btn--primary">지원서 제출</button>
         </div>
+      </div>
+    </article>
+  </div>
+
+  <div id="helpModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-help="true"></div>
+    <article class="modal-panel" style="max-width:480px;">
+      <button class="modal-close" id="helpClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 style="margin:0 0 6px;">무엇이 도움이 필요하세요?</h3>
+        <p class="meta" style="margin:0;">필요한 도움을 선택하면 가장 적합한 멘토(인간/AI)와 연결해드려요.</p>
+        <div class="help-grid" id="helpOptions"></div>
       </div>
     </article>
   </div>
@@ -229,6 +251,46 @@
     document.documentElement.style.setProperty('--theme-tint', currentTheme.tint);
     document.documentElement.style.setProperty('--theme-tint-2', currentTheme.tint2 || currentTheme.tint);
 
+    const AGENT_PRESETS = {
+      project_assistant: { id: 'project_assistant', name: 'Project Assistant', icon: '🤖', desc: '프로젝트 구조화·우선순위 조정' },
+      startup_ai: { id: 'startup_ai', name: 'Startup AI', icon: '🤖', desc: '가설 검증·실행 전략 피드백' },
+      film_ai: { id: 'film_ai', name: 'Film AI', icon: '🤖', desc: '스토리·촬영·편집 피드백' },
+      design_ai: { id: 'design_ai', name: 'Design AI', icon: '🤖', desc: '와이어프레임·UI 개선 제안' },
+      dev_ai: { id: 'dev_ai', name: 'Dev AI', icon: '🤖', desc: '구현 흐름·기술 선택 지원' },
+      research_ai: { id: 'research_ai', name: 'Research AI', icon: '🤖', desc: '리서치 구조화·근거 정리' }
+    };
+
+    const HELP_OPTIONS = [
+      { key: 'planning', label: '기획 도움' },
+      { key: 'design', label: '디자인 도움' },
+      { key: 'development', label: '개발 도움' },
+      { key: 'research', label: '리서치 도움' },
+      { key: 'other', label: '기타' }
+    ];
+
+    function categoryAgentKey(project) {
+      const c = String(project?.category || '').toLowerCase();
+      if (c.includes('film') || c.includes('creative')) return 'film_ai';
+      if (c.includes('startup') || c.includes('app') || c.includes('business')) return 'startup_ai';
+      if (c.includes('policy') || c.includes('campaign')) return 'research_ai';
+      return 'startup_ai';
+    }
+
+    function getProjectMentors(project) {
+      const humans = Array.isArray(project?.mentors) ? project.mentors : [];
+      const aiKeys = ['project_assistant', categoryAgentKey(project)];
+      const aiMentors = Array.from(new Set(aiKeys)).map(k => AGENT_PRESETS[k]).filter(Boolean).map(a => ({ type:'ai', id:a.id, name:a.name, icon:a.icon, desc:a.desc }));
+      return humans.map(h => ({ type:'human', id:h.id || h.name, name:h.name, icon:'👤', desc:h.expertise || '프로젝트 멘토' })).concat(aiMentors);
+    }
+
+    function mapNeedToAgent(project, needKey) {
+      if (needKey === 'planning') return AGENT_PRESETS.project_assistant;
+      if (needKey === 'design') return AGENT_PRESETS.design_ai;
+      if (needKey === 'development') return AGENT_PRESETS.dev_ai;
+      if (needKey === 'research') return AGENT_PRESETS.research_ai;
+      return AGENT_PRESETS[categoryAgentKey(project)] || AGENT_PRESETS.project_assistant;
+    }
+
     function actorId() {
       const s = WETHUS.getState();
       return s.currentUserId || (s.devMode ? 'dev-temp' : null);
@@ -257,16 +319,19 @@
     }
 
     const memberHref = (m) => `member.html?name=${encodeURIComponent(m?.name||'팀원')}&role=${encodeURIComponent(m?.role||'담당')}&bio=${encodeURIComponent(m?.bio||'소개가 아직 없습니다.')}&founder=${m?.isLeader ? '1' : '0'}`;
-    function renderTeam(team=[]) {
-      const leader = team.find(m => m.isLeader) || team[0];
-      const others = team.filter(m => m !== leader);
+    function renderTeam(team = [], project = null) {
+      const hasTeam = Array.isArray(team) && team.length;
+      const leader = hasTeam ? (team.find(m => m.isLeader) || team[0]) : null;
+      const others = hasTeam ? team.filter(m => m !== leader) : [];
       const visible = others.slice(0,2);
       const hidden = others.slice(2);
+      const aiMembers = getProjectMentors(project).filter(m => m.type === 'ai').slice(0, 2);
       return `
         <div class="team-row">
-          <a class="member-pill leader" href="${memberHref(leader)}"><span class="member-name">${leader?.name || '대표'}</span> <span class="member-role">대표</span></a>
+          ${leader ? `<a class="member-pill leader" href="${memberHref(leader)}"><span class="member-name">${leader?.name || '대표'}</span> <span class="member-role">대표</span></a>` : ''}
           ${visible.map(m => `<a class="member-pill" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('')}
-          ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length+1}명</button><div class="team-list">${hidden.map(m=>`<a class="member-pill block" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('')}</div>` : ''}
+          ${aiMembers.map(a => `<span class="member-pill"><span class="member-name">${a.name}</span> <span class="member-role">AI</span></span>`).join('')}
+          ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length + (leader ? 1 : 0)}명</button><div class="team-list">${hidden.map(m=>`<a class="member-pill block" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('')}</div>` : ''}
         </div>`;
     }
 
@@ -311,7 +376,7 @@
               <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
             </div>
             <p class="card-summary">${p.summary}</p>
-            ${renderTeam(p.teamMembers)}
+            ${renderTeam(p.teamMembers, p)}
             <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}</div>
             <div class="card-bottom-row">
               <div class="card-social"><span>${likedSymbol(p)} ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
@@ -493,6 +558,7 @@
     const modalEditBtn = document.getElementById('modalEditBtn');
     const modalDeleteBtn = document.getElementById('modalDeleteBtn');
     const modalApplyBtn = document.getElementById('modalApplyBtn');
+    const modalHelpBtn = document.getElementById('modalHelpBtn');
     const modalCommentPanel = document.getElementById('modalCommentPanel');
     const modalCommentClose = document.getElementById('modalCommentClose');
     const modalComments = document.getElementById('modalComments');
@@ -501,15 +567,37 @@
     const modalTeam = document.getElementById('modalTeam');
     const applyModal = document.getElementById('applyModal');
     const applyMotivation = document.getElementById('applyMotivation');
+    const helpModal = document.getElementById('helpModal');
+    const helpClose = document.getElementById('helpClose');
+    const helpOptions = document.getElementById('helpOptions');
     let applyProjectId = null;
     let currentProjectId = null;
 
-    function renderTeamMini(team=[]) {
-      if (!team.length) { modalTeam.innerHTML = ''; return; }
+    function renderTeamMini(team = [], project = null) {
+      const hasTeam = Array.isArray(team) && team.length;
+      if (!hasTeam) { modalTeam.innerHTML = ''; return; }
       const leader = team.find(m => m.isLeader) || team[0];
       const rest = team.filter(m => m !== leader).slice(0, 3);
+      const aiMembers = getProjectMentors(project).filter(m => m.type === 'ai').slice(0, 2);
       modalTeam.innerHTML = `<a class="member-pill leader" href="${memberHref(leader)}"><span class="member-name">${leader?.name || '대표'}</span> <span class="member-role">대표</span></a>` +
-        rest.map(m => `<a class="member-pill" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('');
+        rest.map(m => `<a class="member-pill" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('') +
+        aiMembers.map(a => `<span class="member-pill"><span class="member-name">${a.name}</span> <span class="member-role">AI</span></span>`).join('');
+    }
+
+    function renderMentors(project) {
+      const list = getProjectMentors(project);
+      const el = document.getElementById('modalMentors');
+      if (!el) return;
+      el.innerHTML = list.map(m => `
+        <article class="mentor-item">
+          <span>${m.icon}</span>
+          <div style="display:grid;gap:2px;">
+            <strong style="font-size:.88rem;">${m.name}</strong>
+            <small>${m.desc || ''}</small>
+          </div>
+          ${m.type === 'ai' ? '<span class="agent-pill">AI Mentor</span>' : '<span class="agent-pill">Human Mentor</span>'}
+        </article>
+      `).join('');
     }
 
     function renderComments(comments) {
@@ -543,7 +631,8 @@
       modalRoles.textContent = data.roles || '';
       modalDuration.textContent = data.duration || '';
       modalImage.src = data.image || imageFor(data, 0);
-      renderTeamMini(data.teamMembers || []);
+      renderTeamMini(data.teamMembers || [], data);
+      renderMentors(data);
       currentProjectId = data.id || null;
       if (currentProjectId) WETHUS.setAuthReturnState?.({ modalProjectId: currentProjectId });
       modalLikeBtn.classList.toggle('liked', !!data._liked);
@@ -684,6 +773,44 @@
       applyProjectId = currentProjectId;
       applyModal.classList.add('open');
       applyModal.setAttribute('aria-hidden', 'false');
+    });
+
+    function openHelpModal() {
+      if (!currentProjectId) return;
+      const project = (currentItems || []).find(p => p.id === currentProjectId) || WETHUS.listProjects().find(p => p.id === currentProjectId);
+      if (!project) return;
+      helpOptions.innerHTML = HELP_OPTIONS.map(opt => `<button class="help-opt" data-need="${opt.key}" type="button">${opt.label}</button>`).join('');
+      helpOptions.querySelectorAll('.help-opt').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const need = btn.getAttribute('data-need');
+          const mappedAgent = mapNeedToAgent(project, need);
+          try {
+            const thread = await WETHUS.createDmThread({
+              targetUserId: `agent:${mappedAgent.id}:project:${project.id}`,
+              targetName: `${mappedAgent.name} (${project.title})`
+            });
+            helpModal.classList.remove('open');
+            helpModal.setAttribute('aria-hidden', 'true');
+            location.href = `dm.html?threadId=${encodeURIComponent(thread?.id || '')}`;
+          } catch (err) {
+            await WETHUS.uiAlert(err?.message || '도움 연결에 실패했습니다.', { title: '연결 실패' });
+          }
+        });
+      });
+      helpModal.classList.add('open');
+      helpModal.setAttribute('aria-hidden', 'false');
+    }
+
+    modalHelpBtn?.addEventListener('click', openHelpModal);
+    helpClose?.addEventListener('click', () => {
+      helpModal.classList.remove('open');
+      helpModal.setAttribute('aria-hidden', 'true');
+    });
+    helpModal?.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close-help') === 'true') {
+        helpModal.classList.remove('open');
+        helpModal.setAttribute('aria-hidden', 'true');
+      }
     });
 
     modalEditBtn?.addEventListener('click', async () => {
