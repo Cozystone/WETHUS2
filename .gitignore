@@ -1,3 +1,4 @@
 .env
 .openclaw/
 WETHUS2/local-config.js
+.vercel
