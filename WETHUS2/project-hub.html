@@ -21,9 +21,12 @@
     .hub-thumb{width:84px;height:84px;border-radius:12px;object-fit:cover;border:1px solid #2f2f2f;background:#1b1b1b}
     .hub-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
     .hub-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-    .hub-tabs{display:flex;gap:8px;margin:14px 0 12px}
+    .hub-tabs-wrap{display:grid;grid-template-columns:1fr 300px;gap:10px;align-items:stretch;margin:14px 0 12px}
+    .hub-tabs{display:flex;gap:8px;align-items:center}
     .hub-tab{padding:8px 12px;border-radius:999px;border:1px solid #333;background:#151515;color:#ddd;cursor:pointer}
     .hub-tab.active{background:#ff8a00;color:#111;border-color:#ff8a00;font-weight:700}
+    .hub-llm-box{border:1px solid #2f2f2f;border-radius:10px;background:#151515;padding:10px}
+    .hub-llm-box h4{margin:0 0 4px;font-size:.9rem}
     .hub-grid{display:grid;grid-template-columns:1.55fr .8fr;gap:12px}
     .hub-left{display:grid;gap:10px}
     .hub-card{border:1px solid #2a2a2a;border-radius:12px;background:#121212;padding:12px}
@@ -35,7 +38,7 @@
     .meta-bullet{margin:0;padding-left:17px;color:#d6d6d6}
     .meta-bullet li{margin:4px 0}
     .hidden{display:none !important}
-    @media (max-width:960px){.hub-grid{grid-template-columns:1fr}.hub-header{grid-template-columns:1fr}.hub-actions{justify-content:flex-start}}
+    @media (max-width:960px){.hub-grid{grid-template-columns:1fr}.hub-header{grid-template-columns:1fr}.hub-actions{justify-content:flex-start}.hub-tabs-wrap{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -88,11 +91,17 @@
         </div>
       </section>
 
-      <div class="hub-tabs" id="hubTabs">
-        <button class="hub-tab active" data-tab="overview" type="button">개요</button>
-        <button class="hub-tab" data-tab="progress" type="button">진행</button>
-        <button class="hub-tab" data-tab="materials" type="button">작업자료</button>
-        <button class="hub-tab" data-tab="team" type="button">팀원</button>
+      <div class="hub-tabs-wrap">
+        <div class="hub-tabs" id="hubTabs">
+          <button class="hub-tab active" data-tab="overview" type="button">개요</button>
+          <button class="hub-tab" data-tab="progress" type="button">진행</button>
+          <button class="hub-tab" data-tab="materials" type="button">작업자료</button>
+          <button class="hub-tab" data-tab="team" type="button">팀원</button>
+        </div>
+        <aside class="hub-llm-box">
+          <h4>프로젝트 지원 LLM</h4>
+          <p id="hubLlmStatus" class="meta" style="margin:0;">연결됨 · 허브 데이터 요약 및 다음 행동 제안 가능</p>
+        </aside>
       </div>
 
       <section class="hub-grid">
@@ -115,8 +124,14 @@
           </div>
 
           <div id="tab-team" class="hidden">
-            <article class="hub-card"><h3>팀원 구성</h3><div id="tmList" class="list-grid"></div></article>
-            <article class="hub-card"><h3>팀 단톡방</h3><button id="tmChatBtn" class="btn btn--primary" type="button">단톡방 열기</button><p class="meta" style="margin-top:8px;">허브 내 팀 커뮤니케이션용 임시 그룹 채팅입니다.</p></article>
+            <article class="hub-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <h3 style="margin:0;">팀원 구성 · 팀 채팅</h3>
+                <button id="tmChatBtn" class="btn btn--primary" type="button">단톡방 열기</button>
+              </div>
+              <p class="meta" style="margin:6px 0 10px;">팀원 현황을 확인하고 같은 영역에서 팀 채팅을 바로 열 수 있습니다.</p>
+              <div id="tmList" class="list-grid"></div>
+            </article>
           </div>
         </div>
 
@@ -129,7 +144,7 @@
     </section>
   </main>
 
-  <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:560px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 툴 연결</h3><label>Google Docs 링크<input id="toolDocs" /></label><label>Google Sheets 링크<input id="toolSheets" /></label><label>Notion 링크<input id="toolNotion" /></label><label>Figma 링크<input id="toolFigma" /></label><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="toolSaveBtn" class="btn btn--primary" type="button">저장</button></div></div></article></div>
+  <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:560px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 툴 연결</h3><p class="meta" style="margin:0 0 10px;">툴 로고를 눌러 MCP/연동 설정 페이지로 이동하세요.</p><div id="toolLogoGrid" class="tool-grid"></div></div></article></div>
   <div id="hubUpdateModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-update="true"></div><article class="modal-panel" style="max-width:560px;"><button class="modal-close" id="hubUpdateClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">업데이트 작성</h3><textarea id="hubUpdateInput" style="width:100%;min-height:120px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;"></textarea><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="hubUpdateSubmit" class="btn btn--primary" type="button">등록</button></div></div></article></div>
   <div id="hubChatModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-chat="true"></div><article class="modal-panel" style="max-width:640px;"><button class="modal-close" id="hubChatClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">팀 단톡방</h3><div id="chatList" class="list-grid" style="max-height:260px;overflow:auto;"></div><div style="display:flex;gap:8px;margin-top:10px;"><input id="chatInput" style="flex:1;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px;" /><button id="chatSend" class="btn btn--primary">보내기</button></div></div></article></div>
 
@@ -200,10 +215,6 @@
       renderTeamList(p.teamMembers||[]);
       document.getElementById('sdStatus').innerHTML=`<li>현재 단계: ${p.status||'기획 중'}</li><li>최근 업데이트: ${(hub.updatedAt?new Date(hub.updatedAt).toLocaleString('ko-KR'):'방금')}</li><li>팀원 수: ${(p.teamMembers||[]).length}명</li>`;
       document.getElementById('sdAdvice').innerHTML='<li>목표를 이번 주 단위로 쪼개세요.</li><li>막힌 점을 카드에 명시하세요.</li><li>멘토링 요청은 구체적으로 작성하세요.</li>';
-      document.getElementById('toolDocs').value=(hub.tools.find(x=>x.name==='Google Docs')||{}).url||'';
-      document.getElementById('toolSheets').value=(hub.tools.find(x=>x.name==='Google Sheets')||{}).url||'';
-      document.getElementById('toolNotion').value=(hub.tools.find(x=>x.name==='Notion')||{}).url||'';
-      document.getElementById('toolFigma').value=(hub.tools.find(x=>x.name==='Figma')||{}).url||'';
       renderTab(activeTab);
     }
 
@@ -230,27 +241,24 @@
     }
 
     document.getElementById('hubBackBtn').addEventListener('click',backToList);
-    document.getElementById('hubMentorBtn').addEventListener('click',()=>location.href='mentor.html');
-    document.getElementById('sdAiBtn').addEventListener('click',()=>location.href='mentor.html');
-    document.getElementById('sdHumanBtn').addEventListener('click',()=>location.href='mentor.html');
+    document.getElementById('hubMentorBtn').addEventListener('click',()=>location.href='mentor.html?fromHub=1');
+    document.getElementById('sdAiBtn').addEventListener('click',()=>location.href='mentor.html?fromHub=1');
+    document.getElementById('sdHumanBtn').addEventListener('click',()=>location.href='mentor.html?fromHub=1');
 
     document.getElementById('hubTabs').addEventListener('click',(e)=>{const b=e.target.closest('[data-tab]'); if(!b) return; renderTab(b.getAttribute('data-tab'));});
+
+    const toolTargets = [
+      { name:'Google Docs', logo:'📝', href:'https://docs.openclaw.ai/integrations/google-docs' },
+      { name:'Google Sheets', logo:'📊', href:'https://docs.openclaw.ai/integrations/google-sheets' },
+      { name:'Notion', logo:'🧩', href:'https://docs.openclaw.ai/integrations/notion' },
+      { name:'Figma', logo:'🎨', href:'https://docs.openclaw.ai/integrations/figma' }
+    ];
+    const toolLogoGrid = document.getElementById('toolLogoGrid');
+    toolLogoGrid.innerHTML = toolTargets.map(t => `<a class="tool-card" href="${t.href}" target="_blank" rel="noreferrer"><strong style="font-size:1.25rem;">${t.logo}</strong><p style="margin:6px 0 0;">${t.name}</p><p class="meta" style="margin:4px 0 0;">MCP 연동 설정으로 이동</p></a>`).join('');
 
     document.getElementById('hubToolBtn').addEventListener('click',()=>openModal('hubToolModal'));
     document.getElementById('hubToolClose').addEventListener('click',()=>closeModal('hubToolModal'));
     document.querySelector('[data-close-tool]').addEventListener('click',()=>closeModal('hubToolModal'));
-    document.getElementById('toolSaveBtn').addEventListener('click',()=>{
-      if(!currentProject) return;
-      const tools=[
-        {name:'Google Docs',url:document.getElementById('toolDocs').value.trim(),desc:'기획 문서'},
-        {name:'Google Sheets',url:document.getElementById('toolSheets').value.trim(),desc:'일정/지표'},
-        {name:'Notion',url:document.getElementById('toolNotion').value.trim(),desc:'팀 위키'},
-        {name:'Figma',url:document.getElementById('toolFigma').value.trim(),desc:'디자인'}
-      ];
-      WETHUS.upsertProjectHub(currentProject.id,{tools});
-      WETHUS.addHubActivity(currentProject.id,'외부 툴 연결 정보 업데이트');
-      closeModal('hubToolModal'); renderHub();
-    });
 
     document.getElementById('hubUpdateBtn').addEventListener('click',()=>openModal('hubUpdateModal'));
     document.getElementById('hubUpdateClose').addEventListener('click',()=>closeModal('hubUpdateModal'));
