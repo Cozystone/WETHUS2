@@ -74,7 +74,8 @@
       name: params.get('name') || '팀원',
       role: params.get('role') || '담당 미정',
       bio: params.get('bio') || '소개가 아직 없습니다.',
-      founder: params.get('founder') === '1'
+      founder: params.get('founder') === '1',
+      mentor: params.get('mentor') === '1'
     };
 
     const me = WETHUS.currentUser();
@@ -83,6 +84,7 @@
     const myTeamNames = new Set((WETHUS.myProjects() || []).flatMap(p => (p.teamMembers || []).map(m => m.name)));
     const canViewDetail = paid || myTeamNames.has(member.name) || me?.name === member.name || me?.nickname === member.name;
 
+    const mentorBadge = member.mentor ? '<span class="verify-badge" style="background:#6d28d9;color:#f5f3ff;border-color:#8b5cf6;">Mentor 인증</span>' : '';
     document.getElementById('memberHero').innerHTML = `
       <div class="profile-avatar">${member.name.slice(0,1)}</div>
       <div class="profile-main">
@@ -92,6 +94,7 @@
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <span class="profile-nickname">@${member.name.replace(/\s+/g,'').toLowerCase()}</span>
               ${member.founder ? '<span class="verify-badge">Founder 인증</span>' : ''}
+              ${mentorBadge}
             </div>
           </div>
           <button id="memberDmBtn" class="btn btn--primary" type="button">DM 보내기</button>

@@ -205,7 +205,7 @@
         if (activeTab === 'human') {
           const isFull = Number(m.activeTeams || 0) >= Number(m.capacity || 0);
           return `
-            <article class="mentor-item">
+            <article class="mentor-item" data-open-human="${m.id}" style="cursor:pointer;">
               <div class="mentor-avatar">${avatarHtml}</div>
               <div>
                 <h3 class="mentor-name">${m.name} 멘토</h3>
@@ -235,20 +235,31 @@
           </article>`;
       }).join('');
 
+      targetEl.querySelectorAll('[data-open-human]').forEach(card => {
+        card.addEventListener('click', () => {
+          const m = humanMentors.find(x => x.id === card.getAttribute('data-open-human'));
+          if (!m) return;
+          location.href = `member.html?name=${encodeURIComponent(m.name)}&role=${encodeURIComponent(m.title)}&bio=${encodeURIComponent(m.role)}&founder=0&mentor=1`;
+        });
+      });
+
       targetEl.querySelectorAll('[data-consult-human]').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const m = humanMentors.find(x => x.id === btn.getAttribute('data-consult-human'));
           if (m) startDm(`${m.name} 멘토`, `human-mentor:${m.id}`, m.avatar || '');
         });
       });
       targetEl.querySelectorAll('[data-wait-human]').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const m = humanMentors.find(x => x.id === btn.getAttribute('data-wait-human'));
           mentorMsg.textContent = m ? `${m.name} 멘토는 현재 정원 마감입니다. 대기 신청이 접수되었습니다.` : '대기 신청이 접수되었습니다.';
         });
       });
       targetEl.querySelectorAll('[data-dm-human]').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const m = humanMentors.find(x => x.id === btn.getAttribute('data-dm-human'));
           if (m) startDm(`${m.name} 멘토`, `human-mentor:${m.id}`, m.avatar || '');
         });
