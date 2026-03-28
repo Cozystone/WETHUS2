@@ -917,6 +917,18 @@
     }
   }
 
+  async function requestAgentReply(threadId, userText) {
+    try {
+      await dmFetch(`/dm/threads/${encodeURIComponent(threadId)}/agent-reply`, {
+        method: 'POST',
+        body: JSON.stringify({ userText: String(userText || '') })
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async function sendDm(threadId, text) {
     const s = load();
     const u = s.users.find(x => x.id === s.currentUserId);
@@ -1643,6 +1655,7 @@
     listDmMessages,
     createDmThread,
     sendDm,
+    requestAgentReply,
     listAgents,
     ensureAgentProfile,
     runAgentTick,

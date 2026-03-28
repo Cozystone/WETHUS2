@@ -186,6 +186,10 @@
       if (!text || !currentThreadId) return;
       try {
         await WETHUS.sendDm(currentThreadId, text);
+        const thread = currentThreads.find(t => t.id === currentThreadId);
+        if (thread && String(thread.peerId || '').startsWith('agent:')) {
+          await WETHUS.requestAgentReply(currentThreadId, text);
+        }
         input.value = '';
         await refreshThreads();
       } catch (e) {
