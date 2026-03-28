@@ -675,7 +675,8 @@
 
   function isAdminActor() {
     const s = load();
-    const actor = s.currentUserId || (s.devMode ? 'dev-temp' : null);
+    if (s.devMode) return true;
+    const actor = s.currentUserId || null;
     if (!actor) return false;
     if (actor === ADMIN_MODE_USER_ID) return true;
     const u = s.users.find(x => x.id === actor);
