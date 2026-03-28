@@ -13,11 +13,11 @@
   <link rel="stylesheet" href="styles.css?v=20260319-23" />
   <style>
     .dm-shell{margin-top:24px;border:1px solid #2a2a2a;border-radius:16px;overflow:hidden;background:#111;display:grid;grid-template-columns:320px 1fr;min-height:68vh}
-    .dm-left{border-right:1px solid #232323;background:#0f0f0f;display:grid;grid-template-rows:auto 1fr}
+    .dm-left{border-right:1px solid #232323;background:#0f0f0f;display:grid;grid-template-rows:auto 1fr;overflow:hidden}
     .dm-search{padding:12px;border-bottom:1px solid #232323}
     .dm-search input{width:100%;background:#171717;border:1px solid #2c2c2c;border-radius:12px;color:#fff;padding:10px 12px}
-    .dm-threads{overflow:auto;padding:6px}
-    .dm-thread{padding:10px 12px;border-radius:12px;cursor:pointer;border:1px solid transparent;display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:center}
+    .dm-threads{overflow-y:auto;overflow-x:hidden;padding:6px}
+    .dm-thread{padding:10px 12px;border-radius:12px;cursor:pointer;border:1px solid transparent;display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:center;overflow:hidden}
     .dm-thread:hover{background:#171717}
     .dm-thread.active{background:#1f1f1f;border-color:#343434}
     .dm-avatar{width:36px;height:36px;border-radius:999px;display:grid;place-items:center;background:#2a2a2a;color:#fff;font-size:.78rem;font-weight:700;border:1px solid #3a3a3a;overflow:hidden}
@@ -135,7 +135,7 @@
       threadEl.innerHTML = list.map(t => `
         <article class="dm-thread ${currentThreadId === t.id ? 'active' : ''}" data-id="${t.id}">
           ${avatarMarkup(t.peerName || t.targetName || '대화 상대', t.peerAvatar || t.targetAvatar || '')}
-          <div>
+          <div style="min-width:0;">
             <h4 class="dm-thread-name">${t.peerName || t.targetName || '대화 상대'}</h4>
             <p class="dm-thread-last">${t.lastMessage || '메시지가 없습니다.'}</p>
           </div>

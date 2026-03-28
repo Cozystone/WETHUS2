@@ -154,9 +154,9 @@ function buildAgentFallbackReply(agentCode, userText = '') {
 
 async function generateAgentReply(agentCode, userText = '') {
   const system = AGENT_SYSTEM_PROMPTS[agentCode] || 'You are a helpful specialized project mentor. Respond in Korean with practical steps.';
-  const prompt = `SYSTEM:\n${system}\n\nUSER:\n${String(userText || '').slice(0, 2000)}\n\n답변 형식: 핵심 진단 1~2문장 + 다음 행동 3개 불릿.`;
+  const prompt = `SYSTEM:\n${system}\n\nUSER:\n${String(userText || '').slice(0, 2000)}\n\n지침:\n- 말투는 자연스럽고 대화형으로 답변\n- 필요한 경우에만 불릿을 사용하고 과도한 템플릿 반복 금지\n- 사용자 문맥을 반영한 구체적 다음 행동 제안`;
   try {
-    const out = await callAi(prompt);
+    const out = await callAi(prompt, { systemPrompt: system, temperature: 0.7, maxTokens: 420 });
     return String(out || '').trim() || buildAgentFallbackReply(agentCode, userText);
   } catch {
     return buildAgentFallbackReply(agentCode, userText);
@@ -354,9 +354,12 @@ async function callGemini(prompt, retries = 2) {
   throw lastErr || new Error('ai failed');
 }
 
-async function callOpenAI(prompt, retries = 2) {
+async function callOpenAI(prompt, retries = 2, opts = {}) {
   if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not configured');
   const url = 'https://api.openai.com/v1/chat/completions';
+  const systemPrompt = String(opts.systemPrompt || 'You are a helpful assistant. Respond clearly and naturally in Korean.');
+  const temperature = Number.isFinite(opts.temperature) ? Number(opts.temperature) : 0.35;
+  const maxTokens = Number.isFinite(opts.maxTokens) ? Number(opts.maxTokens) : 320;
 
   let lastErr;
   for (let i = 0; i <= retries; i++) {
@@ -372,10 +375,10 @@ async function callOpenAI(prompt, retries = 2) {
         signal: controller.signal,
         body: JSON.stringify({
           model: OPENAI_MODEL,
-          temperature: 0.25,
-          max_tokens: 260,
+          temperature,
+          max_tokens: maxTokens,
           messages: [
-            { role: 'system', content: "You rewrite youth profile career notes into concise Korean bullets using only '-(전)' or '-(현)' prefixes." },
+            { role: 'system', content: systemPrompt },
             { role: 'user', content: prompt }
           ]
         })
@@ -394,8 +397,8 @@ async function callOpenAI(prompt, retries = 2) {
   throw lastErr || new Error('openai failed');
 }
 
-async function callAi(prompt) {
-  if (AI_PROVIDER === 'openai') return callOpenAI(prompt, 2);
+async function callAi(prompt, opts = {}) {
+  if (AI_PROVIDER === 'openai') return callOpenAI(prompt, 2, opts);
   return callGemini(prompt, 2);
 }
 
@@ -404,7 +407,11 @@ app.post('/ai/career-summary', async (req, res) => {
     const raw = String(req.body?.raw || '').trim();
     if (!raw) return res.status(400).json({ ok: false, error: 'raw is required' });
     const prompt = `다음 경력사항을 정확히 '-(전) ...' 또는 '-(현) ...' 형식의 불릿으로만 출력해줘. 최대 6줄. 원문 복붙 금지, 핵심만 간결히.\n${raw}`;
-    const text = await callAi(prompt);
+    const text = await callAi(prompt, {
+      systemPrompt: "You rewrite youth profile career notes into concise Korean bullets using only '-(전)' or '-(현)' prefixes.",
+      temperature: 0.2,
+      maxTokens: 260
+    });
     return res.json({ ok: true, summary: text });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'career summary failed' });
