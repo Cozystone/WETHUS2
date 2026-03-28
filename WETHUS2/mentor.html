@@ -15,7 +15,7 @@
     .mentor-tabs{display:flex;gap:8px;margin:8px 0 14px}
     .mentor-tab{padding:8px 14px;border-radius:999px;border:1px solid #333;background:#151515;color:#d8d8d8;cursor:pointer}
     .mentor-tab.active{background:#f5f5f5;color:#111;border-color:#f5f5f5;font-weight:700}
-    .mentor-toolbar{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:12px}
+    .mentor-toolbar{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:12px}
     .mentor-search{background:#101010;border:1px solid #2b2b2b;border-radius:10px;color:#f5f5f5;padding:10px 12px}
     .mentor-cats{display:flex;gap:6px;flex-wrap:wrap}
     .mentor-chip{padding:6px 10px;border-radius:999px;border:1px solid #313131;background:#141414;color:#d3d3d3;font-size:.78rem;cursor:pointer}
@@ -24,10 +24,12 @@
     .mentor-pane.active{display:block}
     .mentor-list{display:grid;gap:10px}
     .mentor-item{border:1px solid #2b2b2b;border-radius:12px;padding:12px;background:#121212;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
-    .mentor-avatar{width:46px;height:46px;border-radius:999px;display:grid;place-items:center;background:#1f1f1f;border:1px solid #3a3a3a;color:#f5f5f5;font-weight:800}
+    .mentor-avatar{width:46px;height:46px;border-radius:999px;display:grid;place-items:center;background:#1f1f1f;border:1px solid #3a3a3a;color:#f5f5f5;font-weight:800;overflow:hidden}
+    .mentor-avatar img{width:100%;height:100%;object-fit:cover;display:block}
     .mentor-name{margin:0;font-size:.98rem}
     .mentor-sub{margin:2px 0 0;color:#a9a9a9;font-size:.82rem}
     .mentor-role{margin:6px 0 0;font-size:.84rem;color:#ddd}
+    .mentor-load{margin:6px 0 0;font-size:.8rem;color:#cfcfcf}
     .mentor-actions{display:flex;gap:8px;align-items:center}
     @media (max-width:760px){
       .mentor-toolbar{grid-template-columns:1fr}
@@ -102,16 +104,16 @@
     const canHumanDm = ['pro','master'].includes(plan);
 
     const humanMentors = [
-      { id:'hm_1', name:'김민준', title:'제품/서비스 MVP 멘토', role:'앱/웹 MVP 구조, 기능 우선순위, 초기 검증 설계', category:'기획' },
-      { id:'hm_2', name:'박서윤', title:'영상 제작 멘토', role:'기획-촬영-편집 워크플로우와 팀 운영 피드백', category:'영상' },
-      { id:'hm_3', name:'이도윤', title:'브랜딩/디자인 멘토', role:'브랜드 메시지, 디자인 방향성, 랜딩 개선', category:'디자인' }
+      { id:'hm_1', name:'김민준', title:'제품/서비스 MVP 멘토', role:'앱/웹 MVP 구조, 기능 우선순위, 초기 검증 설계', category:'기획', activeTeams:5, capacity:10, avatar:'https://i.pravatar.cc/100?img=12' },
+      { id:'hm_2', name:'박서윤', title:'영상 제작 멘토', role:'기획-촬영-편집 워크플로우와 팀 운영 피드백', category:'영상', activeTeams:10, capacity:10, avatar:'https://i.pravatar.cc/100?img=47' },
+      { id:'hm_3', name:'이도윤', title:'브랜딩/디자인 멘토', role:'브랜드 메시지, 디자인 방향성, 랜딩 개선', category:'디자인', activeTeams:3, capacity:8, avatar:'https://i.pravatar.cc/100?img=33' }
     ];
 
     const aiMentors = [
-      { id:'project_assistant', name:'Project Assistant', title:'프로젝트 실행 멘토', role:'실행 계획, 우선순위, 스프린트 정리', category:'기획' },
-      { id:'startup_ai', name:'Startup AI', title:'스타트업 멘토', role:'가설 검증, MVP 범위, 고객 인터뷰 가이드', category:'스타트업' },
-      { id:'film_ai', name:'Film AI', title:'영상 제작 멘토', role:'스토리, 촬영 계획, 편집 피드백', category:'영상' },
-      { id:'design_ai', name:'Design AI', title:'디자인 멘토', role:'와이어프레임, UX 개선, 시안 피드백', category:'디자인' }
+      { id:'project_assistant', name:'Project Assistant', title:'프로젝트 실행 멘토', role:'실행 계획, 우선순위, 스프린트 정리', category:'기획', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=ProjectAssistant' },
+      { id:'startup_ai', name:'Startup AI', title:'스타트업 멘토', role:'가설 검증, MVP 범위, 고객 인터뷰 가이드', category:'스타트업', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=StartupAI' },
+      { id:'film_ai', name:'Film AI', title:'영상 제작 멘토', role:'스토리, 촬영 계획, 편집 피드백', category:'영상', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=FilmAI' },
+      { id:'design_ai', name:'Design AI', title:'디자인 멘토', role:'와이어프레임, UX 개선, 시안 피드백', category:'디자인', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=DesignAI' }
     ];
 
     const tabHuman = document.getElementById('tabHuman');
@@ -155,9 +157,9 @@
       return hitQ && hitCat;
     }
 
-    async function startDm(targetName, targetUserId){
+    async function startDm(targetName, targetUserId, targetAvatar){
       try {
-        const thread = await WETHUS.createDmThread({ targetName, targetUserId });
+        const thread = await WETHUS.createDmThread({ targetName, targetUserId, targetAvatar });
         location.href = `dm.html?threadId=${encodeURIComponent(thread?.id || '')}`;
       } catch (e) {
         mentorMsg.textContent = e?.message || 'DM 연결에 실패했습니다.';
@@ -179,12 +181,14 @@
             <article class="mentor-item">
               <div class="mentor-avatar">${avatar}</div>
               <div>
-                <h3 class="mentor-name">${m.name}</h3>
-                <p class="mentor-sub">${m.title}</p>
+                <h3 class="mentor-name">${m.name} 멘토</h3>
+                <p class="mentor-sub">${m.title} · 자문중 팀 ${m.activeTeams}/${m.capacity}</p>
                 <p class="mentor-role">${m.role}</p>
               </div>
               <div class="mentor-actions">
-                <button class="btn btn--secondary" data-consult-human="${m.id}" type="button">자문 요청하기</button>
+                ${m.activeTeams >= m.capacity
+                  ? `<button class="btn btn--secondary" data-wait-human="${m.id}" type="button">대기 신청</button>`
+                  : `<button class="btn btn--secondary" data-consult-human="${m.id}" type="button">자문 요청하기</button>`}
                 ${canHumanDm ? `<button class="btn btn--primary" data-dm-human="${m.id}" type="button">DM 보내기</button>` : ''}
               </div>
             </article>`;
@@ -206,19 +210,25 @@
       targetEl.querySelectorAll('[data-consult-human]').forEach(btn => {
         btn.addEventListener('click', () => {
           const m = humanMentors.find(x => x.id === btn.getAttribute('data-consult-human'));
-          if (m) startDm(`${m.name} 자문`, `human-mentor:${m.id}`);
+          if (m) startDm(`${m.name} 멘토`, `human-mentor:${m.id}`, `https://i.pravatar.cc/100?u=${encodeURIComponent(m.id)}`);
+        });
+      });
+      targetEl.querySelectorAll('[data-wait-human]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const m = humanMentors.find(x => x.id === btn.getAttribute('data-wait-human'));
+          mentorMsg.textContent = m ? `${m.name} 멘토는 현재 정원 마감입니다. 대기 신청이 접수되었습니다.` : '대기 신청이 접수되었습니다.';
         });
       });
       targetEl.querySelectorAll('[data-dm-human]').forEach(btn => {
         btn.addEventListener('click', () => {
           const m = humanMentors.find(x => x.id === btn.getAttribute('data-dm-human'));
-          if (m) startDm(m.name, `human-mentor:${m.id}`);
+          if (m) startDm(`${m.name} 멘토`, `human-mentor:${m.id}`, `https://i.pravatar.cc/100?u=${encodeURIComponent(m.id)}`);
         });
       });
       targetEl.querySelectorAll('[data-consult-ai]').forEach(btn => {
         btn.addEventListener('click', () => {
           const m = aiMentors.find(x => x.id === btn.getAttribute('data-consult-ai'));
-          if (m) startDm(m.name, `agent:${m.id}`);
+          if (m) startDm(m.name, `agent:${m.id}`, `https://api.dicebear.com/9.x/bottts/svg?seed=${encodeURIComponent(m.id)}`);
         });
       });
     }

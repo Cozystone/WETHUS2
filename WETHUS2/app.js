@@ -896,25 +896,24 @@
     }
   }
 
-  async function createDmThread({ targetUserId, targetName } = {}) {
+  async function createDmThread({ targetUserId, targetName, targetAvatar } = {}) {
     if (!targetUserId && !targetName) throw new Error('대화 상대가 필요합니다.');
     try {
       const data = await dmFetch('/dm/threads', {
         method: 'POST',
-        body: JSON.stringify({ targetUserId, targetName })
+        body: JSON.stringify({ targetUserId, targetName, targetAvatar })
       });
       return data?.thread;
     } catch {
       const s = load();
-      const actor = currentActorId();
       const peerName = targetName || '대화 상대';
       let thread = (s.dmThreads || []).find(t => String(t.targetName || '') === String(peerName));
       if (!thread) {
-        thread = { id: uid(), targetName: peerName, messages: [] };
+        thread = { id: uid(), targetName: peerName, peerAvatar: targetAvatar || '', messages: [] };
         s.dmThreads.unshift(thread);
         save(s);
       }
-      return { id: thread.id, peerName };
+      return { id: thread.id, peerName, peerAvatar: thread.peerAvatar || targetAvatar || '' };
     }
   }
 
