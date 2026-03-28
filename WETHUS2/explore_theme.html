@@ -163,7 +163,7 @@
               <button id="mentorTabHuman" class="mentor-tab active" type="button">Human Mentors</button>
               <button id="mentorTabAi" class="mentor-tab" type="button">AI Mentors</button>
             </div>
-            <button id="modalHelpBtn" class="btn btn--primary" type="button">도움 요청하기</button>
+
           </div>
         </div>
         <div id="modalMentors" class="mentor-stack"></div>
@@ -201,18 +201,6 @@
         <div style="display:flex;justify-content:flex-end;margin-top:10px;">
           <button id="applySubmit" class="btn btn--primary">지원서 제출</button>
         </div>
-      </div>
-    </article>
-  </div>
-
-  <div id="helpModal" class="modal" aria-hidden="true">
-    <div class="modal-backdrop" data-close-help="true"></div>
-    <article class="modal-panel" style="max-width:480px;">
-      <button class="modal-close" id="helpClose" aria-label="닫기">×</button>
-      <div class="modal-content">
-        <h3 style="margin:0 0 6px;">무엇이 도움이 필요하세요?</h3>
-        <p class="meta" style="margin:0;">필요한 도움을 선택하면 가장 적합한 멘토(인간/AI)와 연결해드려요.</p>
-        <div class="help-grid" id="helpOptions"></div>
       </div>
     </article>
   </div>
@@ -570,7 +558,6 @@
     const modalEditBtn = document.getElementById('modalEditBtn');
     const modalDeleteBtn = document.getElementById('modalDeleteBtn');
     const modalApplyBtn = document.getElementById('modalApplyBtn');
-    const modalHelpBtn = document.getElementById('modalHelpBtn');
     const mentorTabHuman = document.getElementById('mentorTabHuman');
     const mentorTabAi = document.getElementById('mentorTabAi');
     const modalCommentPanel = document.getElementById('modalCommentPanel');
@@ -581,9 +568,6 @@
     const modalTeam = document.getElementById('modalTeam');
     const applyModal = document.getElementById('applyModal');
     const applyMotivation = document.getElementById('applyMotivation');
-    const helpModal = document.getElementById('helpModal');
-    const helpClose = document.getElementById('helpClose');
-    const helpOptions = document.getElementById('helpOptions');
     let applyProjectId = null;
     let currentProjectId = null;
 
@@ -804,45 +788,8 @@
       applyModal.setAttribute('aria-hidden', 'false');
     });
 
-    function openHelpModal() {
-      if (!currentProjectId) return;
-      const project = (currentItems || []).find(p => p.id === currentProjectId) || WETHUS.listProjects().find(p => p.id === currentProjectId);
-      if (!project) return;
-      helpOptions.innerHTML = HELP_OPTIONS.map(opt => `<button class="help-opt" data-need="${opt.key}" type="button">${opt.label}</button>`).join('');
-      helpOptions.querySelectorAll('.help-opt').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const need = btn.getAttribute('data-need');
-          const mappedAgent = mapNeedToAgent(project, need);
-          try {
-            const thread = await WETHUS.createDmThread({
-              targetUserId: `agent:${mappedAgent.id}:project:${project.id}`,
-              targetName: `${mappedAgent.name} (${project.title})`
-            });
-            helpModal.classList.remove('open');
-            helpModal.setAttribute('aria-hidden', 'true');
-            location.href = `dm.html?threadId=${encodeURIComponent(thread?.id || '')}`;
-          } catch (err) {
-            await WETHUS.uiAlert(err?.message || '도움 연결에 실패했습니다.', { title: '연결 실패' });
-          }
-        });
-      });
-      helpModal.classList.add('open');
-      helpModal.setAttribute('aria-hidden', 'false');
-    }
-
-    modalHelpBtn?.addEventListener('click', openHelpModal);
     mentorTabHuman?.addEventListener('click', () => renderMentors(mentorProjectRef, 'human'));
     mentorTabAi?.addEventListener('click', () => renderMentors(mentorProjectRef, 'ai'));
-    helpClose?.addEventListener('click', () => {
-      helpModal.classList.remove('open');
-      helpModal.setAttribute('aria-hidden', 'true');
-    });
-    helpModal?.addEventListener('click', (e) => {
-      if (e.target && e.target.getAttribute('data-close-help') === 'true') {
-        helpModal.classList.remove('open');
-        helpModal.setAttribute('aria-hidden', 'true');
-      }
-    });
 
     modalEditBtn?.addEventListener('click', async () => {
       if (!currentProjectId) return;

@@ -142,17 +142,6 @@
   const seedNotifications = [
     {
       id: uid(),
-      type: 'founder_submitted',
-      title: 'Founder 신청이 접수되었습니다',
-      body: '운영자 검토 후 승인 여부가 안내됩니다.',
-      sender: 'WETHUS',
-      href: 'founder.html',
-      unread: true,
-      createdAt: new Date().toISOString(),
-      userId: null
-    },
-    {
-      id: uid(),
       type: 'team_request',
       title: '새 팀 참여 요청이 도착했습니다',
       body: '프로젝트 지원서를 확인해보세요.',
@@ -237,6 +226,7 @@
     if (!Array.isArray(parsed.applications)) parsed.applications = [];
     if (!Array.isArray(parsed.bookmarks)) parsed.bookmarks = [];
     if (!Array.isArray(parsed.notifications)) parsed.notifications = [];
+    parsed.notifications = parsed.notifications.filter(n => !(n?.type === 'founder_submitted' && n?.userId == null));
     if (!parsed.notifications.length) {
       parsed.notifications = seedNotifications.slice();
     }
