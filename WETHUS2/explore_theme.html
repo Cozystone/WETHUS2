@@ -411,10 +411,24 @@
 
     function inTheme(project) {
       const c = (project.category || '').toLowerCase();
-      if (catParam === 'MathSci') return /(math|sci|science|app|research|data)/.test(c) || /(연구|과학|수학|데이터)/.test(project.title || '');
-      if (catParam === 'ArtCulture') return /(film|creative|art|culture)/.test(c) || /(영화|전시|출판|문화|크리에이티브)/.test(project.title || '');
-      if (catParam === 'StartupBusiness') return /(startup|business|app)/.test(c) || /(스타트업|비즈니스|서비스|브랜딩)/.test(project.title || '');
-      if (catParam === 'SocietyLaw') return /(policy|campaign|law|society)/.test(c) || /(정책|사회|캠페인|법)/.test(project.title || '');
+      const t = String(project.title || '').toLowerCase();
+      const s = String(project.summary || '').toLowerCase();
+      const blob = `${t} ${s}`;
+
+      // 카테고리 우선 매핑: category 값이 있으면 가장 먼저 신뢰
+      if (catParam === 'MathSci') {
+        if (/(film|creative|startup|app|policy|campaign)/.test(c)) return false;
+        return /(math|sci|science|research|data)/.test(c) || /(연구|과학|수학|데이터|경진대회)/.test(blob);
+      }
+      if (catParam === 'ArtCulture') {
+        return /(film|creative|art|culture)/.test(c) || /(영화|전시|출판|문화|크리에이티브|예술|영상)/.test(blob);
+      }
+      if (catParam === 'StartupBusiness') {
+        return /(startup|business|app)/.test(c) || /(스타트업|비즈니스|서비스|브랜딩|창업|앱|mvp)/.test(blob);
+      }
+      if (catParam === 'SocietyLaw') {
+        return /(policy|campaign|law|society)/.test(c) || /(정책|사회|캠페인|법|공공|제안)/.test(blob);
+      }
       return true;
     }
 

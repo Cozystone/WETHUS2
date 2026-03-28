@@ -110,11 +110,36 @@
     ];
 
     const aiMentors = [
-      { id:'project_assistant', name:'Project Assistant', title:'프로젝트 실행 멘토', role:'실행 계획, 우선순위, 스프린트 정리', category:'기획', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=ProjectAssistant' },
-      { id:'startup_ai', name:'Startup AI', title:'스타트업 멘토', role:'가설 검증, MVP 범위, 고객 인터뷰 가이드', category:'스타트업', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=StartupAI' },
-      { id:'film_ai', name:'Film AI', title:'영상 제작 멘토', role:'스토리, 촬영 계획, 편집 피드백', category:'영상', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=FilmAI' },
-      { id:'design_ai', name:'Design AI', title:'디자인 멘토', role:'와이어프레임, UX 개선, 시안 피드백', category:'디자인', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=DesignAI' }
+      { id:'project_management_ai', name:'프로젝트 매니지먼트 AI', title:'프로젝트 시작/진행 멘토', role:'처음 프로젝트를 시작할 때 구조 설계와 단계별 진행을 도와줍니다.', category:'공통', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=project_management_ai' },
+      { id:'branding_ai', name:'브랜딩 AI', title:'브랜딩 멘토', role:'브랜드 포지셔닝, 네이밍, 톤앤매너 방향을 제시합니다.', category:'공통', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=branding_ai' },
+      { id:'vision_ai', name:'비전제시 AI', title:'비전 멘토', role:'프로젝트의 목적·장기 목표·핵심 임팩트를 정리합니다.', category:'공통', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=vision_ai' },
+      { id:'developer_ai', name:'개발자 AI', title:'개발 멘토', role:'기술 선택, 구현 우선순위, 아키텍처를 안내합니다.', category:'공통', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=developer_ai' },
+      { id:'marketing_ai', name:'마케팅 AI', title:'마케팅 멘토', role:'타깃 설정, 메시지 전략, 초기 확산 전략을 도와줍니다.', category:'공통', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=marketing_ai' },
+
+      { id:'science_competition_ai', name:'수·과학 경진대회 대비 AI', title:'수·과학 대회 멘토', role:'문제정의, 실험 설계, 발표 준비를 지원합니다.', category:'수학·과학' , avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=science_competition_ai' },
+      { id:'film_production_ai', name:'영화제작 AI', title:'영화 제작 멘토', role:'기획·촬영·편집 파이프라인을 구체화합니다.', category:'영상/예술', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=film_production_ai' },
+      { id:'product_brand_ai', name:'제품브랜드 AI', title:'제품 브랜드 멘토', role:'제품 컨셉과 브랜딩 결합 전략을 제안합니다.', category:'창업/비즈니스', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=product_brand_ai' },
+      { id:'art_exhibition_ai', name:'예술전시 AI', title:'전시 기획 멘토', role:'전시 구조, 스토리라인, 관람 동선을 설계합니다.', category:'영상/예술', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=art_exhibition_ai' },
+      { id:'indie_publishing_ai', name:'독립출판 AI', title:'출판 멘토', role:'기획-편집-디자인-출판 실행 흐름을 지원합니다.', category:'영상/예술', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=indie_publishing_ai' },
+      { id:'video_support_ai', name:'영상제작지원 AI', title:'영상 지원 멘토', role:'촬영/편집 실무 체크리스트와 개선안을 제안합니다.', category:'영상/예술', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=video_support_ai' },
+      { id:'startup_support_ai', name:'창업지원 AI', title:'창업 지원 멘토', role:'사업화 초기 계획과 실행 단계를 정리합니다.', category:'창업/비즈니스', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=startup_support_ai' },
+      { id:'startup_competition_ai', name:'창업대회지원 AI', title:'창업대회 멘토', role:'대회 준비, 발표 구조, 심사 포인트 대응을 돕습니다.', category:'창업/비즈니스', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=startup_competition_ai' },
+      { id:'startup_ai', name:'스타트업 AI', title:'스타트업 멘토', role:'가설 검증, MVP 범위, 고객 인터뷰 가이드를 제공합니다.', category:'창업/비즈니스', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=startup_ai' },
+      { id:'social_service_ai', name:'사회봉사 AI', title:'사회봉사 멘토', role:'봉사 프로젝트 운영과 임팩트 지표 설계를 돕습니다.', category:'사회/정책', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=social_service_ai' },
+      { id:'policy_proposal_ai', name:'정책제안 AI', title:'정책 제안 멘토', role:'정책 제안서 구조와 근거자료 구성을 지원합니다.', category:'사회/정책', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=policy_proposal_ai' },
+      { id:'campaign_ai', name:'캠페인 AI', title:'캠페인 멘토', role:'캠페인 설계, 메시지, 실행 전략을 구체화합니다.', category:'사회/정책', avatar:'https://api.dicebear.com/9.x/bottts/svg?seed=campaign_ai' }
     ];
+
+    aiMentors.forEach(m => {
+      try {
+        WETHUS.ensureAgentProfile({
+          code: m.id,
+          name: m.name,
+          nickname: String(m.name || '').replace(/\s+/g,'').toLowerCase(),
+          bio: `${m.title} · ${m.role}`
+        });
+      } catch (_) {}
+    });
 
     const tabHuman = document.getElementById('tabHuman');
     const tabAi = document.getElementById('tabAi');
@@ -186,12 +211,12 @@
                 <h3 class="mentor-name">${m.name} 멘토</h3>
                 <p class="mentor-sub">${m.title}</p>
                 <p class="mentor-role">${m.role}</p>
-                <p class="mentor-load">자문중 팀 ${m.activeTeams}/${m.capacity} ${isFull ? '· 정원마감(대기가능)' : ''}</p>
+                <p class="mentor-load">자문중인 팀 ${m.activeTeams}/${m.capacity} ${isFull ? '· 정원마감(대기가능)' : ''}</p>
               </div>
               <div class="mentor-actions">
                 ${isFull
-                  ? `<button class="btn btn--secondary" data-wait-human="${m.id}" type="button">대기 신청하기</button>`
-                  : `<button class="btn btn--secondary" data-consult-human="${m.id}" type="button">자문 요청하기</button>`}
+                  ? `<button class="btn btn--primary" data-wait-human="${m.id}" type="button">대기 신청하기</button>`
+                  : `<button class="btn btn--primary" data-consult-human="${m.id}" type="button">자문 요청하기</button>`}
                 ${canHumanDm ? `<button class="btn btn--primary" data-dm-human="${m.id}" type="button">DM 보내기</button>` : ''}
               </div>
             </article>`;
