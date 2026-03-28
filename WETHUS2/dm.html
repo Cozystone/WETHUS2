@@ -53,6 +53,7 @@
   </header>
 
   <main class="container page-main page-main--standard">
+    <div style="margin-top:10px;margin-bottom:8px;"><button id="fromHubBack" class="btn btn--secondary" type="button" style="display:none;">← 프로젝트 허브로 돌아가기</button></div>
     <section class="projects-head-row" style="padding-top:10px;">
       <div>
         <h1 class="page-title" style="margin:0;">DM</h1>
@@ -111,8 +112,15 @@
     const composerWrap = document.getElementById('dmComposerWrap');
     const dmInfo = document.getElementById('dmInfo');
     const dmSearch = document.getElementById('dmSearch');
+    const fromHubBack = document.getElementById('fromHubBack');
+    if (fromHub && fromHubBack) {
+      fromHubBack.style.display = 'inline-flex';
+      fromHubBack.addEventListener('click', () => history.back());
+    }
 
-    const initialThreadId = new URLSearchParams(location.search).get('threadId');
+    const qs = new URLSearchParams(location.search);
+    const initialThreadId = qs.get('threadId');
+    const fromHub = qs.get('fromHub') === '1';
     let currentThreadId = initialThreadId || null;
     let currentThreads = [];
     let isSending = false;

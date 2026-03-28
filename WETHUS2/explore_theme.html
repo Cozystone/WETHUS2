@@ -338,9 +338,13 @@
 
     function renderList(items) {
       listEl.className = 'list-grid';
+      const st = WETHUS.getState();
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
       listEl.innerHTML = items.map((p, i) => {
         const stage = normalizeStage(p.status);
         const item = { ...p, image: imageFor(p, i), status: stage };
+        const mine = !!actor && p.founderId === actor;
+        const label = mine ? '프로젝트로 이동' : (WETHUS.hasApplied(p.id) ? '지원완료' : '지원하기');
         return `
           <article class="list-item" data-project='${JSON.stringify(item).replace(/'/g, "&#39;")}'>
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
@@ -353,7 +357,7 @@
                 <p class="mini-summary" style="margin:0 0 6px;">${p.summary}</p>
                 <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}</div>
               </div>
-              <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>
+              <button class="apply-btn ${mine ? 'mine' : (WETHUS.hasApplied(p.id)?'applied':'')}" data-apply="${p.id}">${label}</button>
             </div>
           </article>
         `;
@@ -363,9 +367,13 @@
     function renderAlbum(items) {
       listEl.className = 'project-cards';
       const fallbackClass = { Film:'card-media--film', App:'card-media--startup', Startup:'card-media--startup', Policy:'card-media--policy', Campaign:'card-media--policy', Creative:'card-media--film' };
+      const st = WETHUS.getState();
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
       listEl.innerHTML = items.map((p, i) => {
         const stage = normalizeStage(p.status);
         const item = { ...p, image: imageFor(p, i), status: stage };
+        const mine = !!actor && p.founderId === actor;
+        const label = mine ? '프로젝트로 이동' : (WETHUS.hasApplied(p.id)?'지원완료':'지원하기');
         return `
           <article class="card" data-project='${JSON.stringify(item).replace(/'/g, "&#39;")}'>
             <div class="card-media ${fallbackClass[p.category] || 'card-media--film'}">
@@ -381,7 +389,7 @@
             <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}</div>
             <div class="card-bottom-row">
               <div class="card-social"><span>${likedSymbol(p)} ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
-              <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>
+              <button class="apply-btn ${mine ? 'mine' : (WETHUS.hasApplied(p.id)?'applied':'')}" data-apply="${p.id}">${label}</button>
             </div>
           </article>
         `;
@@ -410,27 +418,27 @@
       });
     }
 
-    function inTheme(project) {
-      const c = (project.category || '').toLowerCase();
-      const t = String(project.title || '').toLowerCase();
-      const s = String(project.summary || '').toLowerCase();
-      const blob = `${t} ${s}`;
+    function projectThemeKey(project) {
+      const c = String(project.category || '').toLowerCase();
+      const blob = `${String(project.title || '').toLowerCase()} ${String(project.summary || '').toLowerCase()}`;
 
-      // 카테고리 우선 매핑: category 값이 있으면 가장 먼저 신뢰
-      if (catParam === 'MathSci') {
-        if (/(film|creative|startup|app|policy|campaign)/.test(c)) return false;
-        return /(math|sci|science|research|data)/.test(c) || /(연구|과학|수학|데이터|경진대회)/.test(blob);
-      }
-      if (catParam === 'ArtCulture') {
-        return /(film|creative|art|culture)/.test(c) || /(영화|전시|출판|문화|크리에이티브|예술|영상)/.test(blob);
-      }
-      if (catParam === 'StartupBusiness') {
-        return /(startup|business|app)/.test(c) || /(스타트업|비즈니스|서비스|브랜딩|창업|앱|mvp)/.test(blob);
-      }
-      if (catParam === 'SocietyLaw') {
-        return /(policy|campaign|law|society)/.test(c) || /(정책|사회|캠페인|법|공공|제안)/.test(blob);
-      }
-      return true;
+      // 1차: 카테고리 문자열로 단일 매핑
+      if (/(math|sci|science|research|data)/.test(c)) return 'MathSci';
+      if (/(film|creative|art|culture)/.test(c)) return 'ArtCulture';
+      if (/(startup|business|app)/.test(c)) return 'StartupBusiness';
+      if (/(policy|campaign|law|society)/.test(c)) return 'SocietyLaw';
+
+      // 2차: 제목/요약 키워드로 단일 매핑 (우선순위 고정)
+      if (/(연구|과학|수학|데이터|경진대회)/.test(blob)) return 'MathSci';
+      if (/(영화|전시|출판|문화|크리에이티브|예술|영상)/.test(blob)) return 'ArtCulture';
+      if (/(스타트업|비즈니스|서비스|브랜딩|창업|앱|mvp)/.test(blob)) return 'StartupBusiness';
+      if (/(정책|사회|캠페인|법|공공|제안)/.test(blob)) return 'SocietyLaw';
+
+      return 'MathSci'; // 미분류 기본값
+    }
+
+    function inTheme(project) {
+      return projectThemeKey(project) === catParam;
     }
 
     function sourceProjects() {
@@ -668,9 +676,12 @@
       modalLikeCount.textContent = data.likes || 0;
       modalCommentCount.textContent = (data.comments || []).length;
       if (modalApplyBtn) {
+        const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+        const mine = !!actor && data.founderId === actor;
         const applied = WETHUS.hasApplied(data.id);
         modalApplyBtn.classList.toggle('applied', applied);
-        modalApplyBtn.textContent = applied ? '지원완료' : '지원하기';
+        modalApplyBtn.classList.toggle('mine', mine);
+        modalApplyBtn.textContent = mine ? '프로젝트로 이동' : (applied ? '지원완료' : '지원하기');
       }
       if (modalBookmarkBtn) {
         const marked = WETHUS.isBookmarked(data.id);
@@ -718,6 +729,12 @@
           return;
         }
         applyProjectId = applyBtn.dataset.apply;
+        const p = (currentItems || []).find(x => x.id === applyProjectId) || WETHUS.listProjects().find(x => x.id === applyProjectId);
+        const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+        if (p && actor && p.founderId === actor) {
+          location.href = `project-hub.html?projectId=${encodeURIComponent(p.id)}`;
+          return;
+        }
         if (applyBtn.classList.contains('applied')) {
           const ok = await WETHUS.uiConfirm('지원을 취소하겠습니까?', { title: '지원 취소' });
           if (!ok) return;
@@ -788,6 +805,12 @@
       if (!(st.currentUserId || st.devMode)) {
         WETHUS.setAuthReturnState?.({ modalProjectId: currentProjectId });
         location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
+        return;
+      }
+      const p = (currentItems || []).find(x => x.id === currentProjectId) || WETHUS.listProjects().find(x => x.id === currentProjectId);
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+      if (p && actor && p.founderId === actor) {
+        location.href = `project-hub.html?projectId=${encodeURIComponent(p.id)}`;
         return;
       }
       if (WETHUS.hasApplied(currentProjectId)) {
