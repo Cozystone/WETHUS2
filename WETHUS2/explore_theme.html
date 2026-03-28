@@ -39,6 +39,10 @@
       border-color: rgba(255,255,255,.28) !important;
     }
     .mentor-stack { display:grid; gap:8px; margin:8px 0 12px; }
+    .mentor-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:8px 0 6px; }
+    .mentor-tabs { display:flex; gap:6px; }
+    .mentor-tab { padding:5px 10px; border:1px solid #3a3a3a; border-radius:999px; background:#141414; color:#ddd; font-size:.78rem; cursor:pointer; }
+    .mentor-tab.active { background:#f5f5f5; color:#111; border-color:#f5f5f5; }
     .mentor-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid #2c2c2c; border-radius:10px; background:#101010; }
     .mentor-item small { color:#9b9b9b; }
     .agent-pill { display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:999px; background:#1f1f1f; color:#cfcfcf; font-size:.72rem; border:1px solid #333; }
@@ -152,11 +156,19 @@
         <p id="modalSummary" style="margin:0 0 12px;color:#f5f5f5;"></p>
         <p id="modalDesc" style="margin:0 0 18px;color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p>
         <div id="modalTeam" class="team-row" style="margin-bottom:8px;"></div>
-        <h4 style="margin:8px 0 6px;font-size:.92rem;color:#e8e8e8;">Mentors</h4>
+        <div class="mentor-head">
+          <h4 style="margin:0;font-size:.92rem;color:#e8e8e8;">Mentors</h4>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="mentor-tabs">
+              <button id="mentorTabHuman" class="mentor-tab active" type="button">Human Mentors</button>
+              <button id="mentorTabAi" class="mentor-tab" type="button">AI Mentors</button>
+            </div>
+            <button id="modalHelpBtn" class="btn btn--primary" type="button">도움 요청하기</button>
+          </div>
+        </div>
         <div id="modalMentors" class="mentor-stack"></div>
         <div class="meta"><span class="badge" id="modalCategoryBadge"></span> · <span id="modalStatus"></span> · <span id="modalRoles"></span> · <span id="modalDuration"></span></div>
         <div class="modal-social-row">
-          <button id="modalHelpBtn" class="btn btn--primary" type="button">도움 요청하기</button>
           <button id="modalLikeBtn" class="btn btn--secondary">♡ <span id="modalLikeCount">0</span></button>
           <button id="modalCommentBtn" class="btn btn--secondary">💬 <span id="modalCommentCount">0</span></button>
           <button id="modalEditBtn" class="btn btn--secondary" type="button" style="display:none;">수정</button>
@@ -559,6 +571,8 @@
     const modalDeleteBtn = document.getElementById('modalDeleteBtn');
     const modalApplyBtn = document.getElementById('modalApplyBtn');
     const modalHelpBtn = document.getElementById('modalHelpBtn');
+    const mentorTabHuman = document.getElementById('mentorTabHuman');
+    const mentorTabAi = document.getElementById('mentorTabAi');
     const modalCommentPanel = document.getElementById('modalCommentPanel');
     const modalCommentClose = document.getElementById('modalCommentClose');
     const modalComments = document.getElementById('modalComments');
@@ -584,11 +598,26 @@
         aiMembers.map(a => `<span class="member-pill"><span class="member-name">${a.name}</span> <span class="member-role">AI</span></span>`).join('');
     }
 
-    function renderMentors(project) {
-      const list = getProjectMentors(project);
+    let activeMentorTab = 'human';
+    let mentorProjectRef = null;
+
+    function renderMentors(project, tab = activeMentorTab) {
+      mentorProjectRef = project || mentorProjectRef;
+      activeMentorTab = tab;
+      const list = getProjectMentors(mentorProjectRef || {});
       const el = document.getElementById('modalMentors');
       if (!el) return;
-      el.innerHTML = list.map(m => `
+
+      mentorTabHuman?.classList.toggle('active', activeMentorTab === 'human');
+      mentorTabAi?.classList.toggle('active', activeMentorTab === 'ai');
+
+      const filtered = list.filter(m => activeMentorTab === 'human' ? m.type === 'human' : m.type === 'ai');
+      if (!filtered.length) {
+        el.innerHTML = `<article class="mentor-item"><span>ℹ️</span><div><strong style="font-size:.88rem;">${activeMentorTab === 'human' ? '아직 등록된 인간 멘토가 없습니다.' : '기본 AI 멘토가 준비 중입니다.'}</strong></div></article>`;
+        return;
+      }
+
+      el.innerHTML = filtered.map(m => `
         <article class="mentor-item">
           <span>${m.icon}</span>
           <div style="display:grid;gap:2px;">
@@ -632,7 +661,7 @@
       modalDuration.textContent = data.duration || '';
       modalImage.src = data.image || imageFor(data, 0);
       renderTeamMini(data.teamMembers || [], data);
-      renderMentors(data);
+      renderMentors(data, activeMentorTab || 'human');
       currentProjectId = data.id || null;
       if (currentProjectId) WETHUS.setAuthReturnState?.({ modalProjectId: currentProjectId });
       modalLikeBtn.classList.toggle('liked', !!data._liked);
@@ -802,6 +831,8 @@
     }
 
     modalHelpBtn?.addEventListener('click', openHelpModal);
+    mentorTabHuman?.addEventListener('click', () => renderMentors(mentorProjectRef, 'human'));
+    mentorTabAi?.addEventListener('click', () => renderMentors(mentorProjectRef, 'ai'));
     helpClose?.addEventListener('click', () => {
       helpModal.classList.remove('open');
       helpModal.setAttribute('aria-hidden', 'true');
