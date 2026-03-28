@@ -1,21 +1,27 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
   <script>
    window.dataLayer = window.dataLayer || [];
-   function gtag(){dataLayer.push(arguments);}
-   gtag('js', new Date());
-  
-   gtag('config', 'G-PKF58GJC08');
+   function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-PKF58GJC08');
   </script>
-  
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WETHUS | 멘토</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260319-23" />
+  <style>
+    .mentor-tabs{display:flex;gap:8px;margin:8px 0 16px}
+    .mentor-tab{padding:8px 14px;border-radius:999px;border:1px solid #333;background:#151515;color:#d8d8d8;cursor:pointer}
+    .mentor-tab.active{background:#f5f5f5;color:#111;border-color:#f5f5f5;font-weight:700}
+    .mentor-pane{display:none}
+    .mentor-pane.active{display:block}
+    .mentor-card{border:1px solid #2b2b2b;border-radius:12px;padding:12px;background:#121212;margin-bottom:10px}
+    .help-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+    .help-opt{padding:11px 10px;border-radius:10px;border:1px solid #353535;background:#141414;color:#f5f5f5;cursor:pointer}
+    .help-opt:hover{background:#1b1b1b;border-color:#4a4a4a}
+  </style>
 </head>
 <body>
   <header class="nav">
@@ -33,21 +39,35 @@
 
   <main class="container page-main page-main--standard">
     <section class="page-header">
-      <h1 class="page-title">멘토 레이어</h1>
-      <p class="page-sub">팀이 막혔을 때만 요청하는 단기 멘토 지원 레이어입니다.</p>
+      <h1 class="page-title">멘토</h1>
+      <p class="page-sub">사람 멘토와 AI 멘토를 같은 흐름에서 사용합니다.</p>
     </section>
 
-    <section class="list-grid">
-      <article class="list-item">
-        <h3>제품/서비스 MVP 멘토</h3>
-        <p>앱/웹 MVP 구조, 기능 우선순위, 초기 검증 설계</p>
+    <div class="mentor-tabs">
+      <button id="tabHuman" class="mentor-tab active" type="button">Human Mentors</button>
+      <button id="tabAi" class="mentor-tab" type="button">AI Mentors</button>
+    </div>
+
+    <section id="paneHuman" class="mentor-pane active">
+      <article class="mentor-card">
+        <h3 style="margin:0 0 6px;">제품/서비스 MVP 멘토</h3>
+        <p style="margin:0 0 6px;">앱/웹 MVP 구조, 기능 우선순위, 초기 검증 설계</p>
         <div class="meta"><span class="badge">가용</span> · 주 2회</div>
       </article>
-      <article class="list-item">
-        <h3>영상 제작 멘토</h3>
-        <p>기획-촬영-편집 워크플로우와 팀 운영 피드백</p>
+      <article class="mentor-card">
+        <h3 style="margin:0 0 6px;">영상 제작 멘토</h3>
+        <p style="margin:0 0 6px;">기획-촬영-편집 워크플로우와 팀 운영 피드백</p>
         <div class="meta"><span class="badge">가용</span> · 주 1회</div>
       </article>
+    </section>
+
+    <section id="paneAi" class="mentor-pane">
+      <article class="mentor-card">
+        <h3 style="margin:0 0 6px;">AI Mentors</h3>
+        <p style="margin:0;">필요한 도움을 고르면 시스템이 적절한 AI 멘토에 연결합니다.</p>
+        <div class="help-grid" id="helpOptions"></div>
+      </article>
+      <p id="helpMsg" class="form-message"></p>
     </section>
   </main>
 
@@ -60,7 +80,6 @@
     </div>
   </footer>
 
-
   <script src="app.js?v=20260318-58"></script>
   <script>
     WETHUS.requireAuth();
@@ -71,6 +90,44 @@
       authLink.href = '#';
       authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
     }
+
+    const tabHuman = document.getElementById('tabHuman');
+    const tabAi = document.getElementById('tabAi');
+    const paneHuman = document.getElementById('paneHuman');
+    const paneAi = document.getElementById('paneAi');
+
+    function setTab(tab){
+      const ai = tab === 'ai';
+      tabHuman.classList.toggle('active', !ai);
+      tabAi.classList.toggle('active', ai);
+      paneHuman.classList.toggle('active', !ai);
+      paneAi.classList.toggle('active', ai);
+    }
+    tabHuman.addEventListener('click', ()=>setTab('human'));
+    tabAi.addEventListener('click', ()=>setTab('ai'));
+
+    const helpOptions = [
+      { key:'planning', label:'기획 도움', agent:'Project Assistant' },
+      { key:'design', label:'디자인 도움', agent:'Design AI' },
+      { key:'development', label:'개발 도움', agent:'Dev AI' },
+      { key:'research', label:'리서치 도움', agent:'Research AI' },
+      { key:'other', label:'기타', agent:'Startup AI' }
+    ];
+
+    const wrap = document.getElementById('helpOptions');
+    const helpMsg = document.getElementById('helpMsg');
+    wrap.innerHTML = helpOptions.map(opt => `<button class="help-opt" data-agent="${opt.agent}" type="button">${opt.label}</button>`).join('');
+    wrap.querySelectorAll('.help-opt').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const agentName = btn.getAttribute('data-agent') || 'Project Assistant';
+        try {
+          const thread = await WETHUS.createDmThread({ targetUserId: `agent:${agentName.toLowerCase().replace(/\s+/g,'_')}`, targetName: agentName });
+          location.href = `dm.html?threadId=${encodeURIComponent(thread?.id || '')}`;
+        } catch (e) {
+          helpMsg.textContent = e?.message || '도움 요청 연결에 실패했습니다.';
+        }
+      });
+    });
   </script>
 </body>
 </html>
