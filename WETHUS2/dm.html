@@ -32,7 +32,7 @@
     .dm-bubble.other{justify-self:start;background:#232323;color:#f5f5f5;border-bottom-left-radius:4px}
     .dm-meta{font-size:.72rem;color:#8c8c8c;margin-top:4px}
     .dm-compose{padding:12px;border-top:1px solid #232323;display:grid;grid-template-columns:1fr auto;gap:8px}
-    .dm-compose textarea{min-height:52px;max-height:140px;resize:vertical;border-radius:12px;padding:10px;background:#101010;border:1px solid #2a2a2a;color:#fff}
+    .dm-compose textarea{height:44px;min-height:44px;max-height:140px;resize:none;border-radius:12px;padding:10px;background:#101010;border:1px solid #2a2a2a;color:#fff;line-height:1.25;overflow-y:auto}
     .dm-empty{display:grid;place-items:center;color:#8f8f8f}
     @media (max-width: 960px){.dm-shell{grid-template-columns:1fr;min-height:76vh}.dm-left{max-height:220px;border-right:0;border-bottom:1px solid #232323}}
   </style>
@@ -44,6 +44,7 @@
       <nav class="nav-links">
         <a href="explore.html" class="nav-link">탐색</a>
         <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
+        <a href="project-hub.html" class="nav-link">프로젝트 허브</a>
         <a href="mentor.html" class="nav-link">멘토</a>
         <a href="profile.html" class="nav-link">프로필</a>
         <a href="login.html" class="nav-link js-auth-link">로그인</a>
@@ -77,7 +78,7 @@
         </div>
         <div id="dmMessages" class="dm-messages"><div class="dm-empty">왼쪽에서 대화를 선택하세요.</div></div>
         <div id="dmComposerWrap" class="dm-compose" style="display:none;">
-          <textarea id="dmInput" placeholder="메시지를 입력하세요"></textarea>
+          <textarea id="dmInput" rows="1" placeholder="메시지를 입력하세요"></textarea>
           <button id="dmSend" class="btn btn--primary">보내기</button>
         </div>
       </section>
@@ -182,15 +183,30 @@
 
     upgradeBtn.addEventListener('click', () => { WETHUS.setCurrentUserPlan('premium'); applyPlanUi(); });
 
-    document.getElementById('dmSend').addEventListener('click', async () => {
+    const dmInputEl = document.getElementById('dmInput');
+    const dmSendEl = document.getElementById('dmSend');
+
+    dmInputEl.addEventListener('input', () => {
+      dmInputEl.style.height = '44px';
+      dmInputEl.style.height = Math.min(dmInputEl.scrollHeight, 140) + 'px';
+    });
+
+    dmInputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        dmSendEl.click();
+      }
+    });
+
+    dmSendEl.addEventListener('click', async () => {
       if (isSending) return;
-      const input = document.getElementById('dmInput');
-      const text = (input.value || '').trim();
+      const text = (dmInputEl.value || '').trim();
       if (!text || !currentThreadId) return;
       try {
         isSending = true;
         await WETHUS.sendDm(currentThreadId, text);
-        input.value = '';
+        dmInputEl.value = '';
+        dmInputEl.style.height = '44px';
         await refreshThreads();
       } catch (e) {
         dmInfo.textContent = e?.message || '메시지 전송에 실패했습니다.';
