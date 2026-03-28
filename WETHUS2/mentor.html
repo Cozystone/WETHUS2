@@ -79,6 +79,27 @@
     <p id="mentorMsg" class="form-message"></p>
   </main>
 
+  <div id="consultModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-consult="true"></div>
+    <article class="modal-panel" style="max-width:560px;">
+      <button class="modal-close" id="consultClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 id="consultTitle" style="margin:0 0 8px;">멘토 자문 요청</h3>
+        <p class="meta" style="margin:0 0 10px;">어떤 프로젝트에 자문을 요청할지 선택하세요.</p>
+        <label style="display:grid;gap:6px;margin-bottom:10px;">프로젝트 선택
+          <select id="consultProjectSelect" style="background:#101010;border:1px solid #2b2b2b;color:#f5f5f5;padding:10px;border-radius:10px;"></select>
+        </label>
+        <label style="display:grid;gap:6px;">요청 내용(비고)
+          <textarea id="consultNote" style="width:100%;min-height:120px;background:#101010;border:1px solid #2b2b2b;color:#f5f5f5;padding:10px;border-radius:10px;" placeholder="어떤 부분에서 도움이 필요한지 구체적으로 작성해주세요."></textarea>
+        </label>
+        <p class="meta" style="margin:8px 0 0;">요청 내용을 자세히 작성할수록 멘토가 빠르고 정확하게 검토할 가능성이 높습니다.</p>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+          <button id="consultSubmit" class="btn btn--primary" type="button">요청하기</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
   <footer class="footer">
     <div class="container">
       <div class="footer-inner">
@@ -150,9 +171,16 @@
     const mentorSearch = document.getElementById('mentorSearch');
     const mentorCats = document.getElementById('mentorCats');
     const mentorMsg = document.getElementById('mentorMsg');
+    const consultModal = document.getElementById('consultModal');
+    const consultClose = document.getElementById('consultClose');
+    const consultTitle = document.getElementById('consultTitle');
+    const consultProjectSelect = document.getElementById('consultProjectSelect');
+    const consultNote = document.getElementById('consultNote');
+    const consultSubmit = document.getElementById('consultSubmit');
 
     let activeTab = 'human';
     let activeCategory = '전체';
+    let pendingConsultMentor = null;
 
     function setTab(tab){
       activeTab = tab;
@@ -182,13 +210,37 @@
       return hitQ && hitCat;
     }
 
-    async function startDm(targetName, targetUserId, targetAvatar){
+    async function startDm(targetName, targetUserId, targetAvatar, initialMessage = ''){
       try {
         const thread = await WETHUS.createDmThread({ targetName, targetUserId, targetAvatar });
+        if (initialMessage && thread?.id) {
+          try { await WETHUS.sendDm(thread.id, initialMessage); } catch (_) {}
+        }
         location.href = `dm.html?threadId=${encodeURIComponent(thread?.id || '')}`;
       } catch (e) {
         mentorMsg.textContent = e?.message || 'DM 연결에 실패했습니다.';
       }
+    }
+
+    function openConsultModal(mentor) {
+      pendingConsultMentor = mentor;
+      consultTitle.textContent = `${mentor.name} 멘토 자문 요청`;
+      const myProjects = WETHUS.myProjects();
+      if (!myProjects.length) {
+        mentorMsg.textContent = '먼저 내 프로젝트를 1개 이상 만들어야 자문 요청을 보낼 수 있어요.';
+        return;
+      }
+      consultProjectSelect.innerHTML = myProjects.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
+      consultNote.value = '';
+      consultModal.classList.add('open');
+      consultModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeConsultModal() {
+      consultModal.classList.remove('open');
+      consultModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
     }
 
     function renderMentors(){
@@ -247,7 +299,7 @@
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
           const m = humanMentors.find(x => x.id === btn.getAttribute('data-consult-human'));
-          if (m) startDm(`${m.name} 멘토`, `human-mentor:${m.id}`, m.avatar || '');
+          if (m) openConsultModal(m);
         });
       });
       targetEl.querySelectorAll('[data-wait-human]').forEach(btn => {
@@ -275,6 +327,22 @@
     tabHuman.addEventListener('click', ()=>setTab('human'));
     tabAi.addEventListener('click', ()=>setTab('ai'));
     mentorSearch.addEventListener('input', renderMentors);
+
+    consultClose?.addEventListener('click', closeConsultModal);
+    consultModal?.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close-consult') === 'true') closeConsultModal();
+    });
+    consultSubmit?.addEventListener('click', async () => {
+      if (!pendingConsultMentor) return;
+      const projectId = consultProjectSelect.value;
+      const selected = (WETHUS.myProjects() || []).find(p => p.id === projectId);
+      const note = (consultNote.value || '').trim();
+      if (!selected) { mentorMsg.textContent = '프로젝트를 선택해주세요.'; return; }
+      if (note.length < 10) { mentorMsg.textContent = '요청 내용을 조금 더 구체적으로 작성해주세요.'; return; }
+      const intro = `[자문 요청]\n프로젝트: ${selected.title}\n요청 내용: ${note}`;
+      await startDm(`${pendingConsultMentor.name} 멘토`, `human-mentor:${pendingConsultMentor.id}`, pendingConsultMentor.avatar || '', intro);
+      closeConsultModal();
+    });
 
     renderCategories();
     renderMentors();
