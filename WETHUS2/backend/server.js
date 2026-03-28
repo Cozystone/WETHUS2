@@ -97,35 +97,70 @@ function getUserNameById(userId) {
   return user?.nickname || user?.name || user?.email || '사용자';
 }
 
-function buildAgentReply(agentCode, userText = '') {
+const AGENT_SYSTEM_PROMPTS = {
+  project_management_ai: 'You are a senior project management mentor for youth teams. Respond in Korean. Give practical, step-by-step execution guidance with priorities and clear next action.',
+  branding_ai: 'You are a branding mentor. Respond in Korean with clear brand positioning, messaging, and identity guidance.',
+  vision_ai: 'You are a vision mentor. Respond in Korean and help define mission, long-term direction, and measurable milestones.',
+  developer_ai: 'You are a software engineering mentor. Respond in Korean with technical clarity and MVP-first decisions.',
+  marketing_ai: 'You are a growth marketing mentor. Respond in Korean with target, channel, and experiment suggestions.',
+  science_competition_ai: 'You are a science competition mentor. Respond in Korean with hypothesis, method, measurement and presentation advice.',
+  film_production_ai: 'You are a film production mentor. Respond in Korean with planning, shoot, edit, and storytelling guidance.',
+  product_brand_ai: 'You are a product-brand mentor. Respond in Korean with product positioning and brand strategy.',
+  art_exhibition_ai: 'You are an art exhibition mentor. Respond in Korean with curatorial flow and execution details.',
+  indie_publishing_ai: 'You are an indie publishing mentor. Respond in Korean with structure, editing and production advice.',
+  video_support_ai: 'You are a video production support mentor. Respond in Korean with practical production checklists.',
+  startup_support_ai: 'You are a startup execution mentor. Respond in Korean with customer validation and MVP guidance.',
+  startup_competition_ai: 'You are a startup competition mentor. Respond in Korean with pitch strategy and judging criteria alignment.',
+  startup_ai: 'You are a startup mentor. Respond in Korean with concrete experiments and execution steps.',
+  social_service_ai: 'You are a social impact mentor. Respond in Korean with beneficiary focus and impact metrics.',
+  policy_proposal_ai: 'You are a policy proposal mentor. Respond in Korean with evidence-based proposal structure.',
+  campaign_ai: 'You are a campaign mentor. Respond in Korean with message strategy and action design.',
+  thesis_writing_ai: 'You are a mini-thesis writing mentor. Respond in Korean with research structure and academic writing guidance.',
+  student_research_ai: 'You are a student-led research mentor. Respond in Korean with inquiry framing and iterative method advice.',
+  advisor_professor_ai: 'You are an academic advisor mentor. Respond in Korean with supervision-ready summaries and progress framing.',
+  environment_solution_ai: 'You are an environmental problem-solving mentor. Respond in Korean with actionable intervention plans.'
+};
+
+function buildAgentFallbackReply(agentCode, userText = '') {
   const text = String(userText || '').trim();
   const oneLine = (s) => String(s || '').replace(/\s+/g, ' ').trim();
   const core = {
-    project_management_ai: '프로젝트를 1) 목표정의 2) 2주 스프린트 3) 검증지표로 쪼개서 시작하세요.',
-    branding_ai: '브랜드는 문제-대상-약속 한 문장으로 먼저 고정하면 훨씬 선명해집니다.',
-    vision_ai: '비전 문장은 “누구를 위해 어떤 변화를 만들 것인지”로 작성해보세요.',
-    developer_ai: '기술은 확장성보다 검증속도 우선: MVP 핵심 기능 2~3개만 먼저 구현하세요.',
-    marketing_ai: '타깃 1개 세그먼트에 집중하고 첫 50명 반응 데이터를 빠르게 모으세요.',
-    science_competition_ai: '가설-변수-측정지표를 표로 먼저 정리하면 대회형 연구 품질이 크게 올라갑니다.',
-    film_production_ai: '스토리보드와 쇼트리스트를 먼저 잠그고 촬영일정은 씬 단위로 분할하세요.',
-    product_brand_ai: '제품가치와 브랜드 스토리를 같은 메시지 축으로 맞추는 게 핵심입니다.',
-    art_exhibition_ai: '전시는 관람 동선과 메시지 흐름을 먼저 설계한 뒤 작품을 배치하세요.',
-    indie_publishing_ai: '출판은 기획-목차-샘플 챕터 순으로 검증하면 완성도가 안정됩니다.',
-    video_support_ai: '촬영 전에 러닝타임 기준 컷 분량을 먼저 확정하면 편집 효율이 좋아집니다.',
-    startup_support_ai: '문제 인터뷰 10건으로 니즈를 검증하고 MVP 범위를 반으로 줄여보세요.',
-    startup_competition_ai: '대회는 문제정의-솔루션-시장-실행계획-지표 순으로 발표 구조를 고정하세요.',
-    startup_ai: '핵심 가설 1개를 정하고 이번 주에 검증 가능한 실험 1개만 실행하세요.',
-    social_service_ai: '봉사 프로젝트는 수혜자 정의와 임팩트 측정지표를 같이 설계해야 지속됩니다.',
-    policy_proposal_ai: '정책제안은 현황데이터-문제원인-대안-기대효과를 한 세트로 제시해야 설득력이 생깁니다.',
-    campaign_ai: '캠페인은 메시지 1개와 행동유도 CTA 1개를 명확히 잡는 것이 우선입니다.',
-    thesis_writing_ai: '소논문은 연구질문-선행연구-방법-결과-한계 구조를 먼저 템플릿으로 고정하세요.',
-    student_research_ai: '학생주도연구는 자기주도성 근거(질문선정 이유, 실험 반복기록)를 남기는 게 중요합니다.',
-    advisor_professor_ai: '지도교수 커뮤니케이션은 주간 진행요약 5줄 + 다음주 계획 3줄 형식이 가장 효율적입니다.',
-    environment_solution_ai: '환경문제 해결은 원인 분석 후 개입지점을 1개 좁혀 파일럿부터 검증하세요.'
+    project_management_ai: '목표-스프린트-검증지표 순서로 쪼개서 실행해보세요.',
+    branding_ai: '문제-대상-약속을 한 문장으로 먼저 고정해보세요.',
+    vision_ai: '누구를 위해 어떤 변화를 만들지 한 문장 비전으로 정리해보세요.',
+    developer_ai: '확장성보다 MVP 검증 속도를 우선해 핵심 기능부터 구현하세요.',
+    marketing_ai: '타깃 세그먼트 1개와 실험 1개를 먼저 선택해 실행해보세요.',
+    science_competition_ai: '가설-변수-측정지표를 표로 먼저 정리해보세요.',
+    film_production_ai: '스토리보드와 쇼트리스트를 먼저 확정해보세요.',
+    product_brand_ai: '제품 가치와 브랜드 메시지를 같은 축으로 맞춰보세요.',
+    art_exhibition_ai: '관람 동선과 메시지 흐름을 먼저 설계해보세요.',
+    indie_publishing_ai: '기획-목차-샘플 원고 순서로 검증해보세요.',
+    video_support_ai: '러닝타임 기준 컷 분량부터 먼저 고정해보세요.',
+    startup_support_ai: '문제 인터뷰로 니즈를 검증하고 MVP 범위를 줄여보세요.',
+    startup_competition_ai: '문제정의-해결-시장-실행-지표 순으로 발표를 구성해보세요.',
+    startup_ai: '핵심 가설 1개와 검증 실험 1개를 먼저 실행해보세요.',
+    social_service_ai: '수혜자와 임팩트 지표를 함께 정의해보세요.',
+    policy_proposal_ai: '현황-원인-대안-효과 구조로 제안서를 설계해보세요.',
+    campaign_ai: '메시지 1개와 CTA 1개를 명확히 잡아보세요.',
+    thesis_writing_ai: '연구질문-선행연구-방법-결과-한계 템플릿으로 먼저 정리해보세요.',
+    student_research_ai: '질문선정 이유와 반복실험 기록을 중심으로 진행해보세요.',
+    advisor_professor_ai: '주간 요약 5줄과 다음주 계획 3줄로 보고 구조를 맞춰보세요.',
+    environment_solution_ai: '개입지점을 1개로 좁혀 파일럿 실험부터 시작해보세요.'
   };
-  const base = core[agentCode] || '요청 내용을 실행 단위로 쪼개고, 오늘 안에 할 수 있는 1단계를 먼저 정해볼게요.';
+  const base = core[agentCode] || '요청을 실행 단위로 쪼개서 오늘 할 1단계를 먼저 정해볼게요.';
   if (!text) return base;
-  return oneLine(`${base} 지금 질문 기준으로는 "${text.slice(0, 120)}"를 중심으로 다음 행동을 정리해드릴게요.`);
+  return oneLine(`${base} 우선 질문의 핵심인 "${text.slice(0, 100)}"부터 정리해볼게요.`);
+}
+
+async function generateAgentReply(agentCode, userText = '') {
+  const system = AGENT_SYSTEM_PROMPTS[agentCode] || 'You are a helpful specialized project mentor. Respond in Korean with practical steps.';
+  const prompt = `SYSTEM:\n${system}\n\nUSER:\n${String(userText || '').slice(0, 2000)}\n\n답변 형식: 핵심 진단 1~2문장 + 다음 행동 3개 불릿.`;
+  try {
+    const out = await callAi(prompt);
+    return String(out || '').trim() || buildAgentFallbackReply(agentCode, userText);
+  } catch {
+    return buildAgentFallbackReply(agentCode, userText);
+  }
 }
 
 function threadPeer(thread, actorId) {
@@ -252,7 +287,7 @@ app.post('/dm/threads/:threadId/messages', (req, res) => {
   return res.json({ ok: true, message });
 });
 
-app.post('/dm/threads/:threadId/agent-reply', (req, res) => {
+app.post('/dm/threads/:threadId/agent-reply', async (req, res) => {
   const actorId = requireActor(req, res);
   if (!actorId) return;
   const threadId = String(req.params.threadId || '').trim();
@@ -270,7 +305,7 @@ app.post('/dm/threads/:threadId/agent-reply', (req, res) => {
     return res.status(400).json({ ok: false, error: 'not an agent thread' });
   }
   const agentCode = targetId.replace(/^agent:/, '').split(':')[0];
-  const replyText = buildAgentReply(agentCode, userText);
+  const replyText = await generateAgentReply(agentCode, userText);
   const now = new Date().toISOString();
   const message = {
     id: crypto.randomUUID(),
