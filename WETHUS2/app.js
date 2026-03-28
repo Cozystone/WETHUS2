@@ -534,6 +534,48 @@
     return load().projects;
   }
 
+  function ensureHubState(s) {
+    if (!s.projectHubs || typeof s.projectHubs !== 'object') s.projectHubs = {};
+    return s.projectHubs;
+  }
+
+  function getProjectHub(projectId) {
+    const s = load();
+    const hubs = ensureHubState(s);
+    const base = hubs[projectId] || {};
+    return {
+      goal: base.goal || '',
+      weeklyTodos: Array.isArray(base.weeklyTodos) ? base.weeklyTodos : [],
+      recentActivities: Array.isArray(base.recentActivities) ? base.recentActivities : [],
+      blocker: base.blocker || '',
+      tools: Array.isArray(base.tools) ? base.tools : [],
+      teamChat: Array.isArray(base.teamChat) ? base.teamChat : [],
+      progress: Array.isArray(base.progress) ? base.progress : [],
+      materials: Array.isArray(base.materials) ? base.materials : [],
+      updatedAt: base.updatedAt || ''
+    };
+  }
+
+  function upsertProjectHub(projectId, patch = {}) {
+    const s = load();
+    const hubs = ensureHubState(s);
+    const prev = hubs[projectId] || {};
+    hubs[projectId] = {
+      ...prev,
+      ...patch,
+      updatedAt: new Date().toISOString()
+    };
+    save(s);
+    return hubs[projectId];
+  }
+
+  function addHubActivity(projectId, text) {
+    const hub = getProjectHub(projectId);
+    const next = [{ id: uid(), text: String(text || ''), createdAt: new Date().toISOString() }, ...(hub.recentActivities || [])].slice(0, 30);
+    upsertProjectHub(projectId, { recentActivities: next });
+    return next;
+  }
+
   function myProjects() {
     const s = load();
     return s.projects.filter(p => p.founderId === s.currentUserId || (s.devMode && p.founderId === 'dev-temp'));
@@ -1632,6 +1674,9 @@
     addProject,
     listProjects,
     myProjects,
+    getProjectHub,
+    upsertProjectHub,
+    addHubActivity,
     toggleLike,
     isBookmarked,
     toggleBookmark,
