@@ -12,14 +12,18 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260319-23" />
   <style>
-    .hub-header{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start;border:1px solid #2a2a2a;border-radius:14px;background:#111;padding:14px}
+    .hub-shell{margin-top:24px}
+    .hub-list{display:grid;gap:10px}
+    .hub-item{border:1px solid #2a2a2a;border-radius:12px;background:#121212;padding:12px;cursor:pointer}
+    .hub-item:hover{border-color:#3a3a3a;background:#151515}
+    .hub-header{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start;border:1px solid #2a2a2a;border-radius:14px;background:linear-gradient(180deg,#141414,#111);padding:14px}
     .hub-head-left{display:flex;gap:12px;align-items:flex-start}
     .hub-thumb{width:84px;height:84px;border-radius:12px;object-fit:cover;border:1px solid #2f2f2f;background:#1b1b1b}
     .hub-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
     .hub-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
     .hub-tabs{display:flex;gap:8px;margin:14px 0 12px}
-    .hub-tab{padding:8px 12px;border-radius:999px;border:1px solid #333;background:#151515;color:#ddd}
-    .hub-tab.active{background:#f5f5f5;color:#111;border-color:#f5f5f5;font-weight:700}
+    .hub-tab{padding:8px 12px;border-radius:999px;border:1px solid #333;background:#151515;color:#ddd;cursor:pointer}
+    .hub-tab.active{background:#ff8a00;color:#111;border-color:#ff8a00;font-weight:700}
     .hub-grid{display:grid;grid-template-columns:1.55fr .8fr;gap:12px}
     .hub-left{display:grid;gap:10px}
     .hub-card{border:1px solid #2a2a2a;border-radius:12px;background:#121212;padding:12px}
@@ -30,6 +34,7 @@
     .side-stack{display:grid;gap:10px}
     .meta-bullet{margin:0;padding-left:17px;color:#d6d6d6}
     .meta-bullet li{margin:4px 0}
+    .hidden{display:none !important}
     @media (max-width:960px){.hub-grid{grid-template-columns:1fr}.hub-header{grid-template-columns:1fr}.hub-actions{justify-content:flex-start}}
   </style>
 </head>
@@ -48,123 +53,250 @@
     </div>
   </header>
 
-  <main class="container page-main page-main--standard">
-    <section class="hub-header" style="margin-top:24px;">
-      <div class="hub-head-left">
-        <img class="hub-thumb" src="https://picsum.photos/seed/hub-main/240/240" alt="프로젝트 썸네일" />
+  <main class="container page-main page-main--standard hub-shell">
+    <section id="hubListView">
+      <div class="projects-head-row" style="margin-bottom:8px;">
         <div>
-          <h1 class="page-title" style="margin:0;">Retro Workman Revival</h1>
-          <div class="hub-badges">
-            <span class="badge">Startup</span>
-            <span class="badge">기획 중</span>
-            <span class="badge">팀 정렬 완료</span>
-          </div>
-          <p class="page-sub" style="margin-top:8px;">핵심 목표: 레트로 감성 워크맨 복각 MVP 1차 시제품 제작</p>
+          <h1 class="page-title" style="margin:0;">프로젝트 허브</h1>
+          <p class="page-sub" style="margin-top:6px;">레포지토리처럼 프로젝트를 선택해 운영 허브로 들어가세요.</p>
         </div>
       </div>
-      <div class="hub-actions">
-        <button class="btn btn--secondary" type="button">외부 툴 연결</button>
-        <button class="btn btn--secondary" type="button">업데이트 작성</button>
-        <button class="btn btn--primary" type="button">도움 요청</button>
-      </div>
+      <div id="hubProjectList" class="hub-list"></div>
     </section>
 
-    <div class="hub-tabs">
-      <button class="hub-tab active" type="button">개요</button>
-      <button class="hub-tab" type="button">진행</button>
-      <button class="hub-tab" type="button">작업자료</button>
-      <button class="hub-tab" type="button">팀원</button>
-    </div>
-
-    <section class="hub-grid">
-      <div class="hub-left">
-        <article class="hub-card">
-          <h3>현재 목표</h3>
-          <p style="margin:0;color:#e3e3e3;">MVP 핵심 기능 3개 확정 후 2주 스프린트 내 테스트 가능한 프로토타입 배포.</p>
-        </article>
-
-        <article class="hub-card">
-          <h3>이번 주 할 일</h3>
-          <ul class="meta-bullet">
-            <li>타깃 사용자 인터뷰 5건 진행</li>
-            <li>브랜드 메시지 1차 문안 확정</li>
-            <li>기능 우선순위(Must/Should/Could) 재정렬</li>
-          </ul>
-        </article>
-
-        <article class="hub-card">
-          <h3>최근 활동</h3>
-          <ul class="meta-bullet">
-            <li>어제 23:10 · 디자인 시안 v2 업로드</li>
-            <li>어제 21:40 · 팀 역할 분배 업데이트</li>
-            <li>오늘 00:20 · 브랜딩 AI 자문 요청</li>
-          </ul>
-        </article>
-
-        <article class="hub-card hub-wide">
-          <h3>현재 이슈 / 현재 막힌 점</h3>
-          <p style="margin:0;color:#f0c7a8;">초기 타깃 세그먼트 정의가 넓어 사용자 테스트 메시지 일관성이 떨어지고 있음. 이번 주 내 1개 세그먼트로 축소 필요.</p>
-        </article>
-
-        <article class="hub-card">
-          <h3>연결된 도구들</h3>
-          <div class="tool-grid">
-            <article class="tool-card"><strong>Google Docs</strong><p class="meta" style="margin:4px 0 0;">기획 문서 / 인터뷰 노트</p></article>
-            <article class="tool-card"><strong>Google Sheets</strong><p class="meta" style="margin:4px 0 0;">실험 지표 / 일정 관리</p></article>
-            <article class="tool-card"><strong>Notion</strong><p class="meta" style="margin:4px 0 0;">팀 위키 / 회의록</p></article>
-            <article class="tool-card"><strong>Figma</strong><p class="meta" style="margin:4px 0 0;">UI 시안 / 프로토타입</p></article>
+    <section id="hubDetailView" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <button id="hubBackBtn" class="btn btn--secondary" type="button">← 프로젝트 목록으로</button>
+      </div>
+      <section class="hub-header">
+        <div class="hub-head-left">
+          <img id="hubThumb" class="hub-thumb" src="" alt="프로젝트 썸네일" />
+          <div>
+            <h1 id="hubTitle" class="page-title" style="margin:0;"></h1>
+            <div class="hub-badges">
+              <span id="hubCategory" class="badge"></span>
+              <span id="hubStage" class="badge"></span>
+              <span id="hubState" class="badge"></span>
+            </div>
+            <p id="hubSummary" class="page-sub" style="margin-top:8px;"></p>
           </div>
-        </article>
+        </div>
+        <div class="hub-actions">
+          <button id="hubToolBtn" class="btn btn--secondary" type="button">외부 툴 연결</button>
+          <button id="hubUpdateBtn" class="btn btn--secondary" type="button">업데이트 작성</button>
+          <button id="hubMentorBtn" class="btn btn--primary" type="button">멘토링 요청</button>
+        </div>
+      </section>
+
+      <div class="hub-tabs" id="hubTabs">
+        <button class="hub-tab active" data-tab="overview" type="button">개요</button>
+        <button class="hub-tab" data-tab="progress" type="button">진행</button>
+        <button class="hub-tab" data-tab="materials" type="button">작업자료</button>
+        <button class="hub-tab" data-tab="team" type="button">팀원</button>
       </div>
 
-      <aside class="side-stack">
-        <article class="hub-card">
-          <h3>프로젝트 상태</h3>
-          <ul class="meta-bullet">
-            <li>현재 단계: 기획 중</li>
-            <li>최근 활동: 15분 전</li>
-            <li>요약: 목표-역할-리소스 정렬 단계</li>
-          </ul>
-        </article>
-
-        <article class="hub-card">
-          <h3>진행 조언</h3>
-          <ul class="meta-bullet">
-            <li>목표를 이번 주 검증 단위로 축소</li>
-            <li>팀별 산출물 정의를 명확히 고정</li>
-            <li>리스크 1개를 먼저 제거하는 실행</li>
-          </ul>
-        </article>
-
-        <article class="hub-card">
-          <h3>멘토 또는 AI에게 요청하기</h3>
-          <div style="display:grid;gap:8px;">
-            <button class="btn btn--primary" type="button">AI 멘토 요청</button>
-            <button class="btn btn--secondary" type="button">인간 멘토 요청</button>
+      <section class="hub-grid">
+        <div class="hub-left">
+          <div id="tab-overview">
+            <article class="hub-card"><h3>현재 목표</h3><p id="ovGoal" style="margin:0;"></p></article>
+            <article class="hub-card"><h3>이번 주 할 일</h3><ul id="ovTodos" class="meta-bullet"></ul></article>
+            <article class="hub-card"><h3>최근 활동</h3><ul id="ovRecent" class="meta-bullet"></ul></article>
+            <article class="hub-card hub-wide"><h3>현재 이슈 / 현재 막힌 점</h3><p id="ovBlocker" style="margin:0;"></p></article>
+            <article class="hub-card"><h3>연결된 도구들</h3><div id="ovTools" class="tool-grid"></div></article>
           </div>
-        </article>
-      </aside>
+
+          <div id="tab-progress" class="hidden">
+            <article class="hub-card"><h3>진행 로그</h3><ul id="pgLogs" class="meta-bullet"></ul></article>
+            <article class="hub-card"><h3>로컬 프로젝트 매니지먼트 AI 요약</h3><button id="pgAiSummBtn" class="btn btn--secondary" type="button">외부 툴 기반 요약 생성</button><p id="pgAiSummary" style="margin:10px 0 0;"></p></article>
+          </div>
+
+          <div id="tab-materials" class="hidden">
+            <article class="hub-card"><h3>작업자료</h3><ul id="mtList" class="meta-bullet"></ul></article>
+          </div>
+
+          <div id="tab-team" class="hidden">
+            <article class="hub-card"><h3>팀원 구성</h3><div id="tmList" class="list-grid"></div></article>
+            <article class="hub-card"><h3>팀 단톡방</h3><button id="tmChatBtn" class="btn btn--primary" type="button">단톡방 열기</button><p class="meta" style="margin-top:8px;">허브 내 팀 커뮤니케이션용 임시 그룹 채팅입니다.</p></article>
+          </div>
+        </div>
+
+        <aside class="side-stack">
+          <article class="hub-card"><h3>프로젝트 상태</h3><ul id="sdStatus" class="meta-bullet"></ul></article>
+          <article class="hub-card"><h3>진행 조언</h3><ul id="sdAdvice" class="meta-bullet"></ul></article>
+          <article class="hub-card"><h3>멘토 또는 AI에게 요청하기</h3><div style="display:grid;gap:8px;"><button id="sdAiBtn" class="btn btn--primary" type="button">AI 멘토 요청</button><button id="sdHumanBtn" class="btn btn--secondary" type="button">인간 멘토 요청</button></div></article>
+        </aside>
+      </section>
     </section>
   </main>
 
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-inner">
-        <span class="wordmark">WETHUS</span>
-        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:anseokkim@gmail.com">anseokkim@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
-      </div>
-    </div>
-  </footer>
+  <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:560px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 툴 연결</h3><label>Google Docs 링크<input id="toolDocs" /></label><label>Google Sheets 링크<input id="toolSheets" /></label><label>Notion 링크<input id="toolNotion" /></label><label>Figma 링크<input id="toolFigma" /></label><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="toolSaveBtn" class="btn btn--primary" type="button">저장</button></div></div></article></div>
+  <div id="hubUpdateModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-update="true"></div><article class="modal-panel" style="max-width:560px;"><button class="modal-close" id="hubUpdateClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">업데이트 작성</h3><textarea id="hubUpdateInput" style="width:100%;min-height:120px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;"></textarea><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="hubUpdateSubmit" class="btn btn--primary" type="button">등록</button></div></div></article></div>
+  <div id="hubChatModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-chat="true"></div><article class="modal-panel" style="max-width:640px;"><button class="modal-close" id="hubChatClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">팀 단톡방</h3><div id="chatList" class="list-grid" style="max-height:260px;overflow:auto;"></div><div style="display:flex;gap:8px;margin-top:10px;"><input id="chatInput" style="flex:1;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px;" /><button id="chatSend" class="btn btn--primary">보내기</button></div></div></article></div>
+
+  <footer class="footer"><div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:anseokkim@gmail.com">anseokkim@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p></div></div></footer>
 
   <script src="app.js?v=20260318-58"></script>
   <script>
+    WETHUS.requireAuth();
     const authLink = document.querySelector('.js-auth-link');
     const st = WETHUS.getState();
-    if (authLink && (st.currentUserId || st.devMode)) {
-      authLink.textContent = '로그아웃';
-      authLink.href = '#';
-      authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
+    if (authLink && (st.currentUserId || st.devMode)) { authLink.textContent='로그아웃'; authLink.href='#'; authLink.addEventListener('click', (e)=>{e.preventDefault();WETHUS.logout();location.href='login.html';}); }
+
+    const hubListView = document.getElementById('hubListView');
+    const hubDetailView = document.getElementById('hubDetailView');
+    const hubProjectList = document.getElementById('hubProjectList');
+    let currentProject = null;
+    let activeTab='overview';
+
+    function fallbackHub(p){
+      return {
+        goal: p.summary || '현재 목표를 설정하세요.',
+        weeklyTodos: ['핵심 과업 1개 완료', '팀 미팅 1회 진행', '다음 주 목표 수립'],
+        recentActivities: [{text:'허브 생성됨',createdAt:new Date().toISOString()}],
+        blocker: '현재 막힌 점을 등록하면 팀 전체가 빠르게 대응할 수 있어요.',
+        tools: [
+          {name:'Google Docs',url:'',desc:'기획 문서'},
+          {name:'Google Sheets',url:'',desc:'일정/지표'},
+          {name:'Notion',url:'',desc:'팀 위키'},
+          {name:'Figma',url:'',desc:'디자인'}
+        ],
+        progress:[{text:'프로젝트 시작',createdAt:p.createdAt||new Date().toISOString()}],
+        materials:[{name:'요구사항 문서',type:'문서'},{name:'와이어프레임',type:'디자인'}],
+        teamChat:[]
+      };
     }
+
+    function openModal(id){ const el=document.getElementById(id); el.classList.add('open'); el.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; }
+    function closeModal(id){ const el=document.getElementById(id); el.classList.remove('open'); el.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+
+    function renderProjectList(){
+      const list = WETHUS.myProjects();
+      if(!list.length){ hubProjectList.innerHTML='<article class="hub-item"><h3 style="margin:0 0 6px;">프로젝트가 없습니다.</h3><p class="meta" style="margin:0;">먼저 프로젝트를 시작하면 허브를 사용할 수 있어요.</p><div style="margin-top:10px;"><a href="founder.html" class="btn btn--primary">프로젝트 시작하기</a></div></article>'; return; }
+      hubProjectList.innerHTML = list.map(p=>`<article class="hub-item" data-id="${p.id}"><h3 style="margin:0 0 6px;">${p.title}</h3><p class="meta" style="margin:0 0 4px;">${p.category||''} · ${p.status||''}</p><p style="margin:0;color:#d4d4d4;">${p.summary||''}</p></article>`).join('');
+      hubProjectList.querySelectorAll('[data-id]').forEach(el=>el.addEventListener('click',()=>openProject(el.getAttribute('data-id'))));
+    }
+
+    function renderTeamList(team){
+      const el=document.getElementById('tmList');
+      el.innerHTML=(team||[]).map(m=>`<article class="list-item"><h3 style="margin:0 0 4px;">${m.name||'팀원'}</h3><p class="meta" style="margin:0;">${m.role||''}</p></article>`).join('')||'<p class="meta">팀원이 없습니다.</p>';
+    }
+
+    function renderHub(){
+      const p=currentProject; if(!p) return;
+      const hub = Object.assign(fallbackHub(p), WETHUS.getProjectHub(p.id));
+      document.getElementById('hubThumb').src=p.image||'https://picsum.photos/seed/hub-main/240/240';
+      document.getElementById('hubTitle').textContent=p.title||'';
+      document.getElementById('hubCategory').textContent=p.category||'Uncategorized';
+      document.getElementById('hubStage').textContent=p.status||'기획 중';
+      document.getElementById('hubState').textContent='팀 운영중';
+      document.getElementById('hubSummary').textContent=p.summary||'';
+      document.getElementById('ovGoal').textContent=hub.goal;
+      document.getElementById('ovTodos').innerHTML=(hub.weeklyTodos||[]).map(t=>`<li>${t}</li>`).join('')||'<li>이번 주 할 일을 등록하세요.</li>';
+      document.getElementById('ovRecent').innerHTML=(hub.recentActivities||[]).map(a=>`<li>${a.text} · ${new Date(a.createdAt).toLocaleString('ko-KR')}</li>`).join('')||'<li>최근 활동이 없습니다.</li>';
+      document.getElementById('ovBlocker').textContent=hub.blocker;
+      document.getElementById('ovTools').innerHTML=(hub.tools||[]).map(t=>`<article class="tool-card"><strong>${t.name}</strong><p class="meta" style="margin:4px 0 0;">${t.desc||''}</p></article>`).join('');
+      document.getElementById('pgLogs').innerHTML=(hub.progress||[]).map(x=>`<li>${x.text} · ${new Date(x.createdAt||Date.now()).toLocaleString('ko-KR')}</li>`).join('')||'<li>진행 로그 없음</li>';
+      document.getElementById('mtList').innerHTML=(hub.materials||[]).map(x=>`<li>${x.name} (${x.type||'자료'})</li>`).join('')||'<li>자료 없음</li>';
+      renderTeamList(p.teamMembers||[]);
+      document.getElementById('sdStatus').innerHTML=`<li>현재 단계: ${p.status||'기획 중'}</li><li>최근 업데이트: ${(hub.updatedAt?new Date(hub.updatedAt).toLocaleString('ko-KR'):'방금')}</li><li>팀원 수: ${(p.teamMembers||[]).length}명</li>`;
+      document.getElementById('sdAdvice').innerHTML='<li>목표를 이번 주 단위로 쪼개세요.</li><li>막힌 점을 카드에 명시하세요.</li><li>멘토링 요청은 구체적으로 작성하세요.</li>';
+      document.getElementById('toolDocs').value=(hub.tools.find(x=>x.name==='Google Docs')||{}).url||'';
+      document.getElementById('toolSheets').value=(hub.tools.find(x=>x.name==='Google Sheets')||{}).url||'';
+      document.getElementById('toolNotion').value=(hub.tools.find(x=>x.name==='Notion')||{}).url||'';
+      document.getElementById('toolFigma').value=(hub.tools.find(x=>x.name==='Figma')||{}).url||'';
+      renderTab(activeTab);
+    }
+
+    function renderTab(tab){
+      activeTab=tab;
+      document.querySelectorAll('.hub-tab').forEach(b=>b.classList.toggle('active',b.getAttribute('data-tab')===tab));
+      ['overview','progress','materials','team'].forEach(k=>document.getElementById(`tab-${k}`).classList.toggle('hidden',k!==tab));
+    }
+
+    function openProject(id){
+      const p=WETHUS.myProjects().find(x=>x.id===id); if(!p) return;
+      currentProject=p;
+      hubListView.classList.add('hidden');
+      hubDetailView.classList.remove('hidden');
+      history.replaceState({},'',`project-hub.html?projectId=${encodeURIComponent(id)}`);
+      renderHub();
+    }
+
+    function backToList(){
+      currentProject=null;
+      hubDetailView.classList.add('hidden');
+      hubListView.classList.remove('hidden');
+      history.replaceState({},'',`project-hub.html`);
+    }
+
+    document.getElementById('hubBackBtn').addEventListener('click',backToList);
+    document.getElementById('hubMentorBtn').addEventListener('click',()=>location.href='mentor.html');
+    document.getElementById('sdAiBtn').addEventListener('click',()=>location.href='mentor.html');
+    document.getElementById('sdHumanBtn').addEventListener('click',()=>location.href='mentor.html');
+
+    document.getElementById('hubTabs').addEventListener('click',(e)=>{const b=e.target.closest('[data-tab]'); if(!b) return; renderTab(b.getAttribute('data-tab'));});
+
+    document.getElementById('hubToolBtn').addEventListener('click',()=>openModal('hubToolModal'));
+    document.getElementById('hubToolClose').addEventListener('click',()=>closeModal('hubToolModal'));
+    document.querySelector('[data-close-tool]').addEventListener('click',()=>closeModal('hubToolModal'));
+    document.getElementById('toolSaveBtn').addEventListener('click',()=>{
+      if(!currentProject) return;
+      const tools=[
+        {name:'Google Docs',url:document.getElementById('toolDocs').value.trim(),desc:'기획 문서'},
+        {name:'Google Sheets',url:document.getElementById('toolSheets').value.trim(),desc:'일정/지표'},
+        {name:'Notion',url:document.getElementById('toolNotion').value.trim(),desc:'팀 위키'},
+        {name:'Figma',url:document.getElementById('toolFigma').value.trim(),desc:'디자인'}
+      ];
+      WETHUS.upsertProjectHub(currentProject.id,{tools});
+      WETHUS.addHubActivity(currentProject.id,'외부 툴 연결 정보 업데이트');
+      closeModal('hubToolModal'); renderHub();
+    });
+
+    document.getElementById('hubUpdateBtn').addEventListener('click',()=>openModal('hubUpdateModal'));
+    document.getElementById('hubUpdateClose').addEventListener('click',()=>closeModal('hubUpdateModal'));
+    document.querySelector('[data-close-update]').addEventListener('click',()=>closeModal('hubUpdateModal'));
+    document.getElementById('hubUpdateSubmit').addEventListener('click',()=>{
+      const text=document.getElementById('hubUpdateInput').value.trim(); if(!text||!currentProject) return;
+      WETHUS.addHubActivity(currentProject.id,text);
+      const hub=WETHUS.getProjectHub(currentProject.id);
+      const logs=[{text,createdAt:new Date().toISOString()},...(hub.progress||[])].slice(0,40);
+      WETHUS.upsertProjectHub(currentProject.id,{progress:logs});
+      document.getElementById('hubUpdateInput').value='';
+      closeModal('hubUpdateModal'); renderHub();
+    });
+
+    document.getElementById('tmChatBtn').addEventListener('click',()=>{if(!currentProject)return; openModal('hubChatModal'); renderChat();});
+    document.getElementById('hubChatClose').addEventListener('click',()=>closeModal('hubChatModal'));
+    document.querySelector('[data-close-chat]').addEventListener('click',()=>closeModal('hubChatModal'));
+    document.getElementById('chatSend').addEventListener('click',()=>{
+      const v=document.getElementById('chatInput').value.trim(); if(!v||!currentProject) return;
+      const me=WETHUS.currentUser();
+      const hub=WETHUS.getProjectHub(currentProject.id);
+      const next=[...(hub.teamChat||[]),{id:Date.now().toString(),from:me?.nickname||me?.name||'Me',text:v,createdAt:new Date().toISOString()}].slice(-80);
+      WETHUS.upsertProjectHub(currentProject.id,{teamChat:next});
+      document.getElementById('chatInput').value=''; renderChat();
+    });
+
+    function renderChat(){
+      if(!currentProject) return;
+      const hub=WETHUS.getProjectHub(currentProject.id);
+      document.getElementById('chatList').innerHTML=(hub.teamChat||[]).map(m=>`<article class='list-item'><p style='margin:0 0 4px;'><strong>${m.from}</strong> <span class='meta'>${new Date(m.createdAt).toLocaleString('ko-KR')}</span></p><p style='margin:0;'>${m.text}</p></article>`).join('')||'<p class="meta">아직 대화가 없습니다.</p>';
+    }
+
+    document.getElementById('pgAiSummBtn').addEventListener('click', async ()=>{
+      if(!currentProject) return;
+      const hub=WETHUS.getProjectHub(currentProject.id);
+      const prompt=`프로젝트 허브 요약을 만들어줘. 프로젝트명:${currentProject.title}\n목표:${hub.goal}\n할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,5).map(x=>x.text).join(', ')}\n외부툴:${(hub.tools||[]).map(x=>x.name+':'+(x.url?'연결됨':'미연결')).join(', ')}`;
+      let out='';
+      try { out = await WETHUS.askGemini(prompt); } catch { out = 'AI 요약에 실패했습니다. API 설정을 확인해주세요.'; }
+      document.getElementById('pgAiSummary').textContent=out;
+      WETHUS.addHubActivity(currentProject.id,'로컬 PM AI 요약 생성');
+    });
+
+    const params=new URLSearchParams(location.search);
+    const pid=params.get('projectId');
+    renderProjectList();
+    if(pid) openProject(pid);
   </script>
 </body>
 </html>
