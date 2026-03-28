@@ -12,15 +12,28 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260319-23" />
   <style>
-    .mentor-tabs{display:flex;gap:8px;margin:8px 0 16px}
+    .mentor-tabs{display:flex;gap:8px;margin:8px 0 14px}
     .mentor-tab{padding:8px 14px;border-radius:999px;border:1px solid #333;background:#151515;color:#d8d8d8;cursor:pointer}
     .mentor-tab.active{background:#f5f5f5;color:#111;border-color:#f5f5f5;font-weight:700}
+    .mentor-toolbar{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:12px}
+    .mentor-search{background:#101010;border:1px solid #2b2b2b;border-radius:10px;color:#f5f5f5;padding:10px 12px}
+    .mentor-cats{display:flex;gap:6px;flex-wrap:wrap}
+    .mentor-chip{padding:6px 10px;border-radius:999px;border:1px solid #313131;background:#141414;color:#d3d3d3;font-size:.78rem;cursor:pointer}
+    .mentor-chip.active{background:#f5f5f5;color:#111;border-color:#f5f5f5}
     .mentor-pane{display:none}
     .mentor-pane.active{display:block}
-    .mentor-card{border:1px solid #2b2b2b;border-radius:12px;padding:12px;background:#121212;margin-bottom:10px}
-    .help-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
-    .help-opt{padding:11px 10px;border-radius:10px;border:1px solid #353535;background:#141414;color:#f5f5f5;cursor:pointer}
-    .help-opt:hover{background:#1b1b1b;border-color:#4a4a4a}
+    .mentor-list{display:grid;gap:10px}
+    .mentor-item{border:1px solid #2b2b2b;border-radius:12px;padding:12px;background:#121212;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+    .mentor-avatar{width:46px;height:46px;border-radius:999px;display:grid;place-items:center;background:#1f1f1f;border:1px solid #3a3a3a;color:#f5f5f5;font-weight:800}
+    .mentor-name{margin:0;font-size:.98rem}
+    .mentor-sub{margin:2px 0 0;color:#a9a9a9;font-size:.82rem}
+    .mentor-role{margin:6px 0 0;font-size:.84rem;color:#ddd}
+    .mentor-actions{display:flex;gap:8px;align-items:center}
+    @media (max-width:760px){
+      .mentor-toolbar{grid-template-columns:1fr}
+      .mentor-item{grid-template-columns:auto 1fr;}
+      .mentor-actions{grid-column:1 / -1;justify-content:flex-end}
+    }
   </style>
 </head>
 <body>
@@ -40,7 +53,7 @@
   <main class="container page-main page-main--standard">
     <section class="page-header">
       <h1 class="page-title">멘토</h1>
-      <p class="page-sub">사람 멘토와 AI 멘토를 같은 흐름에서 사용합니다.</p>
+      <p class="page-sub">사람 멘토와 AI 멘토를 같은 화면에서 관리합니다.</p>
     </section>
 
     <div class="mentor-tabs">
@@ -48,27 +61,20 @@
       <button id="tabAi" class="mentor-tab" type="button">AI Mentors</button>
     </div>
 
+    <div class="mentor-toolbar">
+      <input id="mentorSearch" class="mentor-search" placeholder="이름, 역할, 멘토 분야 검색" />
+      <div id="mentorCats" class="mentor-cats"></div>
+    </div>
+
     <section id="paneHuman" class="mentor-pane active">
-      <article class="mentor-card">
-        <h3 style="margin:0 0 6px;">제품/서비스 MVP 멘토</h3>
-        <p style="margin:0 0 6px;">앱/웹 MVP 구조, 기능 우선순위, 초기 검증 설계</p>
-        <div class="meta"><span class="badge">가용</span> · 주 2회</div>
-      </article>
-      <article class="mentor-card">
-        <h3 style="margin:0 0 6px;">영상 제작 멘토</h3>
-        <p style="margin:0 0 6px;">기획-촬영-편집 워크플로우와 팀 운영 피드백</p>
-        <div class="meta"><span class="badge">가용</span> · 주 1회</div>
-      </article>
+      <div id="humanList" class="mentor-list"></div>
     </section>
 
     <section id="paneAi" class="mentor-pane">
-      <article class="mentor-card">
-        <h3 style="margin:0 0 6px;">AI Mentors</h3>
-        <p style="margin:0;">필요한 도움을 고르면 시스템이 적절한 AI 멘토에 연결합니다.</p>
-        <div class="help-grid" id="helpOptions"></div>
-      </article>
-      <p id="helpMsg" class="form-message"></p>
+      <div id="aiList" class="mentor-list"></div>
     </section>
+
+    <p id="mentorMsg" class="form-message"></p>
   </main>
 
   <footer class="footer">
@@ -91,43 +97,138 @@
       authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
     }
 
+    const me = WETHUS.currentUser();
+    const plan = String(me?.plan || 'free').toLowerCase();
+    const canHumanDm = ['pro','master'].includes(plan);
+
+    const humanMentors = [
+      { id:'hm_1', name:'김민준', title:'제품/서비스 MVP 멘토', role:'앱/웹 MVP 구조, 기능 우선순위, 초기 검증 설계', category:'기획' },
+      { id:'hm_2', name:'박서윤', title:'영상 제작 멘토', role:'기획-촬영-편집 워크플로우와 팀 운영 피드백', category:'영상' },
+      { id:'hm_3', name:'이도윤', title:'브랜딩/디자인 멘토', role:'브랜드 메시지, 디자인 방향성, 랜딩 개선', category:'디자인' }
+    ];
+
+    const aiMentors = [
+      { id:'project_assistant', name:'Project Assistant', title:'프로젝트 실행 멘토', role:'실행 계획, 우선순위, 스프린트 정리', category:'기획' },
+      { id:'startup_ai', name:'Startup AI', title:'스타트업 멘토', role:'가설 검증, MVP 범위, 고객 인터뷰 가이드', category:'스타트업' },
+      { id:'film_ai', name:'Film AI', title:'영상 제작 멘토', role:'스토리, 촬영 계획, 편집 피드백', category:'영상' },
+      { id:'design_ai', name:'Design AI', title:'디자인 멘토', role:'와이어프레임, UX 개선, 시안 피드백', category:'디자인' }
+    ];
+
     const tabHuman = document.getElementById('tabHuman');
     const tabAi = document.getElementById('tabAi');
     const paneHuman = document.getElementById('paneHuman');
     const paneAi = document.getElementById('paneAi');
+    const humanList = document.getElementById('humanList');
+    const aiList = document.getElementById('aiList');
+    const mentorSearch = document.getElementById('mentorSearch');
+    const mentorCats = document.getElementById('mentorCats');
+    const mentorMsg = document.getElementById('mentorMsg');
+
+    let activeTab = 'human';
+    let activeCategory = '전체';
 
     function setTab(tab){
-      const ai = tab === 'ai';
-      tabHuman.classList.toggle('active', !ai);
-      tabAi.classList.toggle('active', ai);
-      paneHuman.classList.toggle('active', !ai);
-      paneAi.classList.toggle('active', ai);
+      activeTab = tab;
+      tabHuman.classList.toggle('active', tab === 'human');
+      tabAi.classList.toggle('active', tab === 'ai');
+      paneHuman.classList.toggle('active', tab === 'human');
+      paneAi.classList.toggle('active', tab === 'ai');
+      activeCategory = '전체';
+      renderCategories();
+      renderMentors();
     }
+
+    function currentList(){ return activeTab === 'human' ? humanMentors : aiMentors; }
+
+    function renderCategories(){
+      const cats = ['전체', ...Array.from(new Set(currentList().map(x => x.category)))];
+      mentorCats.innerHTML = cats.map(c => `<button class="mentor-chip ${c===activeCategory?'active':''}" data-cat="${c}" type="button">${c}</button>`).join('');
+      mentorCats.querySelectorAll('.mentor-chip').forEach(btn => {
+        btn.addEventListener('click', () => { activeCategory = btn.getAttribute('data-cat') || '전체'; renderCategories(); renderMentors(); });
+      });
+    }
+
+    function matchesFilter(item){
+      const q = mentorSearch.value.trim().toLowerCase();
+      const hitQ = !q || `${item.name} ${item.title} ${item.role} ${item.category}`.toLowerCase().includes(q);
+      const hitCat = activeCategory === '전체' || item.category === activeCategory;
+      return hitQ && hitCat;
+    }
+
+    async function startDm(targetName, targetUserId){
+      try {
+        const thread = await WETHUS.createDmThread({ targetName, targetUserId });
+        location.href = `dm.html?threadId=${encodeURIComponent(thread?.id || '')}`;
+      } catch (e) {
+        mentorMsg.textContent = e?.message || 'DM 연결에 실패했습니다.';
+      }
+    }
+
+    function renderMentors(){
+      const filtered = currentList().filter(matchesFilter);
+      const targetEl = activeTab === 'human' ? humanList : aiList;
+      if (!filtered.length) {
+        targetEl.innerHTML = '<article class="mentor-item"><div class="mentor-avatar">!</div><div><h3 class="mentor-name">조건에 맞는 멘토가 없습니다.</h3></div></article>';
+        return;
+      }
+
+      targetEl.innerHTML = filtered.map(m => {
+        const avatar = (m.name || 'M').trim().charAt(0).toUpperCase();
+        if (activeTab === 'human') {
+          return `
+            <article class="mentor-item">
+              <div class="mentor-avatar">${avatar}</div>
+              <div>
+                <h3 class="mentor-name">${m.name}</h3>
+                <p class="mentor-sub">${m.title}</p>
+                <p class="mentor-role">${m.role}</p>
+              </div>
+              <div class="mentor-actions">
+                <button class="btn btn--secondary" data-consult-human="${m.id}" type="button">자문 요청하기</button>
+                ${canHumanDm ? `<button class="btn btn--primary" data-dm-human="${m.id}" type="button">DM 보내기</button>` : ''}
+              </div>
+            </article>`;
+        }
+        return `
+          <article class="mentor-item">
+            <div class="mentor-avatar">🤖</div>
+            <div>
+              <h3 class="mentor-name">${m.name}</h3>
+              <p class="mentor-sub">${m.title}</p>
+              <p class="mentor-role">${m.role}</p>
+            </div>
+            <div class="mentor-actions">
+              <button class="btn btn--primary" data-consult-ai="${m.id}" type="button">자문 요청하기</button>
+            </div>
+          </article>`;
+      }).join('');
+
+      targetEl.querySelectorAll('[data-consult-human]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const m = humanMentors.find(x => x.id === btn.getAttribute('data-consult-human'));
+          if (m) startDm(`${m.name} 자문`, `human-mentor:${m.id}`);
+        });
+      });
+      targetEl.querySelectorAll('[data-dm-human]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const m = humanMentors.find(x => x.id === btn.getAttribute('data-dm-human'));
+          if (m) startDm(m.name, `human-mentor:${m.id}`);
+        });
+      });
+      targetEl.querySelectorAll('[data-consult-ai]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const m = aiMentors.find(x => x.id === btn.getAttribute('data-consult-ai'));
+          if (m) startDm(m.name, `agent:${m.id}`);
+        });
+      });
+    }
+
     tabHuman.addEventListener('click', ()=>setTab('human'));
     tabAi.addEventListener('click', ()=>setTab('ai'));
+    mentorSearch.addEventListener('input', renderMentors);
 
-    const helpOptions = [
-      { key:'planning', label:'기획 도움', agent:'Project Assistant' },
-      { key:'design', label:'디자인 도움', agent:'Design AI' },
-      { key:'development', label:'개발 도움', agent:'Dev AI' },
-      { key:'research', label:'리서치 도움', agent:'Research AI' },
-      { key:'other', label:'기타', agent:'Startup AI' }
-    ];
-
-    const wrap = document.getElementById('helpOptions');
-    const helpMsg = document.getElementById('helpMsg');
-    wrap.innerHTML = helpOptions.map(opt => `<button class="help-opt" data-agent="${opt.agent}" type="button">${opt.label}</button>`).join('');
-    wrap.querySelectorAll('.help-opt').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const agentName = btn.getAttribute('data-agent') || 'Project Assistant';
-        try {
-          const thread = await WETHUS.createDmThread({ targetUserId: `agent:${agentName.toLowerCase().replace(/\s+/g,'_')}`, targetName: agentName });
-          location.href = `dm.html?threadId=${encodeURIComponent(thread?.id || '')}`;
-        } catch (e) {
-          helpMsg.textContent = e?.message || '도움 요청 연결에 실패했습니다.';
-        }
-      });
-    });
+    renderCategories();
+    renderMentors();
   </script>
 </body>
 </html>
