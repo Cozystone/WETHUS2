@@ -225,6 +225,8 @@
             messages: [{ id: uid(), from: 'WETHUS', text: 'WETHUS에 오신 걸 환영합니다. 최신 공지와 승인은 여기로 안내됩니다.', createdAt: new Date().toISOString() }]
           }
         ],
+        agents: [],
+        agentActivityLogs: [],
         geminiApiKey: DEFAULT_GEMINI_KEY
       };
       localStorage.setItem(KEY, JSON.stringify(init));
@@ -249,6 +251,9 @@
         }
       ];
     }
+
+    if (!Array.isArray(parsed.agents)) parsed.agents = [];
+    if (!Array.isArray(parsed.agentActivityLogs)) parsed.agentActivityLogs = [];
 
     if (!Array.isArray(parsed.projects)) parsed.projects = [];
     const existingTitles = new Set(parsed.projects.map(p => p.title));
@@ -939,6 +944,149 @@
     }
   }
 
+  function listAgents() {
+    const s = load();
+    return (s.agents || []).slice();
+  }
+
+  function ensureAgentProfile(input = {}) {
+    const s = load();
+    s.agents = s.agents || [];
+    s.users = s.users || [];
+
+    const code = String(input.code || input.id || '').trim() || `agent_${Date.now()}`;
+    let agent = s.agents.find(a => a.code === code);
+
+    if (!agent) {
+      const userId = uid();
+      const name = input.name || 'WETHUS Agent';
+      const nickname = input.nickname || String(name).replace(/\s+/g, '').toLowerCase();
+      const user = {
+        id: userId,
+        name,
+        nickname,
+        email: `${code}@agent.wethus.local`,
+        password: '',
+        bio: input.bio || 'WETHUS 프로젝트 실행을 돕는 에이전트입니다.',
+        founderVerified: false,
+        profileImage: input.profileImage || '',
+        plan: 'master',
+        role: 'agent',
+        isAgent: true,
+        age: null,
+        school: '',
+        careerRaw: '',
+        careerSummary: '',
+        onboardingComplete: true,
+        createdAt: new Date().toISOString()
+      };
+      s.users.push(user);
+      agent = {
+        id: uid(),
+        code,
+        userId,
+        name,
+        behavior: input.behavior || {
+          exploreWeight: 0.5,
+          likeWeight: 0.25,
+          commentWeight: 0.2,
+          createProjectWeight: 0.05
+        },
+        maxActionsPerTick: Number(input.maxActionsPerTick || 3),
+        enabled: input.enabled !== false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      s.agents.push(agent);
+      save(s);
+      return agent;
+    }
+
+    agent.name = input.name || agent.name;
+    agent.enabled = input.enabled === undefined ? agent.enabled : !!input.enabled;
+    agent.updatedAt = new Date().toISOString();
+    save(s);
+    return agent;
+  }
+
+  function runAgentTick(agentCode, opts = {}) {
+    const s = load();
+    const agent = (s.agents || []).find(a => a.code === agentCode || a.id === agentCode);
+    if (!agent) throw new Error('에이전트를 찾을 수 없습니다.');
+    if (!agent.enabled) throw new Error('비활성화된 에이전트입니다.');
+
+    const user = s.users.find(u => u.id === agent.userId);
+    if (!user) throw new Error('에이전트 사용자 프로필이 없습니다.');
+
+    const maxActions = Math.max(1, Math.min(10, Number(opts.maxActions || agent.maxActionsPerTick || 3)));
+    const actorBackup = { currentUserId: s.currentUserId, devMode: s.devMode };
+
+    const logs = [];
+    const now = new Date().toISOString();
+    s.currentUserId = user.id;
+    s.devMode = false;
+    save(s);
+
+    const projects = (s.projects || []).slice();
+    const candidate = projects.filter(p => p.founderId !== user.id);
+
+    const randomPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    const commentPool = [
+      '좋은 문제정의네요. 다음 단계 가설 검증 계획이 있으면 더 강해질 것 같아요.',
+      '실행 플랜이 명확해서 인상적입니다. 1주 단위 목표를 나누면 더 좋아요.',
+      '팀 역할이 선명해요. 우선순위 3개만 먼저 고정해보세요.',
+      '아이디어 좋습니다. MVP 범위를 한 번 더 좁히면 속도 낼 수 있어요.'
+    ];
+
+    for (let i = 0; i < maxActions; i++) {
+      const r = Math.random();
+      if (r < 0.45 && candidate.length) {
+        const p = randomPick(candidate);
+        const out = toggleLike(p.id);
+        logs.push({ type: 'like', projectId: p.id, liked: !!out?.liked, createdAt: now });
+        continue;
+      }
+      if (r < 0.85 && candidate.length) {
+        const p = randomPick(candidate);
+        const text = randomPick(commentPool);
+        addComment(p.id, text);
+        logs.push({ type: 'comment', projectId: p.id, text, createdAt: now });
+        continue;
+      }
+
+      const titleSeed = ['실행 로그 공유', '팀 스프린트', '현장 테스트', '문제 재정의'];
+      const t = randomPick(titleSeed);
+      const categorySeed = ['Startup', 'Film', 'Policy', 'App'];
+      const category = randomPick(categorySeed);
+      const project = addProject({
+        title: `[Agent] ${t} 프로젝트 ${Math.floor(Math.random() * 1000)}`,
+        category,
+        summary: '에이전트가 탐색 중 발견한 실행 패턴을 기반으로 만든 실험형 프로젝트입니다.',
+        desc: '초기 가설 수립 → 인터뷰 → 프로토타입 검증 순서로 운영합니다.',
+        status: '기획 중',
+        teamSize: '3인',
+        roles: '기획 1 · 실행 1 · 기록 1',
+        duration: '4주',
+        image: `https://picsum.photos/seed/agent-${Date.now()}/1200/700`
+      });
+      logs.push({ type: 'create_project', projectId: project?.id, title: project?.title, createdAt: now });
+    }
+
+    const latest = load();
+    latest.agentActivityLogs = latest.agentActivityLogs || [];
+    latest.agentActivityLogs.unshift({ id: uid(), agentCode: agent.code, userId: user.id, logs, createdAt: now });
+    latest.agentActivityLogs = latest.agentActivityLogs.slice(0, 400);
+    latest.currentUserId = actorBackup.currentUserId;
+    latest.devMode = actorBackup.devMode;
+    save(latest);
+    return { ok: true, agent: agent.code, actions: logs };
+  }
+
+  function listAgentActivityLogs(limit = 50) {
+    const s = load();
+    return (s.agentActivityLogs || []).slice(0, Math.max(1, Number(limit || 50)));
+  }
+
   function currentActorId() {
     const s = load();
     return s.currentUserId || (s.devMode ? 'dev-temp' : null);
@@ -1506,6 +1654,10 @@
     listDmMessages,
     createDmThread,
     sendDm,
+    listAgents,
+    ensureAgentProfile,
+    runAgentTick,
+    listAgentActivityLogs,
     uiConfirm,
     uiAlert,
     hasApplied,
