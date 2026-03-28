@@ -146,7 +146,7 @@
 
   <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:560px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 툴 연결</h3><p class="meta" style="margin:0 0 10px;">툴 로고를 눌러 MCP/연동 설정 페이지로 이동하세요.</p><div id="toolLogoGrid" class="tool-grid"></div></div></article></div>
   <div id="hubUpdateModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-update="true"></div><article class="modal-panel" style="max-width:560px;"><button class="modal-close" id="hubUpdateClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">업데이트 작성</h3><textarea id="hubUpdateInput" style="width:100%;min-height:120px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;"></textarea><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="hubUpdateSubmit" class="btn btn--primary" type="button">등록</button></div></div></article></div>
-  <div id="hubChatModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-chat="true"></div><article class="modal-panel" style="max-width:640px;"><button class="modal-close" id="hubChatClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">팀 단톡방</h3><div id="chatList" class="list-grid" style="max-height:260px;overflow:auto;"></div><div style="display:flex;gap:8px;margin-top:10px;"><input id="chatInput" style="flex:1;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px;" /><button id="chatSend" class="btn btn--primary">보내기</button></div></div></article></div>
+  <div id="hubChatModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-chat="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubChatClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">팀 단톡방</h3><p class="meta" style="margin:0 0 8px;">프로젝트 지원 AI는 프로젝트 정보/최근 활동/팀 채팅 문맥을 함께 참고합니다.</p><div id="chatList" style="max-height:320px;overflow:auto;display:grid;gap:8px;"></div><div style="display:flex;gap:8px;margin-top:10px;"><input id="chatInput" style="flex:1;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px;" placeholder="메시지를 입력하세요"/><button id="chatSend" class="btn btn--primary">보내기</button><button id="chatAiAsk" class="btn btn--secondary">AI에게 물어보기</button></div></div></article></div>
 
   <footer class="footer"><div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:anseokkim@gmail.com">anseokkim@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p></div></div></footer>
 
@@ -276,19 +276,50 @@
     document.getElementById('tmChatBtn').addEventListener('click',()=>{if(!currentProject)return; openModal('hubChatModal'); renderChat();});
     document.getElementById('hubChatClose').addEventListener('click',()=>closeModal('hubChatModal'));
     document.querySelector('[data-close-chat]').addEventListener('click',()=>closeModal('hubChatModal'));
-    document.getElementById('chatSend').addEventListener('click',()=>{
-      const v=document.getElementById('chatInput').value.trim(); if(!v||!currentProject) return;
+
+    const chatInputEl = document.getElementById('chatInput');
+    const chatSendEl = document.getElementById('chatSend');
+    chatInputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        chatSendEl.click();
+      }
+    });
+
+    chatSendEl.addEventListener('click',()=>{
+      const v=chatInputEl.value.trim(); if(!v||!currentProject) return;
       const me=WETHUS.currentUser();
       const hub=WETHUS.getProjectHub(currentProject.id);
-      const next=[...(hub.teamChat||[]),{id:Date.now().toString(),from:me?.nickname||me?.name||'Me',text:v,createdAt:new Date().toISOString()}].slice(-80);
+      const next=[...(hub.teamChat||[]),{id:Date.now().toString(),from:me?.nickname||me?.name||'Me',kind:'human',text:v,createdAt:new Date().toISOString()}].slice(-120);
       WETHUS.upsertProjectHub(currentProject.id,{teamChat:next});
-      document.getElementById('chatInput').value=''; renderChat();
+      chatInputEl.value=''; renderChat();
+    });
+
+    document.getElementById('chatAiAsk').addEventListener('click', async () => {
+      if (!currentProject) return;
+      const hub = WETHUS.getProjectHub(currentProject.id);
+      const recentChat = (hub.teamChat || []).slice(-12).map(m => `${m.from}: ${m.text}`).join('\n');
+      const prompt = `너는 프로젝트 지원 매니지먼트 AI다. 한국어로 답변하고 매우 실무적으로 제안해라.\n프로젝트:${currentProject.title}\n카테고리:${currentProject.category}\n상태:${currentProject.status}\n목표:${hub.goal}\n이번주 할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,6).map(x=>x.text).join(', ')}\n팀채팅 문맥:\n${recentChat || '없음'}\n\n요청: 지금 팀이 당장 해야 할 다음 행동 3가지를 우선순위대로 제안해줘.`;
+      let out = '';
+      try { out = await WETHUS.askGemini(prompt); } catch { out = 'AI 응답을 가져오지 못했습니다. API 설정을 확인해주세요.'; }
+      const next=[...(hub.teamChat||[]),{id:Date.now().toString(),from:'프로젝트 지원 AI',kind:'ai',text:out,createdAt:new Date().toISOString()}].slice(-120);
+      WETHUS.upsertProjectHub(currentProject.id,{teamChat:next});
+      renderChat();
     });
 
     function renderChat(){
       if(!currentProject) return;
       const hub=WETHUS.getProjectHub(currentProject.id);
-      document.getElementById('chatList').innerHTML=(hub.teamChat||[]).map(m=>`<article class='list-item'><p style='margin:0 0 4px;'><strong>${m.from}</strong> <span class='meta'>${new Date(m.createdAt).toLocaleString('ko-KR')}</span></p><p style='margin:0;'>${m.text}</p></article>`).join('')||'<p class="meta">아직 대화가 없습니다.</p>';
+      const me=WETHUS.currentUser();
+      const meName=me?.nickname||me?.name||'Me';
+      const html=(hub.teamChat||[]).map(m=>{
+        const mine = m.kind === 'human' && m.from === meName;
+        const align = mine ? 'justify-self:end;background:#ff8a00;color:#111;border-bottom-right-radius:4px;' : 'justify-self:start;background:#232323;color:#f5f5f5;border-bottom-left-radius:4px;';
+        return `<article style="max-width:78%;padding:10px 12px;border-radius:14px;line-height:1.45;${align}"><div style="white-space:pre-wrap;">${m.text}</div><div style="font-size:.72rem;color:${mine ? '#3a2a00' : '#9b9b9b'};margin-top:4px;">${m.from} · ${new Date(m.createdAt).toLocaleString('ko-KR')}</div></article>`;
+      }).join('');
+      const listEl=document.getElementById('chatList');
+      listEl.innerHTML=html||'<p class="meta">아직 대화가 없습니다.</p>';
+      listEl.scrollTop=listEl.scrollHeight;
     }
 
     document.getElementById('pgAiSummBtn').addEventListener('click', async ()=>{
