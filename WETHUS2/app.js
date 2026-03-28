@@ -939,6 +939,12 @@
         method: 'POST',
         body: JSON.stringify({ text: String(text || '') })
       });
+      const threads = await listDmThreads();
+      const t = (threads || []).find(x => x.id === threadId);
+      const peerId = String(t?.peerId || t?.targetId || '');
+      if (peerId.startsWith('agent:')) {
+        await requestAgentReply(threadId, text);
+      }
       return listDmMessages(threadId);
     } catch {
       return sendDmLocal(threadId, text);
