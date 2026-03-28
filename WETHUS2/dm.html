@@ -17,9 +17,11 @@
     .dm-search{padding:12px;border-bottom:1px solid #232323}
     .dm-search input{width:100%;background:#171717;border:1px solid #2c2c2c;border-radius:12px;color:#fff;padding:10px 12px}
     .dm-threads{overflow:auto;padding:6px}
-    .dm-thread{padding:10px 12px;border-radius:12px;cursor:pointer;border:1px solid transparent}
+    .dm-thread{padding:10px 12px;border-radius:12px;cursor:pointer;border:1px solid transparent;display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:center}
     .dm-thread:hover{background:#171717}
     .dm-thread.active{background:#1f1f1f;border-color:#343434}
+    .dm-avatar{width:36px;height:36px;border-radius:999px;display:grid;place-items:center;background:#2a2a2a;color:#fff;font-size:.78rem;font-weight:700;border:1px solid #3a3a3a;overflow:hidden}
+    .dm-avatar img{width:100%;height:100%;object-fit:cover;display:block}
     .dm-thread-name{margin:0;font-size:.93rem}
     .dm-thread-last{margin:3px 0 0;color:#9a9a9a;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .dm-main{display:grid;grid-template-rows:auto 1fr auto;background:#141414}
@@ -65,9 +67,12 @@
       </aside>
       <section class="dm-main">
         <div class="dm-head">
-          <div>
-            <h3 id="dmThreadTitle" style="margin:0;font-size:1rem;">대화를 선택하세요</h3>
-            <p id="dmThreadSub" class="meta" style="margin:2px 0 0;">최근 대화를 이어갈 수 있어요.</p>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div id="dmHeadAvatar" class="dm-avatar">DM</div>
+            <div>
+              <h3 id="dmThreadTitle" style="margin:0;font-size:1rem;">대화를 선택하세요</h3>
+              <p id="dmThreadSub" class="meta" style="margin:2px 0 0;">최근 대화를 이어갈 수 있어요.</p>
+            </div>
           </div>
         </div>
         <div id="dmMessages" class="dm-messages"><div class="dm-empty">왼쪽에서 대화를 선택하세요.</div></div>
@@ -99,6 +104,7 @@
     const msgEl = document.getElementById('dmMessages');
     const titleEl = document.getElementById('dmThreadTitle');
     const subEl = document.getElementById('dmThreadSub');
+    const headAvatarEl = document.getElementById('dmHeadAvatar');
     const planDesc = document.getElementById('dmPlanDesc');
     const upgradeBtn = document.getElementById('upgradeBtn');
     const composerWrap = document.getElementById('dmComposerWrap');
@@ -110,6 +116,10 @@
     let currentThreads = [];
 
     function formatTime(ts){ try { return new Date(ts).toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }); } catch { return ''; } }
+    function avatarMarkup(name, avatar) {
+      if (avatar) return `<span class="dm-avatar"><img src="${avatar}" alt="${name||'avatar'}" /></span>`;
+      return `<span class="dm-avatar">${String(name || 'U').trim().slice(0,1).toUpperCase()}</span>`;
+    }
 
     function applyPlanUi() {
       const isPremium = WETHUS.currentPlan() === 'premium';
@@ -123,8 +133,11 @@
       if (!list.length) { threadEl.innerHTML = '<div class="dm-empty" style="height:100%;">대화가 없습니다.</div>'; return; }
       threadEl.innerHTML = list.map(t => `
         <article class="dm-thread ${currentThreadId === t.id ? 'active' : ''}" data-id="${t.id}">
-          <h4 class="dm-thread-name">${t.peerName || t.targetName || '대화 상대'}</h4>
-          <p class="dm-thread-last">${t.lastMessage || '메시지가 없습니다.'}</p>
+          ${avatarMarkup(t.peerName || t.targetName || '대화 상대', t.peerAvatar || t.targetAvatar || '')}
+          <div>
+            <h4 class="dm-thread-name">${t.peerName || t.targetName || '대화 상대'}</h4>
+            <p class="dm-thread-last">${t.lastMessage || '메시지가 없습니다.'}</p>
+          </div>
         </article>
       `).join('');
       threadEl.querySelectorAll('.dm-thread').forEach(el => el.addEventListener('click', async () => {
@@ -139,6 +152,9 @@
       if (!thread) { msgEl.innerHTML = '<div class="dm-empty">대화를 선택하세요.</div>'; return; }
       titleEl.textContent = thread.peerName || thread.targetName || '대화';
       subEl.textContent = `${thread.messageCount || 0}개 메시지`;
+      headAvatarEl.innerHTML = thread.peerAvatar || thread.targetAvatar
+        ? `<img src="${thread.peerAvatar || thread.targetAvatar}" alt="avatar" />`
+        : String(thread.peerName || thread.targetName || 'U').trim().slice(0,1).toUpperCase();
       const msgs = await WETHUS.listDmMessages(thread.id);
       const me = WETHUS.currentUser();
       const myName = me?.nickname || me?.name || WETHUS.getState().currentUserId || '';

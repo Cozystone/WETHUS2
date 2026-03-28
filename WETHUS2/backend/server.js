@@ -98,11 +98,12 @@ function getUserNameById(userId) {
 }
 
 function threadPeer(thread, actorId) {
-  if (!thread) return { peerId: '', peerName: '알 수 없음' };
+  if (!thread) return { peerId: '', peerName: '알 수 없음', peerAvatar: '' };
   const participants = Array.isArray(thread.participants) ? thread.participants : [];
   const peer = participants.find(p => p !== actorId) || thread.targetId || '';
   const peerName = thread.targetName || getUserNameById(peer) || '대화 상대';
-  return { peerId: peer, peerName };
+  const peerAvatar = thread.targetAvatar || '';
+  return { peerId: peer, peerName, peerAvatar };
 }
 
 app.use(cors({
@@ -125,11 +126,12 @@ app.get('/dm/threads', (req, res) => {
     .filter(t => Array.isArray(t.participants) && t.participants.includes(actorId))
     .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
     .map(t => {
-      const { peerId, peerName } = threadPeer(t, actorId);
+      const { peerId, peerName, peerAvatar } = threadPeer(t, actorId);
       return {
         id: t.id,
         peerId,
         peerName,
+        peerAvatar,
         lastMessage: t.lastMessage || '',
         updatedAt: t.updatedAt || t.createdAt,
         unreadCount: 0,
@@ -144,6 +146,7 @@ app.post('/dm/threads', (req, res) => {
   if (!actorId) return;
   const rawTargetUserId = String(req.body?.targetUserId || '').trim();
   const rawTargetName = String(req.body?.targetName || '').trim();
+  const rawTargetAvatar = String(req.body?.targetAvatar || '').trim();
   if (!rawTargetUserId && !rawTargetName) return res.status(400).json({ ok: false, error: 'target required' });
 
   const targetUserId = rawTargetUserId || `alias:${rawTargetName.toLowerCase().replace(/\s+/g, '_')}`;
@@ -163,6 +166,7 @@ app.post('/dm/threads', (req, res) => {
       participants: [actorId, targetUserId],
       targetId: targetUserId,
       targetName,
+      targetAvatar: rawTargetAvatar || '',
       createdAt: now,
       updatedAt: now,
       lastMessage: '',
@@ -172,8 +176,8 @@ app.post('/dm/threads', (req, res) => {
     writeDmThreads(threads);
   }
 
-  const { peerId, peerName } = threadPeer(thread, actorId);
-  return res.json({ ok: true, thread: { id: thread.id, peerId, peerName, messageCount: thread.messages.length } });
+  const { peerId, peerName, peerAvatar } = threadPeer(thread, actorId);
+  return res.json({ ok: true, thread: { id: thread.id, peerId, peerName, peerAvatar, messageCount: thread.messages.length } });
 });
 
 app.get('/dm/threads/:threadId/messages', (req, res) => {
