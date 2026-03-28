@@ -175,19 +175,22 @@
       }
 
       targetEl.innerHTML = filtered.map(m => {
-        const avatar = (m.name || 'M').trim().charAt(0).toUpperCase();
+        const avatarTxt = (m.name || 'M').trim().charAt(0).toUpperCase();
+        const avatarHtml = m.avatar ? `<img src="${m.avatar}" alt="${m.name || 'mentor'}" />` : avatarTxt;
         if (activeTab === 'human') {
+          const isFull = Number(m.activeTeams || 0) >= Number(m.capacity || 0);
           return `
             <article class="mentor-item">
-              <div class="mentor-avatar">${avatar}</div>
+              <div class="mentor-avatar">${avatarHtml}</div>
               <div>
                 <h3 class="mentor-name">${m.name} 멘토</h3>
-                <p class="mentor-sub">${m.title} · 자문중 팀 ${m.activeTeams}/${m.capacity}</p>
+                <p class="mentor-sub">${m.title}</p>
                 <p class="mentor-role">${m.role}</p>
+                <p class="mentor-load">자문중 팀 ${m.activeTeams}/${m.capacity} ${isFull ? '· 정원마감(대기가능)' : ''}</p>
               </div>
               <div class="mentor-actions">
-                ${m.activeTeams >= m.capacity
-                  ? `<button class="btn btn--secondary" data-wait-human="${m.id}" type="button">대기 신청</button>`
+                ${isFull
+                  ? `<button class="btn btn--secondary" data-wait-human="${m.id}" type="button">대기 신청하기</button>`
                   : `<button class="btn btn--secondary" data-consult-human="${m.id}" type="button">자문 요청하기</button>`}
                 ${canHumanDm ? `<button class="btn btn--primary" data-dm-human="${m.id}" type="button">DM 보내기</button>` : ''}
               </div>
@@ -195,7 +198,7 @@
         }
         return `
           <article class="mentor-item">
-            <div class="mentor-avatar">🤖</div>
+            <div class="mentor-avatar">${avatarHtml || '🤖'}</div>
             <div>
               <h3 class="mentor-name">${m.name}</h3>
               <p class="mentor-sub">${m.title}</p>
@@ -210,7 +213,7 @@
       targetEl.querySelectorAll('[data-consult-human]').forEach(btn => {
         btn.addEventListener('click', () => {
           const m = humanMentors.find(x => x.id === btn.getAttribute('data-consult-human'));
-          if (m) startDm(`${m.name} 멘토`, `human-mentor:${m.id}`, `https://i.pravatar.cc/100?u=${encodeURIComponent(m.id)}`);
+          if (m) startDm(`${m.name} 멘토`, `human-mentor:${m.id}`, m.avatar || '');
         });
       });
       targetEl.querySelectorAll('[data-wait-human]').forEach(btn => {
@@ -222,13 +225,13 @@
       targetEl.querySelectorAll('[data-dm-human]').forEach(btn => {
         btn.addEventListener('click', () => {
           const m = humanMentors.find(x => x.id === btn.getAttribute('data-dm-human'));
-          if (m) startDm(`${m.name} 멘토`, `human-mentor:${m.id}`, `https://i.pravatar.cc/100?u=${encodeURIComponent(m.id)}`);
+          if (m) startDm(`${m.name} 멘토`, `human-mentor:${m.id}`, m.avatar || '');
         });
       });
       targetEl.querySelectorAll('[data-consult-ai]').forEach(btn => {
         btn.addEventListener('click', () => {
           const m = aiMentors.find(x => x.id === btn.getAttribute('data-consult-ai'));
-          if (m) startDm(m.name, `agent:${m.id}`, `https://api.dicebear.com/9.x/bottts/svg?seed=${encodeURIComponent(m.id)}`);
+          if (m) startDm(m.name, `agent:${m.id}`, m.avatar || '');
         });
       });
     }
