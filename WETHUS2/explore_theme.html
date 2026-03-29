@@ -714,7 +714,6 @@
       renderTeamMini(data.teamMembers || [], data);
       renderMentors(data, activeMentorTab || 'human');
       currentProjectId = data.id || null;
-      if (currentProjectId) WETHUS.setAuthReturnState?.({ modalProjectId: currentProjectId });
       modalLikeBtn.classList.toggle('liked', !!data._liked);
       modalLikeBtn.innerHTML = (data._liked ? '♥ ' : '♡ ') + '<span id=\"modalLikeCount\">' + (data.likes || 0) + '</span>';
       modalLikeCount.textContent = data.likes || 0;
@@ -967,7 +966,7 @@
         if (rs?.path === location.pathname) {
           if (typeof rs.scrollY === 'number') setTimeout(() => window.scrollTo(0, rs.scrollY), 0);
           if (rs.modalProjectId) {
-            const p = (currentItems || []).find(x => x.id === rs.modalProjectId) || WETHUS.listProjects().find(x => x.id === rs.modalProjectId);
+            const p = (currentItems || []).find(x => x.id === rs.modalProjectId);
             if (p) openModal(p);
           }
           sessionStorage.removeItem('wethus_auth_return_state');
