@@ -505,8 +505,10 @@
           return `<article class="chat-row mine"><div class="chat-bubble mine">${m.text}</div><div class="chat-meta" style="text-align:right;">${t}</div></article>`;
         }
         const isAi = /ai|AI|WETHUS/.test(String(m.from || ''));
-        const initial = isAi ? '🤖' : String(m.from || 'A').slice(0,1).toUpperCase();
-        return `<article class="chat-row other"><div class="chat-avatar">${initial}</div><div><div class="chat-name">${m.from || '팀원'}</div><div class="chat-bubble other">${m.text}</div><div class="chat-meta">${t}</div></div></article>`;
+        const avatarMap = Object.fromEntries((hub.aiMentors || []).map(a => [a.name, a.avatar || '']));
+        const avatar = avatarMap[m.from] || '';
+        const avatarHtml = avatar ? `<img src="${avatar}" alt="${m.from || 'AI'}"/>` : (isAi ? '🤖' : String(m.from || 'A').slice(0,1).toUpperCase());
+        return `<article class="chat-row other"><div class="chat-avatar">${avatarHtml}</div><div><div class="chat-name">${m.from || '팀원'}</div><div class="chat-bubble other">${m.text}</div><div class="chat-meta">${t}</div></div></article>`;
       }).join('');
       const listEl=document.getElementById('chatList');
       listEl.innerHTML=html||'<p class="meta">아직 대화가 없습니다.</p>';
