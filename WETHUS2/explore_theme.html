@@ -349,6 +349,23 @@
         </div>`;
     }
 
+    function openByProjectId(pid) {
+      const p = (currentItems || []).find(x => x.id === pid) || WETHUS.listProjects().find(x => x.id === pid);
+      if (!p) return;
+      const idx = Math.max(0, (currentItems || []).findIndex(x => x.id === pid));
+      openModal({ ...p, image: imageFor(p, idx), status: normalizeStage(p.status) });
+    }
+
+    function bindProjectCardClicks() {
+      listEl.querySelectorAll('[data-project-id]').forEach(el => {
+        el.onclick = (e) => {
+          if (e.target.closest('.apply-btn, .bookmark-btn, .team-toggle, .member-pill')) return;
+          const pid = el.getAttribute('data-project-id');
+          openByProjectId(pid);
+        };
+      });
+    }
+
     function renderList(items) {
       listEl.className = 'list-grid';
       const st = WETHUS.getState();
@@ -375,6 +392,7 @@
           </article>
         `;
       }).join('');
+      bindProjectCardClicks();
     }
 
     function renderAlbum(items) {
@@ -407,6 +425,7 @@
           </article>
         `;
       }).join('');
+      bindProjectCardClicks();
     }
 
     function render(items) {

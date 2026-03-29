@@ -334,7 +334,7 @@
           if (hubProjectId) {
             const hub = WETHUS.getProjectHub(hubProjectId);
             const next = [...(hub.aiMentors || [])];
-            if (!next.some(x => x.id === m.id)) next.push({ id: m.id, name: m.name, addedAt: new Date().toISOString() });
+            if (!next.some(x => x.id === m.id)) next.push({ id: m.id, name: m.name, avatar: m.avatar || '', addedAt: new Date().toISOString() });
             WETHUS.upsertProjectHub(hubProjectId, { aiMentors: next });
           }
           startDm(m.name, `agent:${m.id}`, m.avatar || '');
