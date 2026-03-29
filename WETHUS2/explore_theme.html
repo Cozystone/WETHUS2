@@ -719,6 +719,7 @@
       modalLikeBtn.innerHTML = (data._liked ? '♥ ' : '♡ ') + '<span id=\"modalLikeCount\">' + (data.likes || 0) + '</span>';
       modalLikeCount.textContent = data.likes || 0;
       modalCommentCount.textContent = (data.comments || []).length;
+      const st = WETHUS.getState();
       if (modalApplyBtn) {
         const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
         const mine = !!actor && data.founderId === actor;
@@ -731,7 +732,6 @@
         const marked = WETHUS.isBookmarked(data.id);
         modalBookmarkBtn.classList.toggle('active', !!marked);
       }
-      const st = WETHUS.getState();
       const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
       const mine = !!actor && data.founderId === actor;
       if (modalEditBtn) modalEditBtn.style.display = mine ? 'inline-flex' : 'none';
