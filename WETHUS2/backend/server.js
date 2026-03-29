@@ -469,6 +469,18 @@ app.post('/ai/image-prompt', async (req, res) => {
   }
 });
 
+app.post('/ai/chat', async (req, res) => {
+  try {
+    const prompt = String(req.body?.prompt || '').trim();
+    const systemPrompt = String(req.body?.systemPrompt || '').trim();
+    if (!prompt) return res.status(400).json({ ok: false, error: 'prompt required' });
+    const text = await callAi(prompt, { systemPrompt: systemPrompt || undefined, temperature: 0.65, maxTokens: 520 });
+    return res.json({ ok: true, text });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'ai chat failed' });
+  }
+});
+
 app.post('/pass/start', (req, res) => {
   if (!PASS_ENABLED || !NICE_SITE_CODE || !NICE_SITE_PASSWORD) {
     return res.status(501).json({

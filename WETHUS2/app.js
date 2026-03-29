@@ -921,16 +921,42 @@
     return t.messages;
   }
 
+  function listHubChatThreadsLocal() {
+    const s = load();
+    const actor = currentActorId();
+    return (s.projects || [])
+      .filter(p => p.founderId === actor)
+      .map(p => {
+        const hub = getProjectHub(p.id);
+        const last = (hub.teamChat || []).slice(-1)[0];
+        return {
+          id: `hubchat:${p.id}`,
+          peerId: `hubchat:${p.id}`,
+          peerName: `[팀채팅] ${p.title}`,
+          lastMessage: last?.text || '아직 대화가 없습니다.',
+          updatedAt: last?.createdAt || p.createdAt,
+          messageCount: (hub.teamChat || []).length
+        };
+      });
+  }
+
   async function listDmThreads() {
+    let base = [];
     try {
       const data = await dmFetch('/dm/threads');
-      return data?.threads || [];
+      base = data?.threads || [];
     } catch {
-      return listDmThreadsLocal();
+      base = listDmThreadsLocal();
     }
+    return [...listHubChatThreadsLocal(), ...base];
   }
 
   async function listDmMessages(threadId) {
+    if (String(threadId || '').startsWith('hubchat:')) {
+      const projectId = String(threadId).replace('hubchat:', '');
+      const hub = getProjectHub(projectId);
+      return (hub.teamChat || []).map(m => ({ id: m.id, from: m.from, fromId: m.kind === 'human' ? currentActorId() : 'project-ai', text: m.text, createdAt: m.createdAt }));
+    }
     try {
       const data = await dmFetch(`/dm/threads/${encodeURIComponent(threadId)}/messages`);
       return data?.messages || [];
@@ -977,6 +1003,16 @@
     const u = s.users.find(x => x.id === s.currentUserId);
     const plan = (u?.plan || 'free').toLowerCase();
     if (plan === 'free') throw new Error('Free 플랜은 DM 수신만 가능합니다.');
+
+    if (String(threadId || '').startsWith('hubchat:')) {
+      const projectId = String(threadId).replace('hubchat:', '');
+      const hub = getProjectHub(projectId);
+      const me = currentUser();
+      const next = [...(hub.teamChat || []), { id: uid(), from: me?.nickname || me?.name || 'Me', kind: 'human', text: String(text || ''), createdAt: new Date().toISOString() }].slice(-120);
+      upsertProjectHub(projectId, { teamChat: next });
+      return listDmMessages(threadId);
+    }
+
     try {
       await dmFetch(`/dm/threads/${encodeURIComponent(threadId)}/messages`, {
         method: 'POST',
@@ -1309,6 +1345,29 @@
   }
 
   async function askGemini(prompt) {
+    const p = String(prompt || '').trim();
+    if (!p) throw new Error('프롬프트가 비어 있습니다.');
+
+    // 1) backend proxy 우선 (브라우저 API 키 403 회피)
+    const baseCandidates = dmApiBases();
+    let backendErr = null;
+    for (const base of baseCandidates) {
+      try {
+        const res = await fetch(`${base}/ai/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: p })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data?.ok) throw new Error(data?.error || `ai/chat failed (${res.status})`);
+        if (!data?.text) throw new Error('ai/chat empty');
+        return data.text;
+      } catch (e) {
+        backendErr = e;
+      }
+    }
+
+    // 2) fallback: 직접 Gemini 호출
     const apiKey = getGeminiApiKey();
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
@@ -1321,16 +1380,14 @@
           headers: { 'Content-Type': 'application/json' },
           signal: controller.signal,
           body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            contents: [{ role: 'user', parts: [{ text: p }] }],
             generationConfig: { temperature: 0.3, maxOutputTokens: 320 }
           })
         });
-
         if (!res.ok) {
           const t = await res.text();
           throw new Error(`Gemini 호출 실패: ${t.slice(0, 180)}`);
         }
-
         const data = await res.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
         if (!text) throw new Error('응답이 비어 있습니다.');
@@ -1340,7 +1397,7 @@
       }
     }
 
-    let lastErr;
+    let lastErr = backendErr;
     const delays = [0, 500, 1200];
     for (let i = 0; i < delays.length; i++) {
       try {
