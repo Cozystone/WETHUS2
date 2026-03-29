@@ -295,14 +295,46 @@
       chatInputEl.value=''; renderChat();
     });
 
+    function routeProjectAssistant(hub, currentProject) {
+      const textBlob = [
+        ...(hub.weeklyTodos || []),
+        ...(hub.recentActivities || []).map(x => x.text),
+        ...(hub.teamChat || []).slice(-8).map(x => x.text),
+        currentProject?.title || '',
+        currentProject?.summary || ''
+      ].join(' ').toLowerCase();
+
+      const rules = [
+        { key: '개발자 AI', test: /(api|버그|오류|서버|프론트|백엔드|개발|코드|db|배포|성능|리팩터)/ },
+        { key: '브랜딩 AI', test: /(브랜딩|브랜드|톤앤매너|네이밍|로고|포지셔닝|메시지)/ },
+        { key: '마케팅 AI', test: /(마케팅|유입|채널|광고|캠페인|sns|전환|리텐션)/ },
+        { key: '정책제안 AI', test: /(정책|법|제안|공공|사회문제|제도)/ },
+        { key: '영상제작지원 AI', test: /(영상|촬영|편집|스토리보드|영화)/ },
+        { key: '프로젝트 매니지먼트 AI', test: /.*/ }
+      ];
+      const picked = rules.find(r => r.test.test(textBlob)) || rules[rules.length - 1];
+
+      const systemByAgent = {
+        '개발자 AI': '너는 개발자 AI다. 한국어로, 문제 원인 진단 + 구현 우선순위 + 즉시 실행 액션을 제시한다.',
+        '브랜딩 AI': '너는 브랜딩 AI다. 한국어로, 브랜드 메시지/정체성/실행안을 실무적으로 제시한다.',
+        '마케팅 AI': '너는 마케팅 AI다. 한국어로, 타깃/채널/실험 설계를 액션 중심으로 제시한다.',
+        '정책제안 AI': '너는 정책제안 AI다. 한국어로, 근거-대안-효과 구조로 제시한다.',
+        '영상제작지원 AI': '너는 영상제작지원 AI다. 한국어로, 제작 공정과 우선순위를 제시한다.',
+        '프로젝트 매니지먼트 AI': '너는 프로젝트 매니지먼트 AI다. 한국어로, 현재 목표와 실행 순서를 명확하게 제시한다.'
+      };
+
+      return { agentName: picked.key, system: systemByAgent[picked.key] };
+    }
+
     document.getElementById('chatAiAsk').addEventListener('click', async () => {
       if (!currentProject) return;
       const hub = WETHUS.getProjectHub(currentProject.id);
+      const routed = routeProjectAssistant(hub, currentProject);
       const recentChat = (hub.teamChat || []).slice(-12).map(m => `${m.from}: ${m.text}`).join('\n');
-      const prompt = `너는 프로젝트 지원 매니지먼트 AI다. 한국어로 답변하고 매우 실무적으로 제안해라.\n프로젝트:${currentProject.title}\n카테고리:${currentProject.category}\n상태:${currentProject.status}\n목표:${hub.goal}\n이번주 할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,6).map(x=>x.text).join(', ')}\n팀채팅 문맥:\n${recentChat || '없음'}\n\n요청: 지금 팀이 당장 해야 할 다음 행동 3가지를 우선순위대로 제안해줘.`;
+      const prompt = `${routed.system}\n\n컨텍스트\n프로젝트:${currentProject.title}\n카테고리:${currentProject.category}\n상태:${currentProject.status}\n목표:${hub.goal}\n이번주 할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,6).map(x=>x.text).join(', ')}\n팀채팅 문맥:\n${recentChat || '없음'}\n\n요청: 지금 팀이 당장 해야 할 다음 행동 3가지를 우선순위대로 제안해줘. 필요하면 짧은 리스크 1개도 포함.`;
       let out = '';
       try { out = await WETHUS.askGemini(prompt); } catch { out = 'AI 응답을 가져오지 못했습니다. API 설정을 확인해주세요.'; }
-      const next=[...(hub.teamChat||[]),{id:Date.now().toString(),from:'프로젝트 지원 AI',kind:'ai',text:out,createdAt:new Date().toISOString()}].slice(-120);
+      const next=[...(hub.teamChat||[]),{id:Date.now().toString(),from:routed.agentName,kind:'ai',text:out,createdAt:new Date().toISOString()}].slice(-120);
       WETHUS.upsertProjectHub(currentProject.id,{teamChat:next});
       renderChat();
     });
