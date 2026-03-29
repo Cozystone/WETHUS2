@@ -41,6 +41,20 @@
     },
     {
       id: uid(),
+      title: '청소년 과학 탐구 데이터 분석 팀',
+      category: 'Science',
+      summary: '실험 데이터 수집/분석으로 과학 탐구 보고서 완성.',
+      desc: '탐구 주제 선정, 변수 통제, 데이터 분석, 시각화까지 5주 스프린트로 운영합니다. 연구 설계와 발표 문서화를 동시에 진행합니다.',
+      status: '기획 중',
+      teamSize: '3인',
+      roles: '실험 1 · 데이터 1 · 문서 1',
+      duration: '5주',
+      image: 'https://picsum.photos/seed/wethus-science/1200/700',
+      founderId: 'system',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: uid(),
       title: '청소년 교통비 정책 제안 프로젝트',
       category: 'Policy',
       summary: '데이터 리서치 기반 정책 제안서와 발표 자료 제작.',
@@ -160,6 +174,29 @@
     if (s === '진행중') return '진행 중';
     if (s === '피보팅') return '피보팅';
     return '기획 중';
+  }
+
+  function normalizeCategory(category, title = '', summary = '') {
+    const raw = String(category || '').trim();
+    const c = raw.toLowerCase();
+    const blob = `${String(title || '').toLowerCase()} ${String(summary || '').toLowerCase()}`;
+
+    if (/^(startup|스타트업|창업|business|비즈니스|app|앱)$/i.test(raw)) return 'Startup';
+    if (/^(film|영상|영화|creative|크리에이티브|art|예술|culture|문화|전시|출판)$/i.test(raw)) return 'Film';
+    if (/^(policy|정책|campaign|캠페인|law|법|society|사회)$/i.test(raw)) return 'Policy';
+    if (/^(math|sci|science|research|data|수학|과학|연구|데이터)$/i.test(raw)) return 'Science';
+
+    if (/(스타트업|창업|비즈니스|app|앱|mvp|startup|business)/.test(c)) return 'Startup';
+    if (/(film|creative|art|culture|영화|영상|전시|출판|예술|문화)/.test(c)) return 'Film';
+    if (/(policy|campaign|law|society|정책|캠페인|법|사회)/.test(c)) return 'Policy';
+    if (/(math|sci|science|research|data|수학|과학|연구|데이터|경진대회)/.test(c)) return 'Science';
+
+    if (/(스타트업|창업|비즈니스|app|앱|mvp|startup|business)/.test(blob)) return 'Startup';
+    if (/(영화|영상|전시|출판|예술|문화|film|creative|art|culture)/.test(blob)) return 'Film';
+    if (/(정책|캠페인|법|사회|policy|campaign|law|society)/.test(blob)) return 'Policy';
+    if (/(수학|과학|연구|데이터|경진대회|math|sci|science|research|data)/.test(blob)) return 'Science';
+
+    return 'Startup';
   }
 
   function addDays(dateStr, days) {
@@ -305,6 +342,11 @@
       const normalized = normalizeStatus(next.status);
       if (normalized !== next.status) {
         next.status = normalized;
+        changed = true;
+      }
+      const normalizedCategory = normalizeCategory(next.category, next.title, next.summary);
+      if (normalizedCategory !== next.category) {
+        next.category = normalizedCategory;
         changed = true;
       }
       if (!next.status) {
