@@ -20,10 +20,10 @@
     .hub-head-left{display:flex;gap:12px;align-items:flex-start}
     .hub-thumb{width:84px;height:84px;border-radius:12px;object-fit:cover;border:1px solid #2f2f2f;background:#1b1b1b}
     .hub-top-team{display:flex;gap:8px;flex-wrap:wrap}
-    .hub-team-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid #303030;background:#151515}
+    .hub-team-pill{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;border:1px solid #303030;background:#151515}
     .hub-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
     .hub-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-    .hub-tabs-wrap{display:grid;grid-template-columns:1fr 300px;gap:10px;align-items:stretch;margin:14px 0 12px}
+    .hub-tabs-wrap{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:10px;align-items:stretch;margin:14px 0 12px}
     .hub-tabs{display:flex;gap:8px;align-items:center}
     .hub-tab{padding:8px 12px;border-radius:999px;border:1px solid #333;background:#151515;color:#ddd;cursor:pointer}
     .hub-tab.active{background:#ff8a00;color:#111;border-color:#ff8a00;font-weight:700}
@@ -181,6 +181,18 @@
     let currentProject = null;
     let activeTab='overview';
 
+    function hubPersistKey() {
+      const st = WETHUS.getState();
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : 'guest');
+      return `wethus.hub.selected.${actor}`;
+    }
+    function setPersistedProject(id) {
+      try { localStorage.setItem(hubPersistKey(), String(id || '')); } catch (_) {}
+    }
+    function getPersistedProject() {
+      try { return localStorage.getItem(hubPersistKey()) || ''; } catch { return ''; }
+    }
+
     function fallbackHub(p){
       return {
         goal: p.summary || '현재 목표를 설정하세요.',
@@ -313,6 +325,7 @@
       hubListView.classList.add('hidden');
       hubDetailView.classList.remove('hidden');
       history.replaceState({},'',`project-hub.html?projectId=${encodeURIComponent(id)}`);
+      setPersistedProject(id);
       await renderHub();
       refreshHubInsights('project-open');
     }
@@ -510,7 +523,7 @@
     });
 
     const params=new URLSearchParams(location.search);
-    const pid=params.get('projectId');
+    const pid=params.get('projectId') || getPersistedProject();
     renderProjectList();
     if(pid) openProject(pid);
   </script>
