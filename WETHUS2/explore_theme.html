@@ -39,6 +39,18 @@
       border-color: rgba(255,255,255,.28) !important;
     }
     #list.list-grid, #list.project-cards { min-height: 760px; }
+    #list.project-cards { align-items: stretch; }
+    #list.project-cards .card { height: 100%; display:flex; flex-direction:column; }
+    #list.project-cards .card-bottom-row { margin-top: auto; }
+    #list .card-summary, #list .mini-summary {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 2.8em;
+      max-width: 100%;
+      word-break: keep-all;
+    }
     .mentor-stack { display:grid; gap:8px; margin:8px 0 12px; }
     .mentor-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:8px 0 6px; }
     .mentor-tabs { display:flex; gap:6px; }
