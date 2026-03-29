@@ -189,7 +189,7 @@
     const consultNote = document.getElementById('consultNote');
     const consultSubmit = document.getElementById('consultSubmit');
 
-    let activeTab = 'human';
+    let activeTab = (qs.get('tab') === 'ai') ? 'ai' : 'human';
     let activeCategory = '전체';
     let pendingConsultMentor = null;
 
@@ -362,6 +362,7 @@
       closeConsultModal();
     });
 
+    setTab(activeTab);
     renderCategories();
     renderMentors();
   </script>
