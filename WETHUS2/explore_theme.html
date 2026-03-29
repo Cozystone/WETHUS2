@@ -7,10 +7,10 @@
    window.dataLayer = window.dataLayer || [];
    function gtag(){dataLayer.push(arguments);}
    gtag('js', new Date());
-  
+
    gtag('config', 'G-PKF58GJC08');
   </script>
-  
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WETHUS | 카테고리 탐색</title>
@@ -51,6 +51,22 @@
       max-width: 100%;
       word-break: keep-all;
     }
+    .modal-panel { max-width: 920px; }
+    .modal-content { padding: 14px 16px 16px; }
+    .modal-summary-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      display: grid;
+      gap: 10px;
+      padding: 0 6px;
+    }
+    .modal-kv {
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #141414;
+    }
+    .modal-kv p { margin: 0; }
     .mentor-stack { display:grid; gap:8px; margin:8px 0 12px; }
     .mentor-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:8px 0 6px; }
     .mentor-tabs { display:flex; gap:6px; }
@@ -161,33 +177,34 @@
       <button class="modal-close" id="modalClose" aria-label="닫기">×</button>
       <div class="modal-media-wrap"><img id="modalImage" class="modal-image" alt="프로젝트 이미지" /></div>
       <div class="modal-content">
-        <p class="section-kicker" id="modalCategory">CATEGORY</p>
-        <div class="card-title-row" style="margin:0 0 4px;align-items:center;">
-          <h3 id="modalTitle" style="margin:0;font-size:1.45rem;font-weight:800;"></h3>
-          <button id="modalBookmarkBtn" class="bookmark-btn" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
-        </div>
-        <p id="modalDateRange" class="modal-date-range" style="margin:0 0 10px;"></p>
-        <p id="modalSummary" style="margin:0 0 12px;color:#f5f5f5;"></p>
-        <p id="modalDesc" style="margin:0 0 18px;color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p>
-        <div id="modalTeam" class="team-row" style="margin-bottom:8px;"></div>
-        <div class="mentor-head">
-          <h4 style="margin:0;font-size:.92rem;color:#e8e8e8;">Mentors</h4>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="mentor-tabs">
-              <button id="mentorTabHuman" class="mentor-tab active" type="button">Human Mentors</button>
-              <button id="mentorTabAi" class="mentor-tab" type="button">AI Mentors</button>
-            </div>
-
+        <div class="modal-summary-wrap">
+          <p class="section-kicker" id="modalCategory">CATEGORY</p>
+          <div class="card-title-row" style="margin:0 0 4px;align-items:center;">
+            <h3 id="modalTitle" style="margin:0;font-size:1.45rem;font-weight:800;"></h3>
+            <button id="modalBookmarkBtn" class="bookmark-btn" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
           </div>
-        </div>
-        <div id="modalMentors" class="mentor-stack"></div>
-        <div class="meta"><span class="badge" id="modalCategoryBadge"></span> · <span id="modalStatus"></span> · <span id="modalRoles"></span> · <span id="modalDuration"></span></div>
-        <div class="modal-social-row">
-          <button id="modalLikeBtn" class="btn btn--secondary">♡ <span id="modalLikeCount">0</span></button>
-          <button id="modalCommentBtn" class="btn btn--secondary">💬 <span id="modalCommentCount">0</span></button>
-          <button id="modalEditBtn" class="btn btn--secondary" type="button" style="display:none;">수정</button>
-          <button id="modalDeleteBtn" class="btn btn--secondary" type="button" style="display:none;">삭제</button>
-          <button id="modalApplyBtn" class="apply-btn" type="button">지원하기</button>
+          <p id="modalDateRange" class="modal-date-range" style="margin:0;"></p>
+          <div class="modal-kv"><p id="modalSummary" style="color:#f5f5f5;"></p></div>
+          <div class="modal-kv"><p id="modalDesc" style="color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p></div>
+          <div id="modalTeam" class="team-row" style="margin-bottom:4px;"></div>
+          <div class="mentor-head">
+            <h4 style="margin:0;font-size:.92rem;color:#e8e8e8;">Mentors</h4>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="mentor-tabs">
+                <button id="mentorTabHuman" class="mentor-tab active" type="button">Human Mentors</button>
+                <button id="mentorTabAi" class="mentor-tab" type="button">AI Mentors</button>
+              </div>
+            </div>
+          </div>
+          <div id="modalMentors" class="mentor-stack"></div>
+          <div class="meta"><span class="badge" id="modalCategoryBadge"></span> · <span id="modalStatus"></span> · <span id="modalRoles"></span> · <span id="modalDuration"></span></div>
+          <div class="modal-social-row">
+            <button id="modalLikeBtn" class="btn btn--secondary">♡ <span id="modalLikeCount">0</span></button>
+            <button id="modalCommentBtn" class="btn btn--secondary">💬 <span id="modalCommentCount">0</span></button>
+            <button id="modalEditBtn" class="btn btn--secondary" type="button" style="display:none;">수정</button>
+            <button id="modalDeleteBtn" class="btn btn--secondary" type="button" style="display:none;">삭제</button>
+            <button id="modalApplyBtn" class="apply-btn" type="button">지원하기</button>
+          </div>
         </div>
         <div id="modalCommentPanel" class="comment-panel" style="display:none;">
           <div class="comment-panel-head">
