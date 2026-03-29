@@ -347,7 +347,7 @@
         const mine = !!actor && p.founderId === actor;
         const label = mine ? '프로젝트로 이동' : (WETHUS.hasApplied(p.id) ? '지원완료' : '지원하기');
         return `
-          <article class="list-item" data-project='${JSON.stringify(item).replace(/'/g, "&#39;")}'>
+          <article class="list-item" data-project-id="${item.id}">
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
               <div style="flex:1;min-width:0;">
                 <span class="card-chip">${p.category}</span>
@@ -376,7 +376,7 @@
         const mine = !!actor && p.founderId === actor;
         const label = mine ? '프로젝트로 이동' : (WETHUS.hasApplied(p.id)?'지원완료':'지원하기');
         return `
-          <article class="card" data-project='${JSON.stringify(item).replace(/'/g, "&#39;")}'>
+          <article class="card" data-project-id="${item.id}">
             <div class="card-media ${fallbackClass[p.category] || 'card-media--film'}">
               <img src="${item.image}" alt="${p.title}" class="card-img" />
             </div>
@@ -420,22 +420,34 @@
     }
 
     function projectThemeKey(project) {
-      const c = String(project.category || '').toLowerCase();
+      const raw = String(project.category || '').trim();
+      const c = raw.toLowerCase();
       const blob = `${String(project.title || '').toLowerCase()} ${String(project.summary || '').toLowerCase()}`;
 
-      // 1차: 카테고리 문자열로 단일 매핑
+      // 1차: 카테고리 값 단일 매핑(가장 우선)
+      const exact = {
+        'math': 'MathSci', 'sci': 'MathSci', 'science': 'MathSci', 'research': 'MathSci', 'data': 'MathSci',
+        'film': 'ArtCulture', 'creative': 'ArtCulture', 'art': 'ArtCulture', 'culture': 'ArtCulture',
+        'startup': 'StartupBusiness', 'business': 'StartupBusiness', 'app': 'StartupBusiness',
+        'policy': 'SocietyLaw', 'campaign': 'SocietyLaw', 'law': 'SocietyLaw', 'society': 'SocietyLaw'
+      };
+      if (exact[c]) return exact[c];
+
+      // 복합 문자열 category도 첫 매칭 1개만 반환
       if (/(math|sci|science|research|data)/.test(c)) return 'MathSci';
       if (/(film|creative|art|culture)/.test(c)) return 'ArtCulture';
       if (/(startup|business|app)/.test(c)) return 'StartupBusiness';
       if (/(policy|campaign|law|society)/.test(c)) return 'SocietyLaw';
 
-      // 2차: 제목/요약 키워드로 단일 매핑 (우선순위 고정)
-      if (/(연구|과학|수학|데이터|경진대회)/.test(blob)) return 'MathSci';
-      if (/(영화|전시|출판|문화|크리에이티브|예술|영상)/.test(blob)) return 'ArtCulture';
-      if (/(스타트업|비즈니스|서비스|브랜딩|창업|앱|mvp)/.test(blob)) return 'StartupBusiness';
-      if (/(정책|사회|캠페인|법|공공|제안)/.test(blob)) return 'SocietyLaw';
+      // 2차: category 미정인 경우에만 제목/요약 키워드 사용
+      if (!c) {
+        if (/(연구|과학|수학|데이터|경진대회)/.test(blob)) return 'MathSci';
+        if (/(영화|전시|출판|문화|크리에이티브|예술|영상)/.test(blob)) return 'ArtCulture';
+        if (/(스타트업|비즈니스|서비스|브랜딩|창업|앱|mvp)/.test(blob)) return 'StartupBusiness';
+        if (/(정책|사회|캠페인|법|공공|제안)/.test(blob)) return 'SocietyLaw';
+      }
 
-      return 'MathSci'; // 미분류 기본값
+      return 'StartupBusiness';
     }
 
     function inTheme(project) {
@@ -756,12 +768,15 @@
         return;
       }
 
-      const target = e.target.closest('[data-project]');
+      const target = e.target.closest('[data-project-id]');
       if (!target) return;
       if (e.target.closest('.member-pill')) return;
       try {
-        const data = JSON.parse(target.getAttribute('data-project'));
-        openModal(data);
+        const pid = target.getAttribute('data-project-id');
+        const p = (currentItems || []).find(x => x.id === pid) || WETHUS.listProjects().find(x => x.id === pid);
+        if (!p) return;
+        const idx = (currentItems || []).findIndex(x => x.id === pid);
+        openModal({ ...p, image: imageFor(p, Math.max(0, idx)), status: normalizeStage(p.status) });
       } catch (err) {
         console.error(err);
       }

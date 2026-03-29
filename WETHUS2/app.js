@@ -367,6 +367,11 @@
     s.currentUserId = null;
     s.devMode = false;
     save(s);
+    try {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('wethus.hub.selected.')) localStorage.removeItem(k);
+      });
+    } catch (_) {}
   }
 
   function currentUser() {
