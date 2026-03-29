@@ -124,6 +124,7 @@
 
     const qs = new URLSearchParams(location.search);
     const fromHub = qs.get('fromHub') === '1';
+    const hubProjectId = qs.get('projectId') || '';
     const fromHubBack = document.getElementById('fromHubBack');
     if (fromHub && fromHubBack) {
       fromHubBack.style.display = 'inline-flex';
@@ -329,7 +330,14 @@
       targetEl.querySelectorAll('[data-consult-ai]').forEach(btn => {
         btn.addEventListener('click', () => {
           const m = aiMentors.find(x => x.id === btn.getAttribute('data-consult-ai'));
-          if (m) startDm(m.name, `agent:${m.id}`, m.avatar || '');
+          if (!m) return;
+          if (hubProjectId) {
+            const hub = WETHUS.getProjectHub(hubProjectId);
+            const next = [...(hub.aiMentors || [])];
+            if (!next.some(x => x.id === m.id)) next.push({ id: m.id, name: m.name, addedAt: new Date().toISOString() });
+            WETHUS.upsertProjectHub(hubProjectId, { aiMentors: next });
+          }
+          startDm(m.name, `agent:${m.id}`, m.avatar || '');
         });
       });
     }
