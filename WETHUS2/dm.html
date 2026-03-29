@@ -125,6 +125,16 @@
     let currentThreads = [];
     let isSending = false;
 
+    function dmDirectoryEntries() {
+      const st = WETHUS.getState();
+      const meId = st.currentUserId;
+      const users = (st.users || []).filter(u => u.id !== meId).map(u => ({ id: u.id, name: u.nickname || u.name || u.email || '사용자', avatar: u.profileImage || '' }));
+      const agents = (st.agents || []).map(a => ({ id: `agent:${a.code}`, name: a.name, avatar: '' }));
+      const uniq = new Map();
+      [...users, ...agents].forEach(x => { if (!uniq.has(x.id)) uniq.set(x.id, x); });
+      return Array.from(uniq.values());
+    }
+
     function formatTime(ts){ try { return new Date(ts).toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }); } catch { return ''; } }
     function avatarMarkup(name, avatar) {
       if (avatar) return `<span class="dm-avatar"><img src="${avatar}" alt="${name||'avatar'}" /></span>`;
@@ -151,7 +161,21 @@
         </article>
       `).join('');
       threadEl.querySelectorAll('.dm-thread').forEach(el => el.addEventListener('click', async () => {
-        currentThreadId = el.getAttribute('data-id');
+        const id = el.getAttribute('data-id');
+        if (String(id).startsWith('new:')) {
+          const targetId = String(id).replace(/^new:/, '');
+          const t = (currentThreads || []).find(x => x.peerId === targetId);
+          if (t) {
+            currentThreadId = t.id;
+          } else {
+            const pseudo = (dmDirectoryEntries() || []).find(x => x.id === targetId);
+            const thread = await WETHUS.createDmThread({ targetUserId: pseudo?.id || targetId, targetName: pseudo?.name || '대화 상대', targetAvatar: pseudo?.avatar || '' });
+            await refreshThreads();
+            currentThreadId = thread?.id || currentThreadId;
+          }
+        } else {
+          currentThreadId = id;
+        }
         renderThreads();
         await renderMessages();
       }));
@@ -186,7 +210,14 @@
     dmSearch.addEventListener('input', () => {
       const q = dmSearch.value.trim().toLowerCase();
       if (!q) return renderThreads(currentThreads);
-      renderThreads(currentThreads.filter(t => String(t.peerName || t.targetName || '').toLowerCase().includes(q)));
+      const filtered = currentThreads.filter(t => String(t.peerName || t.targetName || '').toLowerCase().includes(q));
+      const names = new Set(filtered.map(t => String(t.peerName || t.targetName || '')));
+      const candidates = dmDirectoryEntries()
+        .filter(x => String(x.name || '').toLowerCase().includes(q))
+        .filter(x => !names.has(x.name))
+        .slice(0, 6)
+        .map(x => ({ id: `new:${x.id}`, peerId: x.id, peerName: `${x.name} (새 대화)`, lastMessage: '클릭하여 대화 시작', peerAvatar: x.avatar, _newTarget: x }));
+      renderThreads([...filtered, ...candidates]);
     });
 
     upgradeBtn.addEventListener('click', () => { WETHUS.setCurrentUserPlan('premium'); applyPlanUi(); });
