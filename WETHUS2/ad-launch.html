@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WETHUS · 캠페인 만들기</title>
+  <link rel="stylesheet" href="styles.css?v=20260318-58" />
+</head>
+<body>
+  <header class="header">
+    <div class="container nav">
+      <a class="brand" href="index.html">WETHUS</a>
+      <nav class="nav-links">
+        <a href="explore.html">탐색</a>
+        <a href="project-hub.html">프로젝트 허브</a>
+        <a href="mentor.html">멘토</a>
+        <a href="profile.html" class="js-auth-link">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top:24px;padding-bottom:40px;display:grid;gap:14px;max-width:880px;">
+    <section class="hub-card" style="padding:16px;">
+      <h1 style="margin:0 0 8px;">캠페인 만들기</h1>
+      <p class="meta" style="margin:0;">프로젝트 홍보 캠페인을 빠르게 시작합니다. (MVP 폼)</p>
+    </section>
+
+    <section class="hub-card" style="padding:16px;display:grid;gap:10px;">
+      <label>캠페인 이름
+        <input id="adTitle" placeholder="예: WETHUS Startup 모집 캠페인" style="width:100%;margin-top:6px;" />
+      </label>
+      <label>타겟 카테고리
+        <select id="adTarget" style="width:100%;margin-top:6px;">
+          <option>Startup</option>
+          <option>Film</option>
+          <option>Policy</option>
+          <option>Science</option>
+        </select>
+      </label>
+      <label>하루 예산(원)
+        <input id="adBudget" type="number" min="0" step="1000" placeholder="50000" style="width:100%;margin-top:6px;" />
+      </label>
+      <label>홍보 문구
+        <textarea id="adCopy" style="width:100%;min-height:120px;margin-top:6px;" placeholder="프로젝트의 강점과 지금 참여해야 하는 이유를 써주세요."></textarea>
+      </label>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <a href="ad-center.html" class="btn btn--secondary">취소</a>
+        <button id="adSaveBtn" class="btn btn--primary" type="button">저장</button>
+      </div>
+      <p id="adSaveMsg" class="meta" style="margin:0;"></p>
+    </section>
+  </main>
+
+  <script src="app.js?v=20260318-58"></script>
+  <script>
+    document.getElementById('adSaveBtn')?.addEventListener('click', () => {
+      const payload = {
+        title: document.getElementById('adTitle')?.value?.trim() || '',
+        target: document.getElementById('adTarget')?.value || 'Startup',
+        budget: Number(document.getElementById('adBudget')?.value || 0),
+        copy: document.getElementById('adCopy')?.value?.trim() || ''
+      };
+      try {
+        const raw = localStorage.getItem('wethus.ad.drafts');
+        const arr = raw ? JSON.parse(raw) : [];
+        arr.unshift({ id: Date.now().toString(), ...payload, createdAt: new Date().toISOString() });
+        localStorage.setItem('wethus.ad.drafts', JSON.stringify(arr.slice(0, 30)));
+        document.getElementById('adSaveMsg').textContent = '저장되었습니다. AD 센터에서 확인하세요.';
+      } catch (_) {
+        document.getElementById('adSaveMsg').textContent = '저장 실패: 브라우저 저장소 상태를 확인해주세요.';
+      }
+    });
+  </script>
+</body>
+</html>
