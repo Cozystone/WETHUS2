@@ -33,9 +33,9 @@ const INTEGRATION_APP_URL = process.env.INTEGRATION_APP_URL || 'http://localhost
 const GOOGLE_OAUTH_CLIENT_ID = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || '';
 const GOOGLE_OAUTH_REDIRECT_URI = process.env.GOOGLE_OAUTH_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/google/callback`;
-const NOTION_CLIENT_ID = process.env.NOTION_CLIENT_ID || '';
-const NOTION_CLIENT_SECRET = process.env.NOTION_CLIENT_SECRET || '';
-const NOTION_REDIRECT_URI = process.env.NOTION_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/notion/callback`;
+const NOTION_CLIENT_ID = process.env.NOTION_CLIENT_ID || process.env.NOTION_OAUTH_CLIENT_ID || '';
+const NOTION_CLIENT_SECRET = process.env.NOTION_CLIENT_SECRET || process.env.NOTION_OAUTH_CLIENT_SECRET || '';
+const NOTION_REDIRECT_URI = process.env.NOTION_REDIRECT_URI || process.env.NOTION_OAUTH_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/notion/callback`;
 const SLACK_CLIENT_ID = process.env.SLACK_CLIENT_ID || '';
 const SLACK_CLIENT_SECRET = process.env.SLACK_CLIENT_SECRET || '';
 const SLACK_REDIRECT_URI = process.env.SLACK_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/slack/callback`;
@@ -539,7 +539,9 @@ app.get('/oauth/:provider/start', (req, res) => {
   }[provider];
 
   if (!conf?.clientId) {
-    const errKey = provider === 'google' ? 'GOOGLE_OAUTH_CLIENT_ID (or GOOGLE_CLIENT_ID)' : `${provider.toUpperCase()}_CLIENT_ID`;
+    const errKey = provider === 'google'
+      ? 'GOOGLE_OAUTH_CLIENT_ID (or GOOGLE_CLIENT_ID)'
+      : (provider === 'notion' ? 'NOTION_CLIENT_ID (or NOTION_OAUTH_CLIENT_ID)' : `${provider.toUpperCase()}_CLIENT_ID`);
     return res.json({ ok: true, provider, oauthReady: false, setupRequired: true, error: `${errKey} missing` });
   }
 
