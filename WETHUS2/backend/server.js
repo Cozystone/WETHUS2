@@ -517,7 +517,7 @@ app.get('/oauth/:provider/start', (req, res) => {
   }[provider];
 
   if (!conf?.clientId) {
-    return res.status(400).json({ ok: false, error: `${provider.toUpperCase()}_CLIENT_ID missing`, setupRequired: true });
+    return res.json({ ok: true, provider, oauthReady: false, setupRequired: true, error: `${provider.toUpperCase()}_CLIENT_ID missing` });
   }
 
   let authUrl = '';
