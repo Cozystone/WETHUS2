@@ -297,6 +297,7 @@
       document.getElementById('ovRecent').innerHTML=(hub.recentActivities||[]).map(a=>`<li>${a.text} · ${new Date(a.createdAt).toLocaleString('ko-KR')}</li>`).join('')||'<li>최근 활동이 없습니다.</li>';
       document.getElementById('ovBlocker').textContent=hub.blocker;
       document.getElementById('ovTools').innerHTML=(hub.tools||[]).map(t=>`<article class="tool-card"><strong>${t.name}</strong><p class="meta" style="margin:4px 0 0;">${t.desc||''}</p></article>`).join('');
+      renderToolCards();
       document.getElementById('pgLogs').innerHTML=(hub.progress||[]).map(x=>`<li>${x.text} · ${new Date(x.createdAt||Date.now()).toLocaleString('ko-KR')}</li>`).join('')||'<li>진행 로그 없음</li>';
       document.getElementById('mtList').innerHTML=(hub.materials||[]).map(x=>`<li>${x.name} (${x.type||'자료'})</li>`).join('')||'<li>자료 없음</li>';
       await renderWorkLogs(p.teamMembers||[], hub);
@@ -388,21 +389,87 @@
     });
 
     const toolTargets = [
-      { name:'Google Docs', logo:'📝', href:'https://docs.openclaw.ai/integrations/google-docs' },
-      { name:'Google Sheets', logo:'📊', href:'https://docs.openclaw.ai/integrations/google-sheets' },
-      { name:'Notion', logo:'🧩', href:'https://docs.openclaw.ai/integrations/notion' },
-      { name:'Figma', logo:'🎨', href:'https://docs.openclaw.ai/integrations/figma' }
+      { name:'Google Docs', logo:'📝', home:'https://docs.google.com' },
+      { name:'Google Sheets', logo:'📊', home:'https://sheets.google.com' },
+      { name:'Notion', logo:'🧩', home:'https://www.notion.so' },
+      { name:'Figma', logo:'🎨', home:'https://www.figma.com' }
     ];
-    const toolLogoGrid = document.getElementById('toolLogoGrid');
-    toolLogoGrid.innerHTML = toolTargets.map(t => `<a class="tool-card" data-tool="${t.name}" href="${t.href}" target="_blank" rel="noreferrer"><strong style="font-size:1.25rem;">${t.logo}</strong><p style="margin:6px 0 0;">${t.name}</p><p class="meta" style="margin:4px 0 0;">MCP 연동 설정으로 이동</p></a>`).join('');
-    toolLogoGrid.querySelectorAll('[data-tool]').forEach(a => {
-      a.addEventListener('click', () => {
-        if (!currentProject) return;
-        const tool = a.getAttribute('data-tool');
-        WETHUS.addHubActivity(currentProject.id, `${tool} 연동 설정 페이지 접근`);
-        refreshHubInsights('external-tool-link');
+
+    async function fetchToolMeta(url) {
+      const bases = [window.WETHUS_API_BASE || 'https://wethus-api.onrender.com', `${location.protocol}//${location.hostname}:8787`, 'http://127.0.0.1:8787'];
+      let lastErr;
+      for (const base of bases) {
+        try {
+          const r = await fetch(`${String(base).replace(/\/$/, '')}/tools/fetch-meta`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok || !data?.ok) throw new Error(data?.error || `fetch-meta failed (${r.status})`);
+          return data;
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error('연동 메타 조회 실패');
+    }
+
+    function currentToolState(name) {
+      if (!currentProject) return null;
+      const hub = WETHUS.getProjectHub(currentProject.id);
+      return (hub.tools || []).find(t => t.name === name) || null;
+    }
+
+    function renderToolCards() {
+      const toolLogoGrid = document.getElementById('toolLogoGrid');
+      toolLogoGrid.innerHTML = toolTargets.map(t => {
+        const st = currentToolState(t.name);
+        return `<article class="tool-card" data-tool="${t.name}">
+          <strong style="font-size:1.25rem;">${t.logo}</strong>
+          <p style="margin:6px 0 0;">${t.name}</p>
+          <p class="meta" style="margin:4px 0 0;">${st?.connected ? '연결됨' : '미연결'} ${st?.lastSynced ? '· ' + new Date(st.lastSynced).toLocaleString('ko-KR') : ''}</p>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button class="btn btn--secondary" data-tool-home="${t.name}" type="button">홈</button>
+            <button class="btn btn--primary" data-tool-connect="${t.name}" type="button">연결</button>
+          </div>
+        </article>`;
+      }).join('');
+
+      toolLogoGrid.querySelectorAll('[data-tool-home]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const t = toolTargets.find(x => x.name === btn.getAttribute('data-tool-home'));
+          if (t?.home) window.open(t.home, '_blank', 'noopener');
+        });
       });
-    });
+
+      toolLogoGrid.querySelectorAll('[data-tool-connect]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!currentProject) return;
+          const name = btn.getAttribute('data-tool-connect');
+          const shared = prompt(`${name} 공유 링크를 입력하세요 (https://...)`);
+          if (!shared) return;
+          try {
+            const meta = await fetchToolMeta(shared);
+            const hub = WETHUS.getProjectHub(currentProject.id);
+            const tools = [...(hub.tools || [])];
+            const idx = tools.findIndex(t => t.name === name);
+            const next = { name, url: meta.finalUrl || shared, desc: meta.title || `${name} 연결`, connected: true, lastSynced: meta.fetchedAt };
+            if (idx >= 0) tools[idx] = { ...tools[idx], ...next };
+            else tools.push(next);
+            WETHUS.upsertProjectHub(currentProject.id, { tools });
+            WETHUS.addHubActivity(currentProject.id, `${name} 외부 툴 연결 완료`);
+            refreshHubInsights('external-tool-connect');
+            renderHub();
+            renderToolCards();
+          } catch (e) {
+            alert(e?.message || '연결 실패');
+          }
+        });
+      });
+    }
+
+    renderToolCards();
 
     document.getElementById('hubToolBtn').addEventListener('click',()=>openModal('hubToolModal'));
     document.getElementById('hubToolClose').addEventListener('click',()=>closeModal('hubToolModal'));
