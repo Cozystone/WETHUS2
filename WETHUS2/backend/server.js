@@ -29,7 +29,7 @@ const PASS_RETURN_URL = process.env.PASS_RETURN_URL || 'http://localhost:8787/pa
 const PASS_ERROR_URL = process.env.PASS_ERROR_URL || 'http://localhost:8787/pass/fail';
 
 // Integration OAuth placeholders (Phase 1 foundation)
-const INTEGRATION_APP_URL = process.env.INTEGRATION_APP_URL || 'http://localhost:8080';
+const INTEGRATION_APP_URL = process.env.INTEGRATION_APP_URL || 'https://wethus-api.onrender.com';
 const GOOGLE_OAUTH_CLIENT_ID = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || '';
 const GOOGLE_OAUTH_REDIRECT_URI = process.env.GOOGLE_OAUTH_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/google/callback`;
