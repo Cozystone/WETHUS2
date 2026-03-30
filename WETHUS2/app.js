@@ -1681,7 +1681,8 @@
         const cur = localStorage.getItem('wethus.lang') || 'ko';
         const next = cur === 'ko' ? 'en' : 'ko';
         localStorage.setItem('wethus.lang', next);
-        alert(`언어 설정이 ${next.toUpperCase()}로 저장되었습니다. (UI 텍스트 다국어는 곧 연동)`);
+        alert(`언어 설정이 ${next.toUpperCase()}로 저장되었습니다.`);
+        try { applyLanguageUI(); } catch (_) {}
       });
     });
   }
@@ -1743,6 +1744,47 @@
     }, true);
   }
 
+  function applyLanguageUI() {
+    let lang = 'ko';
+    try { lang = localStorage.getItem('wethus.lang') || 'ko'; } catch (_) {}
+    const dict = {
+      en: {
+        'nav.explore': 'Explore',
+        'nav.hub': 'Project Hub',
+        'nav.mentor': 'Mentor',
+        'ad.center.title': 'AD Center',
+        'ad.center.desc': 'Manage promotion operations in one place. Track campaign status, budget, and performance.',
+        'ad.center.summary': 'Summary',
+        'ad.center.active': 'Active Campaigns',
+        'ad.center.budget': 'Monthly Budget',
+        'ad.center.reach': 'Reached Users',
+        'ad.center.recommend': 'Recommended Actions',
+        'ad.center.action1': 'Write a 3-line campaign copy from your latest project-hub updates.',
+        'ad.center.action2': 'Start with one target among Startup / Film / Policy / Science.',
+        'ad.center.action3': 'Review every 24h and change only one variable per test.',
+        'ad.center.cta': 'Create Campaign',
+        'ad.launch.title': 'Create Campaign',
+        'ad.launch.desc': 'Start a promotion campaign quickly. (MVP form)',
+        'ad.launch.name': 'Campaign Name',
+        'ad.launch.target': 'Target Category',
+        'ad.launch.budget': 'Daily Budget (KRW)',
+        'ad.launch.copy': 'Ad Copy',
+        'ad.launch.cancel': 'Cancel',
+        'ad.launch.save': 'Save',
+        'ad.launch.placeholder.copy': 'Write your project strengths and why people should join now.'
+      }
+    };
+    const map = dict[lang] || {};
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (key && map[key]) el.textContent = map[key];
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (key && map[key]) el.setAttribute('placeholder', map[key]);
+    });
+  }
+
   function applyAuthReturnState() {
     try {
       const raw = sessionStorage.getItem('wethus_auth_return_state');
@@ -1779,6 +1821,7 @@
       initGuestNavGuard();
       initGuestApplyGuard();
       initNotificationNav();
+      applyLanguageUI();
       applyAuthReturnState();
       initNotifyToast();
     });
@@ -1786,6 +1829,7 @@
     initGuestNavGuard();
     initGuestApplyGuard();
     initNotificationNav();
+    applyLanguageUI();
     applyAuthReturnState();
     initNotifyToast();
   }
