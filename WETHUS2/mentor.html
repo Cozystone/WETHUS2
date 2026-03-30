@@ -332,9 +332,6 @@
           const m = aiMentors.find(x => x.id === btn.getAttribute('data-consult-ai'));
           if (!m) return;
 
-          const ok = window.confirm(`에이전트를 추가하시겠습니까?\n\n${m.name} AI 멘토를 프로젝트 허브에 추가합니다.`);
-          if (!ok) return;
-
           const projects = WETHUS.myProjects() || [];
           const targetProjectId = hubProjectId || projects[0]?.id || '';
           if (!targetProjectId) {
@@ -342,14 +339,8 @@
             return;
           }
 
-          const hub = WETHUS.getProjectHub(targetProjectId);
-          const next = [...(hub.aiMentors || [])];
-          if (!next.some(x => x.id === m.id)) {
-            next.push({ id: m.id, name: m.name, avatar: m.avatar || '', addedAt: new Date().toISOString() });
-            WETHUS.upsertProjectHub(targetProjectId, { aiMentors: next });
-          }
-          WETHUS.addHubActivity(targetProjectId, `${m.name} AI 멘토가 허브에 추가됨`);
-          location.href = `project-hub.html?projectId=${encodeURIComponent(targetProjectId)}`;
+          const returnTo = `mentor.html?tab=ai${hubProjectId ? `&fromHub=1&projectId=${encodeURIComponent(hubProjectId)}` : ''}`;
+          location.href = `project-hub.html?projectId=${encodeURIComponent(targetProjectId)}&ai_add_id=${encodeURIComponent(m.id)}&ai_add_name=${encodeURIComponent(m.name)}&ai_add_avatar=${encodeURIComponent(m.avatar || '')}&ai_add_return=${encodeURIComponent(returnTo)}`;
         });
       });
     }
