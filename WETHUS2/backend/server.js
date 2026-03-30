@@ -480,82 +480,106 @@ app.get('/integrations/insights', async (req, res) => {
   const projectId = String(req.query?.projectId || '').trim();
   if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
 
-  const rows = readIntegrations().filter(r => r.project_id === projectId && r.status === 'connected');
-  const out = [];
-
-  const googleAccount = rows.find(r => r.provider === 'google' && r.integration_type === 'account');
-  const googleToken = String(googleAccount?._token_demo_only || '').trim();
-
-  for (const it of rows) {
-    if (it.provider === 'google' && it.integration_type === 'document' && googleToken) {
-      try {
-        const u = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(it.external_resource_id)}?fields=id,name,webViewLink,modifiedTime`;
-        const metaRes = await fetch(u, { headers: { Authorization: `Bearer ${googleToken}` } });
-        const metaJson = await metaRes.json().catch(() => ({}));
-        if (!metaRes.ok) throw new Error(metaJson?.error?.message || 'google file metadata failed');
-
-        const txtRes = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(it.external_resource_id)}/export?mimeType=text/plain`, {
-          headers: { Authorization: `Bearer ${googleToken}` }
-        });
-        const txt = await txtRes.text();
-        if (!txtRes.ok) throw new Error('google doc export failed');
-
-        out.push({
-          provider: 'google_docs',
-          resourceId: metaJson?.id || it.external_resource_id,
-          resourceName: metaJson?.name || it.external_resource_name,
-          resourceUrl: metaJson?.webViewLink || it.external_resource_url || '',
-          modifiedAt: metaJson?.modifiedTime || it.updated_at || '',
-          snippet: String(txt || '').replace(/\s+/g, ' ').trim().slice(0, 1800)
-        });
-      } catch (e) {
-        out.push({
-          provider: 'google_docs',
-          resourceId: it.external_resource_id,
-          resourceName: it.external_resource_name,
-          resourceUrl: it.external_resource_url || '',
-          modifiedAt: it.updated_at || '',
-          snippet: '',
-          error: e?.message || 'insight fetch failed'
-        });
-      }
-    }
-  }
-
-  return res.json({ ok: true, projectId, insights: out });
-});
-
-app.get('/integrations/insights', async (req, res) => {
-  const projectId = String(req.query?.projectId || '').trim();
-  if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
-
   try {
-    const integrations = readIntegrations().filter(i => i.project_id === projectId && i.status === 'connected');
-    const googleAccount = integrations.find(i => i.provider === 'google' && i.integration_type === 'account');
+    const rows = readIntegrations().filter(r => r.project_id === projectId && r.status === 'connected');
+    const out = [];
+
+    const googleAccount = rows.find(r => r.provider === 'google' && r.integration_type === 'account');
     const googleToken = String(googleAccount?._token_demo_only || '').trim();
 
-    const docs = integrations.filter(i => i.provider === 'google' && i.integration_type === 'document').slice(0, 5);
-    const docInsights = [];
+    async function fetchGoogleDocInsight(docId, fallback = {}) {
+      const metaUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}?fields=id,name,webViewLink,modifiedTime,mimeType`;
+      const metaRes = await fetch(metaUrl, { headers: { Authorization: `Bearer ${googleToken}` } });
+      const metaJson = await metaRes.json().catch(() => ({}));
+      if (!metaRes.ok) throw new Error(metaJson?.error?.message || 'google file metadata failed');
+      if (metaJson?.mimeType !== 'application/vnd.google-apps.document') return null;
 
-    if (googleToken && docs.length) {
-      for (const d of docs) {
+      const txtRes = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}/export?mimeType=text/plain`, {
+        headers: { Authorization: `Bearer ${googleToken}` }
+      });
+      const txt = await txtRes.text();
+      if (!txtRes.ok) throw new Error('google doc export failed');
+
+      return {
+        provider: 'google_docs',
+        resourceId: metaJson?.id || fallback.resourceId || docId,
+        resourceName: metaJson?.name || fallback.resourceName || docId,
+        resourceUrl: metaJson?.webViewLink || fallback.resourceUrl || '',
+        modifiedAt: metaJson?.modifiedTime || fallback.modifiedAt || '',
+        snippet: String(txt || '').replace(/\s+/g, ' ').trim().slice(0, 1800)
+      };
+    }
+
+    const linkedGoogleDocs = rows.filter(it => it.provider === 'google' && (it.integration_type === 'document' || it.integration_type === 'folder'));
+    if (googleToken && linkedGoogleDocs.length) {
+      for (const it of linkedGoogleDocs) {
         try {
-          const u = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(d.external_resource_id)}/export?mimeType=text/plain`;
-          const r = await fetch(u, { headers: { Authorization: `Bearer ${googleToken}` } });
-          if (!r.ok) continue;
-          const text = await r.text();
-          const normalized = String(text || '').replace(/\s+/g, ' ').trim();
-          docInsights.push({
-            integration_id: d.id,
-            name: d.external_resource_name || 'Google Doc',
-            snippet: normalized.slice(0, 1200),
-            url: d.external_resource_url || ''
+          if (it.integration_type === 'document') {
+            const one = await fetchGoogleDocInsight(it.external_resource_id, {
+              resourceId: it.external_resource_id,
+              resourceName: it.external_resource_name,
+              resourceUrl: it.external_resource_url || '',
+              modifiedAt: it.updated_at || ''
+            });
+            if (one) out.push(one);
+            continue;
+          }
+
+          // folder 연결: 폴더 하위의 Google Docs를 순회해서 반영
+          const folderId = String(it.external_resource_id || '').trim();
+          if (!folderId) continue;
+          const listUrl = new URL('https://www.googleapis.com/drive/v3/files');
+          listUrl.searchParams.set('q', `mimeType='application/vnd.google-apps.document' and '${folderId}' in parents and trashed=false`);
+          listUrl.searchParams.set('orderBy', 'modifiedTime desc');
+          listUrl.searchParams.set('pageSize', '10');
+          listUrl.searchParams.set('fields', 'files(id,name,webViewLink,modifiedTime)');
+          const listRes = await fetch(listUrl.toString(), { headers: { Authorization: `Bearer ${googleToken}` } });
+          const listJson = await listRes.json().catch(() => ({}));
+          if (!listRes.ok) throw new Error(listJson?.error?.message || 'google folder docs list failed');
+          const docs = Array.isArray(listJson.files) ? listJson.files : [];
+
+          for (const d of docs) {
+            try {
+              const txtRes = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(d.id)}/export?mimeType=text/plain`, {
+                headers: { Authorization: `Bearer ${googleToken}` }
+              });
+              const txt = await txtRes.text();
+              if (!txtRes.ok) continue;
+              out.push({
+                provider: 'google_docs',
+                source: 'folder',
+                sourceFolderId: folderId,
+                sourceFolderName: it.external_resource_name || 'Google Drive Folder',
+                resourceId: d.id,
+                resourceName: d.name || d.id,
+                resourceUrl: d.webViewLink || '',
+                modifiedAt: d.modifiedTime || '',
+                snippet: String(txt || '').replace(/\s+/g, ' ').trim().slice(0, 1800)
+              });
+            } catch (_) {}
+          }
+        } catch (e) {
+          out.push({
+            provider: 'google_docs',
+            source: it.integration_type === 'folder' ? 'folder' : 'single',
+            resourceId: it.external_resource_id,
+            resourceName: it.external_resource_name,
+            resourceUrl: it.external_resource_url || '',
+            modifiedAt: it.updated_at || '',
+            snippet: '',
+            error: e?.message || 'insight fetch failed'
           });
-        } catch (_) {}
+        }
       }
     }
 
-    return res.json({ ok: true, projectId, docInsights, used: { googleDocs: docInsights.length } });
+    return res.json({
+      ok: true,
+      projectId,
+      insights: out,
+      docInsights: out.map(x => ({ integration_id: x.resourceId, name: x.resourceName, snippet: x.snippet, url: x.resourceUrl, modifiedAt: x.modifiedAt })),
+      used: { googleDocs: out.length }
+    });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'insights failed' });
   }
