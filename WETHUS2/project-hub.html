@@ -376,7 +376,14 @@
       setHubLoadingState(true, 'WETHUS AI 업데이트중...');
       insightTimer = setTimeout(async () => {
         const hub = WETHUS.getProjectHub(currentProject.id);
-        const prompt = `너는 프로젝트 운영 어시스턴트다. 이유:${reason}\n프로젝트:${currentProject.title}\n상태:${currentProject.status}\n목표:${hub.goal}\n할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,6).map(x=>x.text).join(', ')}\n팀채팅:${(hub.teamChat||[]).slice(-8).map(x=>x.text).join(' / ')}\n\n출력: 상태요약 1줄, 진행조언 3줄.`;
+        let externalDocContext = '';
+        try {
+          const ext = await hubApi(`/integrations/insights?projectId=${encodeURIComponent(currentProject.id)}`);
+          const docLines = (ext?.docInsights || []).map(d => `${d.name}: ${String(d.snippet || '').slice(0, 500)}`);
+          externalDocContext = docLines.join('\n');
+        } catch (_) {}
+
+        const prompt = `너는 프로젝트 운영 어시스턴트다. 이유:${reason}\n프로젝트:${currentProject.title}\n상태:${currentProject.status}\n목표:${hub.goal}\n할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,6).map(x=>x.text).join(', ')}\n팀채팅:${(hub.teamChat||[]).slice(-8).map(x=>x.text).join(' / ')}\n외부문서요약:${externalDocContext || '없음'}\n\n출력: 상태요약 1줄, 진행조언 3줄.`;
         try {
           const out = await WETHUS.askGemini(prompt);
           const lines = String(out || '').split(/\n+/).map(x => x.trim()).filter(Boolean);
