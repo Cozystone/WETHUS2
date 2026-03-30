@@ -151,9 +151,13 @@
           <div id="tab-materials" class="hidden">
             <article class="hub-card">
               <h3>작업자료</h3>
-              <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-                <input id="mtFileInput" type="file" />
-                <button id="mtFileAddBtn" class="btn btn--secondary" type="button">파일 추가</button>
+              <p class="meta" style="margin:0 0 8px;">외부 툴은 API/Webhook으로 연결하고, 공유 문서/레퍼런스 링크도 여기서 함께 관리하세요.</p>
+              <div style="display:grid;gap:8px;margin-bottom:8px;">
+                <input id="mtLinkInput" type="url" placeholder="공유 링크 추가 (https://...)" style="width:100%;" />
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <input id="mtFileInput" type="file" />
+                  <button id="mtAddBtn" class="btn btn--secondary" type="button">자료 추가</button>
+                </div>
               </div>
               <ul id="mtList" class="meta-bullet"></ul>
             </article>
@@ -343,7 +347,11 @@
       await loadIntegrationsForCurrentProject();
       renderToolCards();
       document.getElementById('pgLogs').innerHTML=(hub.progress||[]).map(x=>`<li>${x.text} · ${new Date(x.createdAt||Date.now()).toLocaleString('ko-KR')}</li>`).join('')||'<li>진행 로그 없음</li>';
-      document.getElementById('mtList').innerHTML=(hub.materials||[]).map(x=>`<li>${x.name} (${x.type||'자료'})</li>`).join('')||'<li>자료 없음</li>';
+      document.getElementById('mtList').innerHTML=(hub.materials||[]).map(x=>{
+        const label = `${x.name} (${x.type||'자료'})`;
+        if (x.url) return `<li><a href="${x.url}" target="_blank" rel="noopener noreferrer">${label}</a></li>`;
+        return `<li>${label}</li>`;
+      }).join('')||'<li>자료 없음</li>';
       renderWorkLogs(p.teamMembers||[], hub).catch(() => {});
       document.getElementById('sdStatus').innerHTML=`<li>현재 단계: ${p.status||'기획 중'}</li><li>최근 업데이트: ${(hub.updatedAt?new Date(hub.updatedAt).toLocaleString('ko-KR'):'방금')}</li><li>팀원 수: ${(p.teamMembers||[]).length}명</li>`;
       document.getElementById('sdAdvice').innerHTML='<li>목표를 이번 주 단위로 쪼개세요.</li><li>막힌 점을 카드에 명시하세요.</li><li>멘토링 요청은 구체적으로 작성하세요.</li>';
@@ -804,18 +812,35 @@
       refreshHubInsights('ai-summary');
     });
 
-    document.getElementById('mtFileAddBtn').addEventListener('click', async () => {
+    document.getElementById('mtAddBtn').addEventListener('click', async () => {
       if (!currentProject) return;
-      const input = document.getElementById('mtFileInput');
-      const f = input.files && input.files[0];
-      if (!f) return;
+      const fileInput = document.getElementById('mtFileInput');
+      const linkInput = document.getElementById('mtLinkInput');
+      const f = fileInput.files && fileInput.files[0];
+      const link = String(linkInput.value || '').trim();
+      if (!f && !link) { alert('파일 또는 링크를 입력해주세요.'); return; }
+
       const hub = WETHUS.getProjectHub(currentProject.id);
-      const next = [{ name: f.name, type: f.type || 'file', size: f.size, addedAt: new Date().toISOString() }, ...(hub.materials || [])].slice(0, 50);
-      setLlmStatus(`WETHUS AI · 업데이트중… (자료 업로드 반영)`);
+      const current = Array.isArray(hub.materials) ? hub.materials : [];
+      const added = [];
+
+      if (link) {
+        let host = '링크';
+        try { host = new URL(link).hostname.replace(/^www\./, ''); } catch (_) {}
+        added.push({ name: host, type: 'link', url: link, addedAt: new Date().toISOString() });
+      }
+      if (f) {
+        added.push({ name: f.name, type: f.type || 'file', size: f.size, addedAt: new Date().toISOString() });
+      }
+
+      const next = [...added, ...current].slice(0, 80);
+      setLlmStatus(`WETHUS AI · 업데이트중… (작업자료 반영)`);
       WETHUS.upsertProjectHub(currentProject.id, { materials: next });
-      WETHUS.addHubActivity(currentProject.id, `작업자료 업로드: ${f.name}`);
-      input.value = '';
-      refreshHubInsights('materials-upload');
+      if (link) WETHUS.addHubActivity(currentProject.id, `공유 링크 추가: ${link}`);
+      if (f) WETHUS.addHubActivity(currentProject.id, `작업자료 업로드: ${f.name}`);
+      fileInput.value = '';
+      linkInput.value = '';
+      refreshHubInsights('materials-update');
       await renderHub();
     });
 
