@@ -22,6 +22,7 @@
     .hub-top-team{display:flex;gap:8px;flex-wrap:wrap}
     .hub-team-pill{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;border:1px solid #303030;background:#151515}
     .hub-team-pill .meta{color:#ff9a2f !important;}
+    .hub-team-pill-remove{border:0;background:transparent;color:#ffb36d;font-weight:900;cursor:pointer;padding:0 2px;line-height:1;}
     .hub-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
     .hub-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
     .hub-tabs-wrap{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:10px;align-items:stretch;margin:14px 0 12px}
@@ -182,6 +183,7 @@
   <div id="hubChatModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-chat="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubChatClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">팀채팅</h3><p class="meta" style="margin:0 0 8px;">프로젝트 지원 AI는 프로젝트 정보/최근 활동/팀 채팅 문맥을 함께 참고합니다.</p><div id="chatList" style="max-height:320px;overflow:auto;display:grid;gap:8px;"></div><div class="slash-suggest" style="display:flex;gap:8px;margin-top:10px;"><input id="chatInput" style="flex:1;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px;" placeholder="메시지를 입력하세요 (/ai 질문 형태 지원)"/><button id="chatSend" class="btn btn--primary">보내기</button><div id="slashList" class="slash-list"></div></div></div></article></div>
   <div id="worklogModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-worklog="true"></div><article class="modal-panel" style="max-width:620px;"><button class="modal-close" id="worklogClose">×</button><div class="modal-content"><h3 id="worklogTitle" style="margin:0 0 8px;">업무기록</h3><ul id="worklogList" class="meta-bullet"></ul></div></article></div>
   <div id="hubAiAddModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-ai-add="true"></div><article class="modal-panel" style="max-width:520px;"><button class="modal-close" id="hubAiAddClose">×</button><div class="modal-content"><h3 id="hubAiAddTitle" style="margin:0 0 8px;">에이전트를 추가하시겠습니까?</h3><p id="hubAiAddDesc" class="meta" style="margin:0 0 12px;">선택한 AI 멘토를 이 프로젝트 허브 팀에 추가합니다.</p><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubAiAddCancel" class="btn btn--secondary" type="button">취소</button><button id="hubAiAddConfirm" class="btn btn--primary" type="button">확인</button></div></div></article></div>
+  <div id="hubAiRemoveModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-ai-remove="true"></div><article class="modal-panel" style="max-width:520px;"><button class="modal-close" id="hubAiRemoveClose">×</button><div class="modal-content"><h3 id="hubAiRemoveTitle" style="margin:0 0 8px;">에이전트를 제거하시겠습니까?</h3><p id="hubAiRemoveDesc" class="meta" style="margin:0 0 12px;">선택한 AI 멘토를 팀 구성에서 제거합니다.</p><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubAiRemoveCancel" class="btn btn--secondary" type="button">취소</button><button id="hubAiRemoveConfirm" class="btn btn--primary" type="button">확인</button></div></div></article></div>
 
   <footer class="footer"><div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:anseokkim@gmail.com">anseokkim@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p></div></div></footer>
 
@@ -322,8 +324,17 @@
       document.getElementById('hubStage').textContent=p.status||'기획 중';
       document.getElementById('hubState').textContent='팀 운영중';
       document.getElementById('hubSummary').textContent=p.summary||'';
-      const teamPills = [...(p.teamMembers||[]).map(m => `<span class='hub-team-pill'><strong>${m.name}</strong><span class='meta'>${m.role||''}</span></span>`), ...(hub.aiMentors||[]).map(a => `<span class='hub-team-pill'><strong>${a.name}</strong><span class='meta'>AI</span></span>`)].join('');
+      const teamPills = [...(p.teamMembers||[]).map(m => `<span class='hub-team-pill'><strong>${m.name}</strong><span class='meta'>${m.role||''}</span></span>`), ...(hub.aiMentors||[]).map(a => `<span class='hub-team-pill'><strong>${a.name}</strong><span class='meta'>AI</span><button class='hub-team-pill-remove' data-remove-ai='${a.id}' title='AI 제거' type='button'>×</button></span>`)].join('');
       document.getElementById('hubTopTeam').innerHTML = teamPills || '<span class="meta">팀 정보 없음</span>';
+      document.querySelectorAll('[data-remove-ai]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          pendingRemoveAiId = btn.getAttribute('data-remove-ai') || '';
+          const ai = (WETHUS.getProjectHub(currentProject.id).aiMentors || []).find(x => x.id === pendingRemoveAiId);
+          document.getElementById('hubAiRemoveDesc').textContent = `${ai?.name || '선택한 AI 멘토'}를 팀 구성에서 제거합니다.`;
+          openModal('hubAiRemoveModal');
+        });
+      });
       document.getElementById('ovGoal').textContent=hub.goal;
       document.getElementById('ovTodos').innerHTML=(hub.weeklyTodos||[]).map(t=>`<li>${t}</li>`).join('')||'<li>이번 주 할 일을 등록하세요.</li>';
       document.getElementById('ovRecent').innerHTML=(hub.recentActivities||[]).map(a=>`<li>${a.text} · ${new Date(a.createdAt).toLocaleString('ko-KR')}</li>`).join('')||'<li>최근 활동이 없습니다.</li>';
@@ -814,6 +825,7 @@
       avatar: params.get('ai_add_avatar') || '',
       returnTo: params.get('ai_add_return') || 'mentor.html?tab=ai'
     };
+    let pendingRemoveAiId = '';
 
     function clearPendingAiAddQuery() {
       if (!currentProject) return;
@@ -852,6 +864,21 @@
       }
       closeModal('hubAiAddModal');
       clearPendingAiAddQuery();
+      await renderHub();
+    });
+
+    document.getElementById('hubAiRemoveClose')?.addEventListener('click', () => closeModal('hubAiRemoveModal'));
+    document.getElementById('hubAiRemoveCancel')?.addEventListener('click', () => closeModal('hubAiRemoveModal'));
+    document.querySelector('[data-close-ai-remove="true"]')?.addEventListener('click', () => closeModal('hubAiRemoveModal'));
+    document.getElementById('hubAiRemoveConfirm')?.addEventListener('click', async () => {
+      if (!currentProject || !pendingRemoveAiId) return;
+      const hub = WETHUS.getProjectHub(currentProject.id);
+      const target = (hub.aiMentors || []).find(x => x.id === pendingRemoveAiId);
+      const next = (hub.aiMentors || []).filter(x => x.id !== pendingRemoveAiId);
+      WETHUS.upsertProjectHub(currentProject.id, { aiMentors: next });
+      if (target?.name) WETHUS.addHubActivity(currentProject.id, `${target.name} AI 멘토가 팀 구성에서 제거됨`);
+      pendingRemoveAiId = '';
+      closeModal('hubAiRemoveModal');
       await renderHub();
     });
 
