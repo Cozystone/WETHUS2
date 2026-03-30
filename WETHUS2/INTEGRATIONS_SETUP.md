@@ -97,6 +97,17 @@ FIGMA_REDIRECT_URI=https://www.wethus.co.kr/oauth/figma/callback
 3. Optional: secure token vault integration (replace demo token field)
 4. Optional: scheduler/cron for automatic periodic sync
 
+## Sync Strategy (MVP)
+
+Primary MVP strategy is **API-based pull**, not webhook-first.
+
+- OAuth connect provider account
+- List selectable resources via provider API
+- Save resource mapping to project
+- Pull metadata/activity periodically (manual or scheduled sync)
+
+Optional (later): webhook push for near real-time events.
+
 ## Auto Sync (recommended)
 
 Use your scheduler/cron to hit:
@@ -111,7 +122,6 @@ Suggested interval:
 
 ## Next recommended steps
 
-- Add webhook-based sync trigger per provider
 - Add per-project sync interval policy
 - Add conflict/permission error handling UI in hub
-- Expand provider implementations: Google Docs/Sheets first, then Slack/Figma
+- Expand provider implementations: Slack/Figma

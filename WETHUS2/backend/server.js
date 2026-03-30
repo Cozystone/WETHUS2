@@ -261,6 +261,7 @@ app.post('/integrations', (req, res) => {
     provider,
     external_resource_id: resourceId,
     external_resource_name: resourceName || resourceId,
+    external_resource_url: String(req.body?.external_resource_url || rows[idx]?.external_resource_url || ''),
     status: 'connected',
     access_token_reference: String(req.body?.access_token_reference || ''),
     connected_by_user_id: actorId,
@@ -301,15 +302,15 @@ app.get('/integrations/providers', (_req, res) => {
     ok: true,
     providers: [
       { key: 'notion', label: 'Notion', description: '문서와 체크리스트 연결', status: 'ready' },
-      { key: 'google_docs', label: 'Google Docs', description: '프로젝트 문서 연결', status: 'placeholder' },
-      { key: 'google_sheets', label: 'Google Sheets', description: '일정/지표 시트 연결', status: 'placeholder' },
+      { key: 'google_docs', label: 'Google Docs', description: '프로젝트 문서 연결', status: 'ready' },
+      { key: 'google_sheets', label: 'Google Sheets', description: '일정/지표 시트 연결', status: 'ready' },
       { key: 'slack', label: 'Slack', description: '프로젝트 채널 활동 연결', status: 'placeholder' },
       { key: 'figma', label: 'Figma', description: '디자인 파일 상태 연결', status: 'placeholder' }
     ]
   });
 });
 
-app.get('/integrations/resources', (req, res) => {
+app.get('/integrations/resources', async (req, res) => {
   const provider = String(req.query?.provider || '').trim().toLowerCase();
   const projectId = String(req.query?.projectId || '').trim();
   if (!provider || !projectId) return res.status(400).json({ ok: false, error: 'provider/projectId required' });
@@ -317,7 +318,28 @@ app.get('/integrations/resources', (req, res) => {
   const integrations = readIntegrations().filter(i => i.project_id === projectId && i.status === 'connected');
   const match = integrations.find(i => i.provider === (provider === 'google_docs' || provider === 'google_sheets' ? 'google' : provider));
 
-  // phase1: placeholder resource picker data (replace with provider SDK/list APIs)
+  if (provider === 'google_docs' || provider === 'google_sheets') {
+    const account = integrations.find(i => i.provider === 'google' && i.integration_type === 'account');
+    const token = String(account?._token_demo_only || '').trim();
+    if (!token) {
+      return res.json({ ok: true, provider, resources: [], placeholder: true, setupRequired: true, message: 'Google 계정 연결이 필요합니다.' });
+    }
+    try {
+      const mime = provider === 'google_docs' ? 'application/vnd.google-apps.document' : 'application/vnd.google-apps.spreadsheet';
+      const u = new URL('https://www.googleapis.com/drive/v3/files');
+      u.searchParams.set('q', `mimeType='${mime}' and trashed=false`);
+      u.searchParams.set('pageSize', '20');
+      u.searchParams.set('fields', 'files(id,name,webViewLink,modifiedTime)');
+      const r = await fetch(u.toString(), { headers: { Authorization: `Bearer ${token}` } });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j?.error?.message || 'google files list failed');
+      const files = Array.isArray(j.files) ? j.files : [];
+      return res.json({ ok: true, provider, resources: files.map(f => ({ id: f.id, name: f.name, url: f.webViewLink || '', modifiedAt: f.modifiedTime || '' })), placeholder: false, integrationId: match?.id || '' });
+    } catch (e) {
+      return res.json({ ok: true, provider, resources: [], placeholder: true, message: e?.message || 'google resources unavailable' });
+    }
+  }
+
   const items = provider === 'notion'
     ? [{ id: match?.external_resource_id || 'notion-workspace', name: match?.external_resource_name || 'Notion Workspace', url: 'https://www.notion.so' }]
     : [{ id: `${provider}-resource-1`, name: `${provider} 기본 리소스`, url: '' }];
@@ -530,25 +552,83 @@ app.get('/oauth/:provider/start', (req, res) => {
     u.searchParams.set('state', state);
     authUrl = u.toString();
   }
+  if (provider === 'google') {
+    const u = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    u.searchParams.set('client_id', GOOGLE_OAUTH_CLIENT_ID);
+    u.searchParams.set('redirect_uri', GOOGLE_OAUTH_REDIRECT_URI);
+    u.searchParams.set('response_type', 'code');
+    u.searchParams.set('scope', 'https://www.googleapis.com/auth/drive.readonly');
+    u.searchParams.set('access_type', 'offline');
+    u.searchParams.set('prompt', 'consent');
+    u.searchParams.set('state', state);
+    authUrl = u.toString();
+  }
 
-  return res.json({ ok: true, provider, oauthReady: true, redirectUri: conf.redirectUri, authUrl, state, note: provider === 'notion' ? 'Use authUrl to complete OAuth.' : 'Phase 1 placeholder for this provider.' });
+  return res.json({ ok: true, provider, oauthReady: true, redirectUri: conf.redirectUri, authUrl, state, note: provider === 'notion' || provider === 'google' ? 'Use authUrl to complete OAuth.' : 'Phase 1 placeholder for this provider.' });
 });
 
 app.get('/oauth/:provider/callback', async (req, res) => {
   const provider = String(req.params.provider || '').toLowerCase();
   const code = String(req.query?.code || '').trim();
   const state = decodeState(req.query?.state);
+  const projectId = String(state?.project_id || req.query?.project_id || '').trim();
+  const userId = String(state?.user_id || req.query?.user_id || 'unknown').trim();
 
-  if (provider !== 'notion') {
-    return res.json({ ok: true, provider, received: req.query || {}, note: 'Phase 1 callback placeholder. Exchange code for tokens in production setup.' });
-  }
-
-  if (!NOTION_CLIENT_ID || !NOTION_CLIENT_SECRET || !NOTION_REDIRECT_URI) {
-    return res.status(400).json({ ok: false, error: 'NOTION oauth env missing', setupRequired: true });
-  }
   if (!code) return res.status(400).json({ ok: false, error: 'code missing' });
 
   try {
+    if (provider === 'google') {
+      if (!GOOGLE_OAUTH_CLIENT_ID || !GOOGLE_OAUTH_CLIENT_SECRET || !GOOGLE_OAUTH_REDIRECT_URI) {
+        return res.status(400).json({ ok: false, error: 'GOOGLE oauth env missing', setupRequired: true });
+      }
+      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: GOOGLE_OAUTH_CLIENT_ID,
+          client_secret: GOOGLE_OAUTH_CLIENT_SECRET,
+          redirect_uri: GOOGLE_OAUTH_REDIRECT_URI,
+          grant_type: 'authorization_code'
+        })
+      });
+      const tokenJson = await tokenRes.json().catch(() => ({}));
+      if (!tokenRes.ok) return res.status(500).json({ ok: false, error: tokenJson?.error_description || 'google token exchange failed', detail: tokenJson });
+
+      const accountId = String(tokenJson?.id_token || tokenJson?.access_token || `google-${Date.now()}`).slice(0, 48);
+      const rows = readIntegrations();
+      const now = new Date().toISOString();
+      const idx = rows.findIndex(r => r.project_id === projectId && r.provider === 'google' && r.integration_type === 'account');
+      const row = {
+        id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
+        project_id: projectId,
+        integration_type: 'account',
+        provider: 'google',
+        external_resource_id: accountId,
+        external_resource_name: 'Google Account',
+        status: 'connected',
+        access_token_reference: tokenJson?.access_token ? `google:token:${accountId}` : '',
+        connected_by_user_id: userId,
+        last_synced_at: now,
+        created_at: idx >= 0 ? rows[idx].created_at : now,
+        updated_at: now,
+        _token_demo_only: tokenJson?.access_token || '',
+        _refresh_token_demo_only: tokenJson?.refresh_token || ''
+      };
+      if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
+      writeIntegrations(rows);
+
+      return res.send(`<!doctype html><meta charset="utf-8"><title>Connected</title><body style="font-family:sans-serif;padding:24px;">Google 연결 완료. 이 창은 자동으로 닫힙니다.<script>try{window.opener&&window.opener.postMessage({type:'wethus-oauth-connected',provider:'google',projectId:${JSON.stringify(projectId)}},'*')}catch(e){};setTimeout(()=>window.close(),400);</script></body>`);
+    }
+
+    if (provider !== 'notion') {
+      return res.json({ ok: true, provider, received: req.query || {}, note: 'Phase 1 callback placeholder. Exchange code for tokens in production setup.' });
+    }
+
+    if (!NOTION_CLIENT_ID || !NOTION_CLIENT_SECRET || !NOTION_REDIRECT_URI) {
+      return res.status(400).json({ ok: false, error: 'NOTION oauth env missing', setupRequired: true });
+    }
+
     const tokenRes = await fetch('https://api.notion.com/v1/oauth/token', {
       method: 'POST',
       headers: {
@@ -564,8 +644,6 @@ app.get('/oauth/:provider/callback', async (req, res) => {
     const tokenJson = await tokenRes.json().catch(() => ({}));
     if (!tokenRes.ok) return res.status(500).json({ ok: false, error: tokenJson?.message || 'notion token exchange failed', detail: tokenJson });
 
-    const projectId = String(state?.project_id || req.query?.project_id || '').trim();
-    const userId = String(state?.user_id || req.query?.user_id || 'unknown').trim();
     const botId = String(tokenJson?.bot_id || tokenJson?.workspace_id || `notion-${Date.now()}`);
     const workspaceName = String(tokenJson?.workspace_name || 'Notion Workspace');
 
@@ -585,15 +663,14 @@ app.get('/oauth/:provider/callback', async (req, res) => {
       last_synced_at: now,
       created_at: idx >= 0 ? rows[idx].created_at : now,
       updated_at: now,
-      // phase1 demo storage (replace with secret manager in production)
       _token_demo_only: tokenJson?.access_token || ''
     };
     if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
     writeIntegrations(rows);
 
-    return res.json({ ok: true, provider, project_id: projectId, integration: row, note: 'Notion OAuth connected. Replace _token_demo_only with secret manager in production.' });
+    return res.send(`<!doctype html><meta charset="utf-8"><title>Connected</title><body style="font-family:sans-serif;padding:24px;">Notion 연결 완료. 이 창은 자동으로 닫힙니다.<script>try{window.opener&&window.opener.postMessage({type:'wethus-oauth-connected',provider:'notion',projectId:${JSON.stringify(projectId)}},'*')}catch(e){};setTimeout(()=>window.close(),400);</script></body>`);
   } catch (e) {
-    return res.status(500).json({ ok: false, error: e?.message || 'notion callback failed' });
+    return res.status(500).json({ ok: false, error: e?.message || 'oauth callback failed' });
   }
 });
 
