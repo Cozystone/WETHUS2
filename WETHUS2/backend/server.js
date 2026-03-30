@@ -304,8 +304,8 @@ app.get('/integrations/providers', (_req, res) => {
       { key: 'notion', label: 'Notion', description: '문서와 체크리스트 연결', status: 'ready' },
       { key: 'google_docs', label: 'Google Docs', description: '프로젝트 문서 연결', status: 'ready' },
       { key: 'google_sheets', label: 'Google Sheets', description: '일정/지표 시트 연결', status: 'ready' },
-      { key: 'slack', label: 'Slack', description: '프로젝트 채널 활동 연결', status: 'placeholder' },
-      { key: 'figma', label: 'Figma', description: '디자인 파일 상태 연결', status: 'placeholder' }
+      { key: 'slack', label: 'Slack', description: '프로젝트 채널 활동 연결', status: 'ready' },
+      { key: 'figma', label: 'Figma', description: '디자인 파일 상태 연결', status: 'ready' }
     ]
   });
 });
@@ -337,6 +337,38 @@ app.get('/integrations/resources', async (req, res) => {
       return res.json({ ok: true, provider, resources: files.map(f => ({ id: f.id, name: f.name, url: f.webViewLink || '', modifiedAt: f.modifiedTime || '' })), placeholder: false, integrationId: match?.id || '' });
     } catch (e) {
       return res.json({ ok: true, provider, resources: [], placeholder: true, message: e?.message || 'google resources unavailable' });
+    }
+  }
+
+  if (provider === 'slack') {
+    const account = integrations.find(i => i.provider === 'slack' && i.integration_type === 'workspace');
+    const token = String(account?._token_demo_only || '').trim();
+    if (!token) return res.json({ ok: true, provider, resources: [], placeholder: true, setupRequired: true, message: 'Slack 워크스페이스 연결이 필요합니다.' });
+    try {
+      const r = await fetch('https://slack.com/api/conversations.list?types=public_channel,private_channel&limit=50', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!j?.ok) throw new Error(j?.error || 'slack channels list failed');
+      const channels = Array.isArray(j.channels) ? j.channels : [];
+      return res.json({ ok: true, provider, resources: channels.map(c => ({ id: c.id, name: `#${c.name}`, url: '' })), placeholder: false, integrationId: match?.id || '' });
+    } catch (e) {
+      return res.json({ ok: true, provider, resources: [], placeholder: true, message: e?.message || 'slack resources unavailable' });
+    }
+  }
+
+  if (provider === 'figma') {
+    const account = integrations.find(i => i.provider === 'figma' && i.integration_type === 'workspace');
+    const token = String(account?._token_demo_only || '').trim();
+    if (!token) return res.json({ ok: true, provider, resources: [], placeholder: true, setupRequired: true, message: 'Figma 계정 연결이 필요합니다.' });
+    try {
+      const r = await fetch('https://api.figma.com/v1/me', { headers: { 'X-Figma-Token': token } });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j?.message || 'figma profile failed');
+      const u = j?.email || j?.handle || 'Figma Workspace';
+      return res.json({ ok: true, provider, resources: [{ id: `figma:${j?.id || 'me'}`, name: u, url: 'https://www.figma.com/files' }], placeholder: false, integrationId: match?.id || '' });
+    } catch (e) {
+      return res.json({ ok: true, provider, resources: [], placeholder: true, message: e?.message || 'figma resources unavailable' });
     }
   }
 
@@ -566,8 +598,25 @@ app.get('/oauth/:provider/start', (req, res) => {
     u.searchParams.set('state', state);
     authUrl = u.toString();
   }
+  if (provider === 'slack') {
+    const u = new URL('https://slack.com/oauth/v2/authorize');
+    u.searchParams.set('client_id', SLACK_CLIENT_ID);
+    u.searchParams.set('scope', 'channels:read,groups:read');
+    u.searchParams.set('redirect_uri', SLACK_REDIRECT_URI);
+    u.searchParams.set('state', state);
+    authUrl = u.toString();
+  }
+  if (provider === 'figma') {
+    const u = new URL('https://www.figma.com/oauth');
+    u.searchParams.set('client_id', FIGMA_CLIENT_ID);
+    u.searchParams.set('redirect_uri', FIGMA_REDIRECT_URI);
+    u.searchParams.set('scope', 'file_read');
+    u.searchParams.set('response_type', 'code');
+    u.searchParams.set('state', state);
+    authUrl = u.toString();
+  }
 
-  return res.json({ ok: true, provider, oauthReady: true, redirectUri: conf.redirectUri, authUrl, state, note: provider === 'notion' || provider === 'google' ? 'Use authUrl to complete OAuth.' : 'Phase 1 placeholder for this provider.' });
+  return res.json({ ok: true, provider, oauthReady: true, redirectUri: conf.redirectUri, authUrl, state, note: provider === 'notion' || provider === 'google' || provider === 'slack' || provider === 'figma' ? 'Use authUrl to complete OAuth.' : 'Phase 1 placeholder for this provider.' });
 });
 
 app.get('/oauth/:provider/callback', async (req, res) => {
@@ -622,6 +671,93 @@ app.get('/oauth/:provider/callback', async (req, res) => {
       writeIntegrations(rows);
 
       return res.send(`<!doctype html><meta charset="utf-8"><title>Connected</title><body style="font-family:sans-serif;padding:24px;">Google 연결 완료. 이 창은 자동으로 닫힙니다.<script>try{window.opener&&window.opener.postMessage({type:'wethus-oauth-connected',provider:'google',projectId:${JSON.stringify(projectId)}},'*')}catch(e){};setTimeout(()=>window.close(),400);</script></body>`);
+    }
+
+    if (provider === 'slack') {
+      if (!SLACK_CLIENT_ID || !SLACK_CLIENT_SECRET || !SLACK_REDIRECT_URI) {
+        return res.status(400).json({ ok: false, error: 'SLACK oauth env missing', setupRequired: true });
+      }
+      const tokenRes = await fetch('https://slack.com/api/oauth.v2.access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: SLACK_CLIENT_ID,
+          client_secret: SLACK_CLIENT_SECRET,
+          redirect_uri: SLACK_REDIRECT_URI
+        })
+      });
+      const tokenJson = await tokenRes.json().catch(() => ({}));
+      if (!tokenJson?.ok) return res.status(500).json({ ok: false, error: tokenJson?.error || 'slack token exchange failed', detail: tokenJson });
+      const teamId = String(tokenJson?.team?.id || `slack-${Date.now()}`);
+      const teamName = String(tokenJson?.team?.name || 'Slack Workspace');
+
+      const rows = readIntegrations();
+      const now = new Date().toISOString();
+      const idx = rows.findIndex(r => r.project_id === projectId && r.provider === 'slack' && r.integration_type === 'workspace');
+      const row = {
+        id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
+        project_id: projectId,
+        integration_type: 'workspace',
+        provider: 'slack',
+        external_resource_id: teamId,
+        external_resource_name: teamName,
+        status: 'connected',
+        access_token_reference: tokenJson?.access_token ? `slack:token:${teamId}` : '',
+        connected_by_user_id: userId,
+        last_synced_at: now,
+        created_at: idx >= 0 ? rows[idx].created_at : now,
+        updated_at: now,
+        _token_demo_only: tokenJson?.access_token || ''
+      };
+      if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
+      writeIntegrations(rows);
+      return res.send(`<!doctype html><meta charset="utf-8"><title>Connected</title><body style="font-family:sans-serif;padding:24px;">Slack 연결 완료. 이 창은 자동으로 닫힙니다.<script>try{window.opener&&window.opener.postMessage({type:'wethus-oauth-connected',provider:'slack',projectId:${JSON.stringify(projectId)}},'*')}catch(e){};setTimeout(()=>window.close(),400);</script></body>`);
+    }
+
+    if (provider === 'figma') {
+      if (!FIGMA_CLIENT_ID || !FIGMA_CLIENT_SECRET || !FIGMA_REDIRECT_URI) {
+        return res.status(400).json({ ok: false, error: 'FIGMA oauth env missing', setupRequired: true });
+      }
+      const tokenRes = await fetch('https://api.figma.com/v1/oauth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: FIGMA_CLIENT_ID,
+          client_secret: FIGMA_CLIENT_SECRET,
+          redirect_uri: FIGMA_REDIRECT_URI,
+          grant_type: 'authorization_code'
+        })
+      });
+      const tokenJson = await tokenRes.json().catch(() => ({}));
+      if (!tokenRes.ok || !tokenJson?.access_token) return res.status(500).json({ ok: false, error: tokenJson?.message || 'figma token exchange failed', detail: tokenJson });
+      const figmaRes = await fetch('https://api.figma.com/v1/me', { headers: { 'X-Figma-Token': tokenJson.access_token } });
+      const figmaMe = await figmaRes.json().catch(() => ({}));
+      const figmaId = String(figmaMe?.id || `figma-${Date.now()}`);
+      const figmaName = String(figmaMe?.email || figmaMe?.handle || 'Figma Workspace');
+
+      const rows = readIntegrations();
+      const now = new Date().toISOString();
+      const idx = rows.findIndex(r => r.project_id === projectId && r.provider === 'figma' && r.integration_type === 'workspace');
+      const row = {
+        id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
+        project_id: projectId,
+        integration_type: 'workspace',
+        provider: 'figma',
+        external_resource_id: figmaId,
+        external_resource_name: figmaName,
+        status: 'connected',
+        access_token_reference: tokenJson?.access_token ? `figma:token:${figmaId}` : '',
+        connected_by_user_id: userId,
+        last_synced_at: now,
+        created_at: idx >= 0 ? rows[idx].created_at : now,
+        updated_at: now,
+        _token_demo_only: tokenJson?.access_token || ''
+      };
+      if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
+      writeIntegrations(rows);
+      return res.send(`<!doctype html><meta charset="utf-8"><title>Connected</title><body style="font-family:sans-serif;padding:24px;">Figma 연결 완료. 이 창은 자동으로 닫힙니다.<script>try{window.opener&&window.opener.postMessage({type:'wethus-oauth-connected',provider:'figma',projectId:${JSON.stringify(projectId)}},'*')}catch(e){};setTimeout(()=>window.close(),400);</script></body>`);
     }
 
     if (provider !== 'notion') {
