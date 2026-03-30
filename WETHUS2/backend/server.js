@@ -481,6 +481,31 @@ app.post('/ai/chat', async (req, res) => {
   }
 });
 
+app.post('/tools/fetch-meta', async (req, res) => {
+  try {
+    const rawUrl = String(req.body?.url || '').trim();
+    if (!/^https?:\/\//i.test(rawUrl)) return res.status(400).json({ ok: false, error: 'http(s) url required' });
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    const r = await fetch(rawUrl, { redirect: 'follow', signal: controller.signal });
+    clearTimeout(timeout);
+
+    const text = await r.text();
+    const titleMatch = text.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const title = titleMatch ? String(titleMatch[1]).trim() : '';
+    return res.json({
+      ok: true,
+      status: r.status,
+      finalUrl: r.url || rawUrl,
+      title,
+      fetchedAt: new Date().toISOString()
+    });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'fetch meta failed' });
+  }
+});
+
 app.post('/pass/start', (req, res) => {
   if (!PASS_ENABLED || !NICE_SITE_CODE || !NICE_SITE_PASSWORD) {
     return res.status(501).json({
