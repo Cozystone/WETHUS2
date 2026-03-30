@@ -25,8 +25,8 @@
     .hub-team-pill-remove{border:0;background:transparent;color:#ffb36d;font-weight:900;cursor:pointer;padding:0 2px;line-height:1;}
     .hub-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
     .hub-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-    .hub-actions .btn{min-width:120px;justify-content:center;}
-    #hubChatOpenBtn{min-width:148px;}
+    .hub-actions .btn{min-width:132px;justify-content:center;}
+    #hubChatOpenBtn{min-width:176px;}
     .hub-tabs-wrap{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:10px;align-items:stretch;margin:14px 0 12px}
     .hub-tabs{display:flex;gap:8px;align-items:center}
     .hub-tab{padding:8px 12px;border-radius:999px;border:1px solid #333;background:#151515;color:#ddd;cursor:pointer}
@@ -944,22 +944,6 @@
       if (!currentProject || !pendingRemoveAiId) return;
       const hub = WETHUS.getProjectHub(currentProject.id);
       const target = (hub.aiMentors || []).find(x => x.id === pendingRemoveAiId);
-      const next = (hub.aiMentors || []).filter(x => x.id !== pendingRemoveAiId);
-      WETHUS.upsertProjectHub(currentProject.id, { aiMentors: next });
-      if (target?.name) WETHUS.addHubActivity(currentProject.id, `${target.name} AI 멘토가 팀 구성에서 제거됨`);
-      pendingRemoveAiId = '';
-      closeModal('hubAiRemoveModal');
-      await renderHub();
-    });
-
-    const pid=params.get('projectId') || getPersistedProject();
-    renderProjectList();
-    if(pid) openProject(pid);
-
-  </script>
-</body>
-</html>
-d === pendingRemoveAiId);
       const next = (hub.aiMentors || []).filter(x => x.id !== pendingRemoveAiId);
       WETHUS.upsertProjectHub(currentProject.id, { aiMentors: next });
       if (target?.name) WETHUS.addHubActivity(currentProject.id, `${target.name} AI 멘토가 팀 구성에서 제거됨`);
