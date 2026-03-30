@@ -331,13 +331,25 @@
         btn.addEventListener('click', () => {
           const m = aiMentors.find(x => x.id === btn.getAttribute('data-consult-ai'));
           if (!m) return;
-          if (hubProjectId) {
-            const hub = WETHUS.getProjectHub(hubProjectId);
-            const next = [...(hub.aiMentors || [])];
-            if (!next.some(x => x.id === m.id)) next.push({ id: m.id, name: m.name, avatar: m.avatar || '', addedAt: new Date().toISOString() });
-            WETHUS.upsertProjectHub(hubProjectId, { aiMentors: next });
+
+          const ok = window.confirm(`에이전트를 추가하시겠습니까?\n\n${m.name} AI 멘토를 프로젝트 허브에 추가합니다.`);
+          if (!ok) return;
+
+          const projects = WETHUS.myProjects() || [];
+          const targetProjectId = hubProjectId || projects[0]?.id || '';
+          if (!targetProjectId) {
+            mentorMsg.textContent = '먼저 프로젝트를 만들어야 AI 에이전트를 추가할 수 있어요.';
+            return;
           }
-          startDm(m.name, `agent:${m.id}`, m.avatar || '');
+
+          const hub = WETHUS.getProjectHub(targetProjectId);
+          const next = [...(hub.aiMentors || [])];
+          if (!next.some(x => x.id === m.id)) {
+            next.push({ id: m.id, name: m.name, avatar: m.avatar || '', addedAt: new Date().toISOString() });
+            WETHUS.upsertProjectHub(targetProjectId, { aiMentors: next });
+          }
+          WETHUS.addHubActivity(targetProjectId, `${m.name} AI 멘토가 허브에 추가됨`);
+          location.href = `project-hub.html?projectId=${encodeURIComponent(targetProjectId)}`;
         });
       });
     }
