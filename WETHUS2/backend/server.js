@@ -327,15 +327,33 @@ app.get('/integrations/resources', async (req, res) => {
     }
     try {
       const mime = provider === 'google_docs' ? 'application/vnd.google-apps.document' : 'application/vnd.google-apps.spreadsheet';
+      const parentId = String(req.query?.parentId || 'root').trim() || 'root';
+      const parentClause = parentId === 'root' ? `'root' in parents` : `'${parentId}' in parents`;
       const u = new URL('https://www.googleapis.com/drive/v3/files');
-      u.searchParams.set('q', `mimeType='${mime}' and trashed=false`);
-      u.searchParams.set('pageSize', '20');
-      u.searchParams.set('fields', 'files(id,name,webViewLink,modifiedTime)');
+      u.searchParams.set('q', `(mimeType='application/vnd.google-apps.folder' or mimeType='${mime}') and ${parentClause} and trashed=false`);
+      u.searchParams.set('orderBy', 'folder,name_natural');
+      u.searchParams.set('pageSize', '100');
+      u.searchParams.set('fields', 'files(id,name,mimeType,parents,webViewLink,modifiedTime)');
       const r = await fetch(u.toString(), { headers: { Authorization: `Bearer ${token}` } });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j?.error?.message || 'google files list failed');
       const files = Array.isArray(j.files) ? j.files : [];
-      return res.json({ ok: true, provider, resources: files.map(f => ({ id: f.id, name: f.name, url: f.webViewLink || '', modifiedAt: f.modifiedTime || '' })), placeholder: false, integrationId: match?.id || '' });
+      return res.json({
+        ok: true,
+        provider,
+        parentId,
+        resources: files.map(f => ({
+          id: f.id,
+          name: f.name,
+          kind: f.mimeType === 'application/vnd.google-apps.folder' ? 'folder' : 'file',
+          mimeType: f.mimeType || '',
+          parentId: Array.isArray(f.parents) ? (f.parents[0] || '') : '',
+          url: f.webViewLink || '',
+          modifiedAt: f.modifiedTime || ''
+        })),
+        placeholder: false,
+        integrationId: match?.id || ''
+      });
     } catch (e) {
       return res.json({ ok: true, provider, resources: [], placeholder: true, message: e?.message || 'google resources unavailable' });
     }
