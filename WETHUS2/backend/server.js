@@ -480,6 +480,55 @@ app.get('/integrations/insights', async (req, res) => {
   const projectId = String(req.query?.projectId || '').trim();
   if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
 
+  const rows = readIntegrations().filter(r => r.project_id === projectId && r.status === 'connected');
+  const out = [];
+
+  const googleAccount = rows.find(r => r.provider === 'google' && r.integration_type === 'account');
+  const googleToken = String(googleAccount?._token_demo_only || '').trim();
+
+  for (const it of rows) {
+    if (it.provider === 'google' && it.integration_type === 'document' && googleToken) {
+      try {
+        const u = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(it.external_resource_id)}?fields=id,name,webViewLink,modifiedTime`;
+        const metaRes = await fetch(u, { headers: { Authorization: `Bearer ${googleToken}` } });
+        const metaJson = await metaRes.json().catch(() => ({}));
+        if (!metaRes.ok) throw new Error(metaJson?.error?.message || 'google file metadata failed');
+
+        const txtRes = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(it.external_resource_id)}/export?mimeType=text/plain`, {
+          headers: { Authorization: `Bearer ${googleToken}` }
+        });
+        const txt = await txtRes.text();
+        if (!txtRes.ok) throw new Error('google doc export failed');
+
+        out.push({
+          provider: 'google_docs',
+          resourceId: metaJson?.id || it.external_resource_id,
+          resourceName: metaJson?.name || it.external_resource_name,
+          resourceUrl: metaJson?.webViewLink || it.external_resource_url || '',
+          modifiedAt: metaJson?.modifiedTime || it.updated_at || '',
+          snippet: String(txt || '').replace(/\s+/g, ' ').trim().slice(0, 1800)
+        });
+      } catch (e) {
+        out.push({
+          provider: 'google_docs',
+          resourceId: it.external_resource_id,
+          resourceName: it.external_resource_name,
+          resourceUrl: it.external_resource_url || '',
+          modifiedAt: it.updated_at || '',
+          snippet: '',
+          error: e?.message || 'insight fetch failed'
+        });
+      }
+    }
+  }
+
+  return res.json({ ok: true, projectId, insights: out });
+});
+
+app.get('/integrations/insights', async (req, res) => {
+  const projectId = String(req.query?.projectId || '').trim();
+  if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
+
   try {
     const integrations = readIntegrations().filter(i => i.project_id === projectId && i.status === 'connected');
     const googleAccount = integrations.find(i => i.provider === 'google' && i.integration_type === 'account');
