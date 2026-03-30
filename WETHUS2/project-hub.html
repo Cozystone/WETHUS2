@@ -379,7 +379,7 @@
         let externalDocContext = '';
         try {
           const ext = await hubApi(`/integrations/insights?projectId=${encodeURIComponent(currentProject.id)}`);
-          const docLines = (ext?.docInsights || []).map(d => `${d.name}: ${String(d.snippet || '').slice(0, 500)}`);
+          const docLines = (ext?.insights || []).filter(d => d?.snippet).map(d => `${d.resourceName || d.name}: ${String(d.snippet || '').slice(0, 500)}`);
           externalDocContext = docLines.join('\n');
         } catch (_) {}
 
