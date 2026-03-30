@@ -188,7 +188,7 @@
   <div id="worklogModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-worklog="true"></div><article class="modal-panel" style="max-width:620px;"><button class="modal-close" id="worklogClose">×</button><div class="modal-content"><h3 id="worklogTitle" style="margin:0 0 8px;">업무기록</h3><ul id="worklogList" class="meta-bullet"></ul></div></article></div>
   <div id="hubAiAddModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-ai-add="true"></div><article class="modal-panel" style="max-width:520px;"><button class="modal-close" id="hubAiAddClose">×</button><div class="modal-content"><h3 id="hubAiAddTitle" style="margin:0 0 8px;">에이전트를 추가하시겠습니까?</h3><p id="hubAiAddDesc" class="meta" style="margin:0 0 12px;">선택한 AI 멘토를 이 프로젝트 허브 팀에 추가합니다.</p><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubAiAddCancel" class="btn btn--secondary" type="button">취소</button><button id="hubAiAddConfirm" class="btn btn--primary" type="button">확인</button></div></div></article></div>
   <div id="hubAiRemoveModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-ai-remove="true"></div><article class="modal-panel" style="max-width:520px;"><button class="modal-close" id="hubAiRemoveClose">×</button><div class="modal-content"><h3 id="hubAiRemoveTitle" style="margin:0 0 8px;">에이전트를 제거하시겠습니까?</h3><p id="hubAiRemoveDesc" class="meta" style="margin:0 0 12px;">선택한 AI 멘토를 팀 구성에서 제거합니다.</p><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubAiRemoveCancel" class="btn btn--secondary" type="button">취소</button><button id="hubAiRemoveConfirm" class="btn btn--primary" type="button">확인</button></div></div></article></div>
-  <div id="hubResourceModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-resource="true"></div><article class="modal-panel" style="max-width:560px;"><button class="modal-close" id="hubResourceClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">연결할 리소스 선택</h3><p id="hubResourceHelp" class="meta" style="margin:0 0 10px;">연결할 문서/시트/워크스페이스를 선택하세요.</p><select id="hubResourceSelect" style="width:100%;margin-bottom:10px;"></select><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubResourceCancel" class="btn btn--secondary" type="button">취소</button><button id="hubResourceConfirm" class="btn btn--primary" type="button">연결 저장</button></div></div></article></div>
+  <div id="hubResourceModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-resource="true"></div><article class="modal-panel" style="max-width:620px;"><button class="modal-close" id="hubResourceClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">연결할 리소스 선택</h3><p id="hubResourceHelp" class="meta" style="margin:0 0 10px;">연결할 문서/시트/워크스페이스를 선택하세요.</p><input id="hubResourceSearch" placeholder="문서/시트 이름 검색" style="width:100%;margin:0 0 8px;" /><div id="hubResourceList" style="max-height:280px;overflow:auto;border:1px solid #2a2a2a;border-radius:10px;padding:6px;background:#111;display:grid;gap:6px;margin-bottom:10px;"></div><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubResourceCancel" class="btn btn--secondary" type="button">취소</button><button id="hubResourceConfirm" class="btn btn--primary" type="button">연결 저장</button></div></div></article></div>
 
   <footer class="footer"><div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p></div></div></footer>
 
@@ -528,6 +528,23 @@
 
     let pendingResourceTool = null;
     let pendingResourceRows = [];
+    let pendingResourceSelectedId = '';
+
+    function renderResourceRows(keyword = '') {
+      const listEl = document.getElementById('hubResourceList');
+      const q = String(keyword || '').trim().toLowerCase();
+      const rows = (pendingResourceRows || []).filter(r => !q || String(r.name || '').toLowerCase().includes(q));
+      listEl.innerHTML = rows.map(r => {
+        const active = r.id === pendingResourceSelectedId;
+        return `<button type="button" data-rid="${r.id}" style="text-align:left;padding:10px;border:1px solid ${active ? '#ff8a1f' : '#2a2a2a'};border-radius:8px;background:${active ? 'rgba(255,138,31,.12)' : '#171717'};color:#f5f5f5;cursor:pointer;"><strong style="display:block;">${r.name || r.id}</strong><span class="meta">${r.modifiedAt ? new Date(r.modifiedAt).toLocaleString('ko-KR') : ''}</span></button>`;
+      }).join('') || '<p class="meta" style="margin:6px;">검색 결과가 없습니다.</p>';
+      listEl.querySelectorAll('[data-rid]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          pendingResourceSelectedId = btn.getAttribute('data-rid') || '';
+          renderResourceRows(document.getElementById('hubResourceSearch').value);
+        });
+      });
+    }
 
     async function openResourceSelector(tool) {
       if (!currentProject) return;
@@ -539,9 +556,10 @@
       }
       pendingResourceTool = tool;
       pendingResourceRows = rows;
+      pendingResourceSelectedId = rows[0]?.id || '';
       document.getElementById('hubResourceHelp').textContent = `${tool.name}에서 프로젝트에 연결할 리소스를 선택하세요.`;
-      const select = document.getElementById('hubResourceSelect');
-      select.innerHTML = rows.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+      document.getElementById('hubResourceSearch').value = '';
+      renderResourceRows('');
       openModal('hubResourceModal');
     }
 
@@ -685,9 +703,10 @@
     document.getElementById('hubResourceClose').addEventListener('click',()=>closeModal('hubResourceModal'));
     document.getElementById('hubResourceCancel').addEventListener('click',()=>closeModal('hubResourceModal'));
     document.querySelector('[data-close-resource]').addEventListener('click',()=>closeModal('hubResourceModal'));
+    document.getElementById('hubResourceSearch').addEventListener('input', (e) => renderResourceRows(e.target.value));
     document.getElementById('hubResourceConfirm').addEventListener('click', async () => {
       if (!currentProject || !pendingResourceTool) return;
-      const selectedId = document.getElementById('hubResourceSelect').value;
+      const selectedId = pendingResourceSelectedId;
       const selected = (pendingResourceRows || []).find(x => x.id === selectedId);
       if (!selected) return;
 
