@@ -182,7 +182,7 @@
   </main>
 
   <div id="hubEditModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-edit="true"></div><article class="modal-panel" style="max-width:760px;"><button class="modal-close" id="hubEditClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">프로젝트 수정</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><input id="hubEditTitle" placeholder="제목" /><input id="hubEditSummary" placeholder="요약" /></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><select id="hubEditStatus"><option>모집 중</option><option>기획 중</option><option>진행 중</option><option>피보팅</option><option>완료</option></select><select id="hubEditTeamSize"><option>1인</option><option>2인</option><option>3인</option><option>4인이상</option></select></div><input id="hubEditRoles" placeholder="역할" style="margin-bottom:8px;" /><textarea id="hubEditDesc" style="width:100%;min-height:110px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;" placeholder="프로젝트 설명"></textarea><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="hubEditSave" class="btn btn--primary" type="button">저장</button></div></div></article></div>
-  <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:560px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 툴 연결</h3><p class="meta" style="margin:0 0 10px;">툴 로고를 눌러 MCP/연동 설정 페이지로 이동하세요.</p><div id="toolLogoGrid" class="tool-grid"></div></div></article></div>
+  <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 툴 연결</h3><p class="meta" style="margin:0 0 10px;">권장: API + Webhook 연동으로 자동 반영. 필요 시 공유 링크 연결도 지원합니다.</p><article class="hub-card" style="padding:10px;margin:0 0 10px;"><strong style="display:block;margin-bottom:4px;">연동 구조</strong><p class="meta" style="margin:0;">1) 연결 생성 → 2) 웹훅 URL/시크릿 발급 → 3) 외부툴에서 웹훅 등록 → 4) 허브 활동/상태 자동 반영</p></article><div id="toolLogoGrid" class="tool-grid"></div></div></article></div>
   <div id="hubUpdateModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-update="true"></div><article class="modal-panel" style="max-width:560px;"><button class="modal-close" id="hubUpdateClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">업데이트 작성</h3><textarea id="hubUpdateInput" style="width:100%;min-height:120px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;"></textarea><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="hubUpdateSubmit" class="btn btn--primary" type="button">등록</button></div></div></article></div>
   <div id="hubChatModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-chat="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubChatClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">팀채팅</h3><p class="meta" style="margin:0 0 8px;">프로젝트 지원 AI는 프로젝트 정보/최근 활동/팀 채팅 문맥을 함께 참고합니다.</p><div id="chatList" style="max-height:320px;overflow:auto;display:grid;gap:8px;"></div><div class="slash-suggest" style="display:flex;gap:8px;margin-top:10px;"><input id="chatInput" style="flex:1;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px;" placeholder="메시지를 입력하세요 (/ai 질문 형태 지원)"/><button id="chatSend" class="btn btn--primary">보내기</button><div id="slashList" class="slash-list"></div></div></div></article></div>
   <div id="worklogModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-worklog="true"></div><article class="modal-panel" style="max-width:620px;"><button class="modal-close" id="worklogClose">×</button><div class="modal-content"><h3 id="worklogTitle" style="margin:0 0 8px;">업무기록</h3><ul id="worklogList" class="meta-bullet"></ul></div></article></div>
@@ -532,12 +532,13 @@
       toolLogoGrid.innerHTML = toolTargets.map(t => {
         const st = currentToolState(t.name);
         return `<article class="tool-card" data-tool="${t.name}">
-          <strong style="font-size:1.25rem;">${t.logo}</strong>
-          <p style="margin:6px 0 0;">${t.name}</p>
-          <p class="meta" style="margin:4px 0 0;">${st?.connected ? '연결됨' : '미연결'} ${st?.lastSynced ? '· ' + new Date(st.lastSynced).toLocaleString('ko-KR') : ''}</p>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+            <div><strong style="font-size:1.15rem;">${t.logo} ${t.name}</strong><p class="meta" style="margin:4px 0 0;">${st?.connected ? '연결됨' : '미연결'} ${st?.lastSynced ? '· 마지막 반영 ' + new Date(st.lastSynced).toLocaleString('ko-KR') : ''}</p></div>
+            <button class="btn btn--secondary" data-tool-home="${t.name}" type="button" style="padding:6px 10px;">홈</button>
+          </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
-            <button class="btn btn--secondary" data-tool-home="${t.name}" type="button">홈</button>
-            <button class="btn btn--primary" data-tool-connect="${t.name}" type="button">연결</button>
+            <button class="btn btn--primary" data-tool-connect="${t.name}" type="button">연결/재연결</button>
+            <button class="btn btn--secondary" data-tool-webhook="${t.name}" type="button">API+Webhook</button>
             <button class="btn btn--secondary" data-tool-sync="${t.name}" type="button">동기화</button>
             <button class="btn btn--secondary" data-tool-disconnect="${t.name}" type="button">해제</button>
           </div>
@@ -548,6 +549,31 @@
         btn.addEventListener('click', () => {
           const t = toolTargets.find(x => x.name === btn.getAttribute('data-tool-home'));
           if (t?.home) window.open(t.home, '_blank', 'noopener');
+        });
+      });
+
+      toolLogoGrid.querySelectorAll('[data-tool-webhook]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!currentProject) return;
+          const name = btn.getAttribute('data-tool-webhook');
+          const provider = (name === 'Notion') ? 'notion' : (name.includes('Google') ? 'google' : name.toLowerCase());
+          const integ = (remoteIntegrations || []).find(x => x.provider === provider);
+          if (!integ?.id) return alert('먼저 연결을 완료한 뒤 API+Webhook를 설정하세요.');
+          try {
+            const conf = await hubApi(`/integrations/${encodeURIComponent(integ.id)}/webhook-config`, { method: 'POST' });
+            const msg = [
+              `${name} API+Webhook 설정 정보`,
+              `- Webhook URL: ${conf.webhook_url}`,
+              `- Header: ${conf.webhook_header}`,
+              `- Secret: ${conf.webhook_secret}`,
+              '',
+              '외부툴 웹훅 설정에 URL/헤더/시크릿을 그대로 등록하세요.'
+            ].join('\n');
+            alert(msg);
+            WETHUS.addHubActivity(currentProject.id, `${name} API+Webhook 설정값 발급`);
+          } catch (e) {
+            alert(e?.message || 'Webhook 설정 실패');
+          }
         });
       });
 

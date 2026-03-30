@@ -64,6 +64,12 @@ FIGMA_REDIRECT_URI=https://www.wethus.co.kr/oauth/figma/callback
 - `GET /integrations?projectId=...`
 - `POST /integrations`
 - `DELETE /integrations/:id`
+- `POST /integrations/:id/webhook-config` (webhook URL/secret 발급)
+
+### Webhook ingest
+- `POST /webhooks/:provider/:integrationId`
+- Header: `x-webhook-secret: <issued-secret>`
+- Body (권장): `{ event_type, item_id, item_name, actor_name, occurred_at, ... }`
 
 ### Activity & Snapshot
 - `GET /activity-events?projectId=...&limit=50`

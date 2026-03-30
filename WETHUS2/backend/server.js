@@ -282,6 +282,74 @@ app.delete('/integrations/:id', (req, res) => {
   return res.json({ ok: true, removed: rows.length - next.length });
 });
 
+app.post('/integrations/:id/webhook-config', (req, res) => {
+  const id = String(req.params.id || '').trim();
+  const rows = readIntegrations();
+  const idx = rows.findIndex(r => r.id === id);
+  if (idx < 0) return res.status(404).json({ ok: false, error: 'integration not found' });
+
+  const secret = crypto.randomBytes(24).toString('hex');
+  const now = new Date().toISOString();
+  rows[idx] = {
+    ...rows[idx],
+    webhook_secret: secret,
+    webhook_enabled: true,
+    webhook_updated_at: now,
+    updated_at: now
+  };
+  writeIntegrations(rows);
+
+  const base = String(req.protocol && req.get('host') ? `${req.protocol}://${req.get('host')}` : INTEGRATION_APP_URL || '').replace(/\/$/, '');
+  const webhook_url = `${base}/webhooks/${encodeURIComponent(rows[idx].provider)}/${encodeURIComponent(id)}`;
+  return res.json({ ok: true, integration_id: id, provider: rows[idx].provider, webhook_url, webhook_secret: secret, webhook_header: 'x-webhook-secret' });
+});
+
+app.post('/webhooks/:provider/:integrationId', (req, res) => {
+  const provider = String(req.params.provider || '').trim().toLowerCase();
+  const integrationId = String(req.params.integrationId || '').trim();
+  const rows = readIntegrations();
+  const integration = rows.find(r => r.id === integrationId && r.provider === provider);
+  if (!integration) return res.status(404).json({ ok: false, error: 'integration not found' });
+
+  const secret = String(req.headers['x-webhook-secret'] || '').trim();
+  if (!integration.webhook_secret || secret !== integration.webhook_secret) {
+    return res.status(401).json({ ok: false, error: 'invalid webhook secret' });
+  }
+
+  const now = new Date().toISOString();
+  const payload = req.body || {};
+  const eventType = String(payload.event_type || payload.type || 'webhook_event');
+  const itemId = String(payload.item_id || payload.id || '');
+  const itemName = String(payload.item_name || payload.title || payload.name || 'Webhook Item');
+  const actorName = String(payload.actor_name || payload.user || provider);
+
+  const events = readActivityEvents();
+  const event = {
+    id: crypto.randomUUID(),
+    project_id: integration.project_id,
+    integration_id: integration.id,
+    source_type: provider,
+    source_item_id: itemId,
+    source_item_name: itemName,
+    actor_external_id: String(payload.actor_external_id || ''),
+    actor_name: actorName,
+    event_type: eventType,
+    raw_payload: payload,
+    occurred_at: String(payload.occurred_at || now),
+    created_at: now
+  };
+  events.push(event);
+  writeActivityEvents(events.slice(-2000));
+
+  const i = rows.findIndex(r => r.id === integration.id);
+  if (i >= 0) {
+    rows[i] = { ...rows[i], last_synced_at: now, updated_at: now };
+    writeIntegrations(rows);
+  }
+
+  return res.json({ ok: true, accepted: true, event_id: event.id });
+});
+
 app.get('/activity-events', (req, res) => {
   const projectId = String(req.query?.projectId || '').trim();
   const limit = Math.min(200, Math.max(1, Number(req.query?.limit || 50)));
