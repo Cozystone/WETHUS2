@@ -1616,15 +1616,35 @@
           <span class="notify-badge menu-badge" style="display:none;">0</span>
         </button>
         <aside class="side-drawer" style="display:none;">
-          <a href="dm.html" class="side-drawer-item">
+          <div class="side-drawer-group-title">빠른 메뉴</div>
+          <a href="dm.html" class="side-drawer-item side-drawer-item--row">
             <span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
             <span>DM</span>
           </a>
-          <a href="notifications.html" class="side-drawer-item">
+          <a href="notifications.html" class="side-drawer-item side-drawer-item--row">
             <span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"/><path d="M9 17a3 3 0 0 0 6 0"/></svg><span class="notify-badge side-badge" style="display:none;">0</span></span>
             <span>알림</span>
           </a>
-          ${state.devMode ? `<a href="admin.html" class="side-drawer-item"><span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7z"/></svg></span><span>프로젝트 검토</span></a>` : ''}
+
+          <div class="side-drawer-group-title">AD · 홍보</div>
+          <a href="pricing.html?tab=ad" class="side-drawer-item side-drawer-item--row">
+            <span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span>
+            <span>AD 센터</span>
+          </a>
+          <a href="pricing.html?tab=ad-campaign" class="side-drawer-item side-drawer-item--row">
+            <span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12l-18-5v-2z"/><path d="M11 14v4a2 2 0 0 0 2 2h1"/></svg></span>
+            <span>홍보 시작</span>
+          </a>
+
+          <div class="side-drawer-group-title">탭</div>
+          <a href="explore.html" class="side-drawer-item side-drawer-item--row"><span>탐색</span></a>
+          <a href="project-hub.html" class="side-drawer-item side-drawer-item--row"><span>프로젝트 허브</span></a>
+          <a href="mentor.html" class="side-drawer-item side-drawer-item--row"><span>멘토</span></a>
+
+          <div class="side-drawer-group-title side-drawer-settings-title"><span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.33 1V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-.33-1 1.65 1.65 0 0 0-1-.6 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1-.33H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1-.33 1.65 1.65 0 0 0 .6-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6c.3-.21.5-.55.6-1V3a2 2 0 1 1 4 0v.09c.1.45.3.79.6 1a1.65 1.65 0 0 0 1 .6 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.21.3.55.5 1 .6H21a2 2 0 1 1 0 4h-.09c-.45.1-.79.3-1 .6z"/></svg></span><span>설정</span></div>
+          <button type="button" class="side-drawer-item side-drawer-item--row" data-lang-switch><span>언어 설정 (KR/EN)</span></button>
+          <a href="profile.html" class="side-drawer-item side-drawer-item--row"><span>계정 설정</span></a>
+          ${state.devMode ? `<a href="admin.html" class="side-drawer-item side-drawer-item--row"><span>프로젝트 검토</span></a>` : ''}
         </aside>
       `;
 
@@ -1653,6 +1673,7 @@
 
       const drawer = menuWrap.querySelector('.side-drawer');
       const openBtn = menuWrap.querySelector('.menu-icon-btn');
+      const langSwitchBtn = menuWrap.querySelector('[data-lang-switch]');
       refreshNavBadges();
 
       const toggleDrawer = () => {
@@ -1661,6 +1682,12 @@
         openBtn?.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
       };
       openBtn?.addEventListener('click', toggleDrawer);
+      langSwitchBtn?.addEventListener('click', () => {
+        const cur = localStorage.getItem('wethus.lang') || 'ko';
+        const next = cur === 'ko' ? 'en' : 'ko';
+        localStorage.setItem('wethus.lang', next);
+        alert(`언어 설정이 ${next.toUpperCase()}로 저장되었습니다. (UI 텍스트 다국어는 곧 연동)`);
+      });
     });
   }
 
