@@ -760,6 +760,89 @@ app.get('/oauth/:provider/callback', async (req, res) => {
       return res.send(`<!doctype html><meta charset="utf-8"><title>Connected</title><body style="font-family:sans-serif;padding:24px;">Figma 연결 완료. 이 창은 자동으로 닫힙니다.<script>try{window.opener&&window.opener.postMessage({type:'wethus-oauth-connected',provider:'figma',projectId:${JSON.stringify(projectId)}},'*')}catch(e){};setTimeout(()=>window.close(),400);</script></body>`);
     }
 
+    if (provider === 'slack') {
+      if (!SLACK_CLIENT_ID || !SLACK_CLIENT_SECRET || !SLACK_REDIRECT_URI) {
+        return res.status(400).json({ ok: false, error: 'SLACK oauth env missing', setupRequired: true });
+      }
+      const tokenRes = await fetch('https://slack.com/api/oauth.v2.access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: SLACK_CLIENT_ID,
+          client_secret: SLACK_CLIENT_SECRET,
+          redirect_uri: SLACK_REDIRECT_URI
+        })
+      });
+      const tokenJson = await tokenRes.json().catch(() => ({}));
+      if (!tokenJson?.ok) return res.status(500).json({ ok: false, error: tokenJson?.error || 'slack token exchange failed', detail: tokenJson });
+
+      const teamId = String(tokenJson?.team?.id || `slack-${Date.now()}`);
+      const rows = readIntegrations();
+      const now = new Date().toISOString();
+      const idx = rows.findIndex(r => r.project_id === projectId && r.provider === 'slack' && r.integration_type === 'workspace');
+      const row = {
+        id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
+        project_id: projectId,
+        integration_type: 'workspace',
+        provider: 'slack',
+        external_resource_id: teamId,
+        external_resource_name: String(tokenJson?.team?.name || 'Slack Workspace'),
+        status: 'connected',
+        access_token_reference: tokenJson?.access_token ? `slack:token:${teamId}` : '',
+        connected_by_user_id: userId,
+        last_synced_at: now,
+        created_at: idx >= 0 ? rows[idx].created_at : now,
+        updated_at: now,
+        _token_demo_only: tokenJson?.access_token || ''
+      };
+      if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
+      writeIntegrations(rows);
+      return res.send(`<!doctype html><meta charset="utf-8"><title>Connected</title><body style="font-family:sans-serif;padding:24px;">Slack 연결 완료. 이 창은 자동으로 닫힙니다.<script>try{window.opener&&window.opener.postMessage({type:'wethus-oauth-connected',provider:'slack',projectId:${JSON.stringify(projectId)}},'*')}catch(e){};setTimeout(()=>window.close(),400);</script></body>`);
+    }
+
+    if (provider === 'figma') {
+      if (!FIGMA_CLIENT_ID || !FIGMA_CLIENT_SECRET || !FIGMA_REDIRECT_URI) {
+        return res.status(400).json({ ok: false, error: 'FIGMA oauth env missing', setupRequired: true });
+      }
+      const tokenRes = await fetch('https://api.figma.com/v1/oauth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: FIGMA_CLIENT_ID,
+          client_secret: FIGMA_CLIENT_SECRET,
+          redirect_uri: FIGMA_REDIRECT_URI,
+          grant_type: 'authorization_code'
+        })
+      });
+      const tokenJson = await tokenRes.json().catch(() => ({}));
+      if (!tokenRes.ok) return res.status(500).json({ ok: false, error: tokenJson?.err || 'figma token exchange failed', detail: tokenJson });
+
+      const figmaId = String(tokenJson?.user_id || `figma-${Date.now()}`);
+      const rows = readIntegrations();
+      const now = new Date().toISOString();
+      const idx = rows.findIndex(r => r.project_id === projectId && r.provider === 'figma' && r.integration_type === 'workspace');
+      const row = {
+        id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
+        project_id: projectId,
+        integration_type: 'workspace',
+        provider: 'figma',
+        external_resource_id: figmaId,
+        external_resource_name: 'Figma Workspace',
+        status: 'connected',
+        access_token_reference: tokenJson?.access_token ? `figma:token:${figmaId}` : '',
+        connected_by_user_id: userId,
+        last_synced_at: now,
+        created_at: idx >= 0 ? rows[idx].created_at : now,
+        updated_at: now,
+        _token_demo_only: tokenJson?.access_token || ''
+      };
+      if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
+      writeIntegrations(rows);
+      return res.send(`<!doctype html><meta charset="utf-8"><title>Connected</title><body style="font-family:sans-serif;padding:24px;">Figma 연결 완료. 이 창은 자동으로 닫힙니다.<script>try{window.opener&&window.opener.postMessage({type:'wethus-oauth-connected',provider:'figma',projectId:${JSON.stringify(projectId)}},'*')}catch(e){};setTimeout(()=>window.close(),400);</script></body>`);
+    }
+
     if (provider !== 'notion') {
       return res.json({ ok: true, provider, received: req.query || {}, note: 'Phase 1 callback placeholder. Exchange code for tokens in production setup.' });
     }
