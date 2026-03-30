@@ -274,6 +274,7 @@
       });
 
       const workEl = document.getElementById('tmWorkLog');
+      workEl.innerHTML = '<p class="meta">업무기록 업데이트중...</p>';
       const rows = Object.entries(byUser).filter(([_, logs]) => logs.length);
       if (!rows.length) { workEl.innerHTML = '<p class="meta">업무기록이 아직 없습니다.</p>'; return; }
 
@@ -342,9 +343,16 @@
       const el = document.getElementById('hubLlmStatus');
       if (el) el.textContent = text;
     }
+    function setHubLoadingState(on, label = '로딩중...') {
+      if (on) {
+        document.getElementById('sdStatus').innerHTML = `<li>${label}</li>`;
+        document.getElementById('sdAdvice').innerHTML = `<li>${label}</li>`;
+      }
+    }
     async function refreshHubInsights(reason = 'update') {
       if (!currentProject) return;
       if (insightTimer) clearTimeout(insightTimer);
+      setHubLoadingState(true, 'WETHUS AI 업데이트중...');
       insightTimer = setTimeout(async () => {
         const hub = WETHUS.getProjectHub(currentProject.id);
         const prompt = `너는 프로젝트 운영 어시스턴트다. 이유:${reason}\n프로젝트:${currentProject.title}\n상태:${currentProject.status}\n목표:${hub.goal}\n할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,6).map(x=>x.text).join(', ')}\n팀채팅:${(hub.teamChat||[]).slice(-8).map(x=>x.text).join(' / ')}\n\n출력: 상태요약 1줄, 진행조언 3줄.`;
