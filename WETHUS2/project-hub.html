@@ -24,9 +24,8 @@
     .hub-team-pill .meta{color:#ff9a2f !important;}
     .hub-team-pill-remove{border:0;background:transparent;color:#ffb36d;font-weight:900;cursor:pointer;padding:0 2px;line-height:1;}
     .hub-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-    .hub-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-    .hub-actions .btn{min-width:132px;justify-content:center;}
-    #hubChatOpenBtn{min-width:176px;}
+    .hub-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;justify-content:stretch}
+    .hub-actions .btn{width:100%;min-width:0;justify-content:center;}
     .hub-tabs-wrap{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:10px;align-items:stretch;margin:14px 0 12px}
     .hub-tabs{display:flex;gap:8px;align-items:center}
     .hub-tab{padding:8px 12px;border-radius:999px;border:1px solid #333;background:#151515;color:#ddd;cursor:pointer}
@@ -60,7 +59,7 @@
     .slash-item{padding:8px 10px;border-bottom:1px solid #232323;cursor:pointer}
     .slash-item:last-child{border-bottom:0}
     .slash-item:hover{background:#1a1a1a}
-    @media (max-width:960px){.hub-grid{grid-template-columns:1fr}.hub-header{grid-template-columns:1fr}.hub-actions{justify-content:flex-start}.hub-tabs-wrap{grid-template-columns:1fr}}
+    @media (max-width:960px){.hub-grid{grid-template-columns:1fr}.hub-header{grid-template-columns:1fr}.hub-actions{grid-template-columns:repeat(2,minmax(0,1fr));}.hub-tabs-wrap{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
