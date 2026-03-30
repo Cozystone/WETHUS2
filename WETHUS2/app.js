@@ -1804,6 +1804,18 @@
     } catch (_) {}
   }
 
+  function ensureFavicon() {
+    try {
+      let link = document.querySelector('link[rel="icon"]');
+      if (!link) {
+        link = document.createElement('link');
+        link.setAttribute('rel', 'icon');
+        document.head.appendChild(link);
+      }
+      if (!link.getAttribute('href')) link.setAttribute('href', 'favicon.ico');
+    } catch (_) {}
+  }
+
   function initNotifyToast() {
     const seenKey = 'wethus_last_toast_notification';
     const latest = listNotifications(20).find(n => n.unread && n.type === 'review_result');
@@ -1825,6 +1837,7 @@
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
+      ensureFavicon();
       initGuestNavGuard();
       initGuestApplyGuard();
       initNotificationNav();
@@ -1833,6 +1846,7 @@
       initNotifyToast();
     });
   } else {
+    ensureFavicon();
     initGuestNavGuard();
     initGuestApplyGuard();
     initNotificationNav();
