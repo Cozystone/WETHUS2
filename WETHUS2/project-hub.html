@@ -344,7 +344,7 @@
       document.getElementById('ovGoal').textContent=hub.goal;
       document.getElementById('ovTodos').innerHTML=(hub.weeklyTodos||[]).map(t=>`<li>${t}</li>`).join('')||'<li>이번 주 할 일을 등록하세요.</li>';
       const recentAll = (hub.recentActivities || []);
-      const recentTop = recentAll.slice(0, 10);
+      const recentTop = recentAll.slice(0, 5);
       document.getElementById('ovRecent').innerHTML=recentTop.map(a=>`<li>${a.text} · ${new Date(a.createdAt).toLocaleString('ko-KR')}</li>`).join('')||'<li>최근 활동이 없습니다.</li>';
       const moreBtn = document.getElementById('ovRecentMoreBtn');
       moreBtn.style.display = recentAll.length > 10 ? 'inline-flex' : 'none';
@@ -400,9 +400,13 @@
       insightTimer = setTimeout(async () => {
         const hub = WETHUS.getProjectHub(currentProject.id);
         let externalDocContext = '';
+        let insightCount = 0;
+        let insightNames = '';
         try {
           const ext = await hubApi(`/integrations/insights?projectId=${encodeURIComponent(currentProject.id)}`);
           const insightRows = (ext?.insights || []).filter(d => d?.snippet);
+          insightCount = insightRows.length;
+          insightNames = insightRows.slice(0, 3).map(d => d.resourceName || d.name).filter(Boolean).join(', ');
           const docLines = insightRows.map(d => `${d.resourceName || d.name}: ${String(d.snippet || '').slice(0, 500)}`);
           externalDocContext = docLines.join('\n');
 
@@ -417,13 +421,27 @@
           if (nextSig) docSignatureByProject.set(currentProject.id, nextSig);
         } catch (_) {}
 
-        const prompt = `너는 프로젝트 운영 어시스턴트다. 이유:${reason}\n프로젝트:${currentProject.title}\n상태:${currentProject.status}\n목표:${hub.goal}\n할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,6).map(x=>x.text).join(', ')}\n팀채팅:${(hub.teamChat||[]).slice(-8).map(x=>x.text).join(' / ')}\n외부문서요약:${externalDocContext || '없음'}\n\n출력: 상태요약 1줄, 진행조언 3줄.`;
+        const prompt = `너는 프로젝트 운영 어시스턴트다. 이유:${reason}\n프로젝트:${currentProject.title}\n상태:${currentProject.status}\n목표:${hub.goal}\n할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,6).map(x=>x.text).join(', ')}\n팀채팅:${(hub.teamChat||[]).slice(-8).map(x=>x.text).join(' / ')}\n외부문서건수:${insightCount}\n외부문서이름:${insightNames || '없음'}\n외부문서요약:${externalDocContext || '없음'}\n\n중요 규칙:\n- 외부문서요약에 내용이 있으면 반드시 그 내용의 고유명사/수치/키워드(최소 2개)를 상태요약이나 조언에 반영\n- '업데이트하세요/정리하세요/공유하세요' 같은 일반론만 쓰지 말 것\n- 문서 근거가 부족하면 추측하지 말고 '문서 근거 부족'이라고 명시\n- '상태 요약:' '진행 조언:' 같은 라벨을 쓰지 말고, 결과 문장만 출력\n\n출력 형식(반드시 4줄):\n1줄차: 상태요약 한 줄\n2줄차~4줄차: 진행조언 3줄`;
         try {
           const out = await WETHUS.askGemini(prompt);
-          const lines = String(out || '').split(/\n+/).map(x => x.trim()).filter(Boolean);
-          if (lines[0]) document.getElementById('sdStatus').innerHTML = `<li>${lines[0]}</li>`;
-          if (lines.length > 1) document.getElementById('sdAdvice').innerHTML = lines.slice(1,4).map(x => `<li>${x.replace(/^[-*]\s*/, '')}</li>`).join('');
-          setLlmStatus(`연결됨 · 마지막 갱신 ${new Date().toLocaleTimeString('ko-KR')}`);
+          const lines = String(out || '')
+            .split(/\n+/)
+            .map(x => x.trim())
+            .filter(Boolean)
+            .map(x => x.replace(/^(상태\s*요약|진행\s*조언)\s*[:：-]\s*/i, '').replace(/^\d+[\.)]\s*/, '').replace(/^[-*]\s*/, '').trim());
+          if (lines[0]) {
+            document.getElementById('sdStatus').innerHTML = `<li>${lines[0]}</li>`;
+          } else {
+            document.getElementById('sdStatus').innerHTML = `<li>문서 ${insightCount}건 기반으로 상태를 분석했습니다.</li>`;
+          }
+          if (lines.length > 1) {
+            document.getElementById('sdAdvice').innerHTML = lines.slice(1,4).map(x => `<li>${x}</li>`).join('');
+          } else {
+            document.getElementById('sdAdvice').innerHTML = insightCount > 0
+              ? `<li>문서 근거(${insightNames || '연결 문서'}) 중심으로 다음 실행 단계를 세분화하세요.</li><li>문서 기준 성공지표 1~2개를 바로 추가하세요.</li><li>가장 최근 수정 문서부터 검증 우선순위를 잡으세요.</li>`
+              : '<li>문서 근거 부족: Google Docs 연결/동기화 상태를 먼저 확인하세요.</li>';
+          }
+          setLlmStatus(`연결됨 · 문서 ${insightCount}건 반영 · 마지막 갱신 ${new Date().toLocaleTimeString('ko-KR')}`);
           try {
             await hubApi('/status-snapshot', {
               method: 'POST',
@@ -472,7 +490,31 @@
     }
 
     document.getElementById('hubBackBtn').addEventListener('click',backToList);
-    document.getElementById('sdRefreshBtn')?.addEventListener('click', () => {
+
+    // 구버전 캐시 HTML에서도 새로고침 버튼이 보이도록 런타임 보정
+    function ensureStatusRefreshButton() {
+      let btn = document.getElementById('sdRefreshBtn');
+      if (btn) return btn;
+      const statusCardTitle = Array.from(document.querySelectorAll('.side-stack .hub-card h3'))
+        .find(el => String(el.textContent || '').includes('프로젝트 상태'));
+      if (!statusCardTitle) return null;
+      statusCardTitle.style.display = 'flex';
+      statusCardTitle.style.alignItems = 'center';
+      statusCardTitle.style.justifyContent = 'space-between';
+      statusCardTitle.style.gap = '8px';
+      btn = document.createElement('button');
+      btn.id = 'sdRefreshBtn';
+      btn.className = 'btn btn--secondary';
+      btn.type = 'button';
+      btn.textContent = '↻';
+      btn.style.padding = '4px 8px';
+      btn.style.minHeight = 'auto';
+      btn.style.lineHeight = '1';
+      statusCardTitle.appendChild(btn);
+      return btn;
+    }
+
+    ensureStatusRefreshButton()?.addEventListener('click', () => {
       refreshHubInsights('manual-refresh');
     });
     function mentorHref(tab = '') { return `mentor.html?fromHub=1${currentProject ? `&projectId=${encodeURIComponent(currentProject.id)}` : ''}${tab ? `&tab=${tab}` : ''}`; }
