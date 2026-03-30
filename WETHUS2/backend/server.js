@@ -486,6 +486,90 @@ app.get('/oauth/:provider/callback', async (req, res) => {
   }
 });
 
+function buildSnapshotFromEvents(projectId, newEvents = []) {
+  const snapshots = readStatusSnapshots();
+  const idx = snapshots.findIndex(s => s.project_id === projectId);
+  const now = new Date().toISOString();
+  const next = {
+    id: idx >= 0 ? snapshots[idx].id : crypto.randomUUID(),
+    project_id: projectId,
+    current_stage: idx >= 0 ? snapshots[idx].current_stage : '기획 중',
+    recent_activity_summary: `Notion 동기화 완료 · ${newEvents.length}개 항목 반영`,
+    recent_activity_at: now,
+    blocker_summary: idx >= 0 ? snapshots[idx].blocker_summary : '',
+    suggested_next_action: newEvents.length > 0
+      ? '새로 반영된 Notion 변경사항을 팀채팅/업데이트에 공유하고 우선순위를 조정하세요.'
+      : '새로운 변경사항이 없어 주요 문서 상태를 점검하세요.',
+    activity_health: newEvents.length > 0 ? 'active' : 'idle',
+    updated_at: now
+  };
+  if (idx >= 0) snapshots[idx] = { ...snapshots[idx], ...next };
+  else snapshots.push(next);
+  writeStatusSnapshots(snapshots);
+  return next;
+}
+
+async function runNotionSyncForIntegration(integration, projectId) {
+  const token = String(integration._token_demo_only || '').trim();
+  if (!token) throw new Error('notion token missing (connect first)');
+
+  const notionRes = await fetch('https://api.notion.com/v1/search', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Notion-Version': '2022-06-28',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ page_size: 10 })
+  });
+  const notionJson = await notionRes.json().catch(() => ({}));
+  if (!notionRes.ok) throw new Error(notionJson?.message || 'notion search failed');
+
+  const results = Array.isArray(notionJson.results) ? notionJson.results : [];
+  const now = new Date().toISOString();
+  const events = readActivityEvents();
+  const newEvents = results.slice(0, 10).map(item => ({
+    id: crypto.randomUUID(),
+    project_id: projectId,
+    integration_id: integration.id,
+    source_type: 'notion',
+    source_item_id: String(item?.id || ''),
+    source_item_name: String(item?.url || item?.id || 'Notion item'),
+    actor_external_id: '',
+    actor_name: 'Notion',
+    event_type: 'resource_seen',
+    raw_payload: item,
+    occurred_at: now,
+    created_at: now
+  }));
+  events.push(...newEvents);
+  writeActivityEvents(events.slice(-2000));
+
+  const rows = readIntegrations();
+  const i = rows.findIndex(r => r.id === integration.id);
+  if (i >= 0) {
+    rows[i] = { ...rows[i], status: 'connected', last_synced_at: now, updated_at: now };
+    writeIntegrations(rows);
+  }
+
+  const snapshot = buildSnapshotFromEvents(projectId, newEvents);
+  return { synced: newEvents.length, snapshot };
+}
+
+app.get('/sync/notion/health', (req, res) => {
+  const configured = !!(NOTION_CLIENT_ID && NOTION_CLIENT_SECRET && NOTION_REDIRECT_URI);
+  return res.json({
+    ok: true,
+    provider: 'notion',
+    oauthConfigured: configured,
+    env: {
+      NOTION_CLIENT_ID: !!NOTION_CLIENT_ID,
+      NOTION_CLIENT_SECRET: !!NOTION_CLIENT_SECRET,
+      NOTION_REDIRECT_URI: !!NOTION_REDIRECT_URI
+    }
+  });
+});
+
 app.post('/sync/notion', async (req, res) => {
   try {
     const projectId = String(req.body?.project_id || '').trim();
@@ -495,68 +579,28 @@ app.post('/sync/notion', async (req, res) => {
     const integration = readIntegrations().find(i => i.id === integrationId || (i.project_id === projectId && i.provider === 'notion')) || null;
     if (!integration) return res.status(404).json({ ok: false, error: 'notion integration not found' });
 
-    const token = String(integration._token_demo_only || '').trim();
-    if (!token) return res.status(400).json({ ok: false, error: 'notion token missing (connect first)' });
-
-    const notionRes = await fetch('https://api.notion.com/v1/search', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Notion-Version': '2022-06-28',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ page_size: 10 })
-    });
-    const notionJson = await notionRes.json().catch(() => ({}));
-    if (!notionRes.ok) return res.status(500).json({ ok: false, error: notionJson?.message || 'notion search failed', detail: notionJson });
-
-    const results = Array.isArray(notionJson.results) ? notionJson.results : [];
-    const now = new Date().toISOString();
-    const events = readActivityEvents();
-    const newEvents = results.slice(0, 10).map(item => ({
-      id: crypto.randomUUID(),
-      project_id: projectId,
-      integration_id: integration.id,
-      source_type: 'notion',
-      source_item_id: String(item?.id || ''),
-      source_item_name: String(item?.url || item?.id || 'Notion item'),
-      actor_external_id: '',
-      actor_name: 'Notion',
-      event_type: 'resource_seen',
-      raw_payload: item,
-      occurred_at: now,
-      created_at: now
-    }));
-    events.push(...newEvents);
-    writeActivityEvents(events.slice(-2000));
-
-    const snapshots = readStatusSnapshots();
-    const idx = snapshots.findIndex(s => s.project_id === projectId);
-    const next = {
-      id: idx >= 0 ? snapshots[idx].id : crypto.randomUUID(),
-      project_id: projectId,
-      current_stage: idx >= 0 ? snapshots[idx].current_stage : '기획 중',
-      recent_activity_summary: `Notion 동기화 완료 · ${newEvents.length}개 항목 반영`,
-      recent_activity_at: now,
-      blocker_summary: idx >= 0 ? snapshots[idx].blocker_summary : '',
-      suggested_next_action: '새로 반영된 Notion 활동을 팀채팅/업데이트로 공유하세요.',
-      activity_health: newEvents.length > 0 ? 'active' : 'idle',
-      updated_at: now
-    };
-    if (idx >= 0) snapshots[idx] = { ...snapshots[idx], ...next };
-    else snapshots.push(next);
-    writeStatusSnapshots(snapshots);
-
-    const rows = readIntegrations();
-    const i = rows.findIndex(r => r.id === integration.id);
-    if (i >= 0) {
-      rows[i] = { ...rows[i], status: 'connected', last_synced_at: now, updated_at: now };
-      writeIntegrations(rows);
-    }
-
-    return res.json({ ok: true, synced: newEvents.length, snapshot: next });
+    const result = await runNotionSyncForIntegration(integration, projectId);
+    return res.json({ ok: true, ...result });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'notion sync failed' });
+  }
+});
+
+app.post('/sync/notion/run-all', async (_req, res) => {
+  try {
+    const notions = readIntegrations().filter(i => i.provider === 'notion' && i.status === 'connected');
+    const out = [];
+    for (const integ of notions) {
+      try {
+        const r = await runNotionSyncForIntegration(integ, integ.project_id);
+        out.push({ integration_id: integ.id, project_id: integ.project_id, ok: true, synced: r.synced });
+      } catch (e) {
+        out.push({ integration_id: integ.id, project_id: integ.project_id, ok: false, error: e?.message || 'sync failed' });
+      }
+    }
+    return res.json({ ok: true, runs: out, count: out.length });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'run-all failed' });
   }
 });
 

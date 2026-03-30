@@ -80,7 +80,9 @@ FIGMA_REDIRECT_URI=https://www.wethus.co.kr/oauth/figma/callback
 - `GET /oauth/:provider/callback`
 
 ### Sync (implemented provider)
+- `GET /sync/notion/health` (env/OAuth 설정 상태 확인)
 - `POST /sync/notion` with `{ project_id, integration_id }`
+- `POST /sync/notion/run-all` (연결된 notion integration 전체 동기화)
 
 ## What still requires your manual setup
 
@@ -88,6 +90,18 @@ FIGMA_REDIRECT_URI=https://www.wethus.co.kr/oauth/figma/callback
 2. Backend env injection on deployed server
 3. Optional: secure token vault integration (replace demo token field)
 4. Optional: scheduler/cron for automatic periodic sync
+
+## Auto Sync (recommended)
+
+Use your scheduler/cron to hit:
+
+```bash
+POST /sync/notion/run-all
+```
+
+Suggested interval:
+- MVP: every 10-15 minutes
+- Active projects: every 5 minutes (watch API limits)
 
 ## Next recommended steps
 
