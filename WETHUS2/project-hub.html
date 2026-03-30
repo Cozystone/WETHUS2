@@ -204,6 +204,31 @@
       try { return localStorage.getItem(hubPersistKey()) || ''; } catch { return ''; }
     }
 
+    async function hubApi(path, options = {}) {
+      const st = WETHUS.getState();
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : '');
+      const bases = [window.WETHUS_API_BASE || 'https://wethus-api.onrender.com', `${location.protocol}//${location.hostname}:8787`, 'http://127.0.0.1:8787'];
+      let lastErr;
+      for (const b of bases) {
+        try {
+          const r = await fetch(`${String(b).replace(/\/$/, '')}${path}`, {
+            ...options,
+            headers: {
+              'Content-Type': 'application/json',
+              'x-user-id': actor,
+              ...(options.headers || {})
+            }
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok || data?.ok === false) throw new Error(data?.error || `hub api failed (${r.status})`);
+          return data;
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error('hub api unavailable');
+    }
+
     function fallbackHub(p){
       return {
         goal: p.summary || '현재 목표를 설정하세요.',
@@ -297,6 +322,7 @@
       document.getElementById('ovRecent').innerHTML=(hub.recentActivities||[]).map(a=>`<li>${a.text} · ${new Date(a.createdAt).toLocaleString('ko-KR')}</li>`).join('')||'<li>최근 활동이 없습니다.</li>';
       document.getElementById('ovBlocker').textContent=hub.blocker;
       document.getElementById('ovTools').innerHTML=(hub.tools||[]).map(t=>`<article class="tool-card"><strong>${t.name}</strong><p class="meta" style="margin:4px 0 0;">${t.desc||''}</p></article>`).join('');
+      await loadIntegrationsForCurrentProject();
       renderToolCards();
       document.getElementById('pgLogs').innerHTML=(hub.progress||[]).map(x=>`<li>${x.text} · ${new Date(x.createdAt||Date.now()).toLocaleString('ko-KR')}</li>`).join('')||'<li>진행 로그 없음</li>';
       document.getElementById('mtList').innerHTML=(hub.materials||[]).map(x=>`<li>${x.name} (${x.type||'자료'})</li>`).join('')||'<li>자료 없음</li>';
@@ -319,6 +345,20 @@
           if (lines[0]) document.getElementById('sdStatus').innerHTML = `<li>${lines[0]}</li>`;
           if (lines.length > 1) document.getElementById('sdAdvice').innerHTML = lines.slice(1,4).map(x => `<li>${x.replace(/^[-*]\s*/, '')}</li>`).join('');
           document.getElementById('hubLlmStatus').textContent = `연결됨 · 마지막 갱신 ${new Date().toLocaleTimeString('ko-KR')}`;
+          try {
+            await hubApi('/status-snapshot', {
+              method: 'POST',
+              body: JSON.stringify({
+                project_id: currentProject.id,
+                current_stage: currentProject.status || '',
+                recent_activity_summary: lines[0] || '',
+                recent_activity_at: new Date().toISOString(),
+                blocker_summary: lines[1] || '',
+                suggested_next_action: lines[2] || '',
+                activity_health: 'active'
+              })
+            });
+          } catch (_) {}
         } catch {
           document.getElementById('hubLlmStatus').textContent = '연결 불안정 · 기본 규칙 조언으로 동작 중';
         }
@@ -415,8 +455,36 @@
       throw lastErr || new Error('연동 메타 조회 실패');
     }
 
+    let remoteIntegrations = [];
+
+    async function loadIntegrationsForCurrentProject() {
+      if (!currentProject) return [];
+      try {
+        const data = await hubApi(`/integrations?projectId=${encodeURIComponent(currentProject.id)}`);
+        remoteIntegrations = data?.integrations || [];
+      } catch {
+        remoteIntegrations = [];
+      }
+      return remoteIntegrations;
+    }
+
     function currentToolState(name) {
       if (!currentProject) return null;
+      const providerMap = {
+        'Google Docs': 'google',
+        'Google Sheets': 'google',
+        'Notion': 'notion',
+        'Figma': 'figma'
+      };
+      const provider = providerMap[name] || '';
+      const remote = remoteIntegrations.find(x => x.provider === provider);
+      if (remote) {
+        return {
+          connected: remote.status === 'connected',
+          lastSynced: remote.last_synced_at,
+          desc: remote.external_resource_name || ''
+        };
+      }
       const hub = WETHUS.getProjectHub(currentProject.id);
       return (hub.tools || []).find(t => t.name === name) || null;
     }
@@ -429,9 +497,11 @@
           <strong style="font-size:1.25rem;">${t.logo}</strong>
           <p style="margin:6px 0 0;">${t.name}</p>
           <p class="meta" style="margin:4px 0 0;">${st?.connected ? '연결됨' : '미연결'} ${st?.lastSynced ? '· ' + new Date(st.lastSynced).toLocaleString('ko-KR') : ''}</p>
-          <div style="display:flex;gap:6px;margin-top:8px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
             <button class="btn btn--secondary" data-tool-home="${t.name}" type="button">홈</button>
             <button class="btn btn--primary" data-tool-connect="${t.name}" type="button">연결</button>
+            <button class="btn btn--secondary" data-tool-sync="${t.name}" type="button">동기화</button>
+            <button class="btn btn--secondary" data-tool-disconnect="${t.name}" type="button">해제</button>
           </div>
         </article>`;
       }).join('');
@@ -447,23 +517,96 @@
         btn.addEventListener('click', async () => {
           if (!currentProject) return;
           const name = btn.getAttribute('data-tool-connect');
-          const shared = prompt(`${name} 공유 링크를 입력하세요 (https://...)`);
-          if (!shared) return;
           try {
+            if (name === 'Notion') {
+              const oauth = await hubApi(`/oauth/notion/start?project_id=${encodeURIComponent(currentProject.id)}`);
+              if (oauth?.authUrl) {
+                window.open(oauth.authUrl, '_blank', 'noopener');
+                WETHUS.addHubActivity(currentProject.id, 'Notion OAuth 연결 시작');
+                return;
+              }
+            }
+
+            const shared = prompt(`${name} 공유 링크를 입력하세요 (https://...)`);
+            if (!shared) return;
             const meta = await fetchToolMeta(shared);
+            const providerMap = {
+              'Google Docs': { provider: 'google', type: 'document' },
+              'Google Sheets': { provider: 'google', type: 'spreadsheet' },
+              'Notion': { provider: 'notion', type: 'workspace' },
+              'Figma': { provider: 'figma', type: 'file' }
+            };
+            const pm = providerMap[name] || { provider: name.toLowerCase(), type: 'external' };
+
+            const created = await hubApi('/integrations', {
+              method: 'POST',
+              body: JSON.stringify({
+                project_id: currentProject.id,
+                integration_type: pm.type,
+                provider: pm.provider,
+                external_resource_id: meta.finalUrl || shared,
+                external_resource_name: meta.title || `${name} 연결`,
+                last_synced_at: meta.fetchedAt
+              })
+            });
+
             const hub = WETHUS.getProjectHub(currentProject.id);
             const tools = [...(hub.tools || [])];
             const idx = tools.findIndex(t => t.name === name);
-            const next = { name, url: meta.finalUrl || shared, desc: meta.title || `${name} 연결`, connected: true, lastSynced: meta.fetchedAt };
+            const next = { name, url: meta.finalUrl || shared, desc: meta.title || `${name} 연결`, connected: true, lastSynced: meta.fetchedAt, integrationId: created?.integration?.id || '' };
             if (idx >= 0) tools[idx] = { ...tools[idx], ...next };
             else tools.push(next);
             WETHUS.upsertProjectHub(currentProject.id, { tools });
             WETHUS.addHubActivity(currentProject.id, `${name} 외부 툴 연결 완료`);
             refreshHubInsights('external-tool-connect');
+            await loadIntegrationsForCurrentProject();
             renderHub();
             renderToolCards();
           } catch (e) {
             alert(e?.message || '연결 실패');
+          }
+        });
+      });
+
+      toolLogoGrid.querySelectorAll('[data-tool-sync]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!currentProject) return;
+          const name = btn.getAttribute('data-tool-sync');
+          const provider = (name === 'Notion') ? 'notion' : (name.includes('Google') ? 'google' : name.toLowerCase());
+          const integ = (remoteIntegrations || []).find(x => x.provider === provider);
+          if (!integ) return alert('먼저 연결을 완료해주세요.');
+          try {
+            if (provider === 'notion') {
+              await hubApi('/sync/notion', { method: 'POST', body: JSON.stringify({ project_id: currentProject.id, integration_id: integ.id }) });
+            }
+            WETHUS.addHubActivity(currentProject.id, `${name} 수동 동기화 실행`);
+            await loadIntegrationsForCurrentProject();
+            renderHub();
+            renderToolCards();
+          } catch (e) {
+            alert(e?.message || '동기화 실패');
+          }
+        });
+      });
+
+      toolLogoGrid.querySelectorAll('[data-tool-disconnect]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!currentProject) return;
+          const name = btn.getAttribute('data-tool-disconnect');
+          const provider = (name === 'Notion') ? 'notion' : (name.includes('Google') ? 'google' : name.toLowerCase());
+          const integ = (remoteIntegrations || []).find(x => x.provider === provider);
+          if (!integ) return;
+          try {
+            await hubApi(`/integrations/${encodeURIComponent(integ.id)}`, { method: 'DELETE' });
+            const hub = WETHUS.getProjectHub(currentProject.id);
+            const tools = (hub.tools || []).map(t => t.name === name ? { ...t, connected: false, lastSynced: '', integrationId: '' } : t);
+            WETHUS.upsertProjectHub(currentProject.id, { tools });
+            WETHUS.addHubActivity(currentProject.id, `${name} 연결 해제`);
+            await loadIntegrationsForCurrentProject();
+            renderHub();
+            renderToolCards();
+          } catch (e) {
+            alert(e?.message || '해제 실패');
           }
         });
       });
