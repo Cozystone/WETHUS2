@@ -476,6 +476,42 @@ app.get('/activity-events', (req, res) => {
   return res.json({ ok: true, events: list });
 });
 
+app.get('/integrations/insights', async (req, res) => {
+  const projectId = String(req.query?.projectId || '').trim();
+  if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
+
+  try {
+    const integrations = readIntegrations().filter(i => i.project_id === projectId && i.status === 'connected');
+    const googleAccount = integrations.find(i => i.provider === 'google' && i.integration_type === 'account');
+    const googleToken = String(googleAccount?._token_demo_only || '').trim();
+
+    const docs = integrations.filter(i => i.provider === 'google' && i.integration_type === 'document').slice(0, 5);
+    const docInsights = [];
+
+    if (googleToken && docs.length) {
+      for (const d of docs) {
+        try {
+          const u = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(d.external_resource_id)}/export?mimeType=text/plain`;
+          const r = await fetch(u, { headers: { Authorization: `Bearer ${googleToken}` } });
+          if (!r.ok) continue;
+          const text = await r.text();
+          const normalized = String(text || '').replace(/\s+/g, ' ').trim();
+          docInsights.push({
+            integration_id: d.id,
+            name: d.external_resource_name || 'Google Doc',
+            snippet: normalized.slice(0, 1200),
+            url: d.external_resource_url || ''
+          });
+        } catch (_) {}
+      }
+    }
+
+    return res.json({ ok: true, projectId, docInsights, used: { googleDocs: docInsights.length } });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'insights failed' });
+  }
+});
+
 app.post('/activity-events', (req, res) => {
   const projectId = String(req.body?.project_id || '').trim();
   const integrationId = String(req.body?.integration_id || '').trim();
