@@ -344,7 +344,7 @@
       renderToolCards();
       document.getElementById('pgLogs').innerHTML=(hub.progress||[]).map(x=>`<li>${x.text} · ${new Date(x.createdAt||Date.now()).toLocaleString('ko-KR')}</li>`).join('')||'<li>진행 로그 없음</li>';
       document.getElementById('mtList').innerHTML=(hub.materials||[]).map(x=>`<li>${x.name} (${x.type||'자료'})</li>`).join('')||'<li>자료 없음</li>';
-      await renderWorkLogs(p.teamMembers||[], hub);
+      renderWorkLogs(p.teamMembers||[], hub).catch(() => {});
       document.getElementById('sdStatus').innerHTML=`<li>현재 단계: ${p.status||'기획 중'}</li><li>최근 업데이트: ${(hub.updatedAt?new Date(hub.updatedAt).toLocaleString('ko-KR'):'방금')}</li><li>팀원 수: ${(p.teamMembers||[]).length}명</li>`;
       document.getElementById('sdAdvice').innerHTML='<li>목표를 이번 주 단위로 쪼개세요.</li><li>막힌 점을 카드에 명시하세요.</li><li>멘토링 요청은 구체적으로 작성하세요.</li>';
       renderTab(activeTab);
@@ -407,7 +407,8 @@
       hubDetailView.classList.remove('hidden');
       history.replaceState({},'',`project-hub.html?projectId=${encodeURIComponent(id)}`);
       setPersistedProject(id);
-      await renderHub();
+      maybeOpenAiAddModal();
+      renderHub().catch(() => {});
       refreshHubInsights('project-open');
     }
 
@@ -884,7 +885,7 @@
 
     const pid=params.get('projectId') || getPersistedProject();
     renderProjectList();
-    if(pid) openProject(pid).then(maybeOpenAiAddModal);
+    if(pid) openProject(pid);
 
   </script>
 </body>
