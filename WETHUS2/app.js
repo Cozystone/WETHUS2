@@ -599,6 +599,9 @@
       teamChat: Array.isArray(base.teamChat) ? base.teamChat : [],
       progress: Array.isArray(base.progress) ? base.progress : [],
       materials: Array.isArray(base.materials) ? base.materials : [],
+      aiMentors: Array.isArray(base.aiMentors) ? base.aiMentors : [],
+      workLogs: Array.isArray(base.workLogs) ? base.workLogs : [],
+      workLogsSig: base.workLogsSig || '',
       updatedAt: base.updatedAt || ''
     };
   }
