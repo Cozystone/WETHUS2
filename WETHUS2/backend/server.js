@@ -319,7 +319,8 @@ app.get('/integrations/resources', async (req, res) => {
   const match = integrations.find(i => i.provider === (provider === 'google_docs' || provider === 'google_sheets' ? 'google' : provider));
 
   if (provider === 'google_docs' || provider === 'google_sheets') {
-    const account = integrations.find(i => i.provider === 'google' && i.integration_type === 'account');
+    const account = integrations.find(i => i.provider === 'google' && i.integration_type === 'account')
+      || readIntegrations().filter(i => i.provider === 'google' && i.integration_type === 'account' && i.status === 'connected').sort((a,b)=>new Date(b.updated_at||0)-new Date(a.updated_at||0))[0];
     const token = String(account?._token_demo_only || '').trim();
     if (!token) {
       return res.json({ ok: true, provider, resources: [], placeholder: true, setupRequired: true, message: 'Google 계정 연결이 필요합니다.' });
