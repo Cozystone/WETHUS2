@@ -534,7 +534,7 @@
       const data = await hubApi(`/integrations/resources?provider=${encodeURIComponent(tool.resourceProvider || tool.provider)}&projectId=${encodeURIComponent(currentProject.id)}`);
       const rows = data?.resources || [];
       if (!rows.length) {
-        alert('선택 가능한 리소스가 없습니다. 먼저 계정 연결을 완료해주세요.');
+        alert(data?.message || '선택 가능한 리소스가 없습니다. 먼저 계정 연결을 완료해주세요.');
         return;
       }
       pendingResourceTool = tool;
