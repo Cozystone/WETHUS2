@@ -27,6 +27,21 @@ const NICE_SITE_CODE = process.env.NICE_SITE_CODE || '';
 const NICE_SITE_PASSWORD = process.env.NICE_SITE_PASSWORD || '';
 const PASS_RETURN_URL = process.env.PASS_RETURN_URL || 'http://localhost:8787/pass/success';
 const PASS_ERROR_URL = process.env.PASS_ERROR_URL || 'http://localhost:8787/pass/fail';
+
+// Integration OAuth placeholders (Phase 1 foundation)
+const INTEGRATION_APP_URL = process.env.INTEGRATION_APP_URL || 'http://localhost:8080';
+const GOOGLE_OAUTH_CLIENT_ID = process.env.GOOGLE_OAUTH_CLIENT_ID || '';
+const GOOGLE_OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET || '';
+const GOOGLE_OAUTH_REDIRECT_URI = process.env.GOOGLE_OAUTH_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/google/callback`;
+const NOTION_CLIENT_ID = process.env.NOTION_CLIENT_ID || '';
+const NOTION_CLIENT_SECRET = process.env.NOTION_CLIENT_SECRET || '';
+const NOTION_REDIRECT_URI = process.env.NOTION_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/notion/callback`;
+const SLACK_CLIENT_ID = process.env.SLACK_CLIENT_ID || '';
+const SLACK_CLIENT_SECRET = process.env.SLACK_CLIENT_SECRET || '';
+const SLACK_REDIRECT_URI = process.env.SLACK_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/slack/callback`;
+const FIGMA_CLIENT_ID = process.env.FIGMA_CLIENT_ID || '';
+const FIGMA_CLIENT_SECRET = process.env.FIGMA_CLIENT_SECRET || '';
+const FIGMA_REDIRECT_URI = process.env.FIGMA_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/figma/callback`;
 const DEFAULT_ALLOWED_ORIGINS = ['http://localhost:8080', 'http://127.0.0.1:8080', 'https://wethus-2.vercel.app'];
 const ALLOWED_ORIGINS = Array.from(new Set([
   ...DEFAULT_ALLOWED_ORIGINS,
@@ -37,11 +52,19 @@ const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 const DATA_DIR = path.join(__dirname, 'data');
 const USERS_DB = path.join(DATA_DIR, 'users.json');
 const DM_DB = path.join(DATA_DIR, 'dm.json');
+const INTEGRATIONS_DB = path.join(DATA_DIR, 'integrations.json');
+const ACTIVITY_EVENTS_DB = path.join(DATA_DIR, 'activity-events.json');
+const STATUS_SNAPSHOTS_DB = path.join(DATA_DIR, 'status-snapshots.json');
+const EXTERNAL_IDENTITIES_DB = path.join(DATA_DIR, 'external-identities.json');
 
 function ensureDb() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   if (!fs.existsSync(USERS_DB)) fs.writeFileSync(USERS_DB, JSON.stringify({ users: [] }, null, 2));
   if (!fs.existsSync(DM_DB)) fs.writeFileSync(DM_DB, JSON.stringify({ threads: [] }, null, 2));
+  if (!fs.existsSync(INTEGRATIONS_DB)) fs.writeFileSync(INTEGRATIONS_DB, JSON.stringify({ integrations: [] }, null, 2));
+  if (!fs.existsSync(ACTIVITY_EVENTS_DB)) fs.writeFileSync(ACTIVITY_EVENTS_DB, JSON.stringify({ events: [] }, null, 2));
+  if (!fs.existsSync(STATUS_SNAPSHOTS_DB)) fs.writeFileSync(STATUS_SNAPSHOTS_DB, JSON.stringify({ snapshots: [] }, null, 2));
+  if (!fs.existsSync(EXTERNAL_IDENTITIES_DB)) fs.writeFileSync(EXTERNAL_IDENTITIES_DB, JSON.stringify({ maps: [] }, null, 2));
 }
 function readUsers() {
   ensureDb();
@@ -71,6 +94,31 @@ function writeDmThreads(threads) {
   ensureDb();
   fs.writeFileSync(DM_DB, JSON.stringify({ threads }, null, 2));
 }
+
+function readCollection(filePath, key) {
+  ensureDb();
+  try {
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed[key]) ? parsed[key] : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCollection(filePath, key, rows) {
+  ensureDb();
+  fs.writeFileSync(filePath, JSON.stringify({ [key]: rows }, null, 2));
+}
+
+function readIntegrations() { return readCollection(INTEGRATIONS_DB, 'integrations'); }
+function writeIntegrations(rows) { writeCollection(INTEGRATIONS_DB, 'integrations', rows); }
+function readActivityEvents() { return readCollection(ACTIVITY_EVENTS_DB, 'events'); }
+function writeActivityEvents(rows) { writeCollection(ACTIVITY_EVENTS_DB, 'events', rows); }
+function readStatusSnapshots() { return readCollection(STATUS_SNAPSHOTS_DB, 'snapshots'); }
+function writeStatusSnapshots(rows) { writeCollection(STATUS_SNAPSHOTS_DB, 'snapshots', rows); }
+function readExternalIdentityMaps() { return readCollection(EXTERNAL_IDENTITIES_DB, 'maps'); }
+function writeExternalIdentityMaps(rows) { writeCollection(EXTERNAL_IDENTITIES_DB, 'maps', rows); }
 function normEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
@@ -184,6 +232,333 @@ app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
 app.get('/health', (_, res) => res.json({ ok: true }));
+
+app.get('/integrations', (req, res) => {
+  const projectId = String(req.query?.projectId || '').trim();
+  const rows = readIntegrations();
+  const list = projectId ? rows.filter(r => r.project_id === projectId) : rows;
+  return res.json({ ok: true, integrations: list });
+});
+
+app.post('/integrations', (req, res) => {
+  const actorId = getActorId(req) || String(req.body?.connected_by_user_id || '').trim() || 'unknown';
+  const projectId = String(req.body?.project_id || '').trim();
+  const integrationType = String(req.body?.integration_type || '').trim();
+  const provider = String(req.body?.provider || '').trim().toLowerCase();
+  const resourceId = String(req.body?.external_resource_id || '').trim();
+  const resourceName = String(req.body?.external_resource_name || '').trim();
+  if (!projectId || !integrationType || !provider || !resourceId) {
+    return res.status(400).json({ ok: false, error: 'project_id/integration_type/provider/external_resource_id required' });
+  }
+
+  const rows = readIntegrations();
+  const now = new Date().toISOString();
+  const idx = rows.findIndex(r => r.project_id === projectId && r.provider === provider && r.external_resource_id === resourceId);
+  const base = {
+    id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
+    project_id: projectId,
+    integration_type: integrationType,
+    provider,
+    external_resource_id: resourceId,
+    external_resource_name: resourceName || resourceId,
+    status: 'connected',
+    access_token_reference: String(req.body?.access_token_reference || ''),
+    connected_by_user_id: actorId,
+    last_synced_at: String(req.body?.last_synced_at || ''),
+    created_at: idx >= 0 ? rows[idx].created_at : now,
+    updated_at: now
+  };
+  if (idx >= 0) rows[idx] = { ...rows[idx], ...base };
+  else rows.push(base);
+  writeIntegrations(rows);
+  return res.json({ ok: true, integration: base });
+});
+
+app.delete('/integrations/:id', (req, res) => {
+  const id = String(req.params.id || '').trim();
+  const rows = readIntegrations();
+  const next = rows.filter(r => r.id !== id);
+  writeIntegrations(next);
+  return res.json({ ok: true, removed: rows.length - next.length });
+});
+
+app.get('/activity-events', (req, res) => {
+  const projectId = String(req.query?.projectId || '').trim();
+  const limit = Math.min(200, Math.max(1, Number(req.query?.limit || 50)));
+  const rows = readActivityEvents();
+  const list = (projectId ? rows.filter(r => r.project_id === projectId) : rows)
+    .sort((a, b) => new Date(b.occurred_at || b.created_at || 0) - new Date(a.occurred_at || a.created_at || 0))
+    .slice(0, limit);
+  return res.json({ ok: true, events: list });
+});
+
+app.post('/activity-events', (req, res) => {
+  const projectId = String(req.body?.project_id || '').trim();
+  const integrationId = String(req.body?.integration_id || '').trim();
+  const sourceType = String(req.body?.source_type || '').trim();
+  const eventType = String(req.body?.event_type || '').trim();
+  if (!projectId || !sourceType || !eventType) {
+    return res.status(400).json({ ok: false, error: 'project_id/source_type/event_type required' });
+  }
+  const now = new Date().toISOString();
+  const row = {
+    id: crypto.randomUUID(),
+    project_id: projectId,
+    integration_id: integrationId,
+    source_type: sourceType,
+    source_item_id: String(req.body?.source_item_id || ''),
+    source_item_name: String(req.body?.source_item_name || ''),
+    actor_external_id: String(req.body?.actor_external_id || ''),
+    actor_name: String(req.body?.actor_name || ''),
+    event_type: eventType,
+    raw_payload: req.body?.raw_payload || {},
+    occurred_at: String(req.body?.occurred_at || now),
+    created_at: now
+  };
+  const rows = readActivityEvents();
+  rows.push(row);
+  writeActivityEvents(rows);
+  return res.json({ ok: true, event: row });
+});
+
+app.get('/status-snapshot', (req, res) => {
+  const projectId = String(req.query?.projectId || '').trim();
+  if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
+  const rows = readStatusSnapshots();
+  const snap = rows.find(r => r.project_id === projectId) || null;
+  return res.json({ ok: true, snapshot: snap });
+});
+
+app.post('/status-snapshot', (req, res) => {
+  const projectId = String(req.body?.project_id || '').trim();
+  if (!projectId) return res.status(400).json({ ok: false, error: 'project_id required' });
+  const rows = readStatusSnapshots();
+  const now = new Date().toISOString();
+  const idx = rows.findIndex(r => r.project_id === projectId);
+  const next = {
+    id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
+    project_id: projectId,
+    current_stage: String(req.body?.current_stage || ''),
+    recent_activity_summary: String(req.body?.recent_activity_summary || ''),
+    recent_activity_at: String(req.body?.recent_activity_at || ''),
+    blocker_summary: String(req.body?.blocker_summary || ''),
+    suggested_next_action: String(req.body?.suggested_next_action || ''),
+    activity_health: String(req.body?.activity_health || ''),
+    updated_at: now
+  };
+  if (idx >= 0) rows[idx] = { ...rows[idx], ...next };
+  else rows.push(next);
+  writeStatusSnapshots(rows);
+  return res.json({ ok: true, snapshot: next });
+});
+
+app.get('/external-identities', (req, res) => {
+  const userId = String(req.query?.userId || '').trim();
+  const rows = readExternalIdentityMaps();
+  return res.json({ ok: true, maps: userId ? rows.filter(r => r.user_id === userId) : rows });
+});
+
+app.post('/external-identities', (req, res) => {
+  const userId = String(req.body?.user_id || '').trim();
+  const provider = String(req.body?.provider || '').trim();
+  const externalUserId = String(req.body?.external_user_id || '').trim();
+  if (!userId || !provider || !externalUserId) return res.status(400).json({ ok: false, error: 'user_id/provider/external_user_id required' });
+  const rows = readExternalIdentityMaps();
+  const now = new Date().toISOString();
+  const idx = rows.findIndex(r => r.user_id === userId && r.provider === provider && r.external_user_id === externalUserId);
+  const next = {
+    id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
+    user_id: userId,
+    provider,
+    external_user_id: externalUserId,
+    external_email: String(req.body?.external_email || ''),
+    external_name: String(req.body?.external_name || ''),
+    created_at: idx >= 0 ? rows[idx].created_at : now,
+    updated_at: now
+  };
+  if (idx >= 0) rows[idx] = { ...rows[idx], ...next };
+  else rows.push(next);
+  writeExternalIdentityMaps(rows);
+  return res.json({ ok: true, map: next });
+});
+
+function encodeState(obj) {
+  return Buffer.from(JSON.stringify(obj)).toString('base64url');
+}
+function decodeState(state) {
+  try { return JSON.parse(Buffer.from(String(state || ''), 'base64url').toString('utf8')); } catch { return {}; }
+}
+
+app.get('/oauth/:provider/start', (req, res) => {
+  const provider = String(req.params.provider || '').toLowerCase();
+  const supported = ['google', 'notion', 'slack', 'figma'];
+  if (!supported.includes(provider)) return res.status(404).json({ ok: false, error: 'provider not supported' });
+
+  const projectId = String(req.query?.project_id || '').trim();
+  const actorId = getActorId(req) || String(req.query?.user_id || '').trim();
+  const state = encodeState({ provider, project_id: projectId, user_id: actorId, ts: Date.now() });
+
+  const conf = {
+    google: { clientId: GOOGLE_OAUTH_CLIENT_ID, redirectUri: GOOGLE_OAUTH_REDIRECT_URI },
+    notion: { clientId: NOTION_CLIENT_ID, redirectUri: NOTION_REDIRECT_URI },
+    slack: { clientId: SLACK_CLIENT_ID, redirectUri: SLACK_REDIRECT_URI },
+    figma: { clientId: FIGMA_CLIENT_ID, redirectUri: FIGMA_REDIRECT_URI }
+  }[provider];
+
+  if (!conf?.clientId) {
+    return res.status(400).json({ ok: false, error: `${provider.toUpperCase()}_CLIENT_ID missing`, setupRequired: true });
+  }
+
+  let authUrl = '';
+  if (provider === 'notion') {
+    const u = new URL('https://api.notion.com/v1/oauth/authorize');
+    u.searchParams.set('owner', 'user');
+    u.searchParams.set('client_id', NOTION_CLIENT_ID);
+    u.searchParams.set('redirect_uri', NOTION_REDIRECT_URI);
+    u.searchParams.set('response_type', 'code');
+    u.searchParams.set('state', state);
+    authUrl = u.toString();
+  }
+
+  return res.json({ ok: true, provider, oauthReady: true, redirectUri: conf.redirectUri, authUrl, state, note: provider === 'notion' ? 'Use authUrl to complete OAuth.' : 'Phase 1 placeholder for this provider.' });
+});
+
+app.get('/oauth/:provider/callback', async (req, res) => {
+  const provider = String(req.params.provider || '').toLowerCase();
+  const code = String(req.query?.code || '').trim();
+  const state = decodeState(req.query?.state);
+
+  if (provider !== 'notion') {
+    return res.json({ ok: true, provider, received: req.query || {}, note: 'Phase 1 callback placeholder. Exchange code for tokens in production setup.' });
+  }
+
+  if (!NOTION_CLIENT_ID || !NOTION_CLIENT_SECRET || !NOTION_REDIRECT_URI) {
+    return res.status(400).json({ ok: false, error: 'NOTION oauth env missing', setupRequired: true });
+  }
+  if (!code) return res.status(400).json({ ok: false, error: 'code missing' });
+
+  try {
+    const tokenRes = await fetch('https://api.notion.com/v1/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${Buffer.from(`${NOTION_CLIENT_ID}:${NOTION_CLIENT_SECRET}`).toString('base64')}`
+      },
+      body: JSON.stringify({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: NOTION_REDIRECT_URI
+      })
+    });
+    const tokenJson = await tokenRes.json().catch(() => ({}));
+    if (!tokenRes.ok) return res.status(500).json({ ok: false, error: tokenJson?.message || 'notion token exchange failed', detail: tokenJson });
+
+    const projectId = String(state?.project_id || req.query?.project_id || '').trim();
+    const userId = String(state?.user_id || req.query?.user_id || 'unknown').trim();
+    const botId = String(tokenJson?.bot_id || tokenJson?.workspace_id || `notion-${Date.now()}`);
+    const workspaceName = String(tokenJson?.workspace_name || 'Notion Workspace');
+
+    const rows = readIntegrations();
+    const now = new Date().toISOString();
+    const idx = rows.findIndex(r => r.project_id === projectId && r.provider === 'notion' && r.external_resource_id === botId);
+    const row = {
+      id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
+      project_id: projectId,
+      integration_type: 'workspace',
+      provider: 'notion',
+      external_resource_id: botId,
+      external_resource_name: workspaceName,
+      status: 'connected',
+      access_token_reference: tokenJson?.access_token ? `notion:token:${botId}` : '',
+      connected_by_user_id: userId,
+      last_synced_at: now,
+      created_at: idx >= 0 ? rows[idx].created_at : now,
+      updated_at: now,
+      // phase1 demo storage (replace with secret manager in production)
+      _token_demo_only: tokenJson?.access_token || ''
+    };
+    if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
+    writeIntegrations(rows);
+
+    return res.json({ ok: true, provider, project_id: projectId, integration: row, note: 'Notion OAuth connected. Replace _token_demo_only with secret manager in production.' });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'notion callback failed' });
+  }
+});
+
+app.post('/sync/notion', async (req, res) => {
+  try {
+    const projectId = String(req.body?.project_id || '').trim();
+    const integrationId = String(req.body?.integration_id || '').trim();
+    if (!projectId) return res.status(400).json({ ok: false, error: 'project_id required' });
+
+    const integration = readIntegrations().find(i => i.id === integrationId || (i.project_id === projectId && i.provider === 'notion')) || null;
+    if (!integration) return res.status(404).json({ ok: false, error: 'notion integration not found' });
+
+    const token = String(integration._token_demo_only || '').trim();
+    if (!token) return res.status(400).json({ ok: false, error: 'notion token missing (connect first)' });
+
+    const notionRes = await fetch('https://api.notion.com/v1/search', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Notion-Version': '2022-06-28',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ page_size: 10 })
+    });
+    const notionJson = await notionRes.json().catch(() => ({}));
+    if (!notionRes.ok) return res.status(500).json({ ok: false, error: notionJson?.message || 'notion search failed', detail: notionJson });
+
+    const results = Array.isArray(notionJson.results) ? notionJson.results : [];
+    const now = new Date().toISOString();
+    const events = readActivityEvents();
+    const newEvents = results.slice(0, 10).map(item => ({
+      id: crypto.randomUUID(),
+      project_id: projectId,
+      integration_id: integration.id,
+      source_type: 'notion',
+      source_item_id: String(item?.id || ''),
+      source_item_name: String(item?.url || item?.id || 'Notion item'),
+      actor_external_id: '',
+      actor_name: 'Notion',
+      event_type: 'resource_seen',
+      raw_payload: item,
+      occurred_at: now,
+      created_at: now
+    }));
+    events.push(...newEvents);
+    writeActivityEvents(events.slice(-2000));
+
+    const snapshots = readStatusSnapshots();
+    const idx = snapshots.findIndex(s => s.project_id === projectId);
+    const next = {
+      id: idx >= 0 ? snapshots[idx].id : crypto.randomUUID(),
+      project_id: projectId,
+      current_stage: idx >= 0 ? snapshots[idx].current_stage : '기획 중',
+      recent_activity_summary: `Notion 동기화 완료 · ${newEvents.length}개 항목 반영`,
+      recent_activity_at: now,
+      blocker_summary: idx >= 0 ? snapshots[idx].blocker_summary : '',
+      suggested_next_action: '새로 반영된 Notion 활동을 팀채팅/업데이트로 공유하세요.',
+      activity_health: newEvents.length > 0 ? 'active' : 'idle',
+      updated_at: now
+    };
+    if (idx >= 0) snapshots[idx] = { ...snapshots[idx], ...next };
+    else snapshots.push(next);
+    writeStatusSnapshots(snapshots);
+
+    const rows = readIntegrations();
+    const i = rows.findIndex(r => r.id === integration.id);
+    if (i >= 0) {
+      rows[i] = { ...rows[i], status: 'connected', last_synced_at: now, updated_at: now };
+      writeIntegrations(rows);
+    }
+
+    return res.json({ ok: true, synced: newEvents.length, snapshot: next });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'notion sync failed' });
+  }
+});
 
 app.get('/dm/threads', (req, res) => {
   const actorId = requireActor(req, res);
