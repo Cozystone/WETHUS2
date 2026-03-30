@@ -30,9 +30,9 @@ const PASS_ERROR_URL = process.env.PASS_ERROR_URL || 'http://localhost:8787/pass
 
 // Integration OAuth placeholders (Phase 1 foundation)
 const INTEGRATION_APP_URL = process.env.INTEGRATION_APP_URL || 'http://localhost:8080';
-const GOOGLE_OAUTH_CLIENT_ID = process.env.GOOGLE_OAUTH_CLIENT_ID || '';
-const GOOGLE_OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET || '';
-const GOOGLE_OAUTH_REDIRECT_URI = process.env.GOOGLE_OAUTH_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/google/callback`;
+const GOOGLE_OAUTH_CLIENT_ID = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '';
+const GOOGLE_OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || '';
+const GOOGLE_OAUTH_REDIRECT_URI = process.env.GOOGLE_OAUTH_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/google/callback`;
 const NOTION_CLIENT_ID = process.env.NOTION_CLIENT_ID || '';
 const NOTION_CLIENT_SECRET = process.env.NOTION_CLIENT_SECRET || '';
 const NOTION_REDIRECT_URI = process.env.NOTION_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/notion/callback`;
@@ -539,7 +539,8 @@ app.get('/oauth/:provider/start', (req, res) => {
   }[provider];
 
   if (!conf?.clientId) {
-    return res.json({ ok: true, provider, oauthReady: false, setupRequired: true, error: `${provider.toUpperCase()}_CLIENT_ID missing` });
+    const errKey = provider === 'google' ? 'GOOGLE_OAUTH_CLIENT_ID (or GOOGLE_CLIENT_ID)' : `${provider.toUpperCase()}_CLIENT_ID`;
+    return res.json({ ok: true, provider, oauthReady: false, setupRequired: true, error: `${errKey} missing` });
   }
 
   let authUrl = '';
