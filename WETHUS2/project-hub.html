@@ -652,28 +652,44 @@
 
       toolLogoGrid.querySelectorAll('[data-tool-connect]').forEach(btn => {
         btn.addEventListener('click', async () => {
-          if (!currentProject) return;
+          if (!currentProject) {
+            alert('먼저 프로젝트를 선택해주세요.');
+            return;
+          }
           const name = btn.getAttribute('data-tool-connect');
           const tool = toolTargets.find(x => x.name === name);
           if (!tool) return;
+
+          // 팝업 차단 방지: 사용자 클릭 스택에서 먼저 빈 창을 연 뒤 URL을 주입한다.
+          const popup = window.open('', '_blank', 'noopener');
+
           try {
             if (!tool.ready) {
+              if (popup) popup.close();
               alert('해당 제공자는 곧 지원 예정입니다.');
               return;
             }
             const oauth = await hubApi(`/oauth/${encodeURIComponent(tool.provider)}/start?project_id=${encodeURIComponent(currentProject.id)}`);
             if (oauth?.setupRequired) {
+              if (popup) popup.close();
               alert(`${name} 연결 설정이 아직 완료되지 않았습니다.\n\n사유: ${oauth?.error || 'OAuth 환경변수 미설정'}\n관리자 설정 후 다시 시도해주세요.`);
               return;
             }
             if (oauth?.authUrl) {
               setLlmStatus(`WETHUS AI · 업데이트중… (${name} OAuth 연결)`);
-              window.open(oauth.authUrl, '_blank');
+              if (popup) {
+                popup.location.href = oauth.authUrl;
+              } else {
+                // 브라우저가 팝업을 막은 경우 마지막 fallback
+                window.location.href = oauth.authUrl;
+              }
               WETHUS.addHubActivity(currentProject.id, `${name} OAuth 연결 시작`);
             } else {
+              if (popup) popup.close();
               alert('연결 URL을 생성하지 못했습니다. 설정을 확인해주세요.');
             }
           } catch (e) {
+            if (popup) popup.close();
             alert(e?.message || '연결 실패');
           }
         });
