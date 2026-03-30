@@ -108,7 +108,6 @@
           <button id="hubEditBtn" class="btn btn--secondary" type="button">프로젝트 수정</button>
           <button id="hubToolBtn" class="btn btn--secondary" type="button">외부 툴 연결</button>
           <button id="hubChatOpenBtn" class="btn btn--secondary" type="button">팀채팅</button>
-          <button id="hubUpdateBtn" class="btn btn--secondary" type="button">업데이트 작성</button>
           <button id="hubMentorBtn" class="btn btn--primary" type="button">멘토링 요청</button>
         </div>
       </section>
@@ -184,14 +183,13 @@
 
   <div id="hubEditModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-edit="true"></div><article class="modal-panel" style="max-width:760px;"><button class="modal-close" id="hubEditClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">프로젝트 수정</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><input id="hubEditTitle" placeholder="제목" /><input id="hubEditSummary" placeholder="요약" /></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><select id="hubEditStatus"><option>모집 중</option><option>기획 중</option><option>진행 중</option><option>피보팅</option><option>완료</option></select><select id="hubEditTeamSize"><option>1인</option><option>2인</option><option>3인</option><option>4인이상</option></select></div><input id="hubEditRoles" placeholder="역할" style="margin-bottom:8px;" /><textarea id="hubEditDesc" style="width:100%;min-height:110px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;" placeholder="프로젝트 설명"></textarea><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="hubEditSave" class="btn btn--primary" type="button">저장</button></div></div></article></div>
   <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 툴 연결</h3><p class="meta" style="margin:0 0 10px;">OAuth로 계정을 연결한 뒤, 프로젝트에 연결할 문서/시트/채널/파일을 선택하세요.</p><article class="hub-card" style="padding:10px;margin:0 0 10px;"><strong style="display:block;margin-bottom:4px;">연동 구조</strong><p class="meta" style="margin:0;">1) 제공자 선택 → 2) OAuth 인증 → 3) 리소스 선택 → 4) 프로젝트 허브에 연결 반영</p></article><div id="toolLogoGrid" class="tool-grid"></div></div></article></div>
-  <div id="hubUpdateModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-update="true"></div><article class="modal-panel" style="max-width:560px;"><button class="modal-close" id="hubUpdateClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">업데이트 작성</h3><textarea id="hubUpdateInput" style="width:100%;min-height:120px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;"></textarea><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="hubUpdateSubmit" class="btn btn--primary" type="button">등록</button></div></div></article></div>
   <div id="hubChatModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-chat="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubChatClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">팀채팅</h3><p class="meta" style="margin:0 0 8px;">프로젝트 지원 AI는 프로젝트 정보/최근 활동/팀 채팅 문맥을 함께 참고합니다.</p><div id="chatList" style="max-height:320px;overflow:auto;display:grid;gap:8px;"></div><div class="slash-suggest" style="display:flex;gap:8px;margin-top:10px;"><input id="chatInput" style="flex:1;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px;" placeholder="메시지를 입력하세요 (/ai 질문 형태 지원)"/><button id="chatSend" class="btn btn--primary">보내기</button><div id="slashList" class="slash-list"></div></div></div></article></div>
   <div id="worklogModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-worklog="true"></div><article class="modal-panel" style="max-width:620px;"><button class="modal-close" id="worklogClose">×</button><div class="modal-content"><h3 id="worklogTitle" style="margin:0 0 8px;">업무기록</h3><ul id="worklogList" class="meta-bullet"></ul></div></article></div>
   <div id="hubAiAddModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-ai-add="true"></div><article class="modal-panel" style="max-width:520px;"><button class="modal-close" id="hubAiAddClose">×</button><div class="modal-content"><h3 id="hubAiAddTitle" style="margin:0 0 8px;">에이전트를 추가하시겠습니까?</h3><p id="hubAiAddDesc" class="meta" style="margin:0 0 12px;">선택한 AI 멘토를 이 프로젝트 허브 팀에 추가합니다.</p><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubAiAddCancel" class="btn btn--secondary" type="button">취소</button><button id="hubAiAddConfirm" class="btn btn--primary" type="button">확인</button></div></div></article></div>
   <div id="hubAiRemoveModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-ai-remove="true"></div><article class="modal-panel" style="max-width:520px;"><button class="modal-close" id="hubAiRemoveClose">×</button><div class="modal-content"><h3 id="hubAiRemoveTitle" style="margin:0 0 8px;">에이전트를 제거하시겠습니까?</h3><p id="hubAiRemoveDesc" class="meta" style="margin:0 0 12px;">선택한 AI 멘토를 팀 구성에서 제거합니다.</p><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubAiRemoveCancel" class="btn btn--secondary" type="button">취소</button><button id="hubAiRemoveConfirm" class="btn btn--primary" type="button">확인</button></div></div></article></div>
   <div id="hubResourceModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-resource="true"></div><article class="modal-panel" style="max-width:560px;"><button class="modal-close" id="hubResourceClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">연결할 리소스 선택</h3><p id="hubResourceHelp" class="meta" style="margin:0 0 10px;">연결할 문서/시트/워크스페이스를 선택하세요.</p><select id="hubResourceSelect" style="width:100%;margin-bottom:10px;"></select><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubResourceCancel" class="btn btn--secondary" type="button">취소</button><button id="hubResourceConfirm" class="btn btn--primary" type="button">연결 저장</button></div></div></article></div>
 
-  <footer class="footer"><div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:anseokkim@gmail.com">anseokkim@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p></div></div></footer>
+  <footer class="footer"><div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p></div></div></footer>
 
   <script src="app.js?v=20260318-58"></script>
   <script>
@@ -718,20 +716,6 @@
       renderToolCards();
     });
 
-    document.getElementById('hubUpdateBtn').addEventListener('click',()=>openModal('hubUpdateModal'));
-    document.getElementById('hubUpdateClose').addEventListener('click',()=>closeModal('hubUpdateModal'));
-    document.querySelector('[data-close-update]').addEventListener('click',()=>closeModal('hubUpdateModal'));
-    document.getElementById('hubUpdateSubmit').addEventListener('click', async ()=>{
-      const text=document.getElementById('hubUpdateInput').value.trim(); if(!text||!currentProject) return;
-      WETHUS.addHubActivity(currentProject.id,text);
-      const hub=WETHUS.getProjectHub(currentProject.id);
-      const logs=[{text,createdAt:new Date().toISOString()},...(hub.progress||[])].slice(0,40);
-      WETHUS.upsertProjectHub(currentProject.id,{progress:logs});
-      document.getElementById('hubUpdateInput').value='';
-      refreshHubInsights('hub-update');
-      closeModal('hubUpdateModal');
-      await renderHub();
-    });
 
     document.getElementById('hubChatOpenBtn').addEventListener('click',()=>{if(!currentProject)return; openModal('hubChatModal'); renderChat();});
     document.getElementById('hubChatClose').addEventListener('click',()=>closeModal('hubChatModal'));
@@ -958,6 +942,22 @@
       if (!currentProject || !pendingRemoveAiId) return;
       const hub = WETHUS.getProjectHub(currentProject.id);
       const target = (hub.aiMentors || []).find(x => x.id === pendingRemoveAiId);
+      const next = (hub.aiMentors || []).filter(x => x.id !== pendingRemoveAiId);
+      WETHUS.upsertProjectHub(currentProject.id, { aiMentors: next });
+      if (target?.name) WETHUS.addHubActivity(currentProject.id, `${target.name} AI 멘토가 팀 구성에서 제거됨`);
+      pendingRemoveAiId = '';
+      closeModal('hubAiRemoveModal');
+      await renderHub();
+    });
+
+    const pid=params.get('projectId') || getPersistedProject();
+    renderProjectList();
+    if(pid) openProject(pid);
+
+  </script>
+</body>
+</html>
+d === pendingRemoveAiId);
       const next = (hub.aiMentors || []).filter(x => x.id !== pendingRemoveAiId);
       WETHUS.upsertProjectHub(currentProject.id, { aiMentors: next });
       if (target?.name) WETHUS.addHubActivity(currentProject.id, `${target.name} AI 멘토가 팀 구성에서 제거됨`);

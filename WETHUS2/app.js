@@ -1628,6 +1628,10 @@
             <span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"/><path d="M9 17a3 3 0 0 0 6 0"/></svg><span class="notify-badge side-badge" style="display:none;">0</span></span>
             <span>알림</span>
           </a>
+          <a href="support.html" class="side-drawer-item side-drawer-item--row">
+            <span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0z"/><path d="M8.5 15a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="10" r="1"/></svg></span>
+            <span>문의</span>
+          </a>
 
           <div class="side-drawer-group-title">AD · 홍보</div>
           <a href="ad-center.html" class="side-drawer-item side-drawer-item--row">
