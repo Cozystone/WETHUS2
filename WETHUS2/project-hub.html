@@ -174,7 +174,7 @@
         </div>
 
         <aside class="side-stack">
-          <article class="hub-card"><h3>프로젝트 상태</h3><ul id="sdStatus" class="meta-bullet"></ul></article>
+          <article class="hub-card"><h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">프로젝트 상태 <button id="sdRefreshBtn" class="btn btn--secondary" type="button" style="padding:4px 8px;min-height:auto;line-height:1;">↻</button></h3><ul id="sdStatus" class="meta-bullet"></ul></article>
           <article class="hub-card"><h3>진행 조언</h3><ul id="sdAdvice" class="meta-bullet"></ul></article>
           <article class="hub-card"><h3>멘토 또는 AI에게 요청하기</h3><div style="display:grid;gap:8px;"><button id="sdAiBtn" class="btn btn--primary" type="button">AI 멘토 요청</button><button id="sdHumanBtn" class="btn btn--secondary" type="button">인간 멘토 요청</button></div></article>
         </aside>
@@ -369,6 +369,8 @@
     }
 
     let insightTimer = null;
+    let insightAutoRefreshTimer = null;
+    const docSignatureByProject = new Map();
     function setLlmStatus(text) {
       const el = document.getElementById('hubLlmStatus');
       if (el) el.textContent = text;
@@ -379,17 +381,40 @@
         document.getElementById('sdAdvice').innerHTML = `<li>${label}</li>`;
       }
     }
-    async function refreshHubInsights(reason = 'update') {
+    function startInsightAutoRefresh() {
+      if (insightAutoRefreshTimer) clearInterval(insightAutoRefreshTimer);
+      insightAutoRefreshTimer = setInterval(() => {
+        if (!currentProject) return;
+        refreshHubInsights('auto-doc-sync', { silent: true });
+      }, 90000);
+    }
+    function stopInsightAutoRefresh() {
+      if (insightAutoRefreshTimer) clearInterval(insightAutoRefreshTimer);
+      insightAutoRefreshTimer = null;
+    }
+    async function refreshHubInsights(reason = 'update', opts = {}) {
       if (!currentProject) return;
+      const { silent = false } = opts;
       if (insightTimer) clearTimeout(insightTimer);
-      setHubLoadingState(true, 'WETHUS AI 업데이트중...');
+      if (!silent) setHubLoadingState(true, 'WETHUS AI 업데이트중...');
       insightTimer = setTimeout(async () => {
         const hub = WETHUS.getProjectHub(currentProject.id);
         let externalDocContext = '';
         try {
           const ext = await hubApi(`/integrations/insights?projectId=${encodeURIComponent(currentProject.id)}`);
-          const docLines = (ext?.insights || []).filter(d => d?.snippet).map(d => `${d.resourceName || d.name}: ${String(d.snippet || '').slice(0, 500)}`);
+          const insightRows = (ext?.insights || []).filter(d => d?.snippet);
+          const docLines = insightRows.map(d => `${d.resourceName || d.name}: ${String(d.snippet || '').slice(0, 500)}`);
           externalDocContext = docLines.join('\n');
+
+          const nextSig = insightRows
+            .map(d => `${d.resourceId || d.id}|${d.modifiedAt || ''}|${String(d.snippet || '').slice(0, 120)}`)
+            .sort()
+            .join('||');
+          const prevSig = docSignatureByProject.get(currentProject.id);
+          if (prevSig && nextSig && prevSig !== nextSig) {
+            WETHUS.addHubActivity(currentProject.id, '연결된 Google Docs 변경 감지 · 상태/진행조언 자동 업데이트');
+          }
+          if (nextSig) docSignatureByProject.set(currentProject.id, nextSig);
         } catch (_) {}
 
         const prompt = `너는 프로젝트 운영 어시스턴트다. 이유:${reason}\n프로젝트:${currentProject.title}\n상태:${currentProject.status}\n목표:${hub.goal}\n할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,6).map(x=>x.text).join(', ')}\n팀채팅:${(hub.teamChat||[]).slice(-8).map(x=>x.text).join(' / ')}\n외부문서요약:${externalDocContext || '없음'}\n\n출력: 상태요약 1줄, 진행조언 3줄.`;
@@ -435,9 +460,11 @@
       maybeOpenAiAddModal();
       renderHub().catch(() => {});
       refreshHubInsights('project-open');
+      startInsightAutoRefresh();
     }
 
     function backToList(){
+      stopInsightAutoRefresh();
       currentProject=null;
       hubDetailView.classList.add('hidden');
       hubListView.classList.remove('hidden');
@@ -445,6 +472,9 @@
     }
 
     document.getElementById('hubBackBtn').addEventListener('click',backToList);
+    document.getElementById('sdRefreshBtn')?.addEventListener('click', () => {
+      refreshHubInsights('manual-refresh');
+    });
     function mentorHref(tab = '') { return `mentor.html?fromHub=1${currentProject ? `&projectId=${encodeURIComponent(currentProject.id)}` : ''}${tab ? `&tab=${tab}` : ''}`; }
     document.getElementById('hubMentorBtn').addEventListener('click',()=>location.href=mentorHref());
     document.getElementById('sdAiBtn').addEventListener('click',()=>location.href=mentorHref('ai'));
@@ -485,7 +515,7 @@
 
     const toolTargets = [
       { name:'Notion', provider:'notion', resourceProvider:'notion', type:'workspace', logo:'🧩', home:'https://www.notion.so', desc:'문서와 체크리스트 연결', ready:true },
-      { name:'Google Docs', provider:'google', resourceProvider:'google_docs', type:'document', logo:'📝', home:'https://docs.google.com', desc:'프로젝트 문서 연결', ready:true },
+      { name:'Google Docs', provider:'google', resourceProvider:'google_docs', type:'document', allowFolderSelect:true, logo:'📝', home:'https://docs.google.com', desc:'프로젝트 문서/폴더 연결', ready:true },
       { name:'Google Sheets', provider:'google', resourceProvider:'google_sheets', type:'spreadsheet', logo:'📊', home:'https://sheets.google.com', desc:'일정/지표 시트 연결', ready:true },
       { name:'Slack', provider:'slack', resourceProvider:'slack', type:'channel', logo:'💬', home:'https://slack.com', desc:'프로젝트 채널 활동 연결', ready:true },
       { name:'Figma', provider:'figma', resourceProvider:'figma', type:'file', logo:'🎨', home:'https://www.figma.com', desc:'디자인 파일 상태 연결', ready:true }
@@ -526,8 +556,14 @@
 
     function currentToolState(tool) {
       if (!currentProject) return null;
-      const remote = remoteIntegrations.find(x => x.provider === tool.provider && x.integration_type === tool.type)
-        || remoteIntegrations.find(x => x.provider === tool.provider);
+      let remote = null;
+      if (tool.name === 'Google Docs') {
+        remote = remoteIntegrations.find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder'))
+          || remoteIntegrations.find(x => x.provider === 'google' && x.integration_type === 'account');
+      } else {
+        remote = remoteIntegrations.find(x => x.provider === tool.provider && x.integration_type === tool.type)
+          || remoteIntegrations.find(x => x.provider === tool.provider);
+      }
       if (remote) {
         return {
           connected: remote.status === 'connected',
@@ -564,18 +600,29 @@
       listEl.innerHTML = rows.map(r => {
         const isFolder = r.kind === 'folder';
         const active = r.id === pendingResourceSelectedId;
-        return `<button type="button" data-rid="${r.id}" data-rkind="${r.kind || 'file'}" style="text-align:left;padding:10px;border:1px solid ${active ? '#ff8a1f' : '#2a2a2a'};border-radius:8px;background:${active ? 'rgba(255,138,31,.12)' : '#171717'};color:#f5f5f5;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;"><span><strong style="display:block;">${isFolder ? '📁 ' : '📄 '}${r.name || r.id}</strong><span class="meta">${r.modifiedAt ? new Date(r.modifiedAt).toLocaleString('ko-KR') : ''}</span></span><span class="meta">${isFolder ? '열기 >' : '선택'}</span></button>`;
+        const canSelectFolder = isFolder && !!pendingResourceTool?.allowFolderSelect;
+        return `<div style="padding:10px;border:1px solid ${active ? '#ff8a1f' : '#2a2a2a'};border-radius:8px;background:${active ? 'rgba(255,138,31,.12)' : '#171717'};color:#f5f5f5;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <span><strong style="display:block;">${isFolder ? '📁 ' : '📄 '}${r.name || r.id}</strong><span class="meta">${r.modifiedAt ? new Date(r.modifiedAt).toLocaleString('ko-KR') : ''}</span></span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            ${isFolder ? '<button type="button" class="btn btn--secondary" data-r-open="' + r.id + '" style="padding:4px 8px;min-height:auto;">열기</button>' : ''}
+            ${canSelectFolder ? '<button type="button" class="btn btn--primary" data-r-select="' + r.id + '" style="padding:4px 8px;min-height:auto;">폴더 연결</button>' : ''}
+            ${!isFolder ? '<button type="button" class="btn btn--secondary" data-r-select="' + r.id + '" style="padding:4px 8px;min-height:auto;">선택</button>' : ''}
+          </div>
+        </div>`;
       }).join('') || '<p class="meta" style="margin:6px;">검색 결과가 없습니다.</p>';
-      listEl.querySelectorAll('[data-rid]').forEach(btn => {
+
+      listEl.querySelectorAll('[data-r-open]').forEach(btn => {
         btn.addEventListener('click', async () => {
-          const rid = btn.getAttribute('data-rid') || '';
-          const kind = btn.getAttribute('data-rkind') || 'file';
-          if (kind === 'folder') {
-            const target = (pendingResourceRows || []).find(x => x.id === rid);
-            pendingResourceFolderStack.push({ id: rid, name: target?.name || '폴더' });
-            await loadResourceRowsForCurrentFolder();
-            return;
-          }
+          const rid = btn.getAttribute('data-r-open') || '';
+          const target = (pendingResourceRows || []).find(x => x.id === rid);
+          pendingResourceFolderStack.push({ id: rid, name: target?.name || '폴더' });
+          await loadResourceRowsForCurrentFolder();
+        });
+      });
+
+      listEl.querySelectorAll('[data-r-select]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const rid = btn.getAttribute('data-r-select') || '';
           pendingResourceSelectedId = rid;
           renderResourceRows(document.getElementById('hubResourceSearch').value);
         });
@@ -586,7 +633,9 @@
       if (!currentProject) return;
       pendingResourceTool = tool;
       pendingResourceFolderStack = [{ id: 'root', name: '내 드라이브' }];
-      document.getElementById('hubResourceHelp').textContent = `${tool.name}에서 프로젝트에 연결할 리소스를 선택하세요.`;
+      document.getElementById('hubResourceHelp').textContent = tool.allowFolderSelect
+        ? `${tool.name}에서 프로젝트에 연결할 리소스를 선택하세요. (문서 또는 폴더 선택 가능)`
+        : `${tool.name}에서 프로젝트에 연결할 리소스를 선택하세요.`;
       document.getElementById('hubResourceSearch').value = '';
       const data = await loadResourceRowsForCurrentFolder();
       if (!(pendingResourceRows || []).length) {
@@ -701,8 +750,11 @@
           const name = btn.getAttribute('data-tool-sync');
           const tool = toolTargets.find(x => x.name === name);
           if (!tool) return;
-          const integ = (remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
-            || (remoteIntegrations || []).find(x => x.provider === tool.provider);
+          const integ = tool.name === 'Google Docs'
+            ? ((remoteIntegrations || []).find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder'))
+              || (remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'account'))
+            : ((remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
+              || (remoteIntegrations || []).find(x => x.provider === tool.provider));
           if (!integ) return alert('먼저 연결을 완료해주세요.');
           try {
             setLlmStatus(`WETHUS AI · 업데이트중… (${name} 동기화)`);
@@ -725,8 +777,11 @@
           const name = btn.getAttribute('data-tool-disconnect');
           const tool = toolTargets.find(x => x.name === name);
           if (!tool) return;
-          const integ = (remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
-            || (remoteIntegrations || []).find(x => x.provider === tool.provider);
+          const integ = tool.name === 'Google Docs'
+            ? ((remoteIntegrations || []).find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder'))
+              || (remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'account'))
+            : ((remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
+              || (remoteIntegrations || []).find(x => x.provider === tool.provider));
           if (!integ) return;
           try {
             await hubApi(`/integrations/${encodeURIComponent(integ.id)}`, { method: 'DELETE' });
@@ -762,14 +817,19 @@
       if (!currentProject || !pendingResourceTool) return;
       const selectedId = pendingResourceSelectedId;
       const selected = (pendingResourceRows || []).find(x => x.id === selectedId);
-      if (!selected) { alert('연결할 파일을 선택해주세요.'); return; }
-      if (selected.kind === 'folder') { alert('폴더가 아니라 파일(문서/시트)을 선택해주세요.'); return; }
+      if (!selected) { alert('연결할 리소스를 선택해주세요.'); return; }
+      const selectedIsFolder = selected.kind === 'folder';
+      if (selectedIsFolder && !pendingResourceTool.allowFolderSelect) {
+        alert('폴더가 아니라 파일(문서/시트)을 선택해주세요.');
+        return;
+      }
 
+      const integrationType = selectedIsFolder ? 'folder' : pendingResourceTool.type;
       const created = await hubApi('/integrations', {
         method: 'POST',
         body: JSON.stringify({
           project_id: currentProject.id,
-          integration_type: pendingResourceTool.type,
+          integration_type: integrationType,
           provider: pendingResourceTool.provider,
           external_resource_id: selected.id,
           external_resource_name: selected.name || `${pendingResourceTool.name} 리소스`,
@@ -781,7 +841,7 @@
       const hub = WETHUS.getProjectHub(currentProject.id);
       const tools = [...(hub.tools || [])];
       const idx = tools.findIndex(t => t.name === pendingResourceTool.name);
-      const next = { name: pendingResourceTool.name, url: selected.url || '', desc: selected.name || `${pendingResourceTool.name} 연결`, connected: true, lastSynced: new Date().toISOString(), integrationId: created?.integration?.id || '' };
+      const next = { name: pendingResourceTool.name, url: selected.url || '', desc: `${selected.name || `${pendingResourceTool.name} 연결`}${selectedIsFolder ? ' (폴더)' : ''}`, connected: true, lastSynced: new Date().toISOString(), integrationId: created?.integration?.id || '' };
       if (idx >= 0) tools[idx] = { ...tools[idx], ...next }; else tools.push(next);
       WETHUS.upsertProjectHub(currentProject.id, { tools });
       WETHUS.addHubActivity(currentProject.id, `${pendingResourceTool.name} 리소스 연결 완료: ${selected.name || selected.id}`);
