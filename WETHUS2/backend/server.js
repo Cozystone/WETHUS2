@@ -276,10 +276,53 @@ app.post('/integrations', (req, res) => {
 
 app.delete('/integrations/:id', (req, res) => {
   const id = String(req.params.id || '').trim();
+  const hard = String(req.query?.hard || '').trim() === '1';
   const rows = readIntegrations();
-  const next = rows.filter(r => r.id !== id);
-  writeIntegrations(next);
-  return res.json({ ok: true, removed: rows.length - next.length });
+  const idx = rows.findIndex(r => r.id === id);
+  if (idx < 0) return res.json({ ok: true, removed: 0 });
+
+  if (hard) {
+    const next = rows.filter(r => r.id !== id);
+    writeIntegrations(next);
+    return res.json({ ok: true, removed: rows.length - next.length, mode: 'hard' });
+  }
+
+  rows[idx] = {
+    ...rows[idx],
+    status: 'disconnected',
+    updated_at: new Date().toISOString()
+  };
+  writeIntegrations(rows);
+  return res.json({ ok: true, removed: 1, mode: 'soft', integration: rows[idx] });
+});
+
+app.get('/integrations/providers', (_req, res) => {
+  return res.json({
+    ok: true,
+    providers: [
+      { key: 'notion', label: 'Notion', description: '문서와 체크리스트 연결', status: 'ready' },
+      { key: 'google_docs', label: 'Google Docs', description: '프로젝트 문서 연결', status: 'placeholder' },
+      { key: 'google_sheets', label: 'Google Sheets', description: '일정/지표 시트 연결', status: 'placeholder' },
+      { key: 'slack', label: 'Slack', description: '프로젝트 채널 활동 연결', status: 'placeholder' },
+      { key: 'figma', label: 'Figma', description: '디자인 파일 상태 연결', status: 'placeholder' }
+    ]
+  });
+});
+
+app.get('/integrations/resources', (req, res) => {
+  const provider = String(req.query?.provider || '').trim().toLowerCase();
+  const projectId = String(req.query?.projectId || '').trim();
+  if (!provider || !projectId) return res.status(400).json({ ok: false, error: 'provider/projectId required' });
+
+  const integrations = readIntegrations().filter(i => i.project_id === projectId && i.status === 'connected');
+  const match = integrations.find(i => i.provider === (provider === 'google_docs' || provider === 'google_sheets' ? 'google' : provider));
+
+  // phase1: placeholder resource picker data (replace with provider SDK/list APIs)
+  const items = provider === 'notion'
+    ? [{ id: match?.external_resource_id || 'notion-workspace', name: match?.external_resource_name || 'Notion Workspace', url: 'https://www.notion.so' }]
+    : [{ id: `${provider}-resource-1`, name: `${provider} 기본 리소스`, url: '' }];
+
+  return res.json({ ok: true, provider, resources: items, placeholder: provider !== 'notion' });
 });
 
 app.post('/integrations/:id/webhook-config', (req, res) => {

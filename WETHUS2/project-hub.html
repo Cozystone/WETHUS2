@@ -467,10 +467,11 @@
     });
 
     const toolTargets = [
-      { name:'Google Docs', logo:'📝', home:'https://docs.google.com' },
-      { name:'Google Sheets', logo:'📊', home:'https://sheets.google.com' },
-      { name:'Notion', logo:'🧩', home:'https://www.notion.so' },
-      { name:'Figma', logo:'🎨', home:'https://www.figma.com' }
+      { name:'Notion', provider:'notion', type:'workspace', logo:'🧩', home:'https://www.notion.so', desc:'문서와 체크리스트 연결', ready:true },
+      { name:'Google Docs', provider:'google', type:'document', logo:'📝', home:'https://docs.google.com', desc:'프로젝트 문서 연결', ready:false },
+      { name:'Google Sheets', provider:'google', type:'spreadsheet', logo:'📊', home:'https://sheets.google.com', desc:'일정/지표 시트 연결', ready:false },
+      { name:'Slack', provider:'slack', type:'channel', logo:'💬', home:'https://slack.com', desc:'프로젝트 채널 활동 연결', ready:false },
+      { name:'Figma', provider:'figma', type:'file', logo:'🎨', home:'https://www.figma.com', desc:'디자인 파일 상태 연결', ready:false }
     ];
 
     async function fetchToolMeta(url) {
@@ -506,41 +507,44 @@
       return remoteIntegrations;
     }
 
-    function currentToolState(name) {
+    function currentToolState(tool) {
       if (!currentProject) return null;
-      const providerMap = {
-        'Google Docs': 'google',
-        'Google Sheets': 'google',
-        'Notion': 'notion',
-        'Figma': 'figma'
-      };
-      const provider = providerMap[name] || '';
-      const remote = remoteIntegrations.find(x => x.provider === provider);
+      const remote = remoteIntegrations.find(x => x.provider === tool.provider && x.integration_type === tool.type)
+        || remoteIntegrations.find(x => x.provider === tool.provider);
       if (remote) {
         return {
           connected: remote.status === 'connected',
+          everConnected: true,
           lastSynced: remote.last_synced_at,
-          desc: remote.external_resource_name || ''
+          desc: remote.external_resource_name || '',
+          integrationId: remote.id
         };
       }
       const hub = WETHUS.getProjectHub(currentProject.id);
-      return (hub.tools || []).find(t => t.name === name) || null;
+      const local = (hub.tools || []).find(t => t.name === tool.name) || null;
+      return local ? { ...local, everConnected: !!local.integrationId } : null;
     }
 
     function renderToolCards() {
       const toolLogoGrid = document.getElementById('toolLogoGrid');
       toolLogoGrid.innerHTML = toolTargets.map(t => {
-        const st = currentToolState(t.name);
+        const st = currentToolState(t);
+        const connectLabel = st?.connected ? '재연결' : (st?.everConnected ? '재연결' : '연결');
+        const statusLabel = t.ready ? (st?.connected ? '연결됨' : (st?.everConnected ? '연결해제됨' : '미연결')) : '준비중';
         return `<article class="tool-card" data-tool="${t.name}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-            <div><strong style="font-size:1.15rem;">${t.logo} ${t.name}</strong><p class="meta" style="margin:4px 0 0;">${st?.connected ? '연결됨' : '미연결'} ${st?.lastSynced ? '· 마지막 반영 ' + new Date(st.lastSynced).toLocaleString('ko-KR') : ''}</p></div>
+            <div>
+              <strong style="font-size:1.15rem;">${t.logo} ${t.name}</strong>
+              <p class="meta" style="margin:4px 0 0;">${t.desc}</p>
+              <p class="meta" style="margin:4px 0 0;">${statusLabel} ${st?.lastSynced ? '· 마지막 반영 ' + new Date(st.lastSynced).toLocaleString('ko-KR') : ''}</p>
+            </div>
             <button class="btn btn--secondary" data-tool-home="${t.name}" type="button" style="padding:6px 10px;">홈</button>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
-            <button class="btn btn--primary" data-tool-connect="${t.name}" type="button">연결/재연결</button>
-            <button class="btn btn--secondary" data-tool-webhook="${t.name}" type="button">API+Webhook</button>
-            <button class="btn btn--secondary" data-tool-sync="${t.name}" type="button">동기화</button>
-            <button class="btn btn--secondary" data-tool-disconnect="${t.name}" type="button">해제</button>
+            <button class="btn btn--primary" data-tool-connect="${t.name}" type="button" ${t.ready ? '' : 'disabled'}>${connectLabel}</button>
+            <button class="btn btn--secondary" data-tool-webhook="${t.name}" type="button" ${t.ready ? '' : 'disabled'}>API+Webhook</button>
+            <button class="btn btn--secondary" data-tool-sync="${t.name}" type="button" ${t.ready ? '' : 'disabled'}>동기화</button>
+            <button class="btn btn--secondary" data-tool-disconnect="${t.name}" type="button" ${t.ready ? '' : 'disabled'}>해제</button>
           </div>
         </article>`;
       }).join('');
@@ -556,8 +560,10 @@
         btn.addEventListener('click', async () => {
           if (!currentProject) return;
           const name = btn.getAttribute('data-tool-webhook');
-          const provider = (name === 'Notion') ? 'notion' : (name.includes('Google') ? 'google' : name.toLowerCase());
-          const integ = (remoteIntegrations || []).find(x => x.provider === provider);
+          const tool = toolTargets.find(x => x.name === name);
+          if (!tool) return;
+          const integ = (remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
+            || (remoteIntegrations || []).find(x => x.provider === tool.provider);
           if (!integ?.id) return alert('먼저 연결을 완료한 뒤 API+Webhook를 설정하세요.');
           try {
             const conf = await hubApi(`/integrations/${encodeURIComponent(integ.id)}/webhook-config`, { method: 'POST' });
@@ -581,28 +587,23 @@
         btn.addEventListener('click', async () => {
           if (!currentProject) return;
           const name = btn.getAttribute('data-tool-connect');
+          const tool = toolTargets.find(x => x.name === name);
+          if (!tool) return;
           try {
-            if (name === 'Notion') {
+            if (tool.provider === 'notion') {
               const oauth = await hubApi(`/oauth/notion/start?project_id=${encodeURIComponent(currentProject.id)}`);
               if (oauth?.authUrl) {
                 setLlmStatus('WETHUS AI · 업데이트중… (Notion 연결 준비)');
                 window.open(oauth.authUrl, '_blank', 'noopener');
                 WETHUS.addHubActivity(currentProject.id, 'Notion OAuth 연결 시작');
-                return;
               }
             }
 
-            const shared = prompt(`${name} 공유 링크를 입력하세요 (https://...)`);
+            const shared = prompt(`${name} 연결할 리소스 링크를 입력하세요 (https://...)`);
             if (!shared) return;
-            setLlmStatus(`WETHUS AI · 업데이트중… (${name} 메타 확인)`);
+            setLlmStatus(`WETHUS AI · 업데이트중… (${name} 리소스 확인)`);
             const meta = await fetchToolMeta(shared);
-            const providerMap = {
-              'Google Docs': { provider: 'google', type: 'document' },
-              'Google Sheets': { provider: 'google', type: 'spreadsheet' },
-              'Notion': { provider: 'notion', type: 'workspace' },
-              'Figma': { provider: 'figma', type: 'file' }
-            };
-            const pm = providerMap[name] || { provider: name.toLowerCase(), type: 'external' };
+            const pm = { provider: tool.provider, type: tool.type };
 
             const created = await hubApi('/integrations', {
               method: 'POST',
@@ -639,12 +640,14 @@
         btn.addEventListener('click', async () => {
           if (!currentProject) return;
           const name = btn.getAttribute('data-tool-sync');
-          const provider = (name === 'Notion') ? 'notion' : (name.includes('Google') ? 'google' : name.toLowerCase());
-          const integ = (remoteIntegrations || []).find(x => x.provider === provider);
+          const tool = toolTargets.find(x => x.name === name);
+          if (!tool) return;
+          const integ = (remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
+            || (remoteIntegrations || []).find(x => x.provider === tool.provider);
           if (!integ) return alert('먼저 연결을 완료해주세요.');
           try {
             setLlmStatus(`WETHUS AI · 업데이트중… (${name} 동기화)`);
-            if (provider === 'notion') {
+            if (tool.provider === 'notion') {
               await hubApi('/sync/notion', { method: 'POST', body: JSON.stringify({ project_id: currentProject.id, integration_id: integ.id }) });
             }
             WETHUS.addHubActivity(currentProject.id, `${name} 수동 동기화 실행`);
@@ -661,8 +664,10 @@
         btn.addEventListener('click', async () => {
           if (!currentProject) return;
           const name = btn.getAttribute('data-tool-disconnect');
-          const provider = (name === 'Notion') ? 'notion' : (name.includes('Google') ? 'google' : name.toLowerCase());
-          const integ = (remoteIntegrations || []).find(x => x.provider === provider);
+          const tool = toolTargets.find(x => x.name === name);
+          if (!tool) return;
+          const integ = (remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
+            || (remoteIntegrations || []).find(x => x.provider === tool.provider);
           if (!integ) return;
           try {
             await hubApi(`/integrations/${encodeURIComponent(integ.id)}`, { method: 'DELETE' });
