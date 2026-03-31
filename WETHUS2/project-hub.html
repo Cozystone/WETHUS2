@@ -706,6 +706,7 @@
         const st = currentToolState(t);
         const connectLabel = st?.connected ? '재연결' : (st?.everConnected ? '재연결' : '연결');
         const statusLabel = t.ready ? (st?.connected ? '연결됨' : (st?.everConnected ? '연결해제됨' : '미연결')) : '준비중';
+        const actionLabel = st?.connected ? '동기화' : connectLabel;
         return `<article class="tool-card" data-tool="${t.name}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
             <div>
@@ -713,37 +714,14 @@
               <p class="meta" style="margin:4px 0 0;">${t.desc}</p>
               <p class="meta" style="margin:4px 0 0;">${statusLabel} ${st?.lastSynced ? '· 마지막 반영 ' + new Date(st.lastSynced).toLocaleString('ko-KR') : ''}</p>
             </div>
-            <button class="btn btn--secondary" data-tool-home="${t.name}" type="button" style="padding:6px 10px;">홈</button>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
-            <button class="btn btn--primary" data-tool-connect="${t.name}" type="button" ${t.ready ? '' : 'disabled'}>${connectLabel}</button>
-            <button class="btn btn--secondary" data-tool-select-resource="${t.name}" type="button" ${t.ready ? '' : 'disabled'}>리소스 선택</button>
-            <button class="btn btn--secondary" data-tool-sync="${t.name}" type="button" ${t.ready ? '' : 'disabled'}>동기화</button>
+            <button class="btn btn--primary" data-tool-connect="${t.name}" type="button" ${t.ready ? '' : 'disabled'}>${actionLabel}</button>
             <button class="btn btn--secondary" data-tool-disconnect="${t.name}" type="button" ${t.ready ? '' : 'disabled'}>해제</button>
           </div>
         </article>`;
       }).join('');
 
-      toolLogoGrid.querySelectorAll('[data-tool-home]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const t = toolTargets.find(x => x.name === btn.getAttribute('data-tool-home'));
-          if (t?.home) window.open(t.home, '_blank', 'noopener');
-        });
-      });
-
-      toolLogoGrid.querySelectorAll('[data-tool-select-resource]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          if (!currentProject) return;
-          const name = btn.getAttribute('data-tool-select-resource');
-          const tool = toolTargets.find(x => x.name === name);
-          if (!tool) return;
-          try {
-            await openResourceSelector(tool);
-          } catch (e) {
-            alert(e?.message || '리소스 목록을 불러오지 못했습니다. 먼저 연결 상태를 확인해주세요.');
-          }
-        });
-      });
 
       toolLogoGrid.querySelectorAll('[data-tool-connect]').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -755,15 +733,36 @@
           const tool = toolTargets.find(x => x.name === name);
           if (!tool) return;
 
-          // 팝업 차단 방지: 사용자 클릭 스택에서 먼저 빈 창을 연 뒤 URL을 주입한다.
-          const popup = window.open('', '_blank', 'noopener');
+          const integ = tool.name === 'Google Docs'
+            ? ((remoteIntegrations || []).find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder'))
+              || (remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'account'))
+            : ((remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
+              || (remoteIntegrations || []).find(x => x.provider === tool.provider));
 
           try {
             if (!tool.ready) {
-              if (popup) popup.close();
               alert('해당 제공자는 곧 지원 예정입니다.');
               return;
             }
+
+            // 이미 연결된 경우: 버튼을 동기화로 동작시킨다.
+            if (integ?.status === 'connected') {
+              setLlmStatus(`WETHUS AI · 업데이트중… (${name} 동기화)`);
+              if (tool.provider === 'notion') {
+                await hubApi('/sync/notion', { method: 'POST', body: JSON.stringify({ project_id: currentProject.id, integration_id: integ.id }) });
+              } else {
+                await hubApi(`/integrations/${encodeURIComponent(integ.id)}/sync`, { method: 'POST' });
+              }
+              WETHUS.addHubActivity(currentProject.id, `${name} 수동 동기화 실행`);
+              await loadIntegrationsForCurrentProject();
+              await refreshHubInsights('manual-tool-sync');
+              await renderHub();
+              renderToolCards();
+              return;
+            }
+
+            // 연결 필요 시: 기존 OAuth 연결 동작 유지
+            const popup = window.open('', '_blank', 'noopener');
             const oauth = await hubApi(`/oauth/${encodeURIComponent(tool.provider)}/start?project_id=${encodeURIComponent(currentProject.id)}`);
             if (oauth?.setupRequired) {
               if (popup) popup.close();
@@ -772,60 +771,19 @@
             }
             if (oauth?.authUrl) {
               setLlmStatus(`WETHUS AI · 업데이트중… (${name} OAuth 연결)`);
-              if (popup) {
-                popup.location.href = oauth.authUrl;
-              } else {
-                // 브라우저가 팝업을 막은 경우 마지막 fallback
-                window.location.href = oauth.authUrl;
-              }
+              if (popup) popup.location.href = oauth.authUrl;
+              else window.location.href = oauth.authUrl;
               WETHUS.addHubActivity(currentProject.id, `${name} OAuth 연결 시작`);
             } else {
               if (popup) popup.close();
               alert('연결 URL을 생성하지 못했습니다. 설정을 확인해주세요.');
             }
           } catch (e) {
-            if (popup) popup.close();
-            alert(e?.message || '연결 실패');
+            alert(e?.message || '연결/동기화 실패');
           }
         });
       });
 
-      toolLogoGrid.querySelectorAll('[data-tool-sync]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          if (!currentProject) return;
-          const name = btn.getAttribute('data-tool-sync');
-          const tool = toolTargets.find(x => x.name === name);
-          if (!tool) return;
-          const integ = tool.name === 'Google Docs'
-            ? ((remoteIntegrations || []).find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder'))
-              || (remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'account'))
-            : ((remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
-              || (remoteIntegrations || []).find(x => x.provider === tool.provider));
-          if (!integ) return alert('먼저 연결을 완료해주세요.');
-          try {
-            setLlmStatus(`WETHUS AI · 업데이트중… (${name} 동기화)`);
-            let syncSummary = '';
-            if (tool.provider === 'notion') {
-              await hubApi('/sync/notion', { method: 'POST', body: JSON.stringify({ project_id: currentProject.id, integration_id: integ.id }) });
-              syncSummary = 'Notion 동기화 완료';
-            } else {
-              const synced = await hubApi(`/integrations/${encodeURIComponent(integ.id)}/sync`, { method: 'POST' });
-              if (tool.provider === 'google' && synced?.summary?.scannedDocs != null) {
-                syncSummary = `Google Docs 폴더 스캔 ${synced.summary.scannedDocs}건`;
-              } else {
-                syncSummary = `${name} 연결 상태 갱신 완료`;
-              }
-            }
-            WETHUS.addHubActivity(currentProject.id, `${name} 수동 동기화 실행 · ${syncSummary}`);
-            await loadIntegrationsForCurrentProject();
-            await refreshHubInsights('manual-tool-sync');
-            await renderHub();
-            renderToolCards();
-          } catch (e) {
-            alert(e?.message || '동기화 실패');
-          }
-        });
-      });
 
       toolLogoGrid.querySelectorAll('[data-tool-disconnect]').forEach(btn => {
         btn.addEventListener('click', async () => {
