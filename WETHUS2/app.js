@@ -1812,7 +1812,9 @@
         link.setAttribute('rel', 'icon');
         document.head.appendChild(link);
       }
-      if (!link.getAttribute('href')) link.setAttribute('href', 'favicon.ico');
+      if (!link.getAttribute('href')) {
+        link.setAttribute('href', 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Ctext y=%2250%22 x=%228%22 font-size=%2248%22%3E%F0%9F%94%A5%3C/text%3E%3C/svg%3E');
+      }
     } catch (_) {}
   }
 
