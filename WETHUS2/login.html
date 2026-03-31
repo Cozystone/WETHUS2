@@ -349,21 +349,25 @@
         googleHint.textContent = 'Google 로그인 SDK 로딩 중입니다. 잠시 후 새로고침해주세요.';
         return;
       }
-      if (gsiInitialized) return;
+      if (gsiInitialized || window.__wethusGsiInitialized) return;
       gsiInitialized = true;
+      window.__wethusGsiInitialized = true;
       google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleCredential,
         auto_select: false,
         cancel_on_tap_outside: true,
-        use_fedcm_for_prompt: false
+        use_fedcm_for_prompt: true
       });
-      google.accounts.id.renderButton(document.getElementById('googleBtn'), {
-        theme: 'outline',
-        size: 'large',
-        width: 320,
-        text: 'signin_with'
-      });
+      const googleBtnEl = document.getElementById('googleBtn');
+      if (googleBtnEl && !googleBtnEl.childElementCount) {
+        google.accounts.id.renderButton(googleBtnEl, {
+          theme: 'outline',
+          size: 'large',
+          width: 320,
+          text: 'signin_with'
+        });
+      }
       googleHint.textContent = '';
     }
 
@@ -574,7 +578,7 @@
 
     window.addEventListener('load', () => {
       initGoogleSignIn();
-    });
+    }, { once: true });
   </script>
 </body>
 </html>
