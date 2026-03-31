@@ -774,23 +774,35 @@
 
             // 연결 필요 시: 기존 OAuth 연결 동작 유지
             pendingOauthToolName = tool.name;
-            const popup = window.open('', '_blank', 'noopener');
-            const oauth = await hubApi(`/oauth/${encodeURIComponent(tool.provider)}/start?project_id=${encodeURIComponent(currentProject.id)}`);
-            if (oauth?.setupRequired) {
+            let popup = null;
+            try {
+              popup = window.open('about:blank', '_blank', 'noopener,noreferrer');
+              if (!popup) {
+                pendingOauthToolName = '';
+                alert('브라우저 팝업이 차단되어 연결을 시작할 수 없습니다. 팝업 허용 후 다시 시도해주세요.');
+                return;
+              }
+
+              const oauth = await hubApi(`/oauth/${encodeURIComponent(tool.provider)}/start?project_id=${encodeURIComponent(currentProject.id)}`);
+              if (oauth?.setupRequired) {
+                pendingOauthToolName = '';
+                if (popup && !popup.closed) popup.close();
+                alert(`${name} 연결 설정이 아직 완료되지 않았습니다.\n\n사유: ${oauth?.error || 'OAuth 환경변수 미설정'}\n관리자 설정 후 다시 시도해주세요.`);
+                return;
+              }
+              if (oauth?.authUrl) {
+                setLlmStatus(`WETHUS AI · 업데이트중… (${name} OAuth 연결)`);
+                popup.location.replace(oauth.authUrl);
+                WETHUS.addHubActivity(currentProject.id, `${name} OAuth 연결 시작`);
+              } else {
+                pendingOauthToolName = '';
+                if (popup && !popup.closed) popup.close();
+                alert('연결 URL을 생성하지 못했습니다. 설정을 확인해주세요.');
+              }
+            } catch (e) {
               pendingOauthToolName = '';
-              if (popup) popup.close();
-              alert(`${name} 연결 설정이 아직 완료되지 않았습니다.\n\n사유: ${oauth?.error || 'OAuth 환경변수 미설정'}\n관리자 설정 후 다시 시도해주세요.`);
-              return;
-            }
-            if (oauth?.authUrl) {
-              setLlmStatus(`WETHUS AI · 업데이트중… (${name} OAuth 연결)`);
-              if (popup) popup.location.href = oauth.authUrl;
-              else window.location.href = oauth.authUrl;
-              WETHUS.addHubActivity(currentProject.id, `${name} OAuth 연결 시작`);
-            } else {
-              pendingOauthToolName = '';
-              if (popup) popup.close();
-              alert('연결 URL을 생성하지 못했습니다. 설정을 확인해주세요.');
+              if (popup && !popup.closed) popup.close();
+              alert(e?.message || '연결/동기화 실패');
             }
           } catch (e) {
             pendingOauthToolName = '';
