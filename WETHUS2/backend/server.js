@@ -297,6 +297,59 @@ app.delete('/integrations/:id', (req, res) => {
   return res.json({ ok: true, removed: 1, mode: 'soft', integration: rows[idx] });
 });
 
+app.post('/integrations/:id/sync', async (req, res) => {
+  const id = String(req.params.id || '').trim();
+  const rows = readIntegrations();
+  const idx = rows.findIndex(r => r.id === id);
+  if (idx < 0) return res.status(404).json({ ok: false, error: 'integration not found' });
+
+  const integration = rows[idx];
+  if (integration.status !== 'connected') return res.status(400).json({ ok: false, error: 'integration disconnected' });
+
+  const now = new Date().toISOString();
+  const summary = { provider: integration.provider, integration_type: integration.integration_type, syncedAt: now };
+
+  try {
+    if (integration.provider === 'google') {
+      const account = rows.find(i => i.project_id === integration.project_id && i.provider === 'google' && i.integration_type === 'account' && i.status === 'connected')
+        || rows.find(i => i.provider === 'google' && i.integration_type === 'account' && i.status === 'connected');
+      const token = String(account?._token_demo_only || '').trim();
+      if (!token) return res.status(400).json({ ok: false, error: 'Google 계정 연결이 필요합니다.' });
+
+      if (integration.integration_type === 'document') {
+        const u = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(integration.external_resource_id)}?fields=id,name,modifiedTime,webViewLink`;
+        const r = await fetch(u, { headers: { Authorization: `Bearer ${token}` } });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j?.error?.message || 'google doc metadata sync failed');
+        summary.resourceName = j?.name || integration.external_resource_name;
+        summary.modifiedAt = j?.modifiedTime || '';
+      }
+
+      if (integration.integration_type === 'folder') {
+        const folderId = String(integration.external_resource_id || '').trim();
+        const u = new URL('https://www.googleapis.com/drive/v3/files');
+        u.searchParams.set('q', `mimeType='application/vnd.google-apps.document' and '${folderId}' in parents and trashed=false`);
+        u.searchParams.set('fields', 'files(id,name,modifiedTime)');
+        u.searchParams.set('orderBy', 'modifiedTime desc');
+        u.searchParams.set('pageSize', '20');
+        const r = await fetch(u.toString(), { headers: { Authorization: `Bearer ${token}` } });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j?.error?.message || 'google folder sync failed');
+        const files = Array.isArray(j.files) ? j.files : [];
+        summary.scannedDocs = files.length;
+        summary.latestDoc = files[0]?.name || '';
+        summary.modifiedAt = files[0]?.modifiedTime || '';
+      }
+    }
+
+    rows[idx] = { ...rows[idx], last_synced_at: now, updated_at: now };
+    writeIntegrations(rows);
+    return res.json({ ok: true, integration: rows[idx], summary });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'sync failed' });
+  }
+});
+
 app.get('/integrations/providers', (_req, res) => {
   return res.json({
     ok: true,
