@@ -203,7 +203,7 @@
     const tabLogin = document.getElementById('tabLogin');
     const googleHint = document.getElementById('googleHint');
 
-    const GOOGLE_CLIENT_ID = window.WETHUS_GOOGLE_CLIENT_ID || '196934770979-6ntmgcrs6k6jkifskspasg4uie5irgec.apps.googleusercontent.com';
+    let GOOGLE_CLIENT_ID = window.WETHUS_GOOGLE_CLIENT_ID || '196934770979-6ntmgcrs6k6jkifskspasg4uie5irgec.apps.googleusercontent.com';
     const isLocalHost = ['localhost', '127.0.0.1'].includes(location.hostname);
     const localBases = ['http://127.0.0.1:8787', 'http://localhost:8787'];
     const remoteBases = [
@@ -211,12 +211,16 @@
       'https://wethus-api.onrender.com/api',
       'https://wethus-api.onrender.com'
     ].filter(Boolean);
-    const AUTH_BASES = isLocalHost
-      ? [`${location.protocol}//${location.hostname}:8787`, ...localBases, ...remoteBases].filter(Boolean)
-      : remoteBases;
-    const GOOGLE_AUTH_ENDPOINTS = AUTH_BASES.map(b => `${b.replace(/\/$/, '')}/auth/google`);
-    const LOGIN_ENDPOINTS = AUTH_BASES.map(b => `${b.replace(/\/$/, '')}/auth/login`);
-    const REGISTER_ENDPOINTS = AUTH_BASES.map(b => `${b.replace(/\/$/, '')}/auth/register`);
+    const AUTH_BASES = (isLocalHost
+      ? [`${location.protocol}//${location.hostname}:8787`, ...localBases, ...remoteBases]
+      : remoteBases)
+      .filter(Boolean)
+      .map(b => b.replace(/\/$/, '').replace(/\/api$/, ''));
+    const UNIQUE_AUTH_BASES = Array.from(new Set(AUTH_BASES));
+    const GOOGLE_CONFIG_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/google/config`);
+    const GOOGLE_AUTH_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/google`);
+    const LOGIN_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/login`);
+    const REGISTER_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/register`);
     const tabSignup = document.getElementById('tabSignup');
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
@@ -280,6 +284,26 @@
         policyDoneLabel.classList.toggle('show', allChecked);
       }
       validateSignupForm();
+    }
+
+    async function getWithFallback(endpoints) {
+      if (!endpoints.length) throw new Error('인증 API 주소가 설정되지 않았습니다.');
+      let lastErr = null;
+      for (const endpoint of endpoints) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4500);
+        try {
+          const res = await fetch(endpoint, { method: 'GET', signal: controller.signal });
+          const data = await res.json().catch(() => ({}));
+          clearTimeout(timeout);
+          if (!res.ok) throw new Error(data?.error || `요청 실패 (${res.status})`);
+          return data;
+        } catch (e) {
+          clearTimeout(timeout);
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error('인증 서버 연결 실패');
     }
 
     async function postWithFallback(endpoints, body) {
@@ -576,7 +600,12 @@
       }
     });
 
-    window.addEventListener('load', () => {
+    window.addEventListener('load', async () => {
+      try {
+        const cfg = await getWithFallback(GOOGLE_CONFIG_ENDPOINTS);
+        const cid = String(cfg?.clientId || '').trim();
+        if (cid) GOOGLE_CLIENT_ID = cid;
+      } catch (_) {}
       initGoogleSignIn();
     }, { once: true });
   </script>
