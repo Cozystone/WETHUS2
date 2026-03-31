@@ -737,7 +737,11 @@
           const name = btn.getAttribute('data-tool-select-resource');
           const tool = toolTargets.find(x => x.name === name);
           if (!tool) return;
-          await openResourceSelector(tool);
+          try {
+            await openResourceSelector(tool);
+          } catch (e) {
+            alert(e?.message || '리소스 목록을 불러오지 못했습니다. 먼저 연결 상태를 확인해주세요.');
+          }
         });
       });
 
@@ -800,12 +804,22 @@
           if (!integ) return alert('먼저 연결을 완료해주세요.');
           try {
             setLlmStatus(`WETHUS AI · 업데이트중… (${name} 동기화)`);
+            let syncSummary = '';
             if (tool.provider === 'notion') {
               await hubApi('/sync/notion', { method: 'POST', body: JSON.stringify({ project_id: currentProject.id, integration_id: integ.id }) });
+              syncSummary = 'Notion 동기화 완료';
+            } else {
+              const synced = await hubApi(`/integrations/${encodeURIComponent(integ.id)}/sync`, { method: 'POST' });
+              if (tool.provider === 'google' && synced?.summary?.scannedDocs != null) {
+                syncSummary = `Google Docs 폴더 스캔 ${synced.summary.scannedDocs}건`;
+              } else {
+                syncSummary = `${name} 연결 상태 갱신 완료`;
+              }
             }
-            WETHUS.addHubActivity(currentProject.id, `${name} 수동 동기화 실행`);
+            WETHUS.addHubActivity(currentProject.id, `${name} 수동 동기화 실행 · ${syncSummary}`);
             await loadIntegrationsForCurrentProject();
-            renderHub();
+            await refreshHubInsights('manual-tool-sync');
+            await renderHub();
             renderToolCards();
           } catch (e) {
             alert(e?.message || '동기화 실패');
