@@ -600,8 +600,9 @@
       if (!currentProject) return null;
       let remote = null;
       if (tool.name === 'Google Docs') {
-        remote = remoteIntegrations.find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder'))
-          || remoteIntegrations.find(x => x.provider === 'google' && x.integration_type === 'account');
+        remote = remoteIntegrations.find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder'));
+      } else if (tool.name === 'Google Sheets') {
+        remote = remoteIntegrations.find(x => x.provider === 'google' && x.integration_type === 'spreadsheet');
       } else {
         remote = remoteIntegrations.find(x => x.provider === tool.provider && x.integration_type === tool.type)
           || remoteIntegrations.find(x => x.provider === tool.provider);
@@ -687,13 +688,15 @@
       openModal('hubResourceModal');
     }
 
+    let pendingOauthToolName = '';
     window.addEventListener('message', async (ev) => {
       const msg = ev?.data || {};
       if (msg?.type !== 'wethus-oauth-connected') return;
       if (!currentProject) return;
       const tool = msg.provider === 'google'
-        ? toolTargets.find(t => t.name === 'Google Docs')
+        ? (toolTargets.find(t => t.name === pendingOauthToolName && t.provider === 'google') || toolTargets.find(t => t.name === 'Google Docs'))
         : toolTargets.find(t => t.provider === msg.provider);
+      pendingOauthToolName = '';
       if (!tool) return;
       await loadIntegrationsForCurrentProject();
       renderToolCards();
@@ -734,10 +737,12 @@
           if (!tool) return;
 
           const integ = tool.name === 'Google Docs'
-            ? ((remoteIntegrations || []).find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder'))
-              || (remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'account'))
-            : ((remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
-              || (remoteIntegrations || []).find(x => x.provider === tool.provider));
+            ? ((remoteIntegrations || []).find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder')))
+            : tool.name === 'Google Sheets'
+              ? ((remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'spreadsheet'))
+              : ((remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
+                || (remoteIntegrations || []).find(x => x.provider === tool.provider));
+          const googleAccount = (remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'account' && x.status === 'connected');
 
           try {
             if (!tool.ready) {
@@ -761,10 +766,18 @@
               return;
             }
 
+            // Google 계정은 이미 연결되어 있고, 아직 시트/문서 리소스만 미연결이면 바로 리소스 선택으로 이동
+            if (tool.provider === 'google' && googleAccount?.status === 'connected') {
+              await openResourceSelector(tool);
+              return;
+            }
+
             // 연결 필요 시: 기존 OAuth 연결 동작 유지
+            pendingOauthToolName = tool.name;
             const popup = window.open('', '_blank', 'noopener');
             const oauth = await hubApi(`/oauth/${encodeURIComponent(tool.provider)}/start?project_id=${encodeURIComponent(currentProject.id)}`);
             if (oauth?.setupRequired) {
+              pendingOauthToolName = '';
               if (popup) popup.close();
               alert(`${name} 연결 설정이 아직 완료되지 않았습니다.\n\n사유: ${oauth?.error || 'OAuth 환경변수 미설정'}\n관리자 설정 후 다시 시도해주세요.`);
               return;
@@ -775,10 +788,12 @@
               else window.location.href = oauth.authUrl;
               WETHUS.addHubActivity(currentProject.id, `${name} OAuth 연결 시작`);
             } else {
+              pendingOauthToolName = '';
               if (popup) popup.close();
               alert('연결 URL을 생성하지 못했습니다. 설정을 확인해주세요.');
             }
           } catch (e) {
+            pendingOauthToolName = '';
             alert(e?.message || '연결/동기화 실패');
           }
         });
@@ -792,10 +807,11 @@
           const tool = toolTargets.find(x => x.name === name);
           if (!tool) return;
           const integ = tool.name === 'Google Docs'
-            ? ((remoteIntegrations || []).find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder'))
-              || (remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'account'))
-            : ((remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
-              || (remoteIntegrations || []).find(x => x.provider === tool.provider));
+            ? ((remoteIntegrations || []).find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder')))
+            : tool.name === 'Google Sheets'
+              ? ((remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'spreadsheet'))
+              : ((remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
+                || (remoteIntegrations || []).find(x => x.provider === tool.provider));
           if (!integ) return;
           try {
             await hubApi(`/integrations/${encodeURIComponent(integ.id)}`, { method: 'DELETE' });
