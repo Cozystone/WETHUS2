@@ -1584,6 +1584,10 @@ app.post('/auth/login', (req, res) => {
   }
 });
 
+app.get('/auth/google/config', (req, res) => {
+  return res.json({ ok: true, clientId: GOOGLE_CLIENT_ID || '' });
+});
+
 app.post('/auth/google', async (req, res) => {
   try {
     if (!GOOGLE_CLIENT_ID) return res.status(500).json({ ok: false, error: 'GOOGLE_CLIENT_ID not configured' });
