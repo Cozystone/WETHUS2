@@ -402,13 +402,20 @@
         let externalDocContext = '';
         let insightCount = 0;
         let insightNames = '';
+        let insightErrors = 0;
         try {
           const ext = await hubApi(`/integrations/insights?projectId=${encodeURIComponent(currentProject.id)}`);
-          const insightRows = (ext?.insights || []).filter(d => d?.snippet);
+          const allRows = (ext?.insights || []);
+          const insightRows = allRows.filter(d => d?.snippet);
+          insightErrors = allRows.filter(d => d?.error).length;
           insightCount = insightRows.length;
           insightNames = insightRows.slice(0, 3).map(d => d.resourceName || d.name).filter(Boolean).join(', ');
           const docLines = insightRows.map(d => `${d.resourceName || d.name}: ${String(d.snippet || '').slice(0, 500)}`);
           externalDocContext = docLines.join('\n');
+          if (insightCount === 0 && allRows.length > 0) {
+            const firstErr = allRows.find(d => d?.error)?.error || '문서 읽기 권한/포맷 문제';
+            setLlmStatus(`연결됨 · 문서 본문 반영 0건 (오류 ${insightErrors}건: ${String(firstErr).slice(0, 60)})`);
+          }
 
           const nextSig = insightRows
             .map(d => `${d.resourceId || d.id}|${d.modifiedAt || ''}|${String(d.snippet || '').slice(0, 120)}`)
@@ -441,7 +448,8 @@
               ? `<li>문서 근거(${insightNames || '연결 문서'}) 중심으로 다음 실행 단계를 세분화하세요.</li><li>문서 기준 성공지표 1~2개를 바로 추가하세요.</li><li>가장 최근 수정 문서부터 검증 우선순위를 잡으세요.</li>`
               : '<li>문서 근거 부족: Google Docs 연결/동기화 상태를 먼저 확인하세요.</li>';
           }
-          setLlmStatus(`연결됨 · 문서 ${insightCount}건 반영 · 마지막 갱신 ${new Date().toLocaleTimeString('ko-KR')}`);
+          const errText = insightErrors > 0 ? ` · 오류 ${insightErrors}건` : '';
+          setLlmStatus(`연결됨 · 문서 ${insightCount}건 반영${errText} · 마지막 갱신 ${new Date().toLocaleTimeString('ko-KR')}`);
           try {
             await hubApi('/status-snapshot', {
               method: 'POST',
