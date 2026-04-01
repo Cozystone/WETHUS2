@@ -121,6 +121,11 @@
         <input id="signupPwConfirm" name="passwordConfirm" type="password" placeholder="비밀번호 확인" required />
         <small id="pwConfirmHint" class="note"></small>
 
+        <input id="signupBirthYear" name="birthYear" type="number" min="1980" max="2026" placeholder="출생연도 (본인인증)" required />
+        <input id="signupAge" name="age" type="number" placeholder="나이(자동 계산)" readonly />
+        <button id="verifyAgeBtn" class="btn btn--secondary" type="button">본인인증(나이 확인)</button>
+        <small id="verifyAgeMsg" class="note"></small>
+
         <div style="display:grid;gap:8px;">
           <button id="openPolicyModal" class="btn btn--secondary" type="button">약관 확인 및 동의하기</button>
           <label style="display:flex;gap:8px;align-items:flex-start;color:#a3a3a3;font-size:.85rem;line-height:1.5;">
@@ -232,6 +237,10 @@
     const signupEmail = document.getElementById('signupEmail');
     const signupPw = document.getElementById('signupPw');
     const signupPwConfirm = document.getElementById('signupPwConfirm');
+    const signupBirthYear = document.getElementById('signupBirthYear');
+    const signupAge = document.getElementById('signupAge');
+    const verifyAgeBtn = document.getElementById('verifyAgeBtn');
+    const verifyAgeMsg = document.getElementById('verifyAgeMsg');
     const emailHint = document.getElementById('emailHint');
     const pwHint = document.getElementById('pwHint');
     const pwConfirmHint = document.getElementById('pwConfirmHint');
@@ -258,6 +267,8 @@
       loginEmail.value = remembered;
       rememberEmail.checked = true;
     }
+
+    let ageVerifiedAt = '';
 
     function setTab(mode) {
       const isLogin = mode === 'login';
@@ -409,6 +420,24 @@
       googleHint.textContent = '';
     }
 
+    function verifyAge() {
+      const by = Number(signupBirthYear?.value || NaN);
+      const year = new Date().getFullYear();
+      if (!Number.isFinite(by) || by < 1980 || by > year) {
+        ageVerifiedAt = '';
+        if (signupAge) signupAge.value = '';
+        if (verifyAgeMsg) verifyAgeMsg.textContent = '출생연도를 정확히 입력해주세요.';
+        validateSignupForm();
+        return false;
+      }
+      const age = year - by;
+      if (signupAge) signupAge.value = String(age);
+      ageVerifiedAt = new Date().toISOString();
+      if (verifyAgeMsg) verifyAgeMsg.textContent = `본인인증 완료 · 만 ${age}세 확인`;
+      validateSignupForm();
+      return true;
+    }
+
     function validateSignupForm() {
       if (!window.WETHUS) return false;
       const s = WETHUS.getState();
@@ -450,6 +479,12 @@
         ok = false;
       } else {
         pwConfirmHint.textContent = '비밀번호가 일치합니다.';
+      }
+
+      const age = Number(signupAge?.value || NaN);
+      if (!Number.isFinite(age) || !ageVerifiedAt) {
+        ok = false;
+        if (verifyAgeMsg && !verifyAgeMsg.textContent) verifyAgeMsg.textContent = '회원가입 전 본인인증(나이 확인)을 완료해주세요.';
       }
 
       if (!agreeChk.checked) ok = false;
@@ -507,10 +542,18 @@
       if (history.length > 1) history.back();
     });
 
-    [signupEmail, signupPw, signupPwConfirm].forEach(el => {
-      el.addEventListener('input', validateSignupForm);
-      el.addEventListener('blur', validateSignupForm);
+    [signupEmail, signupPw, signupPwConfirm, signupBirthYear].forEach(el => {
+      el?.addEventListener('input', () => {
+        if (el === signupBirthYear) {
+          ageVerifiedAt = '';
+          if (signupAge) signupAge.value = '';
+          if (verifyAgeMsg) verifyAgeMsg.textContent = '';
+        }
+        validateSignupForm();
+      });
+      el?.addEventListener('blur', validateSignupForm);
     });
+    verifyAgeBtn?.addEventListener('click', verifyAge);
     agreeChk.addEventListener('change', () => {
       if (!agreeChk.checked) policyDoneLabel?.classList.remove('show');
       validateSignupForm();
@@ -585,7 +628,9 @@
         name: fd.get('name'),
         nickname: fd.get('nickname'),
         email,
-        password: fd.get('password')
+        password: fd.get('password'),
+        age: Number(signupAge?.value || NaN),
+        ageVerifiedAt
       };
       try {
         try {

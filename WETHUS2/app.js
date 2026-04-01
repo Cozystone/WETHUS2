@@ -11,6 +11,27 @@
     (typeof location !== 'undefined' && ['localhost', '127.0.0.1'].includes(location.hostname)) ? `${location.protocol}//${location.hostname}:8787` : ''
   ].filter(Boolean).map(x => String(x).replace(/\/$/, '').replace(/\/api$/, ''));
 
+  function isYouthByAge(age, verifiedAt) {
+    const n = Number(age);
+    if (!Number.isFinite(n)) return false;
+    if (!verifiedAt) return false;
+    return n < 19;
+  }
+
+  function normalizeYouthTag(user = {}) {
+    const byAge = isYouthByAge(user.age, user.ageVerifiedAt);
+    return !!(user.youthTag || byAge);
+  }
+
+  function getUserTrack(user = {}) {
+    return normalizeYouthTag(user) ? 'Youth' : 'Open';
+  }
+
+  function isYouthProject(project, users = []) {
+    const founder = users.find(u => u.id === project?.founderId);
+    return !!(project?.youthProjectTag || (founder && normalizeYouthTag(founder)));
+  }
+
   function uid() {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
     return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -306,6 +327,9 @@
         // 기존 사용자 데이터(과거 버전)는 온보딩 완료로 간주해 강제 리다이렉트를 방지
         if (next.onboardingComplete === undefined) next.onboardingComplete = true;
         if (next.age === undefined) next.age = null;
+        if (next.ageVerifiedAt === undefined) next.ageVerifiedAt = null;
+        if (next.youthTag === undefined) next.youthTag = normalizeYouthTag(next);
+        if (next.userTrack === undefined) next.userTrack = getUserTrack(next);
         if (next.school === undefined) next.school = '';
         if (next.careerRaw === undefined) next.careerRaw = '';
         if (next.careerSummary === undefined) next.careerSummary = '';
@@ -387,6 +411,11 @@
         next.endDate = null;
         changed = true;
       }
+      if (next.youthProjectTag === undefined) {
+        const founder = Array.isArray(parsed.users) ? parsed.users.find(u => u.id === next.founderId) : null;
+        next.youthProjectTag = !!(founder && normalizeYouthTag(founder));
+        changed = true;
+      }
       return next;
     });
 
@@ -464,6 +493,9 @@
         plan: 'free',
         googleSub: sub,
         age: null,
+        ageVerifiedAt: null,
+        youthTag: false,
+        userTrack: 'Open',
         school: '',
         careerRaw: '',
         careerSummary: '',
@@ -475,6 +507,10 @@
       user.googleSub = sub || user.googleSub;
       user.name = name || user.name;
       user.profileImage = picture || user.profileImage;
+      if (user.ageVerifiedAt && Number.isFinite(Number(user.age))) {
+        user.youthTag = normalizeYouthTag(user);
+        user.userTrack = getUserTrack(user);
+      }
     }
     s.currentUserId = user.id;
     s.devMode = false;
@@ -482,7 +518,7 @@
     return { user, isNew };
   }
 
-  function registerUser({ name, nickname, email, password }) {
+  function registerUser({ name, nickname, email, password, age = null, ageVerifiedAt = null }) {
     const s = load();
     const normalizedEmail = String(email || '').trim().toLowerCase();
     const exists = s.users.find(u => String(u.email || '').toLowerCase() === normalizedEmail);
@@ -500,7 +536,10 @@
       founderVerified: false,
       profileImage: '',
       plan: 'free',
-      age: null,
+      age: age == null ? null : Number(age),
+      ageVerifiedAt: ageVerifiedAt || null,
+      youthTag: isYouthByAge(age, ageVerifiedAt),
+      userTrack: isYouthByAge(age, ageVerifiedAt) ? 'Youth' : 'Open',
       school: '',
       careerRaw: '',
       careerSummary: '',
@@ -539,6 +578,7 @@
     const actor = s.currentUserId || 'dev-temp';
     const me = s.users.find(u => u.id === s.currentUserId);
     const moderationStatus = payload?.moderationStatus || 'approved';
+    const founderYouth = !!(me && normalizeYouthTag(me));
     const project = {
       id: uid(),
       founderId: actor,
@@ -547,6 +587,8 @@
       moderationStatus,
       moderationReason: payload?.moderationReason || '',
       moderationReviewedAt: payload?.moderationReviewedAt || null,
+      youthProjectTag: founderYouth,
+      projectTrack: founderYouth ? 'Youth' : 'Open',
       ...payload
     };
     s.projects.unshift(project);
@@ -804,6 +846,8 @@
     const u = s.users.find(x => x.id === s.currentUserId);
     if (!u) return null;
     Object.assign(u, patch || {});
+    u.youthTag = normalizeYouthTag(u);
+    u.userTrack = getUserTrack(u);
     save(s);
     return u;
   }
@@ -824,6 +868,9 @@
         profileImage: user?.profileImage || '',
         plan: user?.plan || 'free',
         age: user?.age ?? null,
+        ageVerifiedAt: user?.ageVerifiedAt || null,
+        youthTag: normalizeYouthTag(user || {}),
+        userTrack: getUserTrack(user || {}),
         school: user?.school || '',
         careerRaw: user?.careerRaw || '',
         careerSummary: user?.careerSummary || '',
@@ -842,6 +889,10 @@
         founderVerified: user?.founderVerified ?? target.founderVerified,
         profileImage: user?.profileImage ?? target.profileImage,
         plan: user?.plan || target.plan,
+        age: user?.age ?? target.age,
+        ageVerifiedAt: user?.ageVerifiedAt ?? target.ageVerifiedAt,
+        youthTag: normalizeYouthTag({ ...target, ...user }),
+        userTrack: getUserTrack({ ...target, ...user }),
         school: user?.school ?? target.school,
         careerRaw: user?.careerRaw ?? target.careerRaw,
         careerSummary: user?.careerSummary ?? target.careerSummary,
