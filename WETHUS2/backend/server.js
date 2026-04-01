@@ -17,6 +17,11 @@ const app = express();
 const PORT = Number(process.env.PORT || 8787);
 const DEFAULT_GOOGLE_CLIENT_ID = '196934770979-6ntmgcrs6k6jkifskspasg4uie5irgec.apps.googleusercontent.com';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_IDS = Array.from(new Set([
+  GOOGLE_CLIENT_ID,
+  DEFAULT_GOOGLE_CLIENT_ID,
+  ...(process.env.GOOGLE_CLIENT_IDS || '').split(',').map(s => s.trim()).filter(Boolean)
+]));
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me';
 const AI_PROVIDER = (process.env.AI_PROVIDER || 'openai').toLowerCase();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
@@ -1595,7 +1600,7 @@ app.post('/auth/login', (req, res) => {
 });
 
 app.get('/auth/google/config', (req, res) => {
-  return res.json({ ok: true, clientId: GOOGLE_CLIENT_ID || '' });
+  return res.json({ ok: true, clientId: GOOGLE_CLIENT_ID || '', fallbackClientIds: GOOGLE_CLIENT_IDS });
 });
 
 app.post('/auth/google', async (req, res) => {
@@ -1606,7 +1611,7 @@ app.post('/auth/google', async (req, res) => {
 
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
-      audience: GOOGLE_CLIENT_ID
+      audience: GOOGLE_CLIENT_IDS
     });
     const payload = ticket.getPayload();
     if (!payload?.sub || !payload?.email) {
@@ -1670,7 +1675,7 @@ app.post('/auth/google/link-password', async (req, res) => {
       return res.status(400).json({ ok: false, error: '비밀번호는 영문+숫자 포함 8자 이상이어야 합니다.' });
     }
 
-    const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
+    const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_IDS });
     const payload = ticket.getPayload();
     if (!payload?.email) return res.status(401).json({ ok: false, error: 'Invalid Google token payload' });
 
