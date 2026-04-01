@@ -893,6 +893,8 @@ app.get('/oauth/:provider/callback', async (req, res) => {
       const rows = readIntegrations();
       const now = new Date().toISOString();
       const idx = rows.findIndex(r => r.project_id === projectId && r.provider === 'google' && r.integration_type === 'account');
+      const prev = idx >= 0 ? rows[idx] : null;
+      const refreshToken = tokenJson?.refresh_token || prev?._refresh_token_demo_only || '';
       const row = {
         id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
         project_id: projectId,
@@ -906,8 +908,8 @@ app.get('/oauth/:provider/callback', async (req, res) => {
         last_synced_at: now,
         created_at: idx >= 0 ? rows[idx].created_at : now,
         updated_at: now,
-        _token_demo_only: tokenJson?.access_token || '',
-        _refresh_token_demo_only: tokenJson?.refresh_token || ''
+        _token_demo_only: tokenJson?.access_token || prev?._token_demo_only || '',
+        _refresh_token_demo_only: refreshToken
       };
       if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
       writeIntegrations(rows);
