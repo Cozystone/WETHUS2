@@ -277,7 +277,7 @@
     function renderProjectList(){
       const list = WETHUS.myProjects();
       if(!list.length){ hubProjectList.innerHTML='<article class="hub-item"><h3 style="margin:0 0 6px;">프로젝트가 없습니다.</h3><p class="meta" style="margin:0;">먼저 프로젝트를 시작하면 허브를 사용할 수 있어요.</p><div style="margin-top:10px;"><a href="founder.html" class="btn btn--primary">프로젝트 시작하기</a></div></article>'; return; }
-      hubProjectList.innerHTML = list.map(p=>`<article class="hub-item" data-id="${p.id}"><h3 style="margin:0 0 6px;">${p.title}</h3><p class="meta" style="margin:0 0 4px;">${p.category||''} · ${p.status||''}</p><p style="margin:0;color:#d4d4d4;">${p.summary||''}</p></article>`).join('');
+      hubProjectList.innerHTML = list.map(p=>`<article class="hub-item" data-id="${p.id}" style="display:flex;gap:10px;align-items:flex-start;"><img src="${p.image||'https://picsum.photos/seed/hub-list/84/84'}" alt="프로젝트 대표사진" style="width:44px;height:44px;border-radius:10px;object-fit:cover;border:1px solid #2a2a2a;flex:0 0 auto;"/><div style="min-width:0;"><h3 style="margin:0 0 6px;">${p.title}</h3><p class="meta" style="margin:0 0 4px;">${p.category||''} · ${p.status||''}</p><p style="margin:0;color:#d4d4d4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.summary||''}</p></div></article>`).join('');
       hubProjectList.querySelectorAll('[data-id]').forEach(el=>el.addEventListener('click',()=>openProject(el.getAttribute('data-id'))));
     }
 
@@ -697,12 +697,8 @@
         const isFolder = r.kind === 'folder';
         const active = r.id === pendingResourceSelectedId;
         const canSelectFolder = isFolder && !!pendingResourceTool?.allowFolderSelect;
-        const thumb = currentProject?.image || 'https://picsum.photos/seed/hub-main/72/72';
         return `<div style="padding:10px;border:1px solid ${active ? '#ff8a1f' : '#2a2a2a'};border-radius:8px;background:${active ? 'rgba(255,138,31,.12)' : '#171717'};color:#f5f5f5;display:flex;justify-content:space-between;align-items:center;gap:8px;">
-          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-            <img src="${thumb}" alt="프로젝트 대표사진" style="width:30px;height:30px;border-radius:8px;object-fit:cover;border:1px solid #2a2a2a;flex:0 0 auto;" />
-            <span style="min-width:0;"><strong style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${isFolder ? '📁 ' : '📄 '}${r.name || r.id}</strong><span class="meta">${r.modifiedAt ? new Date(r.modifiedAt).toLocaleString('ko-KR') : ''}</span></span>
-          </div>
+          <span><strong style="display:block;">${isFolder ? '📁 ' : '📄 '}${r.name || r.id}</strong><span class="meta">${r.modifiedAt ? new Date(r.modifiedAt).toLocaleString('ko-KR') : ''}</span></span>
           <div style="display:flex;gap:6px;align-items:center;">
             ${isFolder ? '<button type="button" class="btn btn--secondary" data-r-open="' + r.id + '" style="padding:4px 8px;min-height:auto;">열기</button>' : ''}
             ${canSelectFolder ? '<button type="button" class="btn btn--primary" data-r-select="' + r.id + '" style="padding:4px 8px;min-height:auto;">폴더 연결</button>' : ''}
