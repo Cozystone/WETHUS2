@@ -176,7 +176,121 @@
       duration: '4주',
       image: 'https://picsum.photos/seed/wethus-brand/1200/700',
       founderId: 'system',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      youthProjectTag: true,
+      projectTrack: 'Youth'
+    },
+    {
+      id: uid(),
+      title: '청소년 다큐 사운드 디자인 랩',
+      category: 'Film',
+      summary: '현장음 수집과 사운드 편집 중심 단편 오디오팀',
+      desc: '인터뷰 기반 다큐 프로젝트의 사운드 파트를 집중 운영합니다.',
+      status: '모집 중',
+      teamSize: '2인',
+      roles: '사운드 1 · 편집 1',
+      duration: '4주',
+      image: 'https://picsum.photos/seed/wethus-film2/1200/700',
+      founderId: 'system',
+      createdAt: new Date().toISOString(),
+      youthProjectTag: true,
+      projectTrack: 'Youth'
+    },
+    {
+      id: uid(),
+      title: '청소년 지역문제 해결 앱 스쿼드',
+      category: 'App',
+      summary: '지역 불편 신고와 해결 추적 앱 MVP 팀',
+      desc: '기획-디자인-프론트 개발로 1차 MVP를 5주 내 배포합니다.',
+      status: '기획 중',
+      teamSize: '3인',
+      roles: '기획 1 · 디자인 1 · 개발 1',
+      duration: '5주',
+      image: 'https://picsum.photos/seed/wethus-app2/1200/700',
+      founderId: 'system',
+      createdAt: new Date().toISOString(),
+      youthProjectTag: true,
+      projectTrack: 'Youth'
+    },
+    {
+      id: uid(),
+      title: '청소년 기후데이터 실험실',
+      category: 'Science',
+      summary: '기후 데이터 수집·시각화 기반 탐구 보고서 팀',
+      desc: '센서 측정 데이터와 공공데이터를 결합해 인사이트를 도출합니다.',
+      status: '모집 중',
+      teamSize: '3인',
+      roles: '데이터 1 · 실험 1 · 문서 1',
+      duration: '6주',
+      image: 'https://picsum.photos/seed/wethus-science2/1200/700',
+      founderId: 'system',
+      createdAt: new Date().toISOString(),
+      youthProjectTag: true,
+      projectTrack: 'Youth'
+    },
+    {
+      id: uid(),
+      title: '청소년 복지정책 리서치 워킹그룹',
+      category: 'Policy',
+      summary: '현장 인터뷰 기반 청소년 복지 개선 제안팀',
+      desc: '학교/지역 인터뷰를 토대로 정책 제안서와 요약 브리프를 제작합니다.',
+      status: '기획 중',
+      teamSize: '2인',
+      roles: '리서치 1 · 문서 1',
+      duration: '5주',
+      image: 'https://picsum.photos/seed/wethus-policy2/1200/700',
+      founderId: 'system',
+      createdAt: new Date().toISOString(),
+      youthProjectTag: true,
+      projectTrack: 'Youth'
+    },
+    {
+      id: uid(),
+      title: '청소년 학교연계 인식개선 캠페인팀',
+      category: 'Campaign',
+      summary: '학교와 지역을 연결하는 오프라인 캠페인 프로젝트',
+      desc: '캠페인 메시지 설계부터 콘텐츠 제작, 현장 운영까지 진행합니다.',
+      status: '모집 중',
+      teamSize: '4인이상',
+      roles: '기획 1 · 콘텐츠 2 · 운영 1',
+      duration: '6주',
+      image: 'https://picsum.photos/seed/wethus-campaign2/1200/700',
+      founderId: 'system',
+      createdAt: new Date().toISOString(),
+      youthProjectTag: true,
+      projectTrack: 'Youth'
+    },
+    {
+      id: uid(),
+      title: '청소년 로컬굿즈 스타트업 프리팀',
+      category: 'Startup',
+      summary: '지역 스토리 기반 굿즈 실험 판매 프로젝트',
+      desc: '브랜딩-제작-판매 테스트까지 작게 실행하는 창업 예비팀입니다.',
+      status: '기획 중',
+      teamSize: '3인',
+      roles: '브랜딩 1 · 운영 1 · 제작 1',
+      duration: '6주',
+      image: 'https://picsum.photos/seed/wethus-startup2/1200/700',
+      founderId: 'system',
+      createdAt: new Date().toISOString(),
+      youthProjectTag: true,
+      projectTrack: 'Youth'
+    },
+    {
+      id: uid(),
+      title: '청소년 아카이브 전시 크리에이티브 셀',
+      category: 'Creative',
+      summary: '청소년 기록 기반 아카이브 전시 제작팀',
+      desc: '인터뷰, 사진, 편집디자인을 결합해 소규모 전시를 기획합니다.',
+      status: '모집 중',
+      teamSize: '3인',
+      roles: '에디터 1 · 디자이너 1 · 촬영 1',
+      duration: '7주',
+      image: 'https://picsum.photos/seed/wethus-creative2/1200/700',
+      founderId: 'system',
+      createdAt: new Date().toISOString(),
+      youthProjectTag: true,
+      projectTrack: 'Youth'
     }
   ];
 
@@ -413,7 +527,11 @@
       }
       if (next.youthProjectTag === undefined) {
         const founder = Array.isArray(parsed.users) ? parsed.users.find(u => u.id === next.founderId) : null;
-        next.youthProjectTag = !!(founder && normalizeYouthTag(founder));
+        next.youthProjectTag = next.founderId === 'system' ? true : !!(founder && normalizeYouthTag(founder));
+        changed = true;
+      }
+      if (next.projectTrack === undefined && next.youthProjectTag) {
+        next.projectTrack = 'Youth';
         changed = true;
       }
       return next;
