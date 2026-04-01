@@ -908,12 +908,12 @@
         }
 
         const descText = String(fd.get('description') || '').trim();
-        let summary = descText.slice(0, 90);
+        let summary = descText.slice(0, 64);
         try {
-          const sPrompt = `다음 프로젝트 본문을 한국어 1~2문장으로 간결하게 요약해줘. 과장 없이 실행 핵심만 작성.\n\n제목:${String(fd.get('title') || '')}\n본문:${descText.slice(0, 1200)}`;
+          const sPrompt = `다음 프로젝트 본문을 한국어 한 줄(최대 60자)로 요약해줘. 실행핵심만, 간결하게.\n\n제목:${String(fd.get('title') || '')}\n본문:${descText.slice(0, 1200)}`;
           const sOut = await WETHUS.askGemini(sPrompt);
           const clean = String(sOut || '').replace(/\s+/g, ' ').trim();
-          if (clean) summary = clean.slice(0, 180);
+          if (clean) summary = clean.slice(0, 64);
         } catch (_) {}
 
         let finalImage = imageData;

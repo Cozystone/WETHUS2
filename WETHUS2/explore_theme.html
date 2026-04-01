@@ -42,10 +42,10 @@
     #list.project-cards { align-items: start; }
     #list .card-summary, #list .mini-summary {
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 1;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      min-height: 2.8em;
+      min-height: 1.45em;
       max-width: 100%;
       word-break: keep-all;
     }
@@ -382,9 +382,9 @@
     }
 
     function miniSummaryText(p) {
-      const base = String(p.miniSummary || p.summary || p.fullDescription || '').trim();
+      const base = String(p.miniSummary || p.summary || p.fullDescription || '').replace(/\s+/g, ' ').trim();
       if (!base) return '요약 정보가 아직 없습니다.';
-      return base;
+      return base.slice(0, 64);
     }
 
     const miniSummaryInFlight = new Set();
@@ -395,11 +395,11 @@
         miniSummaryInFlight.add(p.id);
         try {
           const src = String(p.fullDescription || p.summary || '').slice(0, 800);
-          const prompt = `다음 프로젝트 설명을 한국어 1~2문장으로 간결하게 요약해줘. 불필요한 수식어 없이 핵심 실행내용만.\n\n제목:${p.title || ''}\n본문:${src}`;
+          const prompt = `다음 프로젝트 설명을 한국어 한 줄(최대 60자)로 요약해줘. 핵심 실행내용만, 문장부호 최소화.\n\n제목:${p.title || ''}\n본문:${src}`;
           let out = '';
           try { out = await WETHUS.askGemini(prompt); } catch (_) {}
-          const mini = String(out || '').replace(/\s+/g, ' ').trim().slice(0, 180)
-            || String(p.summary || p.fullDescription || '').replace(/\s+/g, ' ').trim().slice(0, 180);
+          const mini = String(out || '').replace(/\s+/g, ' ').trim().slice(0, 64)
+            || String(p.summary || p.fullDescription || '').replace(/\s+/g, ' ').trim().slice(0, 64);
           WETHUS.updateProject(p.id, { miniSummary: mini });
         } catch (_) {}
         miniSummaryInFlight.delete(p.id);
@@ -927,10 +927,16 @@
       if (!target) return;
       const nextTitle = prompt('프로젝트 제목 수정', target.title || '');
       if (nextTitle == null) return;
-      const nextSummary = prompt('요약 수정', target.summary || '');
+      const nextSummary = prompt('아이템 한줄 설명 수정 (최대 60자)', target.miniSummary || target.summary || '');
       if (nextSummary == null) return;
+      const oneLine = String(nextSummary || '').replace(/\s+/g, ' ').trim().slice(0, 64);
       try {
-        WETHUS.updateProject(currentProjectId, { title: nextTitle.trim() || target.title, summary: nextSummary.trim() || target.summary, updatedAt: new Date().toISOString() });
+        WETHUS.updateProject(currentProjectId, {
+          title: nextTitle.trim() || target.title,
+          summary: oneLine || target.summary,
+          miniSummary: oneLine || target.miniSummary || target.summary,
+          updatedAt: new Date().toISOString()
+        });
         closeModal();
         applyFilters();
       } catch (err) {
