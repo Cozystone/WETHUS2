@@ -553,18 +553,63 @@ app.get('/integrations/insights', async (req, res) => {
     const out = [];
 
     const googleAccount = rows.find(r => r.provider === 'google' && r.integration_type === 'account');
-    const googleToken = String(googleAccount?._token_demo_only || '').trim();
+    let googleToken = String(googleAccount?._token_demo_only || '').trim();
+
+    async function refreshGoogleAccessTokenIfNeeded() {
+      const refreshToken = String(googleAccount?._refresh_token_demo_only || '').trim();
+      if (!refreshToken || !GOOGLE_OAUTH_CLIENT_ID || !GOOGLE_OAUTH_CLIENT_SECRET) return false;
+      try {
+        const tr = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            client_id: GOOGLE_OAUTH_CLIENT_ID,
+            client_secret: GOOGLE_OAUTH_CLIENT_SECRET,
+            refresh_token: refreshToken,
+            grant_type: 'refresh_token'
+          })
+        });
+        const tj = await tr.json().catch(() => ({}));
+        if (!tr.ok || !tj?.access_token) return false;
+        googleToken = String(tj.access_token || '').trim();
+
+        // account token도 갱신 저장
+        const all = readIntegrations();
+        const idx = all.findIndex(r => r.id === googleAccount?.id);
+        if (idx >= 0) {
+          all[idx] = {
+            ...all[idx],
+            _token_demo_only: googleToken,
+            updated_at: new Date().toISOString(),
+            last_synced_at: new Date().toISOString()
+          };
+          writeIntegrations(all);
+        }
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    async function googleFetchWithRefresh(url) {
+      let res = await fetch(url, { headers: { Authorization: `Bearer ${googleToken}` } });
+      if (res.status === 401) {
+        const refreshed = await refreshGoogleAccessTokenIfNeeded();
+        if (refreshed) {
+          res = await fetch(url, { headers: { Authorization: `Bearer ${googleToken}` } });
+        }
+      }
+      return res;
+    }
 
     async function fetchGoogleDocInsight(docId, fallback = {}) {
       const metaUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}?fields=id,name,webViewLink,modifiedTime,mimeType`;
-      const metaRes = await fetch(metaUrl, { headers: { Authorization: `Bearer ${googleToken}` } });
+      const metaRes = await googleFetchWithRefresh(metaUrl);
       const metaJson = await metaRes.json().catch(() => ({}));
       if (!metaRes.ok) throw new Error(metaJson?.error?.message || 'google file metadata failed');
       if (metaJson?.mimeType !== 'application/vnd.google-apps.document') return null;
 
-      const txtRes = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}/export?mimeType=text/plain`, {
-        headers: { Authorization: `Bearer ${googleToken}` }
-      });
+      const txtRes = await googleFetchWithRefresh(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}/export?mimeType=text/plain`);
       const txt = await txtRes.text();
       if (!txtRes.ok) throw new Error('google doc export failed');
 
@@ -579,6 +624,9 @@ app.get('/integrations/insights', async (req, res) => {
     }
 
     const linkedGoogleDocs = rows.filter(it => it.provider === 'google' && (it.integration_type === 'document' || it.integration_type === 'folder'));
+    if ((!googleToken && googleAccount?._refresh_token_demo_only) && linkedGoogleDocs.length) {
+      await refreshGoogleAccessTokenIfNeeded();
+    }
     if (googleToken && linkedGoogleDocs.length) {
       for (const it of linkedGoogleDocs) {
         try {
@@ -601,16 +649,14 @@ app.get('/integrations/insights', async (req, res) => {
           listUrl.searchParams.set('orderBy', 'modifiedTime desc');
           listUrl.searchParams.set('pageSize', '10');
           listUrl.searchParams.set('fields', 'files(id,name,webViewLink,modifiedTime)');
-          const listRes = await fetch(listUrl.toString(), { headers: { Authorization: `Bearer ${googleToken}` } });
+          const listRes = await googleFetchWithRefresh(listUrl.toString());
           const listJson = await listRes.json().catch(() => ({}));
           if (!listRes.ok) throw new Error(listJson?.error?.message || 'google folder docs list failed');
           const docs = Array.isArray(listJson.files) ? listJson.files : [];
 
           for (const d of docs) {
             try {
-              const txtRes = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(d.id)}/export?mimeType=text/plain`, {
-                headers: { Authorization: `Bearer ${googleToken}` }
-              });
+              const txtRes = await googleFetchWithRefresh(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(d.id)}/export?mimeType=text/plain`);
               const txt = await txtRes.text();
               if (!txtRes.ok) continue;
               out.push({
