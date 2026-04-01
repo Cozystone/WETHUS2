@@ -546,9 +546,11 @@
     document.querySelector('[data-close-edit]').addEventListener('click',()=>closeModal('hubEditModal'));
     document.getElementById('hubEditSave').addEventListener('click', async () => {
       if (!currentProject) return;
+      const oneLine = String(document.getElementById('hubEditSummary').value || '').replace(/\s+/g, ' ').trim().slice(0, 64);
       const patch = {
         title: document.getElementById('hubEditTitle').value.trim() || currentProject.title,
-        summary: document.getElementById('hubEditSummary').value.trim() || currentProject.summary,
+        summary: oneLine || currentProject.summary,
+        miniSummary: oneLine || currentProject.miniSummary || currentProject.summary,
         status: document.getElementById('hubEditStatus').value || currentProject.status,
         teamSize: document.getElementById('hubEditTeamSize').value || currentProject.teamSize,
         roles: document.getElementById('hubEditRoles').value.trim() || currentProject.roles,
