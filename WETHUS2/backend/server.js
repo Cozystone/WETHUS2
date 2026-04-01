@@ -42,7 +42,13 @@ const SLACK_REDIRECT_URI = process.env.SLACK_REDIRECT_URI || `${INTEGRATION_APP_
 const FIGMA_CLIENT_ID = process.env.FIGMA_CLIENT_ID || '';
 const FIGMA_CLIENT_SECRET = process.env.FIGMA_CLIENT_SECRET || '';
 const FIGMA_REDIRECT_URI = process.env.FIGMA_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/figma/callback`;
-const DEFAULT_ALLOWED_ORIGINS = ['http://localhost:8080', 'http://127.0.0.1:8080', 'https://wethus-2.vercel.app'];
+const DEFAULT_ALLOWED_ORIGINS = [
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+  'https://wethus-2.vercel.app',
+  'https://wethus.co.kr',
+  'https://www.wethus.co.kr'
+];
 const ALLOWED_ORIGINS = Array.from(new Set([
   ...DEFAULT_ALLOWED_ORIGINS,
   ...(process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean)
