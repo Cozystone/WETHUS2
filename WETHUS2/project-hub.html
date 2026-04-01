@@ -431,6 +431,10 @@
           if (connectedTools.length) {
             externalToolContext = connectedTools.map(i => `${i.provider}:${i.integration_type}:${i.external_resource_name || i.external_resource_id || '-'}:${i.last_synced_at || i.updated_at || ''}`).join(' | ');
           }
+          // 문서 본문을 못 읽어도 연동 메타데이터를 기반으로 최소 요약 맥락을 구성한다.
+          if (!externalDocContext && externalToolContext) {
+            externalDocContext = `연결 리소스 메타데이터 기반 요약: ${externalToolContext}`;
+          }
           if (insightCount === 0 && (allRows.length > 0 || connectedTools.length > 0)) {
             const firstErr = allRows.find(d => d?.error)?.error || '문서 읽기 권한/포맷 문제';
             const toolHint = connectedTools.length ? ` · 연결툴 ${connectedTools.length}개` : '';
