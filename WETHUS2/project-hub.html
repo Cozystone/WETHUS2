@@ -638,13 +638,21 @@
         return;
       }
       el.innerHTML = rows.map((i) => {
-        const insight = (cachedIntegrationInsights || []).find(x => (x.resourceId || '') === (i.external_resource_id || '') || (x.resourceName || '') === (i.external_resource_name || ''));
-        const snippet = String(insight?.snippet || '').replace(/\s+/g, ' ').trim().slice(0, 180);
+        const matches = (cachedIntegrationInsights || []).filter(x =>
+          (x.resourceId || '') === (i.external_resource_id || '') ||
+          (x.sourceFolderId || '') === (i.external_resource_id || '') ||
+          (x.resourceName || '') === (i.external_resource_name || '') ||
+          (x.sourceFolderName || '') === (i.external_resource_name || '')
+        );
+        const firstSnippet = String(matches.find(m => m?.snippet)?.snippet || '').replace(/\s+/g, ' ').trim().slice(0, 180);
+        const matchedCount = matches.filter(m => String(m?.snippet || '').trim().length > 0).length;
+        const errorCount = matches.filter(m => m?.error).length;
         return `<article class="list-item">
           <h3>${i.provider} · ${i.integration_type}</h3>
           <p style="margin:6px 0 4px;">${i.external_resource_name || i.external_resource_id || '-'}</p>
           <p class="meta" style="margin:0 0 6px;">최근 동기화: ${i.last_synced_at ? new Date(i.last_synced_at).toLocaleString('ko-KR') : '기록 없음'}</p>
-          <p class="meta" style="margin:0;">${snippet || '요약 데이터 없음 (권한/포맷/동기화 상태 확인 필요)'}</p>
+          <p class="meta" style="margin:0;">${firstSnippet || '요약 데이터 없음 (권한/포맷/동기화 상태 확인 필요)'}</p>
+          <p class="meta" style="margin:6px 0 0;">반영 문서: ${matchedCount}건${errorCount ? ` · 오류 ${errorCount}건` : ''}</p>
         </article>`;
       }).join('');
     }
