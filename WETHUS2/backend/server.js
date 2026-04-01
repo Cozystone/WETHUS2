@@ -1568,7 +1568,7 @@ app.post('/auth/register', (req, res) => {
     };
     users.push(user);
     writeUsers(users);
-    return res.json({ ok: true, user: { ...user, passwordHash: undefined } });
+    return res.json({ ok: true, user: { ...user, passwordHash: undefined }, hasPassword: !!user.passwordHash });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'register failed' });
   }
@@ -1582,9 +1582,9 @@ app.post('/auth/login', (req, res) => {
     const users = readUsers();
     const user = users.find(u => normEmail(u.email) === email);
     if (!user) return res.status(404).json({ ok: false, error: '가입된 계정이 없습니다.' });
-    if (!user.passwordHash) return res.status(400).json({ ok: false, error: '구글 가입 계정입니다. Google 로그인으로 이용해주세요.' });
+    if (!user.passwordHash) return res.status(400).json({ ok: false, error: '구글 가입 계정입니다. Google 로그인 후 앱 비밀번호를 먼저 설정해주세요.' });
     if (user.passwordHash !== hashPw(password)) return res.status(401).json({ ok: false, error: '비밀번호가 일치하지 않습니다.' });
-    return res.json({ ok: true, user: { ...user, passwordHash: undefined } });
+    return res.json({ ok: true, user: { ...user, passwordHash: undefined }, hasPassword: !!user.passwordHash });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'login failed' });
   }
@@ -1649,10 +1649,39 @@ app.post('/auth/google', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    return res.json({ ok: true, user: { ...user, passwordHash: undefined } });
+    return res.json({ ok: true, user: { ...user, passwordHash: undefined }, hasPassword: !!user.passwordHash });
   } catch (err) {
     console.error('[auth/google] failed:', err?.message || err);
     return res.status(401).json({ ok: false, error: err?.message || 'Google auth failed' });
+  }
+});
+
+app.post('/auth/google/link-password', async (req, res) => {
+  try {
+    if (!GOOGLE_CLIENT_ID) return res.status(500).json({ ok: false, error: 'GOOGLE_CLIENT_ID not configured' });
+    const credential = String(req.body?.credential || '').trim();
+    const password = String(req.body?.password || '');
+    if (!credential || !password) return res.status(400).json({ ok: false, error: 'credential/password required' });
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      return res.status(400).json({ ok: false, error: '비밀번호는 영문+숫자 포함 8자 이상이어야 합니다.' });
+    }
+
+    const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
+    const payload = ticket.getPayload();
+    if (!payload?.email) return res.status(401).json({ ok: false, error: 'Invalid Google token payload' });
+
+    const email = normEmail(payload.email);
+    const users = readUsers();
+    const user = users.find(u => normEmail(u.email) === email);
+    if (!user) return res.status(404).json({ ok: false, error: '가입된 계정이 없습니다.' });
+
+    user.passwordHash = hashPw(password);
+    user.updatedAt = new Date().toISOString();
+    writeUsers(users);
+
+    return res.json({ ok: true, user: { ...user, passwordHash: undefined }, hasPassword: true });
+  } catch (err) {
+    return res.status(401).json({ ok: false, error: err?.message || 'Google password link failed' });
   }
 });
 
