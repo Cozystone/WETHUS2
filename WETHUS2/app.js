@@ -4,6 +4,12 @@
   const DEFAULT_GEMINI_KEY = 'AIzaSyBb5uOh7OMbtR-Mm4GwT6IU2zSwVUqdnL8';
   const DEFAULT_OPENAI_KEY = '';
   const ADMIN_MODE_USER_ID = 'admin-mode';
+  const CLOUD_BASE_CANDIDATES = [
+    (typeof window !== 'undefined' && window.WETHUS_API_BASE) ? window.WETHUS_API_BASE : '',
+    'https://wethus-api.onrender.com/api',
+    'https://wethus-api.onrender.com',
+    (typeof location !== 'undefined' && ['localhost', '127.0.0.1'].includes(location.hostname)) ? `${location.protocol}//${location.hostname}:8787` : ''
+  ].filter(Boolean).map(x => String(x).replace(/\/$/, '').replace(/\/api$/, ''));
 
   function uid() {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -847,6 +853,52 @@
     s.devMode = false;
     save(s);
     return target;
+  }
+
+  async function syncCloudState(emailInput) {
+    const email = String(emailInput || currentUser()?.email || '').trim().toLowerCase();
+    if (!email) return { ok: false, reason: 'email-missing' };
+
+    const bases = Array.from(new Set(CLOUD_BASE_CANDIDATES));
+    let remoteState = null;
+
+    for (const base of bases) {
+      try {
+        const u = new URL('/cloud/state', base);
+        u.searchParams.set('email', email);
+        const r = await fetch(u.toString());
+        if (!r.ok) continue;
+        const j = await r.json().catch(() => ({}));
+        if (j?.state && typeof j.state === 'object') {
+          remoteState = j.state;
+          break;
+        }
+      } catch (_) {}
+    }
+
+    const local = load();
+    let chosen = local;
+    if (remoteState && typeof remoteState === 'object') {
+      const localCount = Array.isArray(local.projects) ? local.projects.length : 0;
+      const remoteCount = Array.isArray(remoteState.projects) ? remoteState.projects.length : 0;
+      chosen = remoteCount > localCount ? remoteState : local;
+      if (chosen === remoteState) {
+        try { localStorage.setItem(KEY, JSON.stringify(remoteState)); } catch (_) {}
+      }
+    }
+
+    for (const base of bases) {
+      try {
+        await fetch(new URL('/cloud/state', base).toString(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, state: chosen })
+        });
+        break;
+      } catch (_) {}
+    }
+
+    return { ok: true, projects: Array.isArray(chosen.projects) ? chosen.projects.length : 0 };
   }
 
   function listReviewProjects() {
@@ -1885,6 +1937,7 @@
     isAdminActor,
     updateCurrentUserProfile,
     upsertCloudUser,
+    syncCloudState,
     currentPlan,
     setCurrentUserPlan,
     listNotifications,

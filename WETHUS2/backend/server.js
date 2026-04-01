@@ -62,6 +62,7 @@ const INTEGRATIONS_DB = path.join(DATA_DIR, 'integrations.json');
 const ACTIVITY_EVENTS_DB = path.join(DATA_DIR, 'activity-events.json');
 const STATUS_SNAPSHOTS_DB = path.join(DATA_DIR, 'status-snapshots.json');
 const EXTERNAL_IDENTITIES_DB = path.join(DATA_DIR, 'external-identities.json');
+const CLOUD_STATE_DB = path.join(DATA_DIR, 'cloud-state.json');
 
 function ensureDb() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -71,6 +72,7 @@ function ensureDb() {
   if (!fs.existsSync(ACTIVITY_EVENTS_DB)) fs.writeFileSync(ACTIVITY_EVENTS_DB, JSON.stringify({ events: [] }, null, 2));
   if (!fs.existsSync(STATUS_SNAPSHOTS_DB)) fs.writeFileSync(STATUS_SNAPSHOTS_DB, JSON.stringify({ snapshots: [] }, null, 2));
   if (!fs.existsSync(EXTERNAL_IDENTITIES_DB)) fs.writeFileSync(EXTERNAL_IDENTITIES_DB, JSON.stringify({ maps: [] }, null, 2));
+  if (!fs.existsSync(CLOUD_STATE_DB)) fs.writeFileSync(CLOUD_STATE_DB, JSON.stringify({ states: [] }, null, 2));
 }
 function readUsers() {
   ensureDb();
@@ -125,6 +127,8 @@ function readStatusSnapshots() { return readCollection(STATUS_SNAPSHOTS_DB, 'sna
 function writeStatusSnapshots(rows) { writeCollection(STATUS_SNAPSHOTS_DB, 'snapshots', rows); }
 function readExternalIdentityMaps() { return readCollection(EXTERNAL_IDENTITIES_DB, 'maps'); }
 function writeExternalIdentityMaps(rows) { writeCollection(EXTERNAL_IDENTITIES_DB, 'maps', rows); }
+function readCloudStates() { return readCollection(CLOUD_STATE_DB, 'states'); }
+function writeCloudStates(rows) { writeCollection(CLOUD_STATE_DB, 'states', rows); }
 function normEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
@@ -1699,6 +1703,34 @@ app.get('/auth/session', (req, res) => {
 app.post('/auth/logout', (req, res) => {
   res.clearCookie('wethus_session');
   res.json({ ok: true });
+});
+
+app.get('/cloud/state', (req, res) => {
+  const email = normEmail(req.query?.email);
+  if (!email) return res.status(400).json({ ok: false, error: 'email required' });
+  const rows = readCloudStates();
+  const row = rows.find(r => normEmail(r.email) === email) || null;
+  return res.json({ ok: true, state: row?.state || null, updatedAt: row?.updatedAt || null });
+});
+
+app.post('/cloud/state', (req, res) => {
+  const email = normEmail(req.body?.email);
+  const state = req.body?.state;
+  if (!email || !state || typeof state !== 'object') return res.status(400).json({ ok: false, error: 'email/state required' });
+
+  const rows = readCloudStates();
+  const now = new Date().toISOString();
+  const idx = rows.findIndex(r => normEmail(r.email) === email);
+  const next = {
+    id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
+    email,
+    state,
+    updatedAt: now
+  };
+  if (idx >= 0) rows[idx] = next;
+  else rows.push(next);
+  writeCloudStates(rows);
+  return res.json({ ok: true, updatedAt: now });
 });
 
 app.listen(PORT, () => {
