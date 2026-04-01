@@ -637,11 +637,20 @@
       const el = document.getElementById('igList');
       if (!el) return;
       const rows = (remoteIntegrations || []).filter(i => i.status === 'connected');
-      if (!rows.length) {
+      const hub = currentProject ? WETHUS.getProjectHub(currentProject.id) : null;
+      const localRows = (hub?.tools || []).filter(t => t.connected).map(t => ({
+        provider: t.name,
+        integration_type: 'local',
+        external_resource_id: t.integrationId || '',
+        external_resource_name: t.desc || t.name,
+        last_synced_at: t.lastSynced || ''
+      }));
+      const merged = rows.length ? rows : localRows;
+      if (!merged.length) {
         el.innerHTML = '<article class="list-item"><h3>연결된 외부툴 없음</h3><p class="meta">외부 연동을 먼저 연결하면 이곳에 요약이 표시됩니다.</p></article>';
         return;
       }
-      el.innerHTML = rows.map((i) => {
+      el.innerHTML = merged.map((i) => {
         const matches = (cachedIntegrationInsights || []).filter(x =>
           (x.resourceId || '') === (i.external_resource_id || '') ||
           (x.sourceFolderId || '') === (i.external_resource_id || '') ||
