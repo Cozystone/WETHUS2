@@ -907,7 +907,14 @@
           return;
         }
 
-        const summary = String(fd.get('description')).slice(0, 90);
+        const descText = String(fd.get('description') || '').trim();
+        let summary = descText.slice(0, 90);
+        try {
+          const sPrompt = `다음 프로젝트 본문을 한국어 1~2문장으로 간결하게 요약해줘. 과장 없이 실행 핵심만 작성.\n\n제목:${String(fd.get('title') || '')}\n본문:${descText.slice(0, 1200)}`;
+          const sOut = await WETHUS.askGemini(sPrompt);
+          const clean = String(sOut || '').replace(/\s+/g, ' ').trim();
+          if (clean) summary = clean.slice(0, 180);
+        } catch (_) {}
 
         let finalImage = imageData;
         if (!finalImage && aiImageSelected) {
@@ -924,6 +931,7 @@
           title: fd.get('title'),
           category: resolvedCategory(),
           summary,
+          miniSummary: summary,
           fullDescription: fd.get('description'),
           motivation: fd.get('motivation'),
           expectedOutput: fd.get('output'),

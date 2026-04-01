@@ -381,6 +381,31 @@
       });
     }
 
+    function miniSummaryText(p) {
+      const base = String(p.miniSummary || p.summary || p.fullDescription || '').trim();
+      if (!base) return '요약 정보가 아직 없습니다.';
+      return base;
+    }
+
+    const miniSummaryInFlight = new Set();
+    async function hydrateMiniSummaries(items) {
+      const targets = (items || []).filter(p => p && p.id && !p.miniSummary && String(p.fullDescription || p.summary || '').trim().length > 80).slice(0, 4);
+      for (const p of targets) {
+        if (miniSummaryInFlight.has(p.id)) continue;
+        miniSummaryInFlight.add(p.id);
+        try {
+          const src = String(p.fullDescription || p.summary || '').slice(0, 800);
+          const prompt = `다음 프로젝트 설명을 한국어 1~2문장으로 간결하게 요약해줘. 불필요한 수식어 없이 핵심 실행내용만.\n\n제목:${p.title || ''}\n본문:${src}`;
+          let out = '';
+          try { out = await WETHUS.askGemini(prompt); } catch (_) {}
+          const mini = String(out || '').replace(/\s+/g, ' ').trim().slice(0, 180)
+            || String(p.summary || p.fullDescription || '').replace(/\s+/g, ' ').trim().slice(0, 180);
+          WETHUS.updateProject(p.id, { miniSummary: mini });
+        } catch (_) {}
+        miniSummaryInFlight.delete(p.id);
+      }
+    }
+
     function renderList(items) {
       listEl.className = 'list-grid';
       const st = WETHUS.getState();
@@ -399,7 +424,7 @@
                   <h3 class="card-title" style="margin:0 0 4px;">${p.title}</h3>
                   <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
                 </div>
-                <p class="mini-summary" style="margin:0 0 6px;">${p.summary}</p>
+                <p class="mini-summary" style="margin:0 0 6px;">${miniSummaryText(p)}</p>
                 <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}</div>
               </div>
               <button class="apply-btn ${mine ? 'mine' : (WETHUS.hasApplied(p.id)?'applied':'')}" data-apply="${p.id}">${label}</button>
@@ -430,7 +455,7 @@
               <h3 class="card-title">${p.title}</h3>
               <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
             </div>
-            <p class="card-summary">${p.summary}</p>
+            <p class="card-summary">${miniSummaryText(p)}</p>
             ${renderTeam(p.teamMembers, p)}
             <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}</div>
             <div class="card-bottom-row">
@@ -451,6 +476,12 @@
       viewListBtn.classList.toggle('active', viewMode === 'list');
       viewAlbumBtn.classList.toggle('active', viewMode === 'album');
       loadMoreBtn.style.display = items.length > visibleCount ? 'inline-flex' : 'none';
+      hydrateMiniSummaries(pageItems).then(() => {
+        const refreshed = sourceProjects();
+        const pageRefreshed = refreshed.slice(0, visibleCount);
+        if (viewMode === 'album') renderAlbum(pageRefreshed);
+        else renderList(pageRefreshed);
+      }).catch(() => {});
     }
 
     function buildCategoryChips(items) {
