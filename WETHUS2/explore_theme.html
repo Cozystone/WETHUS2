@@ -459,6 +459,7 @@
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
               <div style="flex:1;min-width:0;">
                 <span class="card-chip">${p.category}</span>
+                ${p.youthProjectTag ? '<span class="card-chip" style="margin-left:6px;background:#e8f7ee;color:#0f8a47;">Youth</span>' : ''}
                 <div class="card-title-row">
                   <h3 class="card-title" style="margin:0 0 4px;">${p.title}</h3>
                   <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
@@ -490,6 +491,7 @@
               <img src="${item.image}" alt="${p.title}" class="card-img" />
             </div>
             <span class="card-chip">${p.category}</span>
+            ${p.youthProjectTag ? '<span class="card-chip" style="margin-left:6px;background:#e8f7ee;color:#0f8a47;">Youth</span>' : ''}
             <div class="card-title-row">
               <h3 class="card-title">${p.title}</h3>
               <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
@@ -582,7 +584,18 @@
       const mineApproved = visible.filter(p => actor && p.founderId === actor && p.moderationStatus === 'approved')
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       const others = visible.filter(p => !mineApproved.includes(p));
-      return mineApproved.concat(others);
+
+      // Youth/non-Youth 고르게 섞기
+      const youth = others.filter(p => !!p.youthProjectTag);
+      const nonYouth = others.filter(p => !p.youthProjectTag);
+      const mixed = [];
+      let i = 0;
+      while (i < youth.length || i < nonYouth.length) {
+        if (i < youth.length) mixed.push(youth[i]);
+        if (i < nonYouth.length) mixed.push(nonYouth[i]);
+        i++;
+      }
+      return mineApproved.concat(mixed);
     }
 
     function applyFilters() {

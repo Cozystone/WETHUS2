@@ -1602,6 +1602,8 @@ app.post('/auth/register', (req, res) => {
     const nickname = String(req.body?.nickname || '').trim() || name;
     const email = normEmail(req.body?.email);
     const password = String(req.body?.password || '');
+    const age = Number(req.body?.age);
+    const ageVerifiedAt = String(req.body?.ageVerifiedAt || '').trim();
     if (!name || !email || !password) return res.status(400).json({ ok: false, error: 'name/email/password required' });
     const users = readUsers();
     if (users.some(u => normEmail(u.email) === email)) return res.status(409).json({ ok: false, error: '이미 가입된 이메일입니다.' });
@@ -1617,6 +1619,10 @@ app.post('/auth/register', (req, res) => {
       profileImage: '',
       bio: '',
       onboardingComplete: false,
+      age: Number.isFinite(age) ? age : null,
+      ageVerifiedAt: ageVerifiedAt || null,
+      youthTag: Number.isFinite(age) && age < 19 && !!ageVerifiedAt,
+      userTrack: (Number.isFinite(age) && age < 19 && !!ageVerifiedAt) ? 'Youth' : 'Open',
       school: '',
       careerRaw: '',
       careerSummary: '',
