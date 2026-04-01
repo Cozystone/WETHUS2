@@ -343,17 +343,20 @@ app.post('/integrations/:id/sync', async (req, res) => {
       if (integration.integration_type === 'folder') {
         const folderId = String(integration.external_resource_id || '').trim();
         const u = new URL('https://www.googleapis.com/drive/v3/files');
-        u.searchParams.set('q', `mimeType='application/vnd.google-apps.document' and '${folderId}' in parents and trashed=false`);
-        u.searchParams.set('fields', 'files(id,name,modifiedTime)');
+        u.searchParams.set('q', `'${folderId}' in parents and trashed=false`);
+        u.searchParams.set('fields', 'files(id,name,mimeType,modifiedTime)');
         u.searchParams.set('orderBy', 'modifiedTime desc');
-        u.searchParams.set('pageSize', '20');
+        u.searchParams.set('pageSize', '100');
+        u.searchParams.set('supportsAllDrives', 'true');
+        u.searchParams.set('includeItemsFromAllDrives', 'true');
         const r = await fetch(u.toString(), { headers: { Authorization: `Bearer ${token}` } });
         const j = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(j?.error?.message || 'google folder sync failed');
         const files = Array.isArray(j.files) ? j.files : [];
-        summary.scannedDocs = files.length;
-        summary.latestDoc = files[0]?.name || '';
-        summary.modifiedAt = files[0]?.modifiedTime || '';
+        const docs = files.filter(f => f?.mimeType === 'application/vnd.google-apps.document');
+        summary.scannedDocs = docs.length;
+        summary.latestDoc = docs[0]?.name || '';
+        summary.modifiedAt = docs[0]?.modifiedTime || '';
       }
     }
 
@@ -644,15 +647,39 @@ app.get('/integrations/insights', async (req, res) => {
           // folder 연결: 폴더 하위의 Google Docs를 순회해서 반영
           const folderId = String(it.external_resource_id || '').trim();
           if (!folderId) continue;
-          const listUrl = new URL('https://www.googleapis.com/drive/v3/files');
-          listUrl.searchParams.set('q', `mimeType='application/vnd.google-apps.document' and '${folderId}' in parents and trashed=false`);
-          listUrl.searchParams.set('orderBy', 'modifiedTime desc');
-          listUrl.searchParams.set('pageSize', '10');
-          listUrl.searchParams.set('fields', 'files(id,name,webViewLink,modifiedTime)');
-          const listRes = await googleFetchWithRefresh(listUrl.toString());
-          const listJson = await listRes.json().catch(() => ({}));
-          if (!listRes.ok) throw new Error(listJson?.error?.message || 'google folder docs list failed');
-          const docs = Array.isArray(listJson.files) ? listJson.files : [];
+          async function listFolderChildren(fid) {
+            const u = new URL('https://www.googleapis.com/drive/v3/files');
+            u.searchParams.set('q', `'${fid}' in parents and trashed=false`);
+            u.searchParams.set('orderBy', 'modifiedTime desc');
+            u.searchParams.set('pageSize', '100');
+            u.searchParams.set('supportsAllDrives', 'true');
+            u.searchParams.set('includeItemsFromAllDrives', 'true');
+            u.searchParams.set('fields', 'files(id,name,mimeType,webViewLink,modifiedTime)');
+            const r = await googleFetchWithRefresh(u.toString());
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(j?.error?.message || 'google folder children list failed');
+            return Array.isArray(j.files) ? j.files : [];
+          }
+
+          // 폴더 직접 하위 + 1단계 하위폴더까지 순회
+          const direct = await listFolderChildren(folderId);
+          const directDocs = direct.filter(x => x.mimeType === 'application/vnd.google-apps.document');
+          const subFolders = direct.filter(x => x.mimeType === 'application/vnd.google-apps.folder').slice(0, 20);
+          let docs = [...directDocs];
+
+          for (const sf of subFolders) {
+            try {
+              const subChildren = await listFolderChildren(sf.id);
+              const subDocs = subChildren.filter(x => x.mimeType === 'application/vnd.google-apps.document');
+              docs.push(...subDocs.map(d => ({ ...d, _sourceSubFolder: sf.name || sf.id })));
+            } catch (_) {}
+          }
+
+          // 최신순 + 중복제거
+          docs = docs
+            .sort((a, b) => new Date(b.modifiedTime || 0) - new Date(a.modifiedTime || 0))
+            .filter((d, idx, arr) => arr.findIndex(x => x.id === d.id) === idx)
+            .slice(0, 20);
 
           for (const d of docs) {
             try {
@@ -664,6 +691,7 @@ app.get('/integrations/insights', async (req, res) => {
                 source: 'folder',
                 sourceFolderId: folderId,
                 sourceFolderName: it.external_resource_name || 'Google Drive Folder',
+                sourceSubFolderName: d._sourceSubFolder || '',
                 resourceId: d.id,
                 resourceName: d.name || d.id,
                 resourceUrl: d.webViewLink || '',
