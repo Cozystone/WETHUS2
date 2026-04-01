@@ -364,6 +364,7 @@
           }
         }
 
+        try { if (WETHUS.syncCloudState) await WETHUS.syncCloudState(user?.email || data?.user?.email); } catch (_) {}
         // 기존 계정 인식 실패로 온보딩으로 튀는 문제 방지: Google 로그인은 기본 index로 진입
         location.href = 'index.html';
       } catch (err) {
@@ -538,6 +539,7 @@
         }
         if (rememberEmail.checked) localStorage.setItem('wethus_saved_email', email);
         else localStorage.removeItem('wethus_saved_email');
+        try { if (WETHUS.syncCloudState) await WETHUS.syncCloudState(email); } catch (_) {}
         location.href = 'index.html';
       } catch (err) {
         const m = String(err?.message || '로그인에 실패했습니다.');
@@ -548,6 +550,7 @@
             WETHUS.loginUser({ email, password });
             if (rememberEmail.checked) localStorage.setItem('wethus_saved_email', email);
             else localStorage.removeItem('wethus_saved_email');
+            try { if (WETHUS.syncCloudState) await WETHUS.syncCloudState(email); } catch (_) {}
             location.href = 'index.html';
             return;
           } catch (_) {}
