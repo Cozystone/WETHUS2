@@ -946,11 +946,11 @@
           image: finalImage,
           likes: 0,
           comments: [],
-          moderationStatus: moderation.review ? 'manual_review' : 'approved',
-          moderationReason: moderation.reason || ''
+          moderationStatus: 'manual_review',
+          moderationReason: moderation.reason || 'Founder 제출 건은 운영자 승인 후 탐색 탭에 반영됩니다.'
         });
 
-        msg.textContent = '신청 완료! 홈으로 이동합니다. (AI 검토 2~3분, 수동 확인 필요 시 1일 내 안내)';
+        msg.textContent = '신청 완료! 운영자 승인 후 탐색 탭에 반영됩니다. (검토 진행 알림을 확인해주세요)';
         try { sessionStorage.setItem('wethus_pending_toast', '신청완료 · 검토가 시작되었습니다'); } catch (_) {}
         localStorage.removeItem(DRAFT_KEY);
         form.reset();
