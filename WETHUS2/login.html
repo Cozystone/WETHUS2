@@ -219,6 +219,7 @@
     const UNIQUE_AUTH_BASES = Array.from(new Set(AUTH_BASES));
     const GOOGLE_CONFIG_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/google/config`);
     const GOOGLE_AUTH_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/google`);
+    const GOOGLE_LINK_PASSWORD_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/google/link-password`);
     const LOGIN_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/login`);
     const REGISTER_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/register`);
     const tabSignup = document.getElementById('tabSignup');
@@ -351,6 +352,18 @@
             age: existingLocal.age ?? user.age
           }) || user;
         }
+
+        if (!data?.hasPassword) {
+          const pw = prompt('일반 로그인에서도 쓰실 앱 비밀번호를 설정하세요.\n(영문+숫자 포함 8자 이상)');
+          if (pw && String(pw).trim()) {
+            try {
+              await postWithFallback(GOOGLE_LINK_PASSWORD_ENDPOINTS, { credential, password: String(pw).trim() });
+            } catch (e) {
+              msg.textContent = e?.message || '앱 비밀번호 설정에 실패했습니다. 다음에 다시 시도해주세요.';
+            }
+          }
+        }
+
         // 기존 계정 인식 실패로 온보딩으로 튀는 문제 방지: Google 로그인은 기본 index로 진입
         location.href = 'index.html';
       } catch (err) {
