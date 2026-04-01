@@ -389,7 +389,15 @@
 
     const miniSummaryInFlight = new Set();
     async function hydrateMiniSummaries(items) {
-      const targets = (items || []).filter(p => p && p.id && !p.miniSummary && String(p.fullDescription || p.summary || '').trim().length > 80).slice(0, 4);
+      const targets = (items || []).filter(p => {
+        if (!p || !p.id) return false;
+        const srcLen = String(p.fullDescription || p.summary || '').trim().length;
+        if (srcLen <= 80) return false;
+        const mini = String(p.miniSummary || '').trim();
+        const sum = String(p.summary || '').trim();
+        // 미니요약이 없거나, 기존 긴 summary를 그대로 복붙한 상태면 재생성
+        return !mini || mini.length > 64 || (mini && sum && mini === sum);
+      }).slice(0, 4);
       for (const p of targets) {
         if (miniSummaryInFlight.has(p.id)) continue;
         miniSummaryInFlight.add(p.id);
@@ -398,8 +406,10 @@
           const prompt = `다음 프로젝트 설명을 한국어 한 줄(최대 60자)로 요약해줘. 핵심 실행내용만, 문장부호 최소화.\n\n제목:${p.title || ''}\n본문:${src}`;
           let out = '';
           try { out = await WETHUS.askGemini(prompt); } catch (_) {}
+          const fallbackBase = String(p.fullDescription || p.summary || '').replace(/\s+/g, ' ').trim();
+          const fallbackLine = (fallbackBase.split(/[.!?。]\s*/)[0] || fallbackBase).slice(0, 64);
           const mini = String(out || '').replace(/\s+/g, ' ').trim().slice(0, 64)
-            || String(p.summary || p.fullDescription || '').replace(/\s+/g, ' ').trim().slice(0, 64);
+            || fallbackLine;
           WETHUS.updateProject(p.id, { miniSummary: mini });
         } catch (_) {}
         miniSummaryInFlight.delete(p.id);
