@@ -606,24 +606,47 @@ app.get('/integrations/insights', async (req, res) => {
     }
 
     async function fetchGoogleDocInsight(docId, fallback = {}) {
-      const metaUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}?fields=id,name,webViewLink,modifiedTime,mimeType`;
-      const metaRes = await googleFetchWithRefresh(metaUrl);
-      const metaJson = await metaRes.json().catch(() => ({}));
-      if (!metaRes.ok) throw new Error(metaJson?.error?.message || 'google file metadata failed');
-      if (metaJson?.mimeType !== 'application/vnd.google-apps.document') return null;
+      // 1) 토큰 기반 시도
+      try {
+        if (googleToken) {
+          const metaUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}?fields=id,name,webViewLink,modifiedTime,mimeType`;
+          const metaRes = await googleFetchWithRefresh(metaUrl);
+          const metaJson = await metaRes.json().catch(() => ({}));
+          if (metaRes.ok && metaJson?.mimeType === 'application/vnd.google-apps.document') {
+            const txtRes = await googleFetchWithRefresh(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}/export?mimeType=text/plain`);
+            const txt = await txtRes.text();
+            if (txtRes.ok) {
+              return {
+                provider: 'google_docs',
+                resourceId: metaJson?.id || fallback.resourceId || docId,
+                resourceName: metaJson?.name || fallback.resourceName || docId,
+                resourceUrl: metaJson?.webViewLink || fallback.resourceUrl || '',
+                modifiedAt: metaJson?.modifiedTime || fallback.modifiedAt || '',
+                snippet: String(txt || '').replace(/\s+/g, ' ').trim().slice(0, 1800)
+              };
+            }
+          }
+        }
+      } catch (_) {}
 
-      const txtRes = await googleFetchWithRefresh(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}/export?mimeType=text/plain`);
-      const txt = await txtRes.text();
-      if (!txtRes.ok) throw new Error('google doc export failed');
+      // 2) 공개 공유 문서 fallback (토큰 없이)
+      try {
+        const pub = await fetch(`https://docs.google.com/document/d/${encodeURIComponent(docId)}/export?format=txt`);
+        const txt = await pub.text();
+        if (pub.ok && String(txt || '').trim()) {
+          return {
+            provider: 'google_docs',
+            resourceId: fallback.resourceId || docId,
+            resourceName: fallback.resourceName || docId,
+            resourceUrl: fallback.resourceUrl || `https://docs.google.com/document/d/${docId}/edit`,
+            modifiedAt: fallback.modifiedAt || '',
+            snippet: String(txt || '').replace(/\s+/g, ' ').trim().slice(0, 1800),
+            source: 'public'
+          };
+        }
+      } catch (_) {}
 
-      return {
-        provider: 'google_docs',
-        resourceId: metaJson?.id || fallback.resourceId || docId,
-        resourceName: metaJson?.name || fallback.resourceName || docId,
-        resourceUrl: metaJson?.webViewLink || fallback.resourceUrl || '',
-        modifiedAt: metaJson?.modifiedTime || fallback.modifiedAt || '',
-        snippet: String(txt || '').replace(/\s+/g, ' ').trim().slice(0, 1800)
-      };
+      throw new Error('google doc export failed');
     }
 
     const linkedGoogleDocs = rows.filter(it => it.provider === 'google' && (it.integration_type === 'document' || it.integration_type === 'folder'));
