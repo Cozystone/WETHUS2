@@ -910,9 +910,9 @@
         const descText = String(fd.get('description') || '').trim();
         let summary = descText.slice(0, 64);
         try {
-          const sPrompt = `다음 프로젝트 본문을 한국어 한 줄(최대 60자)로 요약해줘. 실행핵심만, 간결하게.\n\n제목:${String(fd.get('title') || '')}\n본문:${descText.slice(0, 1200)}`;
+          const sPrompt = `다음 프로젝트 본문을 한국어 한 줄(최대 60자) 명사구 스타일로 요약해줘. 문장 끝 마침표 금지.\n\n제목:${String(fd.get('title') || '')}\n본문:${descText.slice(0, 1200)}`;
           const sOut = await WETHUS.askGemini(sPrompt);
-          const clean = String(sOut || '').replace(/\s+/g, ' ').trim();
+          const clean = String(sOut || '').replace(/\s+/g, ' ').trim().replace(/[.!?。]+$/g, '');
           if (clean) summary = clean.slice(0, 64);
         } catch (_) {}
 
