@@ -234,6 +234,30 @@
     </article>
   </div>
 
+  <div id="editProjectModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-edit-close="true"></div>
+    <article class="modal-panel" style="max-width:760px;">
+      <button class="modal-close" id="editProjectClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 style="margin:0 0 8px;">프로젝트 전체 수정</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <input id="editProjectTitle" placeholder="프로젝트 제목" />
+          <input id="editProjectMini" placeholder="아이템 한줄 설명 (최대 60자)" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <select id="editProjectStatus"><option>모집 중</option><option>기획 중</option><option>진행 중</option><option>피보팅</option><option>완료</option></select>
+          <select id="editProjectTeamSize"><option>1인</option><option>2인</option><option>3인</option><option>4인이상</option></select>
+        </div>
+        <input id="editProjectRoles" placeholder="역할" style="margin-bottom:8px;" />
+        <textarea id="editProjectDesc" style="width:100%;min-height:130px;background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;" placeholder="프로젝트 본문"></textarea>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
+          <button id="editProjectCancel" class="btn btn--secondary" type="button">취소</button>
+          <button id="editProjectSave" class="btn btn--primary" type="button">저장</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
   <script src="app.js?v=20260318-58"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
@@ -383,12 +407,13 @@
 
     function miniSummaryText(p) {
       const base = String(p.miniSummary || p.summary || p.fullDescription || '').replace(/\s+/g, ' ').trim();
-      if (!base) return '요약 정보가 아직 없습니다.';
-      return base.slice(0, 64);
+      if (!base) return '요약 정보가 아직 없습니다';
+      return base.replace(/[.!?。]+$/g, '').slice(0, 64);
     }
 
     const miniSummaryInFlight = new Set();
     async function hydrateMiniSummaries(items) {
+      const actor = WETHUS.getState().currentUserId || (WETHUS.getState().devMode ? 'dev-temp' : null);
       const targets = (items || []).filter(p => {
         if (!p || !p.id) return false;
         const srcLen = String(p.fullDescription || p.summary || '').trim().length;
@@ -397,13 +422,17 @@
         const sum = String(p.summary || '').trim();
         // 미니요약이 없거나, 기존 긴 summary를 그대로 복붙한 상태면 재생성
         return !mini || mini.length > 64 || (mini && sum && mini === sum);
-      }).slice(0, 4);
+      }).sort((a,b)=> {
+        const ap = actor && a.founderId === actor ? 1 : 0;
+        const bp = actor && b.founderId === actor ? 1 : 0;
+        return bp - ap;
+      }).slice(0, 12);
       for (const p of targets) {
         if (miniSummaryInFlight.has(p.id)) continue;
         miniSummaryInFlight.add(p.id);
         try {
           const src = String(p.fullDescription || p.summary || '').slice(0, 800);
-          const prompt = `다음 프로젝트 설명을 한국어 한 줄(최대 60자)로 요약해줘. 핵심 실행내용만, 문장부호 최소화.\n\n제목:${p.title || ''}\n본문:${src}`;
+          const prompt = `다음 프로젝트 설명을 한국어 한 줄(최대 60자) 명사구 스타일로 요약해줘. 문장 끝 마침표 금지, 개념/그룹/프로젝트명처럼 마무리.\n\n제목:${p.title || ''}\n본문:${src}`;
           let out = '';
           try { out = await WETHUS.askGemini(prompt); } catch (_) {}
           const fallbackBase = String(p.fullDescription || p.summary || '').replace(/\s+/g, ' ').trim();
@@ -691,6 +720,13 @@
     const modalTeam = document.getElementById('modalTeam');
     const applyModal = document.getElementById('applyModal');
     const applyMotivation = document.getElementById('applyMotivation');
+    const editProjectModal = document.getElementById('editProjectModal');
+    const editProjectTitle = document.getElementById('editProjectTitle');
+    const editProjectMini = document.getElementById('editProjectMini');
+    const editProjectStatus = document.getElementById('editProjectStatus');
+    const editProjectTeamSize = document.getElementById('editProjectTeamSize');
+    const editProjectRoles = document.getElementById('editProjectRoles');
+    const editProjectDesc = document.getElementById('editProjectDesc');
     let applyProjectId = null;
     let currentProjectId = null;
 
@@ -933,25 +969,16 @@
 
     modalEditBtn?.addEventListener('click', async () => {
       if (!currentProjectId) return;
-      const target = currentItems.find(p => p.id === currentProjectId);
+      const target = currentItems.find(p => p.id === currentProjectId) || WETHUS.listProjects().find(p => p.id === currentProjectId);
       if (!target) return;
-      const nextTitle = prompt('프로젝트 제목 수정', target.title || '');
-      if (nextTitle == null) return;
-      const nextSummary = prompt('아이템 한줄 설명 수정 (최대 60자)', target.miniSummary || target.summary || '');
-      if (nextSummary == null) return;
-      const oneLine = String(nextSummary || '').replace(/\s+/g, ' ').trim().slice(0, 64);
-      try {
-        WETHUS.updateProject(currentProjectId, {
-          title: nextTitle.trim() || target.title,
-          summary: oneLine || target.summary,
-          miniSummary: oneLine || target.miniSummary || target.summary,
-          updatedAt: new Date().toISOString()
-        });
-        closeModal();
-        applyFilters();
-      } catch (err) {
-        await WETHUS.uiAlert(err?.message || '수정에 실패했습니다.', { title: '수정 실패' });
-      }
+      editProjectTitle.value = target.title || '';
+      editProjectMini.value = String(target.miniSummary || target.summary || '').slice(0, 64);
+      editProjectStatus.value = target.status || '기획 중';
+      editProjectTeamSize.value = target.teamSize || '3인';
+      editProjectRoles.value = target.roles || '';
+      editProjectDesc.value = target.fullDescription || target.desc || '';
+      editProjectModal.classList.add('open');
+      editProjectModal.setAttribute('aria-hidden', 'false');
     });
 
     modalDeleteBtn?.addEventListener('click', async () => {
@@ -983,6 +1010,40 @@
       const target = currentItems.find(p => p.id === currentProjectId);
       if (target) target.comments = comments;
       render(currentItems);
+    });
+
+    function closeEditProjectModal() {
+      editProjectModal.classList.remove('open');
+      editProjectModal.setAttribute('aria-hidden', 'true');
+    }
+    document.getElementById('editProjectClose').addEventListener('click', closeEditProjectModal);
+    document.getElementById('editProjectCancel').addEventListener('click', closeEditProjectModal);
+    editProjectModal.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-edit-close') === 'true') closeEditProjectModal();
+    });
+    document.getElementById('editProjectSave').addEventListener('click', async () => {
+      if (!currentProjectId) return;
+      const target = currentItems.find(p => p.id === currentProjectId) || WETHUS.listProjects().find(p => p.id === currentProjectId);
+      if (!target) return;
+      const oneLine = String(editProjectMini.value || '').replace(/\s+/g, ' ').trim().replace(/[.!?。]+$/g, '').slice(0, 64);
+      try {
+        WETHUS.updateProject(currentProjectId, {
+          title: editProjectTitle.value.trim() || target.title,
+          summary: oneLine || target.summary,
+          miniSummary: oneLine || target.miniSummary || target.summary,
+          status: editProjectStatus.value || target.status,
+          teamSize: editProjectTeamSize.value || target.teamSize,
+          roles: editProjectRoles.value.trim() || target.roles,
+          fullDescription: editProjectDesc.value.trim() || target.fullDescription || target.desc,
+          desc: editProjectDesc.value.trim() || target.desc,
+          updatedAt: new Date().toISOString()
+        });
+        closeEditProjectModal();
+        closeModal();
+        applyFilters();
+      } catch (err) {
+        await WETHUS.uiAlert(err?.message || '수정에 실패했습니다.', { title: '수정 실패' });
+      }
     });
 
     document.getElementById('applyClose').addEventListener('click', () => {
