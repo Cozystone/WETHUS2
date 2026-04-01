@@ -664,8 +664,12 @@
         const isFolder = r.kind === 'folder';
         const active = r.id === pendingResourceSelectedId;
         const canSelectFolder = isFolder && !!pendingResourceTool?.allowFolderSelect;
+        const thumb = currentProject?.image || 'https://picsum.photos/seed/hub-main/72/72';
         return `<div style="padding:10px;border:1px solid ${active ? '#ff8a1f' : '#2a2a2a'};border-radius:8px;background:${active ? 'rgba(255,138,31,.12)' : '#171717'};color:#f5f5f5;display:flex;justify-content:space-between;align-items:center;gap:8px;">
-          <span><strong style="display:block;">${isFolder ? '📁 ' : '📄 '}${r.name || r.id}</strong><span class="meta">${r.modifiedAt ? new Date(r.modifiedAt).toLocaleString('ko-KR') : ''}</span></span>
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <img src="${thumb}" alt="프로젝트 대표사진" style="width:30px;height:30px;border-radius:8px;object-fit:cover;border:1px solid #2a2a2a;flex:0 0 auto;" />
+            <span style="min-width:0;"><strong style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${isFolder ? '📁 ' : '📄 '}${r.name || r.id}</strong><span class="meta">${r.modifiedAt ? new Date(r.modifiedAt).toLocaleString('ko-KR') : ''}</span></span>
+          </div>
           <div style="display:flex;gap:6px;align-items:center;">
             ${isFolder ? '<button type="button" class="btn btn--secondary" data-r-open="' + r.id + '" style="padding:4px 8px;min-height:auto;">열기</button>' : ''}
             ${canSelectFolder ? '<button type="button" class="btn btn--primary" data-r-select="' + r.id + '" style="padding:4px 8px;min-height:auto;">폴더 연결</button>' : ''}
