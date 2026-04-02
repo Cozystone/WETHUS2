@@ -406,32 +406,7 @@
     }
 
     function normalizeYouthChipPlacement() {
-      document.querySelectorAll('.card-chip').forEach(chip => {
-        const txt = String(chip.textContent || '').trim();
-        const upper = txt.toUpperCase();
-        if (!/YOUTH/.test(upper)) return;
-
-        // 케이스1) 카드 내부 YOUTH 칩이면 제목 배지로 이동
-        const card = chip.closest('.card, .list-item');
-        if (card) {
-          const titleRow = card.querySelector('.title-badge-row, .card-title-row');
-          if (titleRow) {
-            chip.remove();
-            if (!titleRow.querySelector('.youth-badge')) {
-              const badge = document.createElement('span');
-              badge.className = 'owner-badge youth-badge';
-              badge.textContent = 'YOUTH';
-              const myBadge = titleRow.querySelector('.owner-badge');
-              if (myBadge) titleRow.insertBefore(badge, myBadge);
-              else titleRow.appendChild(badge);
-            }
-            return;
-          }
-        }
-
-        // 케이스2) 카테고리 필터/칩 영역에 남은 YOUTH 텍스트는 제거
-        chip.remove();
-      });
+      // no-op: youth chip is intentionally rendered in category row next to category chip.
     }
 
     function normalizeCategoryName(raw) {
