@@ -1080,6 +1080,32 @@
     return { ok: true, projects: Array.isArray(chosen.projects) ? chosen.projects.length : 0 };
   }
 
+  function scheduleCloudSync(reason = 'auto') {
+    const me = currentUser();
+    if (!me?.email) return;
+    if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+    cloudSyncTimer = setTimeout(() => {
+      syncCloudState(me.email).catch(() => {});
+    }, reason === 'save' ? 900 : 250);
+  }
+
+  function startAutoCloudSync() {
+    if (cloudAutoPullTimer) return;
+    cloudAutoPullTimer = setInterval(() => {
+      const me = currentUser();
+      if (!me?.email) return;
+      syncCloudState(me.email).catch(() => {});
+    }, 15000);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          const me = currentUser();
+          if (me?.email) syncCloudState(me.email).catch(() => {});
+        }
+      });
+    }
+  }
+
   function listReviewProjects() {
     return load().projects.filter(p => p.moderationStatus === 'manual_review');
   }
@@ -1493,6 +1519,7 @@
         userId: project.founderId || null
       });
     }
+    target.updatedAt = new Date().toISOString();
     save(s);
     return app;
   }

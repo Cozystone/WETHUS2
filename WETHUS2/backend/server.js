@@ -1851,7 +1851,13 @@ app.post('/cloud/state', (req, res) => {
   for (const p of incoming) {
     if (!p?.id) continue;
     if (p?.moderationStatus === 'rejected' || p?.moderationStatus === 'manual_review') continue;
-    map.set(String(p.id), { ...map.get(String(p.id)), ...p, _updatedAt: now });
+    const key = String(p.id);
+    const prev = map.get(key) || {};
+    const prevTs = new Date(prev.updatedAt || prev._updatedAt || prev.createdAt || 0).getTime() || 0;
+    const nextTs = new Date(p.updatedAt || p.createdAt || now).getTime() || Date.now();
+    if (nextTs >= prevTs) {
+      map.set(key, { ...prev, ...p, _updatedAt: now });
+    }
   }
   writeCloudProjects(Array.from(map.values()));
 
