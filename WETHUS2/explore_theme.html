@@ -490,7 +490,7 @@
                   <h3 class="card-title" style="margin:0 0 4px;">${p.title}</h3>
                   <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
                 </div>
-                <p class="mini-summary ${isYouth ? 'youth-theme' : ''}" style="margin:0 0 6px;">${miniSummaryText(p)}</p>
+                <p class="mini-summary ${(p.youthProjectTag || p.projectTrack === 'Youth' || ((st.users||[]).find(u => u.id === p.founderId)?.youthTag)) ? 'youth-theme' : ''}" style="margin:0 0 6px;">${miniSummaryText(p)}</p>
                 <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}</div>
               </div>
               <button class="apply-btn ${mine ? 'mine' : (WETHUS.hasApplied(p.id)?'applied':'')}" data-apply="${p.id}">${label}</button>
@@ -522,7 +522,7 @@
               <h3 class="card-title">${p.title}</h3>
               <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
             </div>
-            <p class="card-summary ${isYouth ? 'youth-theme' : ''}">${miniSummaryText(p)}</p>
+            <p class="card-summary ${(p.youthProjectTag || p.projectTrack === 'Youth' || ((st.users||[]).find(u => u.id === p.founderId)?.youthTag)) ? 'youth-theme' : ''}">${miniSummaryText(p)}</p>
             ${renderTeam(p.teamMembers, p)}
             <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}</div>
             <div class="card-bottom-row">
