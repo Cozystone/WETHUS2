@@ -526,9 +526,13 @@
         changed = true;
       }
       const rawCategory = String(next.category || '').trim();
-      if (/youth$/i.test(rawCategory)) {
-        const cleaned = rawCategory.replace(/youth$/i, '').trim();
-        if (cleaned) next.category = cleaned;
+      if (/youth/i.test(rawCategory)) {
+        const cleaned = rawCategory
+          .replace(/\byouth\b/ig, '')
+          .replace(/youth/ig, '')
+          .replace(/[-_/|]+$/g, '')
+          .trim();
+        if (cleaned && cleaned !== next.category) next.category = cleaned;
         next.youthProjectTag = true;
         changed = true;
       }
