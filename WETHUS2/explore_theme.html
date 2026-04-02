@@ -405,6 +405,23 @@
       });
     }
 
+    function normalizeYouthChipPlacement() {
+      listEl.querySelectorAll('.card-chip').forEach(chip => {
+        if (String(chip.textContent || '').trim().toUpperCase() !== 'YOUTH') return;
+        const card = chip.closest('.card, .list-item');
+        if (!card) return;
+        const titleRow = card.querySelector('.title-badge-row, .card-title-row');
+        if (!titleRow) return;
+        chip.remove();
+        const badge = document.createElement('span');
+        badge.className = 'owner-badge youth-badge';
+        badge.textContent = 'YOUTH';
+        const myBadge = titleRow.querySelector('.owner-badge');
+        if (myBadge) titleRow.insertBefore(badge, myBadge);
+        else titleRow.appendChild(badge);
+      });
+    }
+
     function normalizeCategoryName(raw) {
       return String(raw || '')
         .replace(/\byouth\b/ig, '')
@@ -520,6 +537,7 @@
       const pageItems = items.slice(0, visibleCount);
       if (viewMode === 'album') renderAlbum(pageItems);
       else renderList(pageItems);
+      normalizeYouthChipPlacement();
       viewListBtn.classList.toggle('active', viewMode === 'list');
       viewAlbumBtn.classList.toggle('active', viewMode === 'album');
       loadMoreBtn.style.display = items.length > visibleCount ? 'inline-flex' : 'none';
@@ -528,6 +546,7 @@
         const pageRefreshed = refreshed.slice(0, visibleCount);
         if (viewMode === 'album') renderAlbum(pageRefreshed);
         else renderList(pageRefreshed);
+        normalizeYouthChipPlacement();
       }).catch(() => {});
     }
 
