@@ -409,6 +409,17 @@
       // no-op: youth chip is intentionally rendered in category row next to category chip.
     }
 
+    function normalizeRenderedCategoryText() {
+      listEl.querySelectorAll('.card *, .list-item *').forEach(el => {
+        const txt = String(el.textContent || '').trim();
+        if (!txt) return;
+        // FILMYOUTH, STARTUPYOUTH 같은 잔존 카테고리 문자열 강제 정리
+        if (/^[A-Z&\s]+YOUTH$/i.test(txt) && txt.length <= 24) {
+          el.textContent = txt.replace(/\byouth\b/ig, '').replace(/youth/ig, '').trim();
+        }
+      });
+    }
+
     function normalizeCategoryName(raw) {
       return String(raw || '')
         .replace(/\byouth\b/ig, '')
@@ -525,6 +536,7 @@
       if (viewMode === 'album') renderAlbum(pageItems);
       else renderList(pageItems);
       normalizeYouthChipPlacement();
+      normalizeRenderedCategoryText();
       viewListBtn.classList.toggle('active', viewMode === 'list');
       viewAlbumBtn.classList.toggle('active', viewMode === 'album');
       loadMoreBtn.style.display = items.length > visibleCount ? 'inline-flex' : 'none';
@@ -534,6 +546,7 @@
         if (viewMode === 'album') renderAlbum(pageRefreshed);
         else renderList(pageRefreshed);
         normalizeYouthChipPlacement();
+        normalizeRenderedCategoryText();
       }).catch(() => {});
     }
 
