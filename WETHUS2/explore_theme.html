@@ -405,6 +405,14 @@
       });
     }
 
+    function normalizeCategoryName(raw) {
+      return String(raw || '')
+        .replace(/\byouth\b/ig, '')
+        .replace(/youth/ig, '')
+        .replace(/[-_/|]+$/g, '')
+        .trim() || '기타';
+    }
+
     function miniSummaryText(p) {
       const base = String(p.miniSummary || p.summary || p.fullDescription || '').replace(/\s+/g, ' ').trim();
       if (!base) return '요약 정보가 아직 없습니다';
@@ -602,7 +610,7 @@
       allProjects = sourceProjects();
       let items = allProjects.slice();
 
-      if (selectedCategory) items = items.filter(p => p.category === selectedCategory);
+      if (selectedCategory) items = items.filter(p => normalizeCategoryName(p.category) === selectedCategory);
       if (teamSizeFilter.value) items = items.filter(p => p.teamSize === teamSizeFilter.value);
       if (stageFilter.value) items = items.filter(p => p.status === stageFilter.value);
       if (query) items = WETHUS.fakeAiSearch(items, query);
