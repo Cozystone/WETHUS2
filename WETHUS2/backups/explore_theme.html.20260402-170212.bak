@@ -478,7 +478,6 @@
       listEl.innerHTML = items.map((p, i) => {
         const stage = normalizeStage(p.status);
         const item = { ...p, image: imageFor(p, i), status: stage };
-        const isYouth = !!(p.youthProjectTag || p.projectTrack === 'Youth' || ((st.users||[]).find(u => u.id === p.founderId)?.youthTag));
         const mine = !!actor && p.founderId === actor;
         const label = mine ? '프로젝트로 이동' : (WETHUS.hasApplied(p.id) ? '지원완료' : '지원하기');
         return `
@@ -509,7 +508,6 @@
       listEl.innerHTML = items.map((p, i) => {
         const stage = normalizeStage(p.status);
         const item = { ...p, image: imageFor(p, i), status: stage };
-        const isYouth = !!(p.youthProjectTag || p.projectTrack === 'Youth' || ((st.users||[]).find(u => u.id === p.founderId)?.youthTag));
         const mine = !!actor && p.founderId === actor;
         const label = mine ? '프로젝트로 이동' : (WETHUS.hasApplied(p.id)?'지원완료':'지원하기');
         return `
