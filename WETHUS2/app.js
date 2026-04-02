@@ -12,11 +12,25 @@
   ].filter(Boolean).map(x => String(x).replace(/\/$/, '').replace(/\/api$/, ''));
 
   function sanitizeCategoryName(raw) {
-    return String(raw || '')
+    const cleaned = String(raw || '')
       .replace(/\byouth\b/ig, '')
       .replace(/youth/ig, '')
       .replace(/[-_/|]+$/g, '')
       .trim();
+    const key = cleaned.toLowerCase();
+    const map = {
+      film: 'Film',
+      startup: 'Startup',
+      science: 'Science',
+      policy: 'Policy',
+      campaign: 'Campaign',
+      creative: 'Creative',
+      app: 'App',
+      artculture: 'ArtCulture',
+      art: 'Art',
+      culture: 'Culture'
+    };
+    return map[key] || cleaned;
   }
 
   function isYouthByAge(age, verifiedAt) {
