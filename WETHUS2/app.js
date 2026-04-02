@@ -525,6 +525,13 @@
         next.endDate = null;
         changed = true;
       }
+      const rawCategory = String(next.category || '').trim();
+      if (/youth$/i.test(rawCategory)) {
+        const cleaned = rawCategory.replace(/youth$/i, '').trim();
+        if (cleaned) next.category = cleaned;
+        next.youthProjectTag = true;
+        changed = true;
+      }
       if (next.youthProjectTag === undefined) {
         const founder = Array.isArray(parsed.users) ? parsed.users.find(u => u.id === next.founderId) : null;
         next.youthProjectTag = next.founderId === 'system' ? true : !!(founder && normalizeYouthTag(founder));
