@@ -376,8 +376,7 @@
         }
 
         try { if (WETHUS.syncCloudState) await WETHUS.syncCloudState(user?.email || data?.user?.email); } catch (_) {}
-        // 기존 계정 인식 실패로 온보딩으로 튀는 문제 방지: Google 로그인은 기본 index로 진입
-        location.href = 'index.html';
+        location.href = user?.onboardingComplete ? 'index.html' : 'profile.html?onboarding=1';
       } catch (err) {
         const m = String(err?.message || '');
         if (/Failed to fetch/i.test(m)) {
@@ -594,7 +593,8 @@
             if (rememberEmail.checked) localStorage.setItem('wethus_saved_email', email);
             else localStorage.removeItem('wethus_saved_email');
             try { if (WETHUS.syncCloudState) await WETHUS.syncCloudState(email); } catch (_) {}
-            location.href = 'index.html';
+            const me = WETHUS.currentUser ? WETHUS.currentUser() : null;
+            location.href = me?.onboardingComplete ? 'index.html' : 'profile.html?onboarding=1';
             return;
           } catch (_) {}
         }
