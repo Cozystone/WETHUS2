@@ -11,6 +11,14 @@
     (typeof location !== 'undefined' && ['localhost', '127.0.0.1'].includes(location.hostname)) ? `${location.protocol}//${location.hostname}:8787` : ''
   ].filter(Boolean).map(x => String(x).replace(/\/$/, '').replace(/\/api$/, ''));
 
+  function sanitizeCategoryName(raw) {
+    return String(raw || '')
+      .replace(/\byouth\b/ig, '')
+      .replace(/youth/ig, '')
+      .replace(/[-_/|]+$/g, '')
+      .trim();
+  }
+
   function isYouthByAge(age, verifiedAt) {
     const n = Number(age);
     if (!Number.isFinite(n)) return false;
@@ -526,13 +534,9 @@
         changed = true;
       }
       const rawCategory = String(next.category || '').trim();
-      if (/youth/i.test(rawCategory)) {
-        const cleaned = rawCategory
-          .replace(/\byouth\b/ig, '')
-          .replace(/youth/ig, '')
-          .replace(/[-_/|]+$/g, '')
-          .trim();
-        if (cleaned && cleaned !== next.category) next.category = cleaned;
+      const cleanedCategory = sanitizeCategoryName(rawCategory);
+      if (cleanedCategory !== rawCategory) {
+        next.category = cleanedCategory || '기타';
         next.youthProjectTag = true;
         changed = true;
       }
