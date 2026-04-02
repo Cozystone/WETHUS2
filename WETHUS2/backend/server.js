@@ -1843,6 +1843,79 @@ app.post('/cloud/state', (req, res) => {
   return res.json({ ok: true, updatedAt: now });
 });
 
+app.get('/integrations/resources2', async (req, res) => {
+  try {
+    const projectId = String(req.query?.projectId || '').trim();
+    const provider = String(req.query?.provider || '').trim();
+    const resourceProvider = String(req.query?.resourceProvider || '').trim();
+    const folderId = String(req.query?.folderId || 'root').trim() || 'root';
+    const q = String(req.query?.q || '').trim().toLowerCase();
+    if (!projectId || !provider) return res.status(400).json({ ok: false, error: 'projectId/provider required' });
+
+    if (provider !== 'google') return res.json({ ok: true, rows: [] });
+
+    const rows = readIntegrations().filter(r => r.project_id === projectId && r.provider === 'google' && r.status === 'connected');
+    const account = rows.find(r => r.integration_type === 'account');
+    const token = String(account?._token_demo_only || '').trim();
+    if (!token) return res.status(400).json({ ok: false, error: 'google account token missing' });
+
+    const wantDocs = resourceProvider === 'google_docs';
+    const wantSheets = resourceProvider === 'google_sheets';
+
+    const url = new URL('https://www.googleapis.com/drive/v3/files');
+    url.searchParams.set('q', `'${folderId}' in parents and trashed=false`);
+    url.searchParams.set('orderBy', 'folder,name_natural');
+    url.searchParams.set('pageSize', '100');
+    url.searchParams.set('supportsAllDrives', 'true');
+    url.searchParams.set('includeItemsFromAllDrives', 'true');
+    url.searchParams.set('fields', 'files(id,name,mimeType,webViewLink,modifiedTime,shortcutDetails)');
+
+    const r = await fetch(url.toString(), { headers: { Authorization: `Bearer ${token}` } });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) return res.status(r.status).json({ ok: false, error: j?.error?.message || 'google list failed' });
+
+    const files = Array.isArray(j.files) ? j.files : [];
+    const out = [];
+
+    for (const f of files) {
+      const mime = String(f.mimeType || '');
+      const name = String(f.name || f.id || '');
+
+      if (mime === 'application/vnd.google-apps.folder') {
+        out.push({ id: f.id, name, kind: 'folder', url: f.webViewLink || '', modifiedAt: f.modifiedTime || '' });
+        continue;
+      }
+
+      const isDoc = mime === 'application/vnd.google-apps.document';
+      const isSheet = mime === 'application/vnd.google-apps.spreadsheet';
+      const isShortcut = mime === 'application/vnd.google-apps.shortcut';
+
+      if (isDoc && wantDocs) {
+        out.push({ id: f.id, name, kind: 'file', url: f.webViewLink || '', modifiedAt: f.modifiedTime || '' });
+        continue;
+      }
+      if (isSheet && wantSheets) {
+        out.push({ id: f.id, name, kind: 'file', url: f.webViewLink || '', modifiedAt: f.modifiedTime || '' });
+        continue;
+      }
+
+      if (isShortcut) {
+        const targetId = String(f.shortcutDetails?.targetId || '').trim();
+        const targetMime = String(f.shortcutDetails?.targetMimeType || '').trim();
+        const okTarget = (wantDocs && targetMime === 'application/vnd.google-apps.document') || (wantSheets && targetMime === 'application/vnd.google-apps.spreadsheet');
+        if (targetId && okTarget) {
+          out.push({ id: targetId, name: `${name} (바로가기)`, kind: 'file', url: f.webViewLink || '', modifiedAt: f.modifiedTime || '' });
+        }
+      }
+    }
+
+    const filtered = q ? out.filter(x => String(x.name || '').toLowerCase().includes(q)) : out;
+    return res.json({ ok: true, rows: filtered });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'resources2 failed' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`WETHUS auth backend listening on :${PORT}`);
 });
