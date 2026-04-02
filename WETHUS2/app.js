@@ -1040,8 +1040,18 @@
         const j = await r.json().catch(() => ({}));
         if (j?.state && typeof j.state === 'object') {
           remoteState = j.state;
-          break;
         }
+        if (Array.isArray(j?.globalProjects) && j.globalProjects.length) {
+          const local = load();
+          const m = new Map((local.projects || []).map(p => [String(p.id), p]));
+          for (const gp of j.globalProjects) {
+            if (!gp?.id) continue;
+            m.set(String(gp.id), { ...m.get(String(gp.id)), ...gp });
+          }
+          local.projects = Array.from(m.values());
+          try { localStorage.setItem(KEY, JSON.stringify(local)); } catch (_) {}
+        }
+        if (remoteState) break;
       } catch (_) {}
     }
 

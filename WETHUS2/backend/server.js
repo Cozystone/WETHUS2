@@ -134,6 +134,8 @@ function readExternalIdentityMaps() { return readCollection(EXTERNAL_IDENTITIES_
 function writeExternalIdentityMaps(rows) { writeCollection(EXTERNAL_IDENTITIES_DB, 'maps', rows); }
 function readCloudStates() { return readCollection(CLOUD_STATE_DB, 'states'); }
 function writeCloudStates(rows) { writeCollection(CLOUD_STATE_DB, 'states', rows); }
+function readCloudProjects() { return readCollection(CLOUD_PROJECTS_DB, 'projects'); }
+function writeCloudProjects(rows) { writeCollection(CLOUD_PROJECTS_DB, 'projects', rows); }
 function normEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
@@ -1820,7 +1822,8 @@ app.get('/cloud/state', (req, res) => {
   if (!email) return res.status(400).json({ ok: false, error: 'email required' });
   const rows = readCloudStates();
   const row = rows.find(r => normEmail(r.email) === email) || null;
-  return res.json({ ok: true, state: row?.state || null, updatedAt: row?.updatedAt || null });
+  const globalProjects = readCloudProjects();
+  return res.json({ ok: true, state: row?.state || null, updatedAt: row?.updatedAt || null, globalProjects });
 });
 
 app.post('/cloud/state', (req, res) => {
@@ -1840,6 +1843,18 @@ app.post('/cloud/state', (req, res) => {
   if (idx >= 0) rows[idx] = next;
   else rows.push(next);
   writeCloudStates(rows);
+
+  // 공개 프로젝트 풀 업데이트 (계정 간 탐색 공통 노출)
+  const incoming = Array.isArray(state?.projects) ? state.projects : [];
+  const globals = readCloudProjects();
+  const map = new Map(globals.map(p => [String(p.id), p]));
+  for (const p of incoming) {
+    if (!p?.id) continue;
+    if (p?.moderationStatus === 'rejected' || p?.moderationStatus === 'manual_review') continue;
+    map.set(String(p.id), { ...map.get(String(p.id)), ...p, _updatedAt: now });
+  }
+  writeCloudProjects(Array.from(map.values()));
+
   return res.json({ ok: true, updatedAt: now });
 });
 
