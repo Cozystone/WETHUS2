@@ -202,7 +202,7 @@
 
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=20260409-101"></script>
+  <script src="app.js?v=20260409-102"></script>
   <script>
     const msg = document.getElementById('authMsg');
     const tabLogin = document.getElementById('tabLogin');
@@ -255,6 +255,12 @@
     const policyOpsChk = document.getElementById('policyOpsChk');
     const policyPrivacyChk = document.getElementById('policyPrivacyChk');
     const policyDoneLabel = document.getElementById('policyDoneLabel');
+    const pwModal = document.getElementById('pwModal');
+    const pwCloseBtn = document.getElementById('pwCloseBtn');
+    const pwModalInput = document.getElementById('pwModalInput');
+    const pwModalMsg = document.getElementById('pwModalMsg');
+    const pwModalSkip = document.getElementById('pwModalSkip');
+    const pwModalSubmit = document.getElementById('pwModalSubmit');
 
     if (!window.WETHUS) {
       msg.textContent = '앱 로딩 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.';
@@ -277,6 +283,46 @@
       loginForm.style.display = isLogin ? 'grid' : 'none';
       signupForm.style.display = isLogin ? 'none' : 'grid';
       msg.textContent = '';
+    }
+
+    function askPasswordModal() {
+      return new Promise((resolve) => {
+        if (!pwModal) return resolve('');
+        pwModal.classList.add('open');
+        pwModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        pwModalInput.value = '';
+        pwModalMsg.textContent = '';
+
+        const close = (value = '') => {
+          pwModal.classList.remove('open');
+          pwModal.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+          pwCloseBtn?.removeEventListener('click', onClose);
+          pwModalSkip?.removeEventListener('click', onSkip);
+          pwModalSubmit?.removeEventListener('click', onSubmit);
+          pwModal?.removeEventListener('click', onBackdrop);
+          resolve(value);
+        };
+        const onClose = () => close('');
+        const onSkip = () => close('');
+        const onBackdrop = (e) => { if (e.target?.getAttribute('data-close-pw') === 'true') close(''); };
+        const onSubmit = () => {
+          const v = String(pwModalInput.value || '').trim();
+          if (!v) { pwModalMsg.textContent = '비밀번호를 입력해주세요.'; return; }
+          if (v.length < 8 || !/[A-Za-z]/.test(v) || !/[0-9]/.test(v)) {
+            pwModalMsg.textContent = '영문+숫자 포함 8자 이상으로 입력해주세요.';
+            return;
+          }
+          close(v);
+        };
+
+        pwCloseBtn?.addEventListener('click', onClose);
+        pwModalSkip?.addEventListener('click', onSkip);
+        pwModalSubmit?.addEventListener('click', onSubmit);
+        pwModal?.addEventListener('click', onBackdrop);
+        setTimeout(() => pwModalInput?.focus(), 10);
+      });
     }
 
     function syncPolicyConfirmState() {
@@ -392,11 +438,17 @@
               }) || cloudUser;
             }
             if (!data?.hasPassword) {
-              const pw = prompt('일반 로그인에서도 쓰실 앱 비밀번호를 설정하세요.\n(영문+숫자 포함 8자 이상)');
-              if (pw && String(pw).trim()) {
-                try {
-                  await postWithFallback(GOOGLE_LINK_PASSWORD_ENDPOINTS, { credential, password: String(pw).trim() });
-                } catch (_) {}
+              const userEmail = String((data?.user?.email || cloudUser?.email || localUser?.email || payload?.email || '')).toLowerCase();
+              const onceKey = `wethus_pw_linked_${userEmail}`;
+              const alreadySet = localStorage.getItem(onceKey) === '1';
+              if (!alreadySet) {
+                const pw = await askPasswordModal();
+                if (pw && String(pw).trim()) {
+                  try {
+                    await postWithFallback(GOOGLE_LINK_PASSWORD_ENDPOINTS, { credential, password: String(pw).trim() });
+                    localStorage.setItem(onceKey, '1');
+                  } catch (_) {}
+                }
               }
             }
           }
@@ -721,6 +773,33 @@ tGoogleSignIn();
       if (p === '0904') {
         WETHUS.setCurrentUser('dev-temp', true);
         msg.textContent = '개발자모드로 진입합니다...';
+        setTimeout(() => { location.href = 'index.html'; }, 250);
+      } else {
+        msg.textContent = '비밀번호가 올바르지 않습니다.';
+      }
+    });
+
+    window.addEventListener('load', async () => {
+      try {
+        const cfg = await getWithFallback(GOOGLE_CONFIG_ENDPOINTS);
+        const cid = String(cfg?.clientId || '').trim();
+        if (cid) GOOGLE_CLIENT_ID = cid;
+      } catch (_) {}
+      initGoogleSignIn();
+    }, { once: true });
+  </script>
+</body>
+</html>
+tGoogleSignIn();
+    }, { once: true });
+  </script>
+</body>
+</html>
+nce: true });
+  </script>
+</body>
+</html>
+��로 진입합니다...';
         setTimeout(() => { location.href = 'index.html'; }, 250);
       } else {
         msg.textContent = '비밀번호가 올바르지 않습니다.';

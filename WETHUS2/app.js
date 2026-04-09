@@ -559,8 +559,12 @@
         next.youthProjectTag = true;
         changed = true;
       }
+      const founder = Array.isArray(parsed.users) ? parsed.users.find(u => u.id === next.founderId) : null;
+      if (!next.founderEmail && founder?.email) {
+        next.founderEmail = String(founder.email).toLowerCase();
+        changed = true;
+      }
       if (next.youthProjectTag === undefined) {
-        const founder = Array.isArray(parsed.users) ? parsed.users.find(u => u.id === next.founderId) : null;
         next.youthProjectTag = next.founderId === 'system' ? true : !!(founder && normalizeYouthTag(founder));
         changed = true;
       }
@@ -1136,7 +1140,12 @@
           const m = new Map((local.projects || []).map(p => [String(p.id), p]));
           for (const gp of j.globalProjects) {
             if (!gp?.id) continue;
-            m.set(String(gp.id), { ...m.get(String(gp.id)), ...gp });
+            const merged = { ...m.get(String(gp.id)), ...gp };
+            if (!merged.founderEmail && merged.founderId) {
+              const founder = (local.users || []).find(u => u.id === merged.founderId);
+              if (founder?.email) merged.founderEmail = String(founder.email).toLowerCase();
+            }
+            m.set(String(gp.id), merged);
           }
           local.projects = Array.from(m.values());
           try { localStorage.setItem(KEY, JSON.stringify(local)); } catch (_) {}
