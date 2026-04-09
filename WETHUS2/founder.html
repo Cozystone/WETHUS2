@@ -179,31 +179,31 @@
           <input id="customCategory" name="customCategory" placeholder="예: Education, Research, Community" />
         </label>
 
-        <label>프로젝트 설명 (공백 제외 300자 이상)
+        <label>프로젝트 설명 (공백 제외 100자 이상)
           <div class="textarea-wrap">
-            <span class="char-counter" data-counter="description" data-min="300">0/300</span>
-            <textarea required name="description" data-min="300" placeholder="어떤 문제를 해결하려는 프로젝트인지, 누구를 위한 프로젝트인지, 실행 범위를 구체적으로 적어주세요."></textarea>
+            <span class="char-counter" data-counter="description" data-min="100">0/100</span>
+            <textarea required name="description" data-min="100" placeholder="어떤 문제를 해결하려는 프로젝트인지, 누구를 위한 프로젝트인지, 실행 범위를 구체적으로 적어주세요."></textarea>
           </div>
         </label>
 
-        <label>동기 (공백 제외 200자 이상)
+        <label>동기 (공백 제외 100자 이상)
           <div class="textarea-wrap">
-            <span class="char-counter" data-counter="motivation" data-min="200">0/200</span>
-            <textarea required name="motivation" data-min="200" placeholder="왜 이 프로젝트를 시작하는지, 왜 지금 해야 하는지, 본인의 진짜 동기를 적어주세요."></textarea>
+            <span class="char-counter" data-counter="motivation" data-min="100">0/100</span>
+            <textarea required name="motivation" data-min="100" placeholder="왜 이 프로젝트를 시작하는지, 왜 지금 해야 하는지, 본인의 진짜 동기를 적어주세요."></textarea>
           </div>
         </label>
 
-        <label>예상 산출물 (공백 제외 200자 이상)
+        <label>예상 산출물 (공백 제외 100자 이상)
           <div class="textarea-wrap">
-            <span class="char-counter" data-counter="output" data-min="200">0/200</span>
-            <textarea required name="output" data-min="200" placeholder="최종 결과물 형태를 명확히 써주세요. 예: 10분 단편영화 1편, 정책 제안서 PDF, MVP 웹앱 배포 링크 등"></textarea>
+            <span class="char-counter" data-counter="output" data-min="100">0/100</span>
+            <textarea required name="output" data-min="100" placeholder="최종 결과물 형태를 명확히 써주세요. 예: 10분 단편영화 1편, 정책 제안서 PDF, MVP 웹앱 배포 링크 등"></textarea>
           </div>
         </label>
 
-        <label>첫 2주 실행 계획 (공백 제외 200자 이상)
+        <label>첫 2주 실행 계획 (공백 제외 100자 이상)
           <div class="textarea-wrap">
-            <span class="char-counter" data-counter="plan" data-min="200">0/200</span>
-            <textarea required name="plan" data-min="200" placeholder="1~2주차에 실제로 무엇을, 어떤 순서로, 누가 수행할지 작성해주세요. 일정/산출물/검증 방법까지 포함하면 좋아요."></textarea>
+            <span class="char-counter" data-counter="plan" data-min="100">0/100</span>
+            <textarea required name="plan" data-min="100" placeholder="1~2주차에 실제로 무엇을, 어떤 순서로, 누가 수행할지 작성해주세요. 일정/산출물/검증 방법까지 포함하면 좋아요."></textarea>
           </div>
         </label>
 
@@ -337,6 +337,7 @@
     const coverPreview = document.getElementById('coverPreview');
     const previewBtn = document.getElementById('previewBtn');
     const draftSaveBtn = document.getElementById('draftSaveBtn');
+    const submitBtn = document.getElementById('submitBtn');
     const genImageBtn = document.getElementById('genImageBtn');
     const regenImageBtn = document.getElementById('regenImageBtn');
     const removeImageBtn = document.getElementById('removeImageBtn');
@@ -355,6 +356,7 @@
 
     let imageData = '';
     let aiImageSelected = false;
+    let founderSubmitting = false;
 
     function noSpaceLen(v) { return String(v || '').replace(/\s/g, '').length; }
 
@@ -459,7 +461,7 @@
         }
       }
 
-      const limits = { description: 300, motivation: 200, output: 200, plan: 200 };
+      const limits = { description: 100, motivation: 100, output: 100, plan: 100 };
       for (const [name, min] of Object.entries(limits)) {
         const len = noSpaceLen(form.elements[name].value);
         if (len < min) {
@@ -897,6 +899,10 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (founderSubmitting) return;
+      founderSubmitting = true;
+      submitBtn.disabled = true;
+      submitBtn.textContent = '신청 처리 중...';
       try {
         if (!validateStrict(true)) return;
 
@@ -927,7 +933,7 @@
           finalImage = `https://picsum.photos/seed/wethus-cover-${encodeURIComponent(title)}-${Date.now()}/1200/700`;
         }
 
-        const created = WETHUS.addProject({
+        WETHUS.addProject({
           title: fd.get('title'),
           category: resolvedCategory(),
           summary,
@@ -975,6 +981,10 @@
         location.href = 'index.html?v=founder-submitted';
       } catch (err) {
         msg.textContent = err?.message || '신청 처리 중 오류가 발생했습니다. 다시 시도해주세요.';
+      } finally {
+        founderSubmitting = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = '신청하기';
       }
     });
   </script>

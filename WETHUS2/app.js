@@ -346,17 +346,20 @@
 
     if (/^(startup|스타트업|창업|business|비즈니스|app|앱)$/i.test(raw)) return 'Startup';
     if (/^(film|영상|영화|creative|크리에이티브|art|예술|culture|문화|전시|출판)$/i.test(raw)) return 'Film';
-    if (/^(policy|정책|campaign|캠페인|law|법|society|사회)$/i.test(raw)) return 'Policy';
+    if (/^(policy|정책|law|법|society|사회)$/i.test(raw)) return 'Policy';
+    if (/^(campaign|캠페인)$/i.test(raw)) return 'Campaign';
     if (/^(math|sci|science|research|data|수학|과학|연구|데이터)$/i.test(raw)) return 'Science';
 
     if (/(스타트업|창업|비즈니스|app|앱|mvp|startup|business)/.test(c)) return 'Startup';
     if (/(film|creative|art|culture|영화|영상|전시|출판|예술|문화)/.test(c)) return 'Film';
-    if (/(policy|campaign|law|society|정책|캠페인|법|사회)/.test(c)) return 'Policy';
+    if (/(policy|law|society|정책|법|사회)/.test(c)) return 'Policy';
+    if (/(campaign|캠페인)/.test(c)) return 'Campaign';
     if (/(math|sci|science|research|data|수학|과학|연구|데이터|경진대회)/.test(c)) return 'Science';
 
     if (/(스타트업|창업|비즈니스|app|앱|mvp|startup|business)/.test(blob)) return 'Startup';
     if (/(영화|영상|전시|출판|예술|문화|film|creative|art|culture)/.test(blob)) return 'Film';
-    if (/(정책|캠페인|법|사회|policy|campaign|law|society)/.test(blob)) return 'Policy';
+    if (/(정책|법|사회|policy|law|society)/.test(blob)) return 'Policy';
+    if (/(캠페인|campaign)/.test(blob)) return 'Campaign';
     if (/(수학|과학|연구|데이터|경진대회|math|sci|science|research|data)/.test(blob)) return 'Science';
 
     return 'Startup';
@@ -2060,6 +2063,7 @@
         'ad.launch.title': 'Create Campaign',
         'ad.launch.desc': 'Start a promotion campaign quickly. (MVP form)',
         'ad.launch.name': 'Campaign Name',
+        'ad.launch.name.placeholder': 'e.g., WETHUS Startup Recruitment Campaign',
         'ad.launch.target': 'Target Category',
         'ad.launch.budget': 'Daily Budget (KRW)',
         'ad.launch.copy': 'Ad Copy',
@@ -2211,3 +2215,4 @@
     askGemini
   };
 })();
+;
