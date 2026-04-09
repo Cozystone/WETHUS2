@@ -1819,52 +1819,60 @@ app.post('/auth/logout', (req, res) => {
 });
 
 app.get('/cloud/state', (req, res) => {
-  const email = normEmail(req.query?.email);
-  if (!email) return res.status(400).json({ ok: false, error: 'email required' });
-  const rows = readCloudStates();
-  const row = rows.find(r => normEmail(r.email) === email) || null;
-  let globalProjects = [];
-  try { globalProjects = readCloudProjects(); } catch (_) { globalProjects = []; }
-  return res.json({ ok: true, state: row?.state || null, updatedAt: row?.updatedAt || null, globalProjects });
+  try {
+    const email = normEmail(req.query?.email);
+    if (!email) return res.status(400).json({ ok: false, error: 'email required' });
+    const rows = readCloudStates();
+    const row = rows.find(r => normEmail(r.email) === email) || null;
+    let globalProjects = [];
+    try { globalProjects = readCloudProjects(); } catch (_) { globalProjects = []; }
+    return res.json({ ok: true, state: row?.state || null, updatedAt: row?.updatedAt || null, globalProjects });
+  } catch (e) {
+    return res.json({ ok: true, state: null, updatedAt: null, globalProjects: [], degraded: true, error: e?.message || 'cloud state fallback' });
+  }
 });
 
 app.post('/cloud/state', (req, res) => {
-  const email = normEmail(req.body?.email);
-  const state = req.body?.state;
-  if (!email || !state || typeof state !== 'object') return res.status(400).json({ ok: false, error: 'email/state required' });
+  try {
+    const email = normEmail(req.body?.email);
+    const state = req.body?.state;
+    if (!email || !state || typeof state !== 'object') return res.status(400).json({ ok: false, error: 'email/state required' });
 
-  const rows = readCloudStates();
-  const now = new Date().toISOString();
-  const idx = rows.findIndex(r => normEmail(r.email) === email);
-  const next = {
-    id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
-    email,
-    state,
-    updatedAt: now
-  };
-  if (idx >= 0) rows[idx] = next;
-  else rows.push(next);
-  writeCloudStates(rows);
+    const rows = readCloudStates();
+    const now = new Date().toISOString();
+    const idx = rows.findIndex(r => normEmail(r.email) === email);
+    const next = {
+      id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
+      email,
+      state,
+      updatedAt: now
+    };
+    if (idx >= 0) rows[idx] = next;
+    else rows.push(next);
+    writeCloudStates(rows);
 
-  // 공개 프로젝트 풀 업데이트 (계정 간 탐색 공통 노출)
-  const incoming = Array.isArray(state?.projects) ? state.projects : [];
-  let globals = [];
-  try { globals = readCloudProjects(); } catch (_) { globals = []; }
-  const map = new Map(globals.map(p => [String(p.id), p]));
-  for (const p of incoming) {
-    if (!p?.id) continue;
-    if (p?.moderationStatus === 'rejected' || p?.moderationStatus === 'manual_review') continue;
-    const key = String(p.id);
-    const prev = map.get(key) || {};
-    const prevTs = new Date(prev.updatedAt || prev._updatedAt || prev.createdAt || 0).getTime() || 0;
-    const nextTs = new Date(p.updatedAt || p.createdAt || now).getTime() || Date.now();
-    if (nextTs >= prevTs) {
-      map.set(key, { ...prev, ...p, _updatedAt: now });
+    // 공개 프로젝트 풀 업데이트 (계정 간 탐색 공통 노출)
+    const incoming = Array.isArray(state?.projects) ? state.projects : [];
+    let globals = [];
+    try { globals = readCloudProjects(); } catch (_) { globals = []; }
+    const map = new Map(globals.map(p => [String(p.id), p]));
+    for (const p of incoming) {
+      if (!p?.id) continue;
+      if (p?.moderationStatus === 'rejected') continue;
+      const key = String(p.id);
+      const prev = map.get(key) || {};
+      const prevTs = new Date(prev.updatedAt || prev._updatedAt || prev.createdAt || 0).getTime() || 0;
+      const nextTs = new Date(p.updatedAt || p.createdAt || now).getTime() || Date.now();
+      if (nextTs >= prevTs) {
+        map.set(key, { ...prev, ...p, _updatedAt: now });
+      }
     }
-  }
-  writeCloudProjects(Array.from(map.values()));
+    try { writeCloudProjects(Array.from(map.values())); } catch (_) {}
 
-  return res.json({ ok: true, updatedAt: now });
+    return res.json({ ok: true, updatedAt: now });
+  } catch (e) {
+    return res.json({ ok: true, updatedAt: new Date().toISOString(), degraded: true, error: e?.message || 'cloud save fallback' });
+  }
 });
 
 app.get('/integrations/resources2', async (req, res) => {

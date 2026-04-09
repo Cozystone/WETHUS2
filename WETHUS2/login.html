@@ -202,7 +202,7 @@
 
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=20260409-100"></script>
+  <script src="app.js?v=20260409-101"></script>
   <script>
     const msg = document.getElementById('authMsg');
     const tabLogin = document.getElementById('tabLogin');
@@ -348,7 +348,10 @@
         const seg = String(jwt || '').split('.')[1] || '';
         const base = seg.replace(/-/g, '+').replace(/_/g, '/');
         const pad = base.length % 4 ? '='.repeat(4 - (base.length % 4)) : '';
-        return JSON.parse(atob(base + pad));
+        const bin = atob(base + pad);
+        const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+        const json = new TextDecoder('utf-8').decode(bytes);
+        return JSON.parse(json);
       } catch (_) {
         return null;
       }
@@ -737,6 +740,10 @@ tGoogleSignIn();
 </html>
 tGoogleSignIn();
     }, { once: true });
+  </script>
+</body>
+</html>
+nce: true });
   </script>
 </body>
 </html>
