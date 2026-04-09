@@ -78,7 +78,8 @@ function ensureDb() {
   if (!fs.existsSync(STATUS_SNAPSHOTS_DB)) fs.writeFileSync(STATUS_SNAPSHOTS_DB, JSON.stringify({ snapshots: [] }, null, 2));
   if (!fs.existsSync(EXTERNAL_IDENTITIES_DB)) fs.writeFileSync(EXTERNAL_IDENTITIES_DB, JSON.stringify({ maps: [] }, null, 2));
   if (!fs.existsSync(CLOUD_STATE_DB)) fs.writeFileSync(CLOUD_STATE_DB, JSON.stringify({ states: [] }, null, 2));
-  if (!fs.existsSync(CLOUD_PROJECTS_DB)) fs.writeFileSync(CLOUD_PROJECTS_DB, JSON.stringify({ projects: [] }, null, 2));
+  const cp = cloudProjectsDbPath();
+  if (!fs.existsSync(cp)) fs.writeFileSync(cp, JSON.stringify({ projects: [] }, null, 2));
 }
 function readUsers() {
   ensureDb();
@@ -135,8 +136,15 @@ function readExternalIdentityMaps() { return readCollection(EXTERNAL_IDENTITIES_
 function writeExternalIdentityMaps(rows) { writeCollection(EXTERNAL_IDENTITIES_DB, 'maps', rows); }
 function readCloudStates() { return readCollection(CLOUD_STATE_DB, 'states'); }
 function writeCloudStates(rows) { writeCollection(CLOUD_STATE_DB, 'states', rows); }
-function readCloudProjects() { return readCollection(CLOUD_PROJECTS_DB, 'projects'); }
-function writeCloudProjects(rows) { writeCollection(CLOUD_PROJECTS_DB, 'projects', rows); }
+function cloudProjectsDbPath() {
+  return path.join(DATA_DIR, 'cloud-projects.json');
+}
+function readCloudProjects() {
+  return readCollection(cloudProjectsDbPath(), 'projects');
+}
+function writeCloudProjects(rows) {
+  writeCollection(cloudProjectsDbPath(), 'projects', rows);
+}
 function normEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
