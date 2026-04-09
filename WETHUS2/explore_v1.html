@@ -442,6 +442,7 @@ function renderList(items) {
     }
 
     function openModal(data) {
+      try { WETHUS.recordProjectView && data?.id && WETHUS.recordProjectView(data.id); } catch (_) {}
       modalTitle.textContent = data.title || '';
       renderModalDate(data);
       modalCategory.textContent = data.category || '';

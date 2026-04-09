@@ -909,6 +909,62 @@
     return load().projects.filter(p => Array.isArray(p.likedBy) && p.likedBy.includes(actor));
   }
 
+  function recordProjectView(projectId) {
+    const s = load();
+    const actor = currentActorId();
+    if (!actor || !projectId) return false;
+    s.projectViews = Array.isArray(s.projectViews) ? s.projectViews : [];
+    s.projectViews.push({ id: uid(), userId: actor, projectId: String(projectId), createdAt: new Date().toISOString() });
+    s.projectViews = s.projectViews.slice(-3000);
+    save(s);
+    return true;
+  }
+
+  function getRecommendedProjects(limit = 6) {
+    const s = load();
+    const actor = currentActorId();
+    const max = Math.max(1, Number(limit || 6));
+    const all = Array.isArray(s.projects) ? s.projects.slice() : [];
+    if (!actor) return all.sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0, max);
+
+    const likesSet = new Set((all.filter(p => Array.isArray(p.likedBy) && p.likedBy.includes(actor)).map(p => p.id)));
+    const bmSet = new Set((s.bookmarks || []).filter(b => b.userId === actor).map(b => b.projectId));
+    const appliedSet = new Set((s.applications || []).filter(a => a.userId === actor && a.status === 'applied').map(a => a.projectId));
+    const views = (s.projectViews || []).filter(v => v.userId === actor);
+
+    const projectById = new Map(all.map(p => [String(p.id), p]));
+    const catScore = {};
+    for (const v of views) {
+      const p = projectById.get(String(v.projectId));
+      if (!p?.category) continue;
+      catScore[p.category] = (catScore[p.category] || 0) + 1;
+    }
+    for (const p of all) {
+      if (likesSet.has(p.id) || bmSet.has(p.id) || appliedSet.has(p.id)) {
+        if (p.category) catScore[p.category] = (catScore[p.category] || 0) + 3;
+      }
+    }
+
+    const now = Date.now();
+    const ranked = all
+      .filter(p => !appliedSet.has(p.id))
+      .map(p => {
+        const likes = Number(p.likes || 0);
+        const comments = Array.isArray(p.comments) ? p.comments.length : 0;
+        const ageDays = Math.max(1, (now - new Date(p.createdAt || now).getTime()) / 86400000);
+        const freshness = Math.max(0, 1 - ageDays / 21);
+        const popularity = Math.min(1, (likes * 0.6 + comments * 1.1) / 42);
+        const affinity = Math.min(1, Number(catScore[p.category] || 0) / 8);
+        const interactionBoost = likesSet.has(p.id) || bmSet.has(p.id) ? 0.2 : 0;
+        const score = affinity * 0.46 + popularity * 0.28 + freshness * 0.22 + interactionBoost + Math.random() * 0.02;
+        return { ...p, _recScore: score };
+      })
+      .sort((a,b) => b._recScore - a._recScore)
+      .slice(0, max);
+
+    return ranked;
+  }
+
   function addComment(projectId, text) {
     const s = load();
     const target = s.projects.find(p => p.id === projectId);
@@ -2168,6 +2224,8 @@
     toggleBookmark,
     myBookmarkedProjects,
     myLikedProjects,
+    recordProjectView,
+    getRecommendedProjects,
     addComment,
     updateProject,
     deleteProject,
