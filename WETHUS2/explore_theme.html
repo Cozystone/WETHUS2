@@ -491,7 +491,7 @@
                   <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
                 </div>
                 <p class="mini-summary ${isYouth ? 'youth-theme' : ''}" style="margin:0 0 6px;">${miniSummaryText(p)}</p>
-                <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}</div>
+                <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}${p.neededRoles ? ` · 필요:${p.neededRoles}` : ''}${p.neededAgeGroup ? ` · ${p.neededAgeGroup}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
               </div>
               <button class="apply-btn ${mine ? 'mine' : (WETHUS.hasApplied(p.id)?'applied':'')}" data-apply="${p.id}">${label}</button>
             </div>
@@ -524,7 +524,7 @@
             </div>
             <p class="card-summary ${isYouth ? 'youth-theme' : ''}">${miniSummaryText(p)}</p>
             ${renderTeam(p.teamMembers, p)}
-            <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}</div>
+            <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}${p.neededRoles ? ` · 필요:${p.neededRoles}` : ''}${p.neededAgeGroup ? ` · ${p.neededAgeGroup}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
             <div class="card-bottom-row">
               <div class="card-social"><span>${likedSymbol(p)} ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
               <button class="apply-btn ${mine ? 'mine' : (WETHUS.hasApplied(p.id)?'applied':'')}" data-apply="${p.id}">${label}</button>

@@ -207,9 +207,28 @@
           </div>
         </label>
 
-        <label>팀 구성원
+        <label>팀 구성원/역할
           <input name="roles" placeholder="예: 대표 1 · 기획 1 · 디자인 1 · 개발 2" required />
         </label>
+
+        <label>현재 필요한 역할(선택)
+          <input name="neededRoles" placeholder="예: 프론트 1, 영상편집 1, 리서처 1" />
+        </label>
+
+        <label>필요 나이대(선택)
+          <select name="neededAgeGroup" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
+            <option value="">제한 없음</option><option>중학생만</option><option>고등학생만</option><option>중·고등학생</option><option>대학생</option><option>혼합</option>
+          </select>
+        </label>
+
+        <div class="form-row">
+          <label style="flex:1;min-width:180px;">목표 정원(선택)
+            <input name="targetCapacity" type="number" min="1" max="100" placeholder="예: 5" />
+          </label>
+          <label style="flex:1;min-width:180px;">현재 인원(선택)
+            <input name="currentMembers" type="number" min="1" max="100" placeholder="예: 2" />
+          </label>
+        </div>
 
         <label>팀 인원
           <select name="teamSize" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
@@ -431,6 +450,12 @@
       setImageError('');
 
       const requiredFields = ['title','category','description','motivation','output','plan','roles','teamSize','status','duration'];
+      const targetCap = Number(form.elements.targetCapacity?.value || 0);
+      const currentMembers = Number(form.elements.currentMembers?.value || 0);
+      if (targetCap && currentMembers && currentMembers > targetCap) {
+        if (showMessage) msg.textContent = '현재 인원은 목표 정원보다 클 수 없습니다.';
+        return false;
+      }
       for (const key of requiredFields) {
         const el = form.elements[key];
         if (!el || !String(el.value || '').trim()) {
@@ -675,6 +700,10 @@
       form.elements.output.value = d.output || '';
       form.elements.plan.value = d.plan || '';
       form.elements.roles.value = d.roles || '';
+      if (form.elements.neededRoles) form.elements.neededRoles.value = d.neededRoles || '';
+      if (form.elements.neededAgeGroup) form.elements.neededAgeGroup.value = d.neededAgeGroup || '';
+      if (form.elements.targetCapacity) form.elements.targetCapacity.value = d.targetCapacity || '';
+      if (form.elements.currentMembers) form.elements.currentMembers.value = d.currentMembers || '';
       form.elements.teamSize.value = d.teamSize || '3인';
       form.elements.status.value = d.status || '기획 중';
       form.elements.duration.value = d.duration || '';

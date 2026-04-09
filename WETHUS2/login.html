@@ -93,11 +93,18 @@
     <section class="auth-card">
       <a href="#" id="authCloseBtn" class="auth-close" aria-label="닫기">×</a>
       <h1>WETHUS 계정</h1>
-      <p>로그인하거나, 회원가입 후 바로 프로젝트를 시작할 수 있습니다.</p>
+      <p>기본 로그인은 Google을 권장합니다. 카카오/핫메일/iCloud 등 모든 이메일 계정도 아래 이메일 로그인으로 이용할 수 있습니다.</p>
+
+      <div id="googleAuthWrap" style="display:grid;gap:8px;margin:4px 0 14px;">
+        <p class="note" style="margin:0;text-align:center;color:#d0d0d0;font-weight:700;">권장: Google로 1초 로그인</p>
+        <div id="g_id_onload" style="display:none;"></div>
+        <div id="googleBtn" style="display:flex;justify-content:center;"></div>
+        <p id="googleHint" class="note" style="margin:0;text-align:center;"></p>
+      </div>
 
       <div class="auth-tabs">
-        <button id="tabLogin" class="btn btn--secondary auth-tab active" type="button">로그인</button>
-        <button id="tabSignup" class="btn btn--secondary auth-tab" type="button">회원가입</button>
+        <button id="tabLogin" class="btn btn--secondary auth-tab active" type="button">이메일 로그인</button>
+        <button id="tabSignup" class="btn btn--secondary auth-tab" type="button">이메일 회원가입</button>
       </div>
 
       <form class="auth-form" id="loginForm" novalidate>
@@ -139,14 +146,8 @@
 
       <div class="auth-sep" style="display:flex;align-items:center;gap:10px;margin:14px 0 10px;color:#8f8f8f;font-size:.82rem;">
         <span style="flex:1;height:1px;background:#2a2a2a;"></span>
-        <span>또는 소셜 로그인</span>
+        <span>다른 계정(카카오/핫메일/iCloud 포함)은 이메일 로그인 사용</span>
         <span style="flex:1;height:1px;background:#2a2a2a;"></span>
-      </div>
-
-      <div id="googleAuthWrap" style="display:grid;gap:8px;margin-bottom:12px;">
-        <div id="g_id_onload" style="display:none;"></div>
-        <div id="googleBtn" style="display:flex;justify-content:center;"></div>
-        <p id="googleHint" class="note" style="margin:0;text-align:center;"></p>
       </div>
 
       <div class="dev-row">

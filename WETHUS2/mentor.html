@@ -239,11 +239,12 @@
       consultTitle.textContent = `${mentor.name} 멘토 자문 요청`;
       const myProjects = WETHUS.myProjects();
       if (!myProjects.length) {
-        mentorMsg.textContent = '먼저 내 프로젝트를 1개 이상 만들어야 자문 요청을 보낼 수 있어요.';
-        return;
+        consultProjectSelect.innerHTML = '<option value="__idea__">아이디어 단계(프로젝트 없음)</option>';
+      } else {
+        consultProjectSelect.innerHTML = `<option value="__idea__">아이디어 단계(프로젝트 없음)</option>` + myProjects.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
       }
-      consultProjectSelect.innerHTML = myProjects.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
       consultNote.value = '';
+      if (consultNoteMsg) consultNoteMsg.textContent = '';
       consultModal.classList.add('open');
       consultModal.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
@@ -275,6 +276,7 @@
                 <h3 class="mentor-name">${m.name} 멘토</h3>
                 <p class="mentor-sub">${m.title}</p>
                 <p class="mentor-role">${m.role}</p>
+                <p class="mentor-sub" style="margin-top:4px;color:#d0d0d0;">경력: ${m.career || '경력 정보 준비중'}</p>
                 <p class="mentor-load">자문중인 팀 ${m.activeTeams}/${m.capacity} ${isFull ? '· 정원마감(대기가능)' : ''}</p>
               </div>
               <div class="mentor-actions">
@@ -350,6 +352,10 @@
     tabAi.addEventListener('click', ()=>setTab('ai'));
     mentorSearch.addEventListener('input', renderMentors);
 
+    consultNote?.addEventListener('input', () => {
+      if ((consultNote.value || '').trim().length >= 10 && consultNoteMsg) consultNoteMsg.textContent = '';
+    });
+
     consultClose?.addEventListener('click', closeConsultModal);
     consultModal?.addEventListener('click', (e) => {
       if (e.target && e.target.getAttribute('data-close-consult') === 'true') closeConsultModal();
@@ -359,9 +365,15 @@
       const projectId = consultProjectSelect.value;
       const selected = (WETHUS.myProjects() || []).find(p => p.id === projectId);
       const note = (consultNote.value || '').trim();
-      if (!selected) { mentorMsg.textContent = '프로젝트를 선택해주세요.'; return; }
-      if (note.length < 10) { mentorMsg.textContent = '요청 내용을 조금 더 구체적으로 작성해주세요.'; return; }
-      const intro = `[자문 요청]\n프로젝트: ${selected.title}\n요청 내용: ${note}`;
+      const selectedTitle = projectId === '__idea__' ? '아이디어 단계(프로젝트 없음)' : (selected?.title || '선택한 프로젝트');
+      if (projectId !== '__idea__' && !selected) { mentorMsg.textContent = '프로젝트를 선택해주세요.'; return; }
+      if (note.length < 10) {
+        if (consultNoteMsg) consultNoteMsg.textContent = '요청 내용을 조금 더 구체적으로 작성해주세요. (최소 10자)';
+        consultNote.focus();
+        return;
+      }
+      if (consultNoteMsg) consultNoteMsg.textContent = '';
+      const intro = `[자문 요청]\n프로젝트: ${selectedTitle}\n요청 내용: ${note}`;
       await startDm(`${pendingConsultMentor.name} 멘토`, `human-mentor:${pendingConsultMentor.id}`, pendingConsultMentor.avatar || '', intro);
       closeConsultModal();
     });
@@ -370,14 +382,5 @@
     renderCategories();
     renderMentors();
   </script>
-</body>
-</html>
-eTab);
-    renderCategories();
-    renderMentors();
-  </script>
-</body>
-</html>
->
 </body>
 </html>
