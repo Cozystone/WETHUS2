@@ -80,6 +80,11 @@
         }
       });
 
+      const me = WETHUS.currentUser && WETHUS.currentUser();
+      if (me?.email && WETHUS.syncCloudState) {
+        WETHUS.syncCloudState(me.email).catch(() => {}).finally(() => render());
+        setTimeout(render, 1200);
+      }
       render();
     })();
   </script>

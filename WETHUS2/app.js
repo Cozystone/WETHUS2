@@ -1179,6 +1179,8 @@
 
   function startAutoCloudSync() {
     if (cloudAutoPullTimer) return;
+    const meNow = currentUser();
+    if (meNow?.email) syncCloudState(meNow.email).catch(() => {});
     cloudAutoPullTimer = setInterval(() => {
       const me = currentUser();
       if (!me?.email) return;
@@ -2193,6 +2195,7 @@
       applyLanguageUI();
       applyAuthReturnState();
       initNotifyToast();
+      startAutoCloudSync();
     });
   } else {
     ensureFavicon();
@@ -2202,6 +2205,7 @@
     applyLanguageUI();
     applyAuthReturnState();
     initNotifyToast();
+    startAutoCloudSync();
   }
 
   window.WETHUS = {
@@ -2273,4 +2277,3 @@
     askGemini
   };
 })();
-;

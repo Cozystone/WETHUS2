@@ -985,6 +985,11 @@
           moderationReason: moderation.reason || 'Founder 제출 건은 운영자 승인 후 탐색 탭에 반영됩니다.'
         });
 
+        try {
+          const me = WETHUS.currentUser && WETHUS.currentUser();
+          if (me?.email && WETHUS.syncCloudState) await WETHUS.syncCloudState(me.email);
+        } catch (_) {}
+
         msg.textContent = '신청 완료! 운영자 승인 후 탐색 탭에 반영됩니다. (검토 진행 알림을 확인해주세요)';
         try { sessionStorage.setItem('wethus_pending_toast', '신청완료 · 검토가 시작되었습니다'); } catch (_) {}
         localStorage.removeItem(DRAFT_KEY);

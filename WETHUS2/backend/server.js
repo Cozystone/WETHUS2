@@ -78,6 +78,7 @@ function ensureDb() {
   if (!fs.existsSync(STATUS_SNAPSHOTS_DB)) fs.writeFileSync(STATUS_SNAPSHOTS_DB, JSON.stringify({ snapshots: [] }, null, 2));
   if (!fs.existsSync(EXTERNAL_IDENTITIES_DB)) fs.writeFileSync(EXTERNAL_IDENTITIES_DB, JSON.stringify({ maps: [] }, null, 2));
   if (!fs.existsSync(CLOUD_STATE_DB)) fs.writeFileSync(CLOUD_STATE_DB, JSON.stringify({ states: [] }, null, 2));
+  if (!fs.existsSync(CLOUD_PROJECTS_DB)) fs.writeFileSync(CLOUD_PROJECTS_DB, JSON.stringify({ projects: [] }, null, 2));
 }
 function readUsers() {
   ensureDb();
