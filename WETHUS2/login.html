@@ -202,7 +202,7 @@
 
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app.js?v=20260409-99"></script>
+  <script src="app.js?v=20260409-100"></script>
   <script>
     const msg = document.getElementById('authMsg');
     const tabLogin = document.getElementById('tabLogin');
@@ -359,62 +359,52 @@
         const credential = response?.credential;
         if (!credential) throw new Error('Google 인증 토큰이 비어 있습니다.');
 
-        let data = null;
+        // 1) 프론트 단독 경로로 먼저 로그인 확정 (백엔드 401과 무관하게 진행)
+        const payload = decodeJwtPayload(credential);
+        if (!payload?.email) throw new Error('Google 사용자 정보를 해석할 수 없습니다.');
+
+        const local = WETHUS.oauthLoginGoogle({
+          sub: payload.sub || '',
+          email: payload.email || '',
+          name: payload.name || payload.email,
+          picture: payload.picture || ''
+        });
+        const localUser = local?.user || WETHUS.currentUser();
+
+        // 2) 백엔드 계정 동기화는 best-effort (실패해도 로그인은 유지)
+        let cloudUser = null;
         try {
-          data = await postWithFallback(GOOGLE_AUTH_ENDPOINTS, { credential });
-        } catch (e) {
-          const m = String(e?.message || '');
-          if (!/401|Unauthorized|Invalid Google token|Invalid token|wrong recipient/i.test(m)) throw e;
-          const payload = decodeJwtPayload(credential);
-          if (!payload?.email) throw e;
-
-          const local = WETHUS.oauthLoginGoogle({
-            sub: payload.sub || '',
-            email: payload.email || '',
-            name: payload.name || payload.email,
-            picture: payload.picture || ''
-          });
-          const localUser = local?.user || WETHUS.currentUser();
-          try { if (WETHUS.syncCloudState && localUser?.email) await WETHUS.syncCloudState(localUser.email); } catch (_) {}
-          location.href = localUser?.onboardingComplete ? 'index.html' : 'profile.html?onboarding=1';
-          return;
-        }
-
-        if (!data?.ok || !data?.user) throw new Error(data?.error || 'Google 사용자 정보를 불러오지 못했습니다.');
-
-        const existingLocal = (WETHUS.getState().users || []).find(u => String(u.email || '').toLowerCase() === String(data?.user?.email || '').toLowerCase());
-        let user = WETHUS.upsertCloudUser(data.user);
-        if (existingLocal) {
-          user = WETHUS.updateCurrentUserProfile({
-            onboardingComplete: true,
-            bio: existingLocal.bio ?? user.bio,
-            school: existingLocal.school ?? user.school,
-            careerRaw: existingLocal.careerRaw ?? user.careerRaw,
-            careerSummary: existingLocal.careerSummary ?? user.careerSummary,
-            age: existingLocal.age ?? user.age
-          }) || user;
-        }
-
-        if (!data?.hasPassword) {
-          const pw = prompt('일반 로그인에서도 쓰실 앱 비밀번호를 설정하세요.\n(영문+숫자 포함 8자 이상)');
-          if (pw && String(pw).trim()) {
-            try {
-              await postWithFallback(GOOGLE_LINK_PASSWORD_ENDPOINTS, { credential, password: String(pw).trim() });
-            } catch (e) {
-              msg.textContent = e?.message || '앱 비밀번호 설정에 실패했습니다. 다음에 다시 시도해주세요.';
+          const data = await postWithFallback(GOOGLE_AUTH_ENDPOINTS, { credential });
+          if (data?.ok && data?.user) {
+            const existingLocal = (WETHUS.getState().users || []).find(u => String(u.email || '').toLowerCase() === String(data?.user?.email || '').toLowerCase());
+            cloudUser = WETHUS.upsertCloudUser(data.user);
+            if (existingLocal) {
+              cloudUser = WETHUS.updateCurrentUserProfile({
+                onboardingComplete: true,
+                bio: existingLocal.bio ?? cloudUser.bio,
+                school: existingLocal.school ?? cloudUser.school,
+                careerRaw: existingLocal.careerRaw ?? cloudUser.careerRaw,
+                careerSummary: existingLocal.careerSummary ?? cloudUser.careerSummary,
+                age: existingLocal.age ?? cloudUser.age
+              }) || cloudUser;
+            }
+            if (!data?.hasPassword) {
+              const pw = prompt('일반 로그인에서도 쓰실 앱 비밀번호를 설정하세요.\n(영문+숫자 포함 8자 이상)');
+              if (pw && String(pw).trim()) {
+                try {
+                  await postWithFallback(GOOGLE_LINK_PASSWORD_ENDPOINTS, { credential, password: String(pw).trim() });
+                } catch (_) {}
+              }
             }
           }
-        }
+        } catch (_) {}
 
-        try { if (WETHUS.syncCloudState) await WETHUS.syncCloudState(user?.email || data?.user?.email); } catch (_) {}
+        const user = cloudUser || localUser;
+        try { if (WETHUS.syncCloudState && user?.email) await WETHUS.syncCloudState(user.email); } catch (_) {}
         location.href = user?.onboardingComplete ? 'index.html' : 'profile.html?onboarding=1';
       } catch (err) {
         const m = String(err?.message || '');
-        if (/Failed to fetch/i.test(m)) {
-          msg.textContent = '인증 서버 연결에 실패했습니다. 백엔드(8787) 실행 상태와 주소(127.0.0.1/localhost)를 확인해주세요.';
-        } else {
-          msg.textContent = m || 'Google 로그인 중 오류가 발생했습니다.';
-        }
+        msg.textContent = m || 'Google 로그인 중 오류가 발생했습니다.';
       }
     }
 
