@@ -403,11 +403,11 @@
       gsiInitialized = true;
       window.__wethusGsiInitialized = true;
       google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
+        client_id: resolvedClientId,
         callback: handleGoogleCredential,
         auto_select: false,
         cancel_on_tap_outside: true,
-        use_fedcm_for_prompt: true
+        use_fedcm_for_prompt: false
       });
       const googleBtnEl = document.getElementById('googleBtn');
       if (googleBtnEl && !googleBtnEl.childElementCount) {
@@ -640,6 +640,46 @@
           WETHUS.upsertCloudUser(data.user || {});
         } catch (err) {
           if (isLocalHost) {
+            WETHUS.registerUser(payload);
+          } else {
+            throw err;
+          }
+        }
+        location.href = 'profile.html?onboarding=1';
+      } catch (err) {
+        msg.textContent = String(err?.message || '회원가입에 실패했습니다.');
+      }
+    });
+
+    document.getElementById('devModeBtn').addEventListener('click', () => {
+      if (!window.WETHUS) return;
+      const p = prompt('개발자모드 비밀번호를 입력하세요');
+      if (p === '0904') {
+        WETHUS.setCurrentUser('dev-temp', true);
+        msg.textContent = '개발자모드로 진입합니다...';
+        setTimeout(() => { location.href = 'index.html'; }, 250);
+      } else {
+        msg.textContent = '비밀번호가 올바르지 않습니다.';
+      }
+    });
+
+    window.addEventListener('load', async () => {
+      try {
+        const cfg = await getWithFallback(GOOGLE_CONFIG_ENDPOINTS);
+        const cid = String(cfg?.clientId || '').trim();
+        if (cid) GOOGLE_CLIENT_ID = cid;
+      } catch (_) {}
+      initGoogleSignIn();
+    }, { once: true });
+  </script>
+</body>
+</html>
+tGoogleSignIn();
+    }, { once: true });
+  </script>
+</body>
+</html>
+       if (isLocalHost) {
             WETHUS.registerUser(payload);
           } else {
             throw err;
