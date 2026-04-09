@@ -10,6 +10,8 @@
     'https://wethus-api.onrender.com',
     (typeof location !== 'undefined' && ['localhost', '127.0.0.1'].includes(location.hostname)) ? `${location.protocol}//${location.hostname}:8787` : ''
   ].filter(Boolean).map(x => String(x).replace(/\/$/, '').replace(/\/api$/, ''));
+  let cloudSyncTimer = null;
+  let cloudAutoPullTimer = null;
 
   function sanitizeCategoryName(raw) {
     const cleaned = String(raw || '')
