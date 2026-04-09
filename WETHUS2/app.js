@@ -1165,18 +1165,22 @@
       }
     }
 
-    for (const base of bases) {
-      try {
-        await fetch(new URL('/cloud/state', base).toString(), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, state: chosen })
-        });
-        break;
-      } catch (_) {}
+    const chosenCount = Array.isArray(chosen.projects) ? chosen.projects.length : 0;
+    const shouldPush = !!remoteState || chosenCount > 0;
+    if (shouldPush) {
+      for (const base of bases) {
+        try {
+          await fetch(new URL('/cloud/state', base).toString(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, state: chosen })
+          });
+          break;
+        } catch (_) {}
+      }
     }
 
-    return { ok: true, projects: Array.isArray(chosen.projects) ? chosen.projects.length : 0 };
+    return { ok: true, projects: chosenCount };
   }
 
   function scheduleCloudSync(reason = 'auto') {
