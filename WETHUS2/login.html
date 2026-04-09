@@ -390,7 +390,9 @@
 
     let gsiInitialized = false;
     function initGoogleSignIn() {
-      if (!GOOGLE_CLIENT_ID) {
+      const fallbackClientId = '196934770979-6ntmgcrs6k6jkifskspasg4uie5irgec.apps.googleusercontent.com';
+      const resolvedClientId = String(GOOGLE_CLIENT_ID || fallbackClientId).trim();
+      if (!resolvedClientId) {
         googleHint.textContent = 'Google 로그인은 아직 설정되지 않았습니다. (Client ID 필요)';
         return;
       }
@@ -669,6 +671,11 @@
         if (cid) GOOGLE_CLIENT_ID = cid;
       } catch (_) {}
       initGoogleSignIn();
+    }, { once: true });
+  </script>
+</body>
+</html>
+tGoogleSignIn();
     }, { once: true });
   </script>
 </body>

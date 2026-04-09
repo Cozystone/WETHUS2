@@ -1823,7 +1823,8 @@ app.get('/cloud/state', (req, res) => {
   if (!email) return res.status(400).json({ ok: false, error: 'email required' });
   const rows = readCloudStates();
   const row = rows.find(r => normEmail(r.email) === email) || null;
-  const globalProjects = readCloudProjects();
+  let globalProjects = [];
+  try { globalProjects = readCloudProjects(); } catch (_) { globalProjects = []; }
   return res.json({ ok: true, state: row?.state || null, updatedAt: row?.updatedAt || null, globalProjects });
 });
 
@@ -1847,7 +1848,8 @@ app.post('/cloud/state', (req, res) => {
 
   // 공개 프로젝트 풀 업데이트 (계정 간 탐색 공통 노출)
   const incoming = Array.isArray(state?.projects) ? state.projects : [];
-  const globals = readCloudProjects();
+  let globals = [];
+  try { globals = readCloudProjects(); } catch (_) { globals = []; }
   const map = new Map(globals.map(p => [String(p.id), p]));
   for (const p of incoming) {
     if (!p?.id) continue;
