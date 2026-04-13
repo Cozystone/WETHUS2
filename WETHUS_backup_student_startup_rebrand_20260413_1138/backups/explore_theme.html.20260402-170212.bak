@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);}
+   gtag('js', new Date());
+
+   gtag('config', 'G-PKF58GJC08');
+  </script>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | 카테고리 탐색</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="styles.css?v=20260319-23" />
+  <style>
+    :root {
+      --theme-tint: #ffb27a;
+      --theme-tint-2: #ff8f45;
+    }
+    .theme-shell::before {
+      content: ""; position: fixed; inset: 0; pointer-events:none;
+      background:
+        radial-gradient(1180px 450px at 18% -8%, color-mix(in srgb, var(--theme-tint) 64%, transparent), transparent 72%),
+        radial-gradient(980px 390px at 88% 110%, color-mix(in srgb, var(--theme-tint-2) 50%, transparent), transparent 70%);
+      z-index: -1;
+    }
+    .theme-shell .search-wrap,
+    .theme-shell .list-item,
+    .theme-shell .project-tile {
+      border-color: rgba(255,255,255,.16) !important;
+      box-shadow: 0 10px 24px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.12);
+    }
+    .theme-shell .list-item:hover,
+    .theme-shell .project-tile:hover {
+      border-color: rgba(255,255,255,.28) !important;
+    }
+    #list.list-grid, #list.project-cards { min-height: 760px; }
+    #list.project-cards { align-items: start; }
+    #list .card-summary, #list .mini-summary {
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 1.45em;
+      max-width: 100%;
+      word-break: keep-all;
+    }
+    .modal-panel { max-width: 920px; }
+    .modal-content { padding: 14px 16px 16px; }
+    .modal-summary-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      display: grid;
+      gap: 10px;
+      padding: 0 6px;
+    }
+    .modal-kv {
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #141414;
+    }
+    .modal-kv p { margin: 0; }
+    .mentor-stack { display:grid; gap:8px; margin:8px 0 12px; }
+    .mentor-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:8px 0 6px; }
+    .mentor-tabs { display:flex; gap:6px; }
+    .mentor-tab { padding:5px 10px; border:1px solid #3a3a3a; border-radius:999px; background:#141414; color:#ddd; font-size:.78rem; cursor:pointer; }
+    .mentor-tab.active { background:#f5f5f5; color:#111; border-color:#f5f5f5; }
+    .mentor-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid #2c2c2c; border-radius:10px; background:#101010; }
+    .mentor-item small { color:#9b9b9b; }
+    .agent-pill { display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:999px; background:#1f1f1f; color:#cfcfcf; font-size:.72rem; border:1px solid #333; }
+    .help-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:10px; }
+    .help-opt { padding:11px 10px; border-radius:10px; border:1px solid #353535; background:#141414; color:#f5f5f5; cursor:pointer; }
+    .help-opt:hover { background:#1b1b1b; border-color:#4a4a4a; }
+  </style>
+</head>
+<body class="theme-shell">
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="wordmark">WETHUS</a>
+      <nav class="nav-links">
+        <a href="explore.html" class="nav-link nav-link--cta">탐색</a>
+        <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
+        <a href="project-hub.html" class="nav-link">프로젝트 허브</a>
+        <a href="mentor.html" class="nav-link">멘토</a>
+        <a href="profile.html" class="nav-link">프로필</a>
+        <a href="login.html" class="nav-link js-auth-link">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page-main page-main--standard page-main--explore">
+    <section class="page-header">
+      <a href="explore.html" class="btn btn--secondary" aria-label="뒤로가기" style="padding:6px 10px;font-size:.78rem;min-width:0;margin-bottom:8px;">← 뒤로</a>
+      <h1 class="page-title" id="themeTitle">카테고리 탐색</h1>
+      <p class="page-sub" id="themeSub">지금 합류 가능한 팀을 빠르게 찾으세요.</p>
+    </section>
+
+    <section class="search-wrap">
+      <div class="search-row" style="position:relative;">
+        <input id="q" placeholder="어떤 프로젝트를 찾고 있나요?" style="padding-left:42px;" />
+        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#8a8a8a;">⌕</span>
+        <button id="searchBtn" class="btn btn--primary">검색</button>
+      </div>
+
+      <div class="search-subrow">
+        <div id="categoryChips" class="hero-tags" style="margin:2px 0 0;"></div>
+        <div class="view-toggle" role="group" aria-label="보기 전환">
+          <button id="viewList" class="view-icon-btn" title="리스트형" aria-label="리스트형">
+            <span class="icon-list"></span>
+          </button>
+          <button id="viewAlbum" class="view-icon-btn active" title="액자형" aria-label="액자형">
+            <span class="icon-grid"></span>
+          </button>
+          <button id="shuffleBtn" class="view-icon-btn" title="셔플" aria-label="셔플">
+            <span class="icon-shuffle"></span>
+          </button>
+          <button id="filterBtn" class="view-icon-btn view-icon-btn--filter" title="필터" aria-label="필터">
+            <span class="icon-filter"></span>
+          </button>
+        </div>
+      </div>
+
+      <div id="filterPanel" class="filter-panel" style="display:none;grid-template-columns:1fr 1fr 1fr auto;">
+        <label>인원
+          <select id="teamSizeFilter">
+            <option value="">전체</option>
+            <option>1인</option><option>2인</option><option>3인</option><option>4인이상</option>
+          </select>
+        </label>
+        <label>단계
+          <select id="stageFilter">
+            <option value="">전체</option>
+            <option>모집 중</option><option>기획 중</option><option>진행 중</option><option>피보팅</option>
+          </select>
+        </label>
+        <label>정렬/보기
+          <select id="sortFilter">
+            <option value="mixed">추천 믹스</option>
+            <option value="latest">업로드 순</option>
+            <option value="oldest">과거 순</option>
+            <option value="popular">인기 순</option>
+            <option value="mine">내 프로젝트</option>
+          </select>
+        </label>
+        <button id="resetFilter" class="btn btn--secondary" type="button">초기화</button>
+      </div>
+
+      <article id="aiResult" class="list-item" style="display:none;"></article>
+    </section>
+
+    <section id="list" class="list-grid"></section>
+    <div style="display:flex;justify-content:center;margin-top:14px;">
+      <button id="loadMoreBtn" class="btn btn--secondary" style="display:none;">더보기</button>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="wordmark">WETHUS</span>
+        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+
+  <div id="projectModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close="true"></div>
+    <article class="modal-panel">
+      <button class="modal-close" id="modalClose" aria-label="닫기">×</button>
+      <div class="modal-media-wrap"><img id="modalImage" class="modal-image" alt="프로젝트 이미지" /></div>
+      <div class="modal-content">
+        <div class="modal-summary-wrap">
+          <p class="section-kicker" id="modalCategory">CATEGORY</p>
+          <div class="card-title-row" style="margin:0 0 4px;align-items:center;">
+            <h3 id="modalTitle" style="margin:0;font-size:1.45rem;font-weight:800;"></h3>
+            <button id="modalBookmarkBtn" class="bookmark-btn" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
+          </div>
+          <p id="modalDateRange" class="modal-date-range" style="margin:0;"></p>
+          <div class="modal-kv"><p id="modalSummary" style="color:#f5f5f5;"></p></div>
+          <div class="modal-kv"><p id="modalDesc" style="color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p></div>
+          <div id="modalTeam" class="team-row" style="margin-bottom:4px;"></div>
+          <div class="mentor-head">
+            <h4 style="margin:0;font-size:.92rem;color:#e8e8e8;">Mentors</h4>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="mentor-tabs">
+                <button id="mentorTabHuman" class="mentor-tab active" type="button">Human Mentors</button>
+                <button id="mentorTabAi" class="mentor-tab" type="button">AI Mentors</button>
+              </div>
+            </div>
+          </div>
+          <div id="modalMentors" class="mentor-stack"></div>
+          <div class="meta"><span class="badge" id="modalCategoryBadge"></span> · <span id="modalStatus"></span> · <span id="modalRoles"></span> · <span id="modalDuration"></span></div>
+          <div class="modal-social-row">
+            <button id="modalLikeBtn" class="btn btn--secondary">♡ <span id="modalLikeCount">0</span></button>
+            <button id="modalCommentBtn" class="btn btn--secondary">💬 <span id="modalCommentCount">0</span></button>
+            <button id="modalEditBtn" class="btn btn--secondary" type="button" style="display:none;">수정</button>
+            <button id="modalDeleteBtn" class="btn btn--secondary" type="button" style="display:none;">삭제</button>
+            <button id="modalApplyBtn" class="apply-btn" type="button">지원하기</button>
+          </div>
+        </div>
+        <div id="modalCommentPanel" class="comment-panel" style="display:none;">
+          <div class="comment-panel-head">
+            <strong>댓글</strong>
+            <button id="modalCommentClose" class="comment-close" type="button">×</button>
+          </div>
+          <div id="modalComments" class="modal-comments"></div>
+          <form id="modalCommentForm" class="modal-comment-form">
+            <input id="modalCommentInput" placeholder="댓글을 입력하세요" />
+            <button class="btn btn--primary" type="submit">등록</button>
+          </form>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <div id="applyModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-apply="true"></div>
+    <article class="modal-panel" style="max-width:520px;">
+      <button class="modal-close" id="applyClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 style="margin:0 0 8px;">프로젝트 참여 지원</h3>
+        <p class="meta" style="margin-bottom:10px;">지원동기를 간단히 작성해주세요.</p>
+        <textarea id="applyMotivation" style="width:100%;min-height:120px;background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+          <button id="applySubmit" class="btn btn--primary">지원서 제출</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <div id="editProjectModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-edit-close="true"></div>
+    <article class="modal-panel" style="max-width:760px;">
+      <button class="modal-close" id="editProjectClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 style="margin:0 0 8px;">프로젝트 전체 수정</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <input id="editProjectTitle" placeholder="프로젝트 제목" />
+          <input id="editProjectMini" placeholder="아이템 한줄 설명 (최대 60자)" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <select id="editProjectStatus"><option>모집 중</option><option>기획 중</option><option>진행 중</option><option>피보팅</option><option>완료</option></select>
+          <select id="editProjectTeamSize"><option>1인</option><option>2인</option><option>3인</option><option>4인이상</option></select>
+        </div>
+        <input id="editProjectRoles" placeholder="역할" style="margin-bottom:8px;" />
+        <textarea id="editProjectDesc" style="width:100%;min-height:130px;background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;" placeholder="프로젝트 본문"></textarea>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
+          <button id="editProjectCancel" class="btn btn--secondary" type="button">취소</button>
+          <button id="editProjectSave" class="btn btn--primary" type="button">저장</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <script src="app.js?v=20260402-1510"></script>
+  <script>
+    const authLink = document.querySelector('.js-auth-link');
+    const st = WETHUS.getState();
+    if (authLink && (st.currentUserId || st.devMode)) {
+      authLink.textContent = '로그아웃';
+      authLink.href = '#';
+      authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
+    }
+
+    const listEl = document.getElementById('list');
+    const q = document.getElementById('q');
+    const aiResultEl = document.getElementById('aiResult');
+    const viewListBtn = document.getElementById('viewList');
+    const viewAlbumBtn = document.getElementById('viewAlbum');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const filterBtn = document.getElementById('filterBtn');
+    const filterPanel = document.getElementById('filterPanel');
+    const teamSizeFilter = document.getElementById('teamSizeFilter');
+    const stageFilter = document.getElementById('stageFilter');
+    const sortFilter = document.getElementById('sortFilter');
+    const resetFilter = document.getElementById('resetFilter');
+    const categoryChips = document.getElementById('categoryChips');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+
+    let allProjects = [];
+    let currentItems = [];
+    let visibleCount = 6;
+    let viewMode = localStorage.getItem('wethus_explore_view') || 'album';
+    let selectedCategory = null;
+
+    const themeMap = {
+      MathSci: { title: 'Math & Sci 탐색', sub: '수학/과학/연구형 프로젝트', tint: '#2fd4ff', tint2: '#2b6fff' },
+      ArtCulture: { title: 'Art & Culture 탐색', sub: '영화/전시/출판/문화 프로젝트', tint: '#ff9a5f', tint2: '#ff4f5e' },
+      StartupBusiness: { title: 'Startup & Business 탐색', sub: '창업/서비스/비즈니스 검증 프로젝트', tint: '#ffd247', tint2: '#ff7f1f' },
+      SocietyLaw: { title: 'Society & Law 탐색', sub: '정책/사회문제/법·제도 프로젝트', tint: '#ff7eb0', tint2: '#ff4d94' }
+    };
+    const qs = new URLSearchParams(location.search);
+    const catParam = qs.get('cat') || 'MathSci';
+    const openProjectId = qs.get('open') || '';
+    const currentTheme = themeMap[catParam] || themeMap.MathSci;
+    document.getElementById('themeTitle').textContent = currentTheme.title;
+    document.getElementById('themeSub').textContent = currentTheme.sub;
+    document.documentElement.style.setProperty('--theme-tint', currentTheme.tint);
+    document.documentElement.style.setProperty('--theme-tint-2', currentTheme.tint2 || currentTheme.tint);
+
+    const AGENT_PRESETS = {
+      project_assistant: { id: 'project_assistant', name: 'Project Assistant', icon: '🤖', desc: '프로젝트 구조화·우선순위 조정' },
+      startup_ai: { id: 'startup_ai', name: 'Startup AI', icon: '🤖', desc: '가설 검증·실행 전략 피드백' },
+      film_ai: { id: 'film_ai', name: 'Film AI', icon: '🤖', desc: '스토리·촬영·편집 피드백' },
+      design_ai: { id: 'design_ai', name: 'Design AI', icon: '🤖', desc: '와이어프레임·UI 개선 제안' },
+      dev_ai: { id: 'dev_ai', name: 'Dev AI', icon: '🤖', desc: '구현 흐름·기술 선택 지원' },
+      research_ai: { id: 'research_ai', name: 'Research AI', icon: '🤖', desc: '리서치 구조화·근거 정리' }
+    };
+
+    const HELP_OPTIONS = [
+      { key: 'planning', label: '기획 도움' },
+      { key: 'design', label: '디자인 도움' },
+      { key: 'development', label: '개발 도움' },
+      { key: 'research', label: '리서치 도움' },
+      { key: 'other', label: '기타' }
+    ];
+
+    function categoryAgentKey(project) {
+      const c = String(project?.category || '').toLowerCase();
+      if (c.includes('film') || c.includes('creative')) return 'film_ai';
+      if (c.includes('startup') || c.includes('app') || c.includes('business')) return 'startup_ai';
+      if (c.includes('policy') || c.includes('campaign')) return 'research_ai';
+      return 'startup_ai';
+    }
+
+    function getProjectMentors(project) {
+      const humans = Array.isArray(project?.mentors) ? project.mentors : [];
+      const aiKeys = ['project_assistant', categoryAgentKey(project)];
+      const aiMentors = Array.from(new Set(aiKeys)).map(k => AGENT_PRESETS[k]).filter(Boolean).map(a => ({ type:'ai', id:a.id, name:a.name, icon:a.icon, desc:a.desc }));
+      return humans.map(h => ({ type:'human', id:h.id || h.name, name:h.name, icon:'👤', desc:h.expertise || '프로젝트 멘토' })).concat(aiMentors);
+    }
+
+    function mapNeedToAgent(project, needKey) {
+      if (needKey === 'planning') return AGENT_PRESETS.project_assistant;
+      if (needKey === 'design') return AGENT_PRESETS.design_ai;
+      if (needKey === 'development') return AGENT_PRESETS.dev_ai;
+      if (needKey === 'research') return AGENT_PRESETS.research_ai;
+      return AGENT_PRESETS[categoryAgentKey(project)] || AGENT_PRESETS.project_assistant;
+    }
+
+    function actorId() {
+      const s = WETHUS.getState();
+      return s.currentUserId || (s.devMode ? 'dev-temp' : null);
+    }
+
+    function likedSymbol(p) {
+      if (typeof p._liked === 'boolean') return p._liked ? '♥' : '♡';
+      const actor = actorId();
+      const liked = !!(actor && Array.isArray(p.likedBy) && p.likedBy.includes(actor));
+      return liked ? '♥' : '♡';
+    }
+
+    function normalizeStage(v) {
+      const s = String(v || '').replace(/\s+/g,'');
+      if (s === '모집중' || s === '구인중') return '모집 중';
+      if (s === '팀빌딩' || s === '기획중' || s === '초기팀빌딩' || s === '검토대기') return '기획 중';
+      if (s === '진행중') return '진행 중';
+      if (s === '피보팅') return '피보팅';
+      return '기획 중';
+    }
+
+    function imageFor(project, idx) {
+      if (project.image) return project.image;
+      const key = (project.category || 'project').toLowerCase();
+      return `https://picsum.photos/seed/wethus-${key}-${idx}/900/560`;
+    }
+
+    const memberHref = (m) => `member.html?name=${encodeURIComponent(m?.name||'팀원')}&role=${encodeURIComponent(m?.role||'담당')}&bio=${encodeURIComponent(m?.bio||'소개가 아직 없습니다.')}&founder=${m?.isLeader ? '1' : '0'}`;
+    function renderTeam(team = [], project = null) {
+      const hasTeam = Array.isArray(team) && team.length;
+      const leader = hasTeam ? (team.find(m => m.isLeader) || team[0]) : null;
+      const others = hasTeam ? team.filter(m => m !== leader) : [];
+      const visible = others.slice(0,2);
+      const hidden = others.slice(2);
+      const aiMembers = getProjectMentors(project).filter(m => m.type === 'ai').slice(0, 2);
+      return `
+        <div class="team-row">
+          ${leader ? `<a class="member-pill leader" href="${memberHref(leader)}"><span class="member-name">${leader?.name || '대표'}</span> <span class="member-role">대표</span></a>` : ''}
+          ${visible.map(m => `<a class="member-pill" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('')}
+          ${aiMembers.map(a => `<span class="member-pill"><span class="member-name">${a.name}</span> <span class="member-role">AI</span></span>`).join('')}
+          ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length + (leader ? 1 : 0)}명</button><div class="team-list">${hidden.map(m=>`<a class="member-pill block" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('')}</div>` : ''}
+        </div>`;
+    }
+
+    function openByProjectId(pid) {
+      const p = (currentItems || []).find(x => x.id === pid) || WETHUS.listProjects().find(x => x.id === pid);
+      if (!p) return;
+      const idx = Math.max(0, (currentItems || []).findIndex(x => x.id === pid));
+      openModal({ ...p, image: imageFor(p, idx), status: normalizeStage(p.status) });
+    }
+
+    function bindProjectCardClicks() {
+      listEl.querySelectorAll('[data-project-id]').forEach(el => {
+        el.onclick = (e) => {
+          if (e.target.closest('.apply-btn, .bookmark-btn, .team-toggle, .member-pill')) return;
+          const pid = el.getAttribute('data-project-id');
+          openByProjectId(pid);
+        };
+      });
+    }
+
+    function normalizeYouthChipPlacement() {
+      // no-op: youth chip is intentionally rendered in category row next to category chip.
+    }
+
+    function normalizeCategoryName(raw) {
+      const cleaned = String(raw || '')
+        .replace(/\byouth\b/ig, '')
+        .replace(/youth/ig, '')
+        .replace(/[-_/|]+$/g, '')
+        .trim();
+      const key = cleaned.toLowerCase();
+      const map = {
+        film: 'Film',
+        startup: 'Startup',
+        science: 'Science',
+        policy: 'Policy',
+        campaign: 'Campaign',
+        creative: 'Creative',
+        app: 'App',
+        artculture: 'ArtCulture',
+        art: 'Art',
+        culture: 'Culture'
+      };
+      return map[key] || cleaned || '기타';
+    }
+
+    function miniSummaryText(p) {
+      const base = String(p.miniSummary || p.summary || p.fullDescription || '').replace(/\s+/g, ' ').trim();
+      if (!base) return '요약 정보가 아직 없습니다';
+      return base.replace(/[.!?。]+$/g, '').slice(0, 64);
+    }
+
+    const miniSummaryInFlight = new Set();
+    async function hydrateMiniSummaries(items) {
+      const actor = WETHUS.getState().currentUserId || (WETHUS.getState().devMode ? 'dev-temp' : null);
+      const targets = (items || []).filter(p => {
+        if (!p || !p.id) return false;
+        const srcLen = String(p.fullDescription || p.summary || '').trim().length;
+        if (srcLen <= 80) return false;
+        const mini = String(p.miniSummary || '').trim();
+        const sum = String(p.summary || '').trim();
+        // 미니요약이 없거나, 기존 긴 summary를 그대로 복붙한 상태면 재생성
+        return !mini || mini.length > 64 || (mini && sum && mini === sum);
+      }).sort((a,b)=> {
+        const ap = actor && a.founderId === actor ? 1 : 0;
+        const bp = actor && b.founderId === actor ? 1 : 0;
+        return bp - ap;
+      }).slice(0, 12);
+      for (const p of targets) {
+        if (miniSummaryInFlight.has(p.id)) continue;
+        miniSummaryInFlight.add(p.id);
+        try {
+          const src = String(p.fullDescription || p.summary || '').slice(0, 800);
+          const prompt = `다음 프로젝트 설명을 한국어 한 줄(최대 60자) 명사구 스타일로 요약해줘. 문장 끝 마침표 금지, 개념/그룹/프로젝트명처럼 마무리.\n\n제목:${p.title || ''}\n본문:${src}`;
+          let out = '';
+          try { out = await WETHUS.askGemini(prompt); } catch (_) {}
+          const fallbackBase = String(p.fullDescription || p.summary || '').replace(/\s+/g, ' ').trim();
+          const fallbackLine = (fallbackBase.split(/[.!?。]\s*/)[0] || fallbackBase).slice(0, 64);
+          const mini = String(out || '').replace(/\s+/g, ' ').trim().slice(0, 64)
+            || fallbackLine;
+          WETHUS.updateProject(p.id, { miniSummary: mini });
+        } catch (_) {}
+        miniSummaryInFlight.delete(p.id);
+      }
+    }
+
+    function renderList(items) {
+      listEl.className = 'list-grid';
+      const st = WETHUS.getState();
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+      listEl.innerHTML = items.map((p, i) => {
+        const stage = normalizeStage(p.status);
+        const item = { ...p, image: imageFor(p, i), status: stage };
+        const mine = !!actor && p.founderId === actor;
+        const label = mine ? '프로젝트로 이동' : (WETHUS.hasApplied(p.id) ? '지원완료' : '지원하기');
+        return `
+          <article class="list-item" data-project-id="${item.id}">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+              <div style="flex:1;min-width:0;">
+                <div class="chip-row"><span class="card-chip">${p.category}</span>${(p.youthProjectTag || p.projectTrack === 'Youth' || ((st.users||[]).find(u => u.id === p.founderId)?.youthTag)) ? '<span class="card-chip youth-chip">YOUTH</span>' : ''}</div>
+                <div class="card-title-row">
+                  <h3 class="card-title" style="margin:0 0 4px;">${p.title}</h3>
+                  <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
+                </div>
+                <p class="mini-summary ${isYouth ? 'youth-theme' : ''}" style="margin:0 0 6px;">${miniSummaryText(p)}</p>
+                <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}</div>
+              </div>
+              <button class="apply-btn ${mine ? 'mine' : (WETHUS.hasApplied(p.id)?'applied':'')}" data-apply="${p.id}">${label}</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+      bindProjectCardClicks();
+    }
+
+    function renderAlbum(items) {
+      listEl.className = 'project-cards';
+      const fallbackClass = { Film:'card-media--film', App:'card-media--startup', Startup:'card-media--startup', Policy:'card-media--policy', Campaign:'card-media--policy', Creative:'card-media--film' };
+      const st = WETHUS.getState();
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+      listEl.innerHTML = items.map((p, i) => {
+        const stage = normalizeStage(p.status);
+        const item = { ...p, image: imageFor(p, i), status: stage };
+        const mine = !!actor && p.founderId === actor;
+        const label = mine ? '프로젝트로 이동' : (WETHUS.hasApplied(p.id)?'지원완료':'지원하기');
+        return `
+          <article class="card" data-project-id="${item.id}">
+            <div class="card-media ${fallbackClass[p.category] || 'card-media--film'}">
+              <img src="${item.image}" alt="${p.title}" class="card-img" />
+            </div>
+            <div class="chip-row"><span class="card-chip">${p.category}</span>${(p.youthProjectTag || p.projectTrack === 'Youth' || ((st.users||[]).find(u => u.id === p.founderId)?.youthTag)) ? '<span class="card-chip youth-chip">YOUTH</span>' : ''}</div>
+            <div class="card-title-row">
+              <h3 class="card-title">${p.title}</h3>
+              <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
+            </div>
+            <p class="card-summary ${isYouth ? 'youth-theme' : ''}">${miniSummaryText(p)}</p>
+            ${renderTeam(p.teamMembers, p)}
+            <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}</div>
+            <div class="card-bottom-row">
+              <div class="card-social"><span>${likedSymbol(p)} ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
+              <button class="apply-btn ${mine ? 'mine' : (WETHUS.hasApplied(p.id)?'applied':'')}" data-apply="${p.id}">${label}</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+      bindProjectCardClicks();
+    }
+
+    function render(items) {
+      currentItems = items;
+      const pageItems = items.slice(0, visibleCount);
+      if (viewMode === 'album') renderAlbum(pageItems);
+      else renderList(pageItems);
+      normalizeYouthChipPlacement();
+      viewListBtn.classList.toggle('active', viewMode === 'list');
+      viewAlbumBtn.classList.toggle('active', viewMode === 'album');
+      loadMoreBtn.style.display = items.length > visibleCount ? 'inline-flex' : 'none';
+      hydrateMiniSummaries(pageItems).then(() => {
+        const refreshed = sourceProjects();
+        const pageRefreshed = refreshed.slice(0, visibleCount);
+        if (viewMode === 'album') renderAlbum(pageRefreshed);
+        else renderList(pageRefreshed);
+        normalizeYouthChipPlacement();
+      }).catch(() => {});
+    }
+
+    function buildCategoryChips(items) {
+      const cats = Array.from(new Set(items.map(p => p.category).filter(Boolean)));
+      categoryChips.innerHTML = cats.map(cat => `<button class="chip chip-btn ${selectedCategory===cat?'active':''}" data-cat="${cat}">${cat}</button>`).join('');
+      categoryChips.querySelectorAll('.chip-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const cat = btn.dataset.cat;
+          selectedCategory = selectedCategory === cat ? null : cat;
+          applyFilters();
+        });
+      });
+    }
+
+    function projectThemeKey(project) {
+      const raw = String(project.category || '').trim();
+      const c = raw.toLowerCase();
+      const blob = `${String(project.title || '').toLowerCase()} ${String(project.summary || '').toLowerCase()}`;
+
+      // 1차: 카테고리 값 단일 매핑(가장 우선)
+      const exact = {
+        'math': 'MathSci', 'sci': 'MathSci', 'science': 'MathSci', 'research': 'MathSci', 'data': 'MathSci',
+        'film': 'ArtCulture', 'creative': 'ArtCulture', 'art': 'ArtCulture', 'culture': 'ArtCulture',
+        'startup': 'StartupBusiness', 'business': 'StartupBusiness', 'app': 'StartupBusiness',
+        'policy': 'SocietyLaw', 'campaign': 'SocietyLaw', 'law': 'SocietyLaw', 'society': 'SocietyLaw'
+      };
+      if (exact[c]) return exact[c];
+
+      // 복합 문자열 category도 첫 매칭 1개만 반환
+      if (/(math|sci|science|research|data)/.test(c)) return 'MathSci';
+      if (/(film|creative|art|culture)/.test(c)) return 'ArtCulture';
+      if (/(startup|business|app)/.test(c)) return 'StartupBusiness';
+      if (/(policy|campaign|law|society)/.test(c)) return 'SocietyLaw';
+
+      // 2차: category 미정인 경우에만 제목/요약 키워드 사용
+      if (!c) {
+        if (/(연구|과학|수학|데이터|경진대회)/.test(blob)) return 'MathSci';
+        if (/(영화|전시|출판|문화|크리에이티브|예술|영상)/.test(blob)) return 'ArtCulture';
+        if (/(스타트업|비즈니스|서비스|브랜딩|창업|앱|mvp)/.test(blob)) return 'StartupBusiness';
+        if (/(정책|사회|캠페인|법|공공|제안)/.test(blob)) return 'SocietyLaw';
+      }
+
+      return 'StartupBusiness';
+    }
+
+    function inTheme(project) {
+      return projectThemeKey(project) === catParam;
+    }
+
+    function sourceProjects() {
+      const st = WETHUS.getState();
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+      const visible = WETHUS.listProjects().slice().filter(p => {
+        const approved = p.moderationStatus !== 'manual_review' && p.moderationStatus !== 'rejected';
+        if (approved) return true;
+        return !!actor && p.founderId === actor;
+      }).filter(inTheme);
+
+      const mineApproved = visible.filter(p => actor && p.founderId === actor && p.moderationStatus === 'approved')
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const others = visible.filter(p => !mineApproved.includes(p));
+
+      // Youth/non-Youth 고르게 섞기
+      const isYouth = (p) => !!(p.youthProjectTag || p.projectTrack === 'Youth' || ((st.users||[]).find(u => u.id === p.founderId)?.youthTag));
+      const youth = others.filter(p => isYouth(p));
+      const nonYouth = others.filter(p => !isYouth(p));
+      const mixed = [];
+      let i = 0;
+      while (i < youth.length || i < nonYouth.length) {
+        if (i < youth.length) mixed.push(youth[i]);
+        if (i < nonYouth.length) mixed.push(nonYouth[i]);
+        i++;
+      }
+      return mineApproved.concat(mixed);
+    }
+
+    function applyFilters() {
+      const query = q.value.trim();
+      allProjects = sourceProjects();
+      let items = allProjects.slice();
+
+      if (selectedCategory) items = items.filter(p => normalizeCategoryName(p.category) === selectedCategory);
+      if (teamSizeFilter.value) items = items.filter(p => p.teamSize === teamSizeFilter.value);
+      if (stageFilter.value) items = items.filter(p => p.status === stageFilter.value);
+      if (query) items = WETHUS.fakeAiSearch(items, query);
+
+      const st = WETHUS.getState();
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+      const sortMode = sortFilter?.value || 'mixed';
+      if (sortMode === 'mine') {
+        items = items.filter(p => actor && p.founderId === actor)
+          .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      } else if (sortMode === 'popular') {
+        items = items.sort((a,b) => (b.likes||0) - (a.likes||0));
+      } else if (sortMode === 'oldest') {
+        items = items.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
+      } else if (sortMode === 'mixed') {
+        const newest = items.slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+        const oldest = items.slice().sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
+        const popular = items.slice().sort((a,b)=>(b.likes||0)-(a.likes||0));
+        const mixed = [];
+        const seen = new Set();
+        let i = 0;
+        while (mixed.length < items.length && i < items.length + 4) {
+          [newest[i], popular[i], oldest[i]].forEach(p => {
+            if (p && !seen.has(p.id)) { seen.add(p.id); mixed.push(p); }
+          });
+          i++;
+        }
+        items = mixed;
+      } else {
+        items = items.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }
+
+      buildCategoryChips(allProjects);
+      render(items);
+      return items;
+    }
+
+    async function runSearch() {
+      visibleCount = 6;
+      const query = q.value.trim();
+      const items = applyFilters();
+
+      if (!query) { aiResultEl.style.display = 'none'; return; }
+
+      aiResultEl.style.display = 'block';
+      aiResultEl.innerHTML = '<p>검색 결과를 더 정교하게 분석 중...</p>';
+
+      try {
+        const prompt = `다음 프로젝트 목록에서 '${query}'에 가장 맞는 3개를 뽑아 짧게 추천해줘.\n` +
+          items.map((p, i) => `${i + 1}. [${p.category}] ${p.title} - ${p.summary} / ${p.roles}`).join('\n') +
+          `\n반환 형식: 1) 프로젝트명 - 추천 이유(한 줄)`;
+        const text = await WETHUS.askGemini(prompt);
+        aiResultEl.innerHTML = `<h3>추천 정리</h3><p style="white-space:pre-wrap;">${text}</p>`;
+      } catch (e) {
+        aiResultEl.style.display = 'none';
+      }
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', runSearch);
+    q.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
+
+    viewListBtn.addEventListener('click', () => {
+      viewMode = 'list';
+      localStorage.setItem('wethus_explore_view', viewMode);
+      render(currentItems);
+    });
+
+    viewAlbumBtn.addEventListener('click', () => {
+      viewMode = 'album';
+      localStorage.setItem('wethus_explore_view', viewMode);
+      render(currentItems);
+    });
+
+    shuffleBtn.addEventListener('click', () => {
+      const shuffled = currentItems.slice().sort(() => Math.random() - 0.5);
+      render(shuffled);
+    });
+
+    filterBtn.addEventListener('click', () => {
+      filterPanel.style.display = filterPanel.style.display === 'none' ? 'grid' : 'none';
+    });
+    teamSizeFilter.addEventListener('change', () => { visibleCount = 6; applyFilters(); });
+    stageFilter.addEventListener('change', () => { visibleCount = 6; applyFilters(); });
+    sortFilter?.addEventListener('change', () => { visibleCount = 6; applyFilters(); });
+    resetFilter.addEventListener('click', () => {
+      teamSizeFilter.value = '';
+      stageFilter.value = '';
+      if (sortFilter) sortFilter.value = 'mixed';
+      selectedCategory = null;
+      q.value = '';
+      visibleCount = 6;
+      aiResultEl.style.display = 'none';
+      applyFilters();
+    });
+
+    loadMoreBtn.addEventListener('click', () => {
+      visibleCount += 6;
+      render(currentItems);
+    });
+
+    const modal = document.getElementById('projectModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalCategory = document.getElementById('modalCategory');
+    const modalSummary = document.getElementById('modalSummary');
+    const modalDateRange = document.getElementById('modalDateRange');
+    const modalDesc = document.getElementById('modalDesc');
+    const modalStatus = document.getElementById('modalStatus');
+    const modalCategoryBadge = document.getElementById('modalCategoryBadge');
+    const modalRoles = document.getElementById('modalRoles');
+    const modalDuration = document.getElementById('modalDuration');
+    const modalImage = document.getElementById('modalImage');
+    const modalLikeBtn = document.getElementById('modalLikeBtn');
+    const modalLikeCount = document.getElementById('modalLikeCount');
+    const modalCommentCount = document.getElementById('modalCommentCount');
+    const modalCommentBtn = document.getElementById('modalCommentBtn');
+    const modalBookmarkBtn = document.getElementById('modalBookmarkBtn');
+    const modalEditBtn = document.getElementById('modalEditBtn');
+    const modalDeleteBtn = document.getElementById('modalDeleteBtn');
+    const modalApplyBtn = document.getElementById('modalApplyBtn');
+    const mentorTabHuman = document.getElementById('mentorTabHuman');
+    const mentorTabAi = document.getElementById('mentorTabAi');
+    const modalCommentPanel = document.getElementById('modalCommentPanel');
+    const modalCommentClose = document.getElementById('modalCommentClose');
+    const modalComments = document.getElementById('modalComments');
+    const modalCommentForm = document.getElementById('modalCommentForm');
+    const modalCommentInput = document.getElementById('modalCommentInput');
+    const modalTeam = document.getElementById('modalTeam');
+    const applyModal = document.getElementById('applyModal');
+    const applyMotivation = document.getElementById('applyMotivation');
+    const editProjectModal = document.getElementById('editProjectModal');
+    const editProjectTitle = document.getElementById('editProjectTitle');
+    const editProjectMini = document.getElementById('editProjectMini');
+    const editProjectStatus = document.getElementById('editProjectStatus');
+    const editProjectTeamSize = document.getElementById('editProjectTeamSize');
+    const editProjectRoles = document.getElementById('editProjectRoles');
+    const editProjectDesc = document.getElementById('editProjectDesc');
+    let applyProjectId = null;
+    let currentProjectId = null;
+
+    function renderTeamMini(team = [], project = null) {
+      const hasTeam = Array.isArray(team) && team.length;
+      if (!hasTeam) { modalTeam.innerHTML = ''; return; }
+      const leader = team.find(m => m.isLeader) || team[0];
+      const rest = team.filter(m => m !== leader).slice(0, 3);
+      const aiMembers = getProjectMentors(project).filter(m => m.type === 'ai').slice(0, 2);
+      modalTeam.innerHTML = `<a class="member-pill leader" href="${memberHref(leader)}"><span class="member-name">${leader?.name || '대표'}</span> <span class="member-role">대표</span></a>` +
+        rest.map(m => `<a class="member-pill" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('') +
+        aiMembers.map(a => `<span class="member-pill"><span class="member-name">${a.name}</span> <span class="member-role">AI</span></span>`).join('');
+    }
+
+    let activeMentorTab = 'human';
+    let mentorProjectRef = null;
+
+    function renderMentors(project, tab = activeMentorTab) {
+      mentorProjectRef = project || mentorProjectRef;
+      activeMentorTab = tab;
+      const list = getProjectMentors(mentorProjectRef || {});
+      const el = document.getElementById('modalMentors');
+      if (!el) return;
+
+      mentorTabHuman?.classList.toggle('active', activeMentorTab === 'human');
+      mentorTabAi?.classList.toggle('active', activeMentorTab === 'ai');
+
+      const filtered = list.filter(m => activeMentorTab === 'human' ? m.type === 'human' : m.type === 'ai');
+      if (!filtered.length) {
+        el.innerHTML = `<article class="mentor-item"><span>ℹ️</span><div><strong style="font-size:.88rem;">${activeMentorTab === 'human' ? '아직 등록된 인간 멘토가 없습니다.' : '기본 AI 멘토가 준비 중입니다.'}</strong></div></article>`;
+        return;
+      }
+
+      el.innerHTML = filtered.map(m => `
+        <article class="mentor-item">
+          <span>${m.icon}</span>
+          <div style="display:grid;gap:2px;">
+            <strong style="font-size:.88rem;">${m.name}</strong>
+            <small>${m.desc || ''}</small>
+          </div>
+          ${m.type === 'ai' ? '<span class="agent-pill">AI Mentor</span>' : '<span class="agent-pill">Human Mentor</span>'}
+        </article>
+      `).join('');
+    }
+
+    function renderComments(comments) {
+      if (!comments || !comments.length) {
+        modalComments.innerHTML = '<p class="meta">아직 댓글이 없습니다.</p>';
+        return;
+      }
+      modalComments.innerHTML = comments.map(c => `<div class="comment-item"><strong>${c.author || '익명'}</strong><p>${c.text || ''}</p></div>`).join('');
+    }
+
+    function formatDateDot(v) {
+      return String(v || '').replaceAll('-', '.');
+    }
+
+    function renderModalDate(data) {
+      if (!data || !data.startDate) {
+        modalDateRange.textContent = '';
+        return;
+      }
+      modalDateRange.textContent = `${formatDateDot(data.startDate)}~${data.ongoingNow ? '현재' : formatDateDot(data.endDate || '')}`;
+    }
+
+    function openModal(data) {
+      modalTitle.textContent = data.title || '';
+      renderModalDate(data);
+      modalCategory.textContent = data.category || '';
+      modalSummary.textContent = data.summary || '';
+      modalDesc.textContent = data.desc || data.fullDescription || '프로젝트 상세 설명이 준비 중입니다.';
+      modalStatus.textContent = data.status || '';
+      modalCategoryBadge.textContent = data.category || '';
+      modalRoles.textContent = data.roles || '';
+      modalDuration.textContent = data.duration || '';
+      modalImage.src = data.image || imageFor(data, 0);
+      renderTeamMini(data.teamMembers || [], data);
+      renderMentors(data, activeMentorTab || 'human');
+      currentProjectId = data.id || null;
+      modalLikeBtn.classList.toggle('liked', !!data._liked);
+      modalLikeBtn.innerHTML = (data._liked ? '♥ ' : '♡ ') + '<span id=\"modalLikeCount\">' + (data.likes || 0) + '</span>';
+      modalLikeCount.textContent = data.likes || 0;
+      modalCommentCount.textContent = (data.comments || []).length;
+      const st = WETHUS.getState();
+      if (modalApplyBtn) {
+        const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+        const mine = !!actor && data.founderId === actor;
+        const applied = WETHUS.hasApplied(data.id);
+        modalApplyBtn.classList.toggle('applied', applied);
+        modalApplyBtn.classList.toggle('mine', mine);
+        modalApplyBtn.textContent = mine ? '프로젝트로 이동' : (applied ? '지원완료' : '지원하기');
+      }
+      if (modalBookmarkBtn) {
+        const marked = WETHUS.isBookmarked(data.id);
+        modalBookmarkBtn.classList.toggle('active', !!marked);
+      }
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+      const mine = !!actor && data.founderId === actor;
+      if (modalEditBtn) modalEditBtn.style.display = mine ? 'inline-flex' : 'none';
+      if (modalDeleteBtn) modalDeleteBtn.style.display = mine ? 'inline-flex' : 'none';
+      if (data.moderationStatus === 'manual_review') modalStatus.textContent = '검수중';
+      if (data.moderationStatus === 'rejected') modalStatus.textContent = '반려';
+      renderComments(data.comments || []);
+      modalCommentPanel.style.display = 'none';
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+
+    listEl.addEventListener('click', async (e) => {
+      const bmBtn = e.target.closest('.bookmark-btn');
+      if (bmBtn) {
+        e.stopPropagation();
+        try {
+          const res = WETHUS.toggleBookmark(bmBtn.dataset.bm);
+          bmBtn.classList.toggle('active', !!res?.bookmarked);
+        } catch (_) {}
+        return;
+      }
+
+      const applyBtn = e.target.closest('.apply-btn');
+      if (applyBtn) {
+        e.stopPropagation();
+        const st = WETHUS.getState();
+        if (!(st.currentUserId || st.devMode)) {
+          WETHUS.setAuthReturnState?.({ modalProjectId: applyBtn.dataset.apply });
+          location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
+          return;
+        }
+        applyProjectId = applyBtn.dataset.apply;
+        const p = (currentItems || []).find(x => x.id === applyProjectId) || WETHUS.listProjects().find(x => x.id === applyProjectId);
+        const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+        if (p && actor && p.founderId === actor) {
+          location.href = `project-hub.html?projectId=${encodeURIComponent(p.id)}`;
+          return;
+        }
+        if (applyBtn.classList.contains('applied')) {
+          const ok = await WETHUS.uiConfirm('지원을 취소하겠습니까?', { title: '지원 취소' });
+          if (!ok) return;
+          WETHUS.cancelApplication(applyProjectId);
+          visibleCount = Math.max(6, visibleCount - 1);
+          applyFilters();
+          return;
+        }
+        applyModal.classList.add('open');
+        applyModal.setAttribute('aria-hidden', 'false');
+        return;
+      }
+
+      const toggleBtn = e.target.closest('.team-toggle');
+      if (toggleBtn) {
+        const list = toggleBtn.nextElementSibling;
+        if (list) list.classList.toggle('open');
+        return;
+      }
+
+      const target = e.target.closest('[data-project-id]');
+      if (!target) return;
+      if (e.target.closest('.member-pill')) return;
+      try {
+        const pid = target.getAttribute('data-project-id');
+        const p = (currentItems || []).find(x => x.id === pid) || WETHUS.listProjects().find(x => x.id === pid);
+        if (!p) return;
+        const idx = (currentItems || []).findIndex(x => x.id === pid);
+        openModal({ ...p, image: imageFor(p, Math.max(0, idx)), status: normalizeStage(p.status) });
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close') === 'true') closeModal();
+    });
+
+    modalLikeBtn.addEventListener('click', () => {
+      if (!currentProjectId) return;
+      const result = WETHUS.toggleLike(currentProjectId);
+      if (!result) return;
+      modalLikeBtn.classList.toggle('liked', !!result.liked);
+      modalLikeBtn.innerHTML = (result.liked ? '♥ ' : '♡ ') + '<span id=\"modalLikeCount\">' + result.likes + '</span>';
+      const target = currentItems.find(p => p.id === currentProjectId);
+      if (target) { target.likes = result.likes; target._liked = result.liked; }
+      render(currentItems);
+    });
+
+    modalCommentBtn.addEventListener('click', () => {
+      modalCommentPanel.style.display = 'block';
+      modalCommentInput.focus();
+    });
+
+    modalBookmarkBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!currentProjectId) return;
+      try {
+        const res = WETHUS.toggleBookmark(currentProjectId);
+        modalBookmarkBtn.classList.toggle('active', !!res?.bookmarked);
+        const btn = listEl.querySelector(`.bookmark-btn[data-bm="${currentProjectId}"]`);
+        if (btn) btn.classList.toggle('active', !!res?.bookmarked);
+      } catch (_) {}
+    });
+
+    modalApplyBtn.addEventListener('click', async () => {
+      if (!currentProjectId) return;
+      const st = WETHUS.getState();
+      if (!(st.currentUserId || st.devMode)) {
+        WETHUS.setAuthReturnState?.({ modalProjectId: currentProjectId });
+        location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
+        return;
+      }
+      const p = (currentItems || []).find(x => x.id === currentProjectId) || WETHUS.listProjects().find(x => x.id === currentProjectId);
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+      if (p && actor && p.founderId === actor) {
+        location.href = `project-hub.html?projectId=${encodeURIComponent(p.id)}`;
+        return;
+      }
+      if (WETHUS.hasApplied(currentProjectId)) {
+        const ok = await WETHUS.uiConfirm('지원을 취소하겠습니까?', { title: '지원 취소' });
+        if (!ok) return;
+        WETHUS.cancelApplication(currentProjectId);
+        closeModal();
+        applyFilters();
+        return;
+      }
+      applyProjectId = currentProjectId;
+      applyModal.classList.add('open');
+      applyModal.setAttribute('aria-hidden', 'false');
+    });
+
+    mentorTabHuman?.addEventListener('click', () => renderMentors(mentorProjectRef, 'human'));
+    mentorTabAi?.addEventListener('click', () => renderMentors(mentorProjectRef, 'ai'));
+
+    modalEditBtn?.addEventListener('click', async () => {
+      if (!currentProjectId) return;
+      const target = currentItems.find(p => p.id === currentProjectId) || WETHUS.listProjects().find(p => p.id === currentProjectId);
+      if (!target) return;
+      editProjectTitle.value = target.title || '';
+      editProjectMini.value = String(target.miniSummary || target.summary || '').slice(0, 64);
+      editProjectStatus.value = target.status || '기획 중';
+      editProjectTeamSize.value = target.teamSize || '3인';
+      editProjectRoles.value = target.roles || '';
+      editProjectDesc.value = target.fullDescription || target.desc || '';
+      editProjectModal.classList.add('open');
+      editProjectModal.setAttribute('aria-hidden', 'false');
+    });
+
+    modalDeleteBtn?.addEventListener('click', async () => {
+      if (!currentProjectId) return;
+      const ok = await WETHUS.uiConfirm('내 프로젝트를 삭제할까요?', { title: '프로젝트 삭제' });
+      if (!ok) return;
+      try {
+        WETHUS.deleteProject(currentProjectId);
+        closeModal();
+        applyFilters();
+      } catch (err) {
+        await WETHUS.uiAlert(err?.message || '삭제에 실패했습니다.', { title: '삭제 실패' });
+      }
+    });
+
+    modalCommentClose.addEventListener('click', () => {
+      modalCommentPanel.style.display = 'none';
+    });
+
+    modalCommentForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!currentProjectId) return;
+      const text = (modalCommentInput.value || '').trim();
+      if (!text) return;
+      const comments = WETHUS.addComment(currentProjectId, text) || [];
+      modalCommentInput.value = '';
+      modalCommentCount.textContent = comments.length;
+      renderComments(comments);
+      const target = currentItems.find(p => p.id === currentProjectId);
+      if (target) target.comments = comments;
+      render(currentItems);
+    });
+
+    function closeEditProjectModal() {
+      editProjectModal.classList.remove('open');
+      editProjectModal.setAttribute('aria-hidden', 'true');
+    }
+    document.getElementById('editProjectClose').addEventListener('click', closeEditProjectModal);
+    document.getElementById('editProjectCancel').addEventListener('click', closeEditProjectModal);
+    editProjectModal.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-edit-close') === 'true') closeEditProjectModal();
+    });
+    document.getElementById('editProjectSave').addEventListener('click', async () => {
+      if (!currentProjectId) return;
+      const target = currentItems.find(p => p.id === currentProjectId) || WETHUS.listProjects().find(p => p.id === currentProjectId);
+      if (!target) return;
+      const oneLine = String(editProjectMini.value || '').replace(/\s+/g, ' ').trim().replace(/[.!?。]+$/g, '').slice(0, 64);
+      try {
+        WETHUS.updateProject(currentProjectId, {
+          title: editProjectTitle.value.trim() || target.title,
+          summary: oneLine || target.summary,
+          miniSummary: oneLine || target.miniSummary || target.summary,
+          status: editProjectStatus.value || target.status,
+          teamSize: editProjectTeamSize.value || target.teamSize,
+          roles: editProjectRoles.value.trim() || target.roles,
+          fullDescription: editProjectDesc.value.trim() || target.fullDescription || target.desc,
+          desc: editProjectDesc.value.trim() || target.desc,
+          updatedAt: new Date().toISOString()
+        });
+        closeEditProjectModal();
+        closeModal();
+        applyFilters();
+      } catch (err) {
+        await WETHUS.uiAlert(err?.message || '수정에 실패했습니다.', { title: '수정 실패' });
+      }
+    });
+
+    document.getElementById('applyClose').addEventListener('click', () => {
+      applyModal.classList.remove('open');
+      applyModal.setAttribute('aria-hidden', 'true');
+    });
+    applyModal.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close-apply') === 'true') {
+        applyModal.classList.remove('open');
+        applyModal.setAttribute('aria-hidden', 'true');
+      }
+    });
+    document.getElementById('applySubmit').addEventListener('click', async () => {
+      if (!applyProjectId) return;
+      const st = WETHUS.getState();
+      if (!(st.currentUserId || st.devMode)) {
+        WETHUS.setAuthReturnState?.({ modalProjectId: applyProjectId });
+        location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
+        return;
+      }
+      const motivation = (applyMotivation.value || '').trim();
+      if (!motivation) { await WETHUS.uiAlert('지원동기를 입력해주세요.', { title: '입력 필요' }); return; }
+      const ok = await WETHUS.uiConfirm('지원하시겠습니까?', { title: '프로젝트 지원' });
+      if (!ok) return;
+      WETHUS.applyToProject(applyProjectId, motivation);
+      applyMotivation.value='';
+      applyModal.classList.remove('open');
+      applyModal.setAttribute('aria-hidden', 'true');
+      if (currentProjectId === applyProjectId) closeModal();
+      applyFilters();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { closeModal(); }
+    });
+
+    buildCategoryChips(allProjects);
+    applyFilters();
+    const returnRaw = sessionStorage.getItem('wethus_auth_return_state');
+    if (returnRaw) {
+      try {
+        const rs = JSON.parse(returnRaw);
+        if (rs?.path === location.pathname) {
+          if (typeof rs.scrollY === 'number') setTimeout(() => window.scrollTo(0, rs.scrollY), 0);
+          if (rs.modalProjectId) {
+            const p = (currentItems || []).find(x => x.id === rs.modalProjectId);
+            if (p) openModal(p);
+          }
+          sessionStorage.removeItem('wethus_auth_return_state');
+        }
+      } catch (_) {}
+    }
+    if (openProjectId) {
+      const p = (currentItems || []).find(x => x.id === openProjectId) || WETHUS.listProjects().find(x => x.id === openProjectId);
+      if (p) openModal(p);
+    }
+  </script>
+</body>
+</html>

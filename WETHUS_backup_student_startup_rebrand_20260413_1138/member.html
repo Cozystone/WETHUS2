@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);}
+   gtag('js', new Date());
+  
+   gtag('config', 'G-PKF58GJC08');
+  </script>
+  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | 팀원 프로필</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="styles.css?v=20260319-23" />
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="wordmark">WETHUS</a>
+      <nav class="nav-links">
+        <a href="explore.html" class="nav-link">탐색</a>
+        <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
+        <a href="project-hub.html" class="nav-link">프로젝트 허브</a>
+        <a href="mentor.html" class="nav-link">멘토</a>
+        <a href="profile.html" class="nav-link">프로필</a>
+        <a href="login.html" class="nav-link js-auth-link">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page-main page-main--standard">
+    <section class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+      <div>
+        <h1 class="page-title">팀원 프로필</h1>
+        <p class="page-sub">프로젝트 팀원 상세 정보</p>
+      </div>
+      <button id="memberClose" class="modal-close" aria-label="뒤로가기" style="position:static;">×</button>
+    </section>
+
+    <section class="profile-hero" id="memberHero"></section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="wordmark">WETHUS</span>
+        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+
+  <script src="app.js?v=20260409-103"></script>
+  <script>
+    const authLink = document.querySelector('.js-auth-link');
+    const state = WETHUS.getState();
+    if (state.currentUserId || state.devMode) {
+      authLink.textContent = '로그아웃';
+      authLink.href = '#';
+      authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
+    }
+
+    const closeBtn = document.getElementById('memberClose');
+    closeBtn?.addEventListener('click', () => {
+      if (history.length > 1) history.back();
+      else location.href = 'explore.html';
+    });
+
+    const params = new URLSearchParams(location.search);
+    const member = {
+      name: params.get('name') || '팀원',
+      role: params.get('role') || '담당 미정',
+      bio: params.get('bio') || '소개가 아직 없습니다.',
+      founder: params.get('founder') === '1',
+      mentor: params.get('mentor') === '1'
+    };
+
+    const me = WETHUS.currentUser();
+    const plan = String(me?.plan || 'free').toLowerCase();
+    const paid = ['premium', 'pro', 'master'].includes(plan);
+    const myTeamNames = new Set((WETHUS.myProjects() || []).flatMap(p => (p.teamMembers || []).map(m => m.name)));
+    const canViewDetail = paid || myTeamNames.has(member.name) || me?.name === member.name || me?.nickname === member.name;
+
+    const mentorBadge = member.mentor ? '<span class="verify-badge" style="background:#6d28d9;color:#f5f3ff;border-color:#8b5cf6;">Mentor 인증</span>' : '';
+    document.getElementById('memberHero').innerHTML = `
+      <div class="profile-avatar">${member.name.slice(0,1)}</div>
+      <div class="profile-main">
+        <div class="profile-topline" style="justify-content:space-between;align-items:flex-start;gap:10px;">
+          <div>
+            <h2>${member.name}</h2>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <span class="profile-nickname">@${member.name.replace(/\s+/g,'').toLowerCase()}</span>
+              ${member.founder ? '<span class="verify-badge">Founder 인증</span>' : ''}
+              ${mentorBadge}
+            </div>
+          </div>
+          <button id="memberDmBtn" class="btn btn--primary" type="button">DM 보내기</button>
+        </div>
+        <p class="profile-bio">${canViewDetail ? member.bio : '상세 프로필은 Premium/Pro 플랜에서 확인할 수 있습니다. (내 팀원 제외)'}</p>
+        ${canViewDetail ? '' : '<p class="meta" style="margin-top:6px;">요금제 업그레이드 시 경력/상세 정보를 확인할 수 있어요.</p>'}
+      </div>
+    `;
+
+    const memberDmBtn = document.getElementById('memberDmBtn');
+    memberDmBtn?.addEventListener('click', async () => {
+      try {
+        const thread = await WETHUS.createDmThread({ targetName: member.name });
+        location.href = `dm.html?threadId=${encodeURIComponent(thread?.id || '')}`;
+      } catch (e) {
+        alert(e?.message || 'DM 대화방 생성에 실패했습니다.');
+      }
+    });
+
+    const projects = WETHUS.projectsByMemberName(member.name);
+    const wrap = document.createElement('section');
+    wrap.innerHTML = `
+      <section class="projects-head-row" style="margin-top:16px;">
+        <h2 class="section-title" style="font-size:1.3rem;margin:0;">참여 프로젝트</h2>
+      </section>
+      <section class="list-grid">${projects.length ? projects.map(p => `<article class=\"list-item\"><span class=\"card-chip\">${p.category||''}</span><h3>${p.title}</h3><p>${p.summary||''}</p><div class=\"meta\">${p.status||''} · ${p.teamSize||''}</div></article>`).join('') : '<article class="list-item"><p class="page-sub">참여 프로젝트가 없습니다.</p></article>'}</section>
+    `;
+    document.querySelector('main.container')?.appendChild(wrap);
+  </script>
+</body>
+</html>

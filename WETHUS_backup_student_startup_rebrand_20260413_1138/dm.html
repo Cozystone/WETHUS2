@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-PKF58GJC08');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | DM</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="styles.css?v=20260319-23" />
+  <style>
+    .dm-shell{margin-top:24px;border:1px solid #2a2a2a;border-radius:16px;overflow:hidden;background:#111;display:grid;grid-template-columns:320px 1fr;min-height:68vh}
+    .dm-left{border-right:1px solid #232323;background:#0f0f0f;display:grid;grid-template-rows:auto 1fr;overflow:hidden}
+    .dm-search{padding:12px;border-bottom:1px solid #232323}
+    .dm-search input{width:100%;background:#171717;border:1px solid #2c2c2c;border-radius:12px;color:#fff;padding:10px 12px}
+    .dm-threads{overflow-y:auto;overflow-x:hidden;padding:6px}
+    .dm-thread{padding:10px 12px;border-radius:12px;cursor:pointer;border:1px solid transparent;display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:center;overflow:hidden}
+    .dm-thread:hover{background:#171717}
+    .dm-thread.active{background:#1f1f1f;border-color:#343434}
+    .dm-avatar{width:36px;height:36px;border-radius:999px;display:grid;place-items:center;background:#2a2a2a;color:#fff;font-size:.78rem;font-weight:700;border:1px solid #3a3a3a;overflow:hidden}
+    .dm-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+    .dm-thread-name{margin:0;font-size:.93rem}
+    .dm-thread-last{margin:3px 0 0;color:#9a9a9a;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .dm-main{display:grid;grid-template-rows:auto 1fr auto;background:#141414}
+    .dm-head{padding:14px 16px;border-bottom:1px solid #232323;display:flex;justify-content:space-between;align-items:center}
+    .dm-messages{padding:14px;overflow:auto;display:grid;gap:8px;align-content:start}
+    .dm-bubble{max-width:min(78%,680px);padding:10px 12px;border-radius:14px;line-height:1.45;word-break:break-word}
+    .dm-bubble.me{justify-self:end;background:#ff8a00;color:#111;border-bottom-right-radius:4px}
+    .dm-bubble.other{justify-self:start;background:#232323;color:#f5f5f5;border-bottom-left-radius:4px}
+    .dm-meta{font-size:.72rem;color:#8c8c8c;margin-top:4px}
+    .dm-compose{padding:12px;border-top:1px solid #232323;display:grid;grid-template-columns:1fr auto;gap:8px}
+    .dm-compose textarea{height:44px;min-height:44px;max-height:140px;resize:none;border-radius:12px;padding:10px;background:#101010;border:1px solid #2a2a2a;color:#fff;line-height:1.25;overflow-y:auto}
+    .dm-empty{display:grid;place-items:center;color:#8f8f8f}
+    @media (max-width: 960px){.dm-shell{grid-template-columns:1fr;min-height:76vh}.dm-left{max-height:220px;border-right:0;border-bottom:1px solid #232323}}
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="wordmark">WETHUS</a>
+      <nav class="nav-links">
+        <a href="explore.html" class="nav-link">탐색</a>
+        <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
+        <a href="project-hub.html" class="nav-link">프로젝트 허브</a>
+        <a href="mentor.html" class="nav-link">멘토</a>
+        <a href="profile.html" class="nav-link">프로필</a>
+        <a href="login.html" class="nav-link js-auth-link">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page-main page-main--standard">
+    <div style="margin-top:10px;margin-bottom:8px;"><button id="fromHubBack" class="btn btn--secondary" type="button" style="display:none;">← 프로젝트 허브로 돌아가기</button></div>
+    <section class="projects-head-row" style="padding-top:10px;">
+      <div>
+        <h1 class="page-title" style="margin:0;">DM</h1>
+        <p class="page-sub" id="dmPlanDesc">사람들과 직접 프로젝트 대화를 나눠보세요.</p>
+      </div>
+      <button id="upgradeBtn" class="btn btn--primary" style="display:none;">Premium으로 전환</button>
+    </section>
+
+    <section class="dm-shell">
+      <aside class="dm-left">
+        <div class="dm-search"><input id="dmSearch" placeholder="대화 상대 검색" /></div>
+        <div id="dmThreads" class="dm-threads"></div>
+      </aside>
+      <section class="dm-main">
+        <div class="dm-head">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div id="dmHeadAvatar" class="dm-avatar">DM</div>
+            <div>
+              <h3 id="dmThreadTitle" style="margin:0;font-size:1rem;">대화를 선택하세요</h3>
+              <p id="dmThreadSub" class="meta" style="margin:2px 0 0;">최근 대화를 이어갈 수 있어요.</p>
+            </div>
+          </div>
+        </div>
+        <div id="dmMessages" class="dm-messages"><div class="dm-empty">왼쪽에서 대화를 선택하세요.</div></div>
+        <div id="dmComposerWrap" class="dm-compose" style="display:none;">
+          <textarea id="dmInput" rows="1" placeholder="메시지를 입력하세요"></textarea>
+          <button id="dmSend" class="btn btn--primary">보내기</button>
+        </div>
+      </section>
+    </section>
+
+    <p id="dmInfo" class="form-message"></p>
+  </main>
+
+  <footer class="footer">
+    <div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p></div></div>
+  </footer>
+
+  <script src="app.js?v=20260409-103"></script>
+  <script>
+    const authLink = document.querySelector('.js-auth-link');
+    const st = WETHUS.getState();
+    if (authLink && (st.currentUserId || st.devMode)) {
+      authLink.textContent = '로그아웃'; authLink.href = '#';
+      authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
+    }
+    WETHUS.requireAuth();
+
+    const threadEl = document.getElementById('dmThreads');
+    const msgEl = document.getElementById('dmMessages');
+    const titleEl = document.getElementById('dmThreadTitle');
+    const subEl = document.getElementById('dmThreadSub');
+    const headAvatarEl = document.getElementById('dmHeadAvatar');
+    const planDesc = document.getElementById('dmPlanDesc');
+    const upgradeBtn = document.getElementById('upgradeBtn');
+    const composerWrap = document.getElementById('dmComposerWrap');
+    const dmInfo = document.getElementById('dmInfo');
+    const dmSearch = document.getElementById('dmSearch');
+    const fromHubBack = document.getElementById('fromHubBack');
+    if (fromHub && fromHubBack) {
+      fromHubBack.style.display = 'inline-flex';
+      fromHubBack.addEventListener('click', () => history.back());
+    }
+
+    const qs = new URLSearchParams(location.search);
+    const initialThreadId = qs.get('threadId');
+    const fromHub = qs.get('fromHub') === '1';
+    let currentThreadId = initialThreadId || null;
+    let currentThreads = [];
+    let isSending = false;
+
+    function dmDirectoryEntries() {
+      const st = WETHUS.getState();
+      const meId = st.currentUserId;
+      const users = (st.users || []).filter(u => u.id !== meId).map(u => ({ id: u.id, name: u.nickname || u.name || u.email || '사용자', avatar: u.profileImage || '' }));
+      const agents = (st.agents || []).map(a => ({ id: `agent:${a.code}`, name: a.name, avatar: '' }));
+      const uniq = new Map();
+      [...users, ...agents].forEach(x => { if (!uniq.has(x.id)) uniq.set(x.id, x); });
+      return Array.from(uniq.values());
+    }
+
+    function formatTime(ts){ try { return new Date(ts).toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }); } catch { return ''; } }
+    function avatarMarkup(name, avatar) {
+      if (avatar) return `<span class="dm-avatar"><img src="${avatar}" alt="${name||'avatar'}" /></span>`;
+      return `<span class="dm-avatar">${String(name || 'U').trim().slice(0,1).toUpperCase()}</span>`;
+    }
+
+    function applyPlanUi() {
+      const isPremium = WETHUS.currentPlan() === 'premium';
+      composerWrap.style.display = isPremium ? 'grid' : 'none';
+      upgradeBtn.style.display = isPremium ? 'none' : 'inline-flex';
+      planDesc.textContent = isPremium ? 'Premium 플랜: DM 수신/발신 가능' : 'Free 플랜: DM 수신만 가능 (발신은 Premium)';
+      dmInfo.textContent = isPremium ? '' : '프리 플랜에서는 메시지 발신이 잠겨 있습니다.';
+    }
+
+    function renderThreads(list = currentThreads) {
+      if (!list.length) { threadEl.innerHTML = '<div class="dm-empty" style="height:100%;">대화가 없습니다.</div>'; return; }
+      threadEl.innerHTML = list.map(t => `
+        <article class="dm-thread ${currentThreadId === t.id ? 'active' : ''}" data-id="${t.id}">
+          ${avatarMarkup(t.peerName || t.targetName || '대화 상대', t.peerAvatar || t.targetAvatar || '')}
+          <div style="min-width:0;">
+            <h4 class="dm-thread-name">${t.peerName || t.targetName || '대화 상대'}</h4>
+            <p class="dm-thread-last">${t.lastMessage || '메시지가 없습니다.'}</p>
+          </div>
+        </article>
+      `).join('');
+      threadEl.querySelectorAll('.dm-thread').forEach(el => el.addEventListener('click', async () => {
+        const id = el.getAttribute('data-id');
+        if (String(id).startsWith('new:')) {
+          const targetId = String(id).replace(/^new:/, '');
+          const t = (currentThreads || []).find(x => x.peerId === targetId);
+          if (t) {
+            currentThreadId = t.id;
+          } else {
+            const pseudo = (dmDirectoryEntries() || []).find(x => x.id === targetId);
+            const thread = await WETHUS.createDmThread({ targetUserId: pseudo?.id || targetId, targetName: pseudo?.name || '대화 상대', targetAvatar: pseudo?.avatar || '' });
+            await refreshThreads();
+            currentThreadId = thread?.id || currentThreadId;
+          }
+        } else {
+          currentThreadId = id;
+        }
+        renderThreads();
+        await renderMessages();
+      }));
+    }
+
+    async function renderMessages() {
+      const thread = currentThreads.find(t => t.id === currentThreadId);
+      if (!thread) { msgEl.innerHTML = '<div class="dm-empty">대화를 선택하세요.</div>'; return; }
+      titleEl.textContent = thread.peerName || thread.targetName || '대화';
+      subEl.textContent = `${thread.messageCount || 0}개 메시지`;
+      headAvatarEl.innerHTML = thread.peerAvatar || thread.targetAvatar
+        ? `<img src="${thread.peerAvatar || thread.targetAvatar}" alt="avatar" />`
+        : String(thread.peerName || thread.targetName || 'U').trim().slice(0,1).toUpperCase();
+      const msgs = await WETHUS.listDmMessages(thread.id);
+      const me = WETHUS.currentUser();
+      const myName = me?.nickname || me?.name || WETHUS.getState().currentUserId || '';
+      const myId = String(WETHUS.getState().currentUserId || '');
+      msgEl.innerHTML = msgs.length ? msgs.map(m => {
+        const mine = String(m.fromId || '') === myId || String(m.from || '').trim() === String(myName).trim();
+        return `<article class="dm-bubble ${mine ? 'me' : 'other'}"><div>${m.text || ''}</div><div class="dm-meta">${m.from || ''} · ${formatTime(m.createdAt)}</div></article>`;
+      }).join('') : '<div class="dm-empty">아직 메시지가 없습니다.</div>';
+      msgEl.scrollTop = msgEl.scrollHeight;
+    }
+
+    async function refreshThreads() {
+      currentThreads = await WETHUS.listDmThreads();
+      if (!currentThreadId && currentThreads[0]) currentThreadId = currentThreads[0].id;
+      renderThreads();
+      await renderMessages();
+    }
+
+    dmSearch.addEventListener('input', () => {
+      const q = dmSearch.value.trim().toLowerCase();
+      if (!q) return renderThreads(currentThreads);
+      const filtered = currentThreads.filter(t => String(t.peerName || t.targetName || '').toLowerCase().includes(q));
+      const names = new Set(filtered.map(t => String(t.peerName || t.targetName || '')));
+      const candidates = dmDirectoryEntries()
+        .filter(x => String(x.name || '').toLowerCase().includes(q))
+        .filter(x => !names.has(x.name))
+        .slice(0, 6)
+        .map(x => ({ id: `new:${x.id}`, peerId: x.id, peerName: `${x.name} (새 대화)`, lastMessage: '클릭하여 대화 시작', peerAvatar: x.avatar, _newTarget: x }));
+      renderThreads([...filtered, ...candidates]);
+    });
+
+    upgradeBtn.addEventListener('click', () => { WETHUS.setCurrentUserPlan('premium'); applyPlanUi(); });
+
+    const dmInputEl = document.getElementById('dmInput');
+    const dmSendEl = document.getElementById('dmSend');
+
+    dmInputEl.addEventListener('input', () => {
+      dmInputEl.style.height = '44px';
+      dmInputEl.style.height = Math.min(dmInputEl.scrollHeight, 140) + 'px';
+    });
+
+    dmInputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        dmSendEl.click();
+      }
+    });
+
+    dmSendEl.addEventListener('click', async () => {
+      if (isSending) return;
+      const text = (dmInputEl.value || '').trim();
+      if (!text || !currentThreadId) return;
+      try {
+        isSending = true;
+        await WETHUS.sendDm(currentThreadId, text);
+        dmInputEl.value = '';
+        dmInputEl.style.height = '44px';
+        await refreshThreads();
+      } catch (e) {
+        dmInfo.textContent = e?.message || '메시지 전송에 실패했습니다.';
+      } finally {
+        isSending = false;
+      }
+    });
+
+    refreshThreads();
+    applyPlanUi();
+  </script>
+</body>
+</html>

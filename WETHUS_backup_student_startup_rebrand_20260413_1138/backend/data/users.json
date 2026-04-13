@@ -1,0 +1,39 @@
+{
+  "users": [
+    {
+      "id": "5bc1072f-07f9-4154-adb0-15c616737ffb",
+      "name": "t",
+      "nickname": "t",
+      "email": "test_wethus_login2@example.com",
+      "passwordHash": "14f8f4bb8c0e79a02670a5fea5682da717a5b3d3dc7b1706f7a4bab9afae18c2",
+      "plan": "free",
+      "founderVerified": false,
+      "profileImage": "",
+      "bio": "",
+      "onboardingComplete": false,
+      "school": "",
+      "careerRaw": "",
+      "careerSummary": "",
+      "createdAt": "2026-03-18T08:23:58.820Z",
+      "updatedAt": "2026-03-18T08:23:58.820Z"
+    },
+    {
+      "id": "cee896c4-c81f-4554-a426-b90e3756c76a",
+      "name": "김안석",
+      "nickname": "김안석",
+      "email": "anseokkim@gmail.com",
+      "passwordHash": "",
+      "plan": "free",
+      "founderVerified": false,
+      "profileImage": "https://lh3.googleusercontent.com/a/ACg8ocL5GyOolu9CNBeGql8UxaT9oqcq9lL6vu-UQosxl8NFMUDiQAo=s96-c",
+      "bio": "",
+      "onboardingComplete": false,
+      "school": "",
+      "careerRaw": "",
+      "careerSummary": "",
+      "googleSub": "111941429841162552539",
+      "createdAt": "2026-03-20T09:37:22.217Z",
+      "updatedAt": "2026-03-20T13:19:28.288Z"
+    }
+  ]
+}

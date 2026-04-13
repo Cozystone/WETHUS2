@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);}
+   gtag('js', new Date());
+  
+   gtag('config', 'G-PKF58GJC08');
+  </script>
+  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | 관리자 검수</title>
+  <link rel="stylesheet" href="styles.css?v=20260319-23" />
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="wordmark">WETHUS</a>
+      <nav class="nav-links"><a href="index.html" class="nav-link">홈</a></nav>
+    </div>
+  </header>
+
+  <main class="container page-main page-main--standard">
+    <section class="page-header">
+      <h1 class="page-title">관리자 수동 검수</h1>
+      <p class="page-sub">수동 검토 필요 프로젝트를 승인(V) 또는 거부(X)하세요.</p>
+    </section>
+    <section id="reviewList" class="list-grid"></section>
+  </main>
+
+  <script src="app.js?v=20260409-103"></script>
+  <script>
+    (function(){
+      const list = document.getElementById('reviewList');
+      const st = WETHUS.getState();
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+      if (!actor) { location.href = 'login.html'; return; }
+      if (!WETHUS.isAdminActor()) {
+        list.innerHTML = '<article class="list-item"><h3>권한 없음</h3><p>관리자 계정에서만 접근 가능합니다.</p></article>';
+        return;
+      }
+
+      function render(){
+        const items = WETHUS.listReviewProjects();
+        if (!items.length) {
+          list.innerHTML = '<article class="list-item"><h3>검수 대기 없음</h3><p>현재 수동 검수가 필요한 프로젝트가 없습니다.</p></article>';
+          return;
+        }
+        list.innerHTML = items.map(p => `
+          <article class="list-item" data-id="${p.id}">
+            <h3>${p.title}</h3>
+            <p>${p.summary || ''}</p>
+            <p class="meta">카테고리: ${p.category || '-'} · 상태: ${p.status || '-'} · 신청자: ${p.founderId || '-'}</p>
+            <p style="white-space:pre-wrap;color:#bdbdbd;">${(p.fullDescription || '').slice(0, 400)}</p>
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+              <button class="btn btn--secondary js-reject">X 거부</button>
+              <button class="btn btn--primary js-approve">V 승인</button>
+            </div>
+          </article>
+        `).join('');
+      }
+
+      list.addEventListener('click', async (e) => {
+        const card = e.target.closest('[data-id]');
+        if (!card) return;
+        const id = card.getAttribute('data-id');
+        if (e.target.closest('.js-approve')) {
+          WETHUS.reviewProject(id, 'approve', '운영자 승인');
+          render();
+        }
+        if (e.target.closest('.js-reject')) {
+          const reason = prompt('거부 사유를 입력하세요', '운영자 검토 결과 반려');
+          if (reason == null) return;
+          WETHUS.reviewProject(id, 'reject', reason);
+          render();
+        }
+      });
+
+      const me = WETHUS.currentUser && WETHUS.currentUser();
+      if (me?.email && WETHUS.syncCloudState) {
+        WETHUS.syncCloudState(me.email).catch(() => {}).finally(() => render());
+        setTimeout(render, 1200);
+      }
+      render();
+    })();
+  </script>
+</body>
+</html>

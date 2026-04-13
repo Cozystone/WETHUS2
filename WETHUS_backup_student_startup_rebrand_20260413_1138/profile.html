@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);}
+   gtag('js', new Date());
+  
+   gtag('config', 'G-PKF58GJC08');
+  </script>
+  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | 프로필</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="styles.css?v=20260319-23" />
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="wordmark">WETHUS</a>
+      <nav class="nav-links">
+        <a href="explore.html" class="nav-link">탐색</a>
+        <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
+        <a href="project-hub.html" class="nav-link">프로젝트 허브</a>
+        <a href="mentor.html" class="nav-link">멘토</a>
+        <a href="profile.html" class="nav-link nav-link--cta">프로필</a>
+        <a href="login.html" class="nav-link js-auth-link">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page-main page-main--profile">
+    <section class="page-header">
+      <h1 class="page-title">내 프로필</h1>
+      <p class="page-sub">프로필, 인증 상태, 프로젝트 활동</p>
+    </section>
+
+    <section class="profile-hero" id="profileHero"></section>
+
+    <section class="profile-activity-wrap">
+      <div class="profile-activity-bar" id="activityBar">
+        <button class="profile-activity-tab" data-tab="liked" type="button">좋아요</button>
+        <button class="profile-activity-tab" data-tab="bookmarked" type="button">북마크</button>
+      </div>
+      <section id="activityList" class="profile-activity-list" style="display:none;"></section>
+    </section>
+
+    <section class="projects-head-row" style="margin-top:8px;">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="projectPaneMy" class="profile-activity-tab active" type="button">내 프로젝트</button>
+        <button id="projectPaneParticipating" class="profile-activity-tab" type="button">참여중 프로젝트</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="myProjectViewAlbum" class="view-icon-btn active" type="button" aria-label="앨범형"><span class="icon-grid"></span></button>
+        <button id="myProjectViewList" class="view-icon-btn" type="button" aria-label="리스트형"><span class="icon-list"></span></button>
+        <a class="btn btn--primary" href="founder.html">+ 프로젝트 추가</a>
+      </div>
+    </section>
+
+    <section id="myProjects" class="list-grid"></section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="wordmark">WETHUS</span>
+        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <div id="profileEditModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-profile="true"></div>
+    <article class="modal-panel" style="max-width:560px;">
+      <button class="modal-close" id="profileEditClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 style="margin:0 0 12px;">프로필 수정</h3>
+        <form id="profileForm" class="application-form">
+          <label>프로필 사진
+            <input id="profileImageFile" type="file" accept="image/*" hidden />
+            <div id="profileDropzone" style="border:1px dashed #3a3a3a;border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+              <img id="profileImagePreview" alt="프로필 미리보기" style="width:48px;height:48px;border-radius:999px;object-fit:cover;border:1px solid #2a2a2a;" />
+              <div>
+                <strong style="font-size:.88rem;">드래그 앤 드롭 또는 파일 선택</strong>
+                <p style="margin:2px 0 0;color:#9a9a9a;font-size:.78rem;">JPG/PNG · 원형 프로필</p>
+              </div>
+            </div>
+          </label>
+          <label>이름 <input name="name" required /></label>
+          <label>별명 <input name="nickname" required /></label>
+          <label>자기소개 <textarea name="bio" placeholder="어떤 프로젝트를 왜 하는지 간단히 소개해보세요."></textarea></label>
+          <label>나이 <input name="age" type="number" min="10" max="30" placeholder="만 나이" required /></label>
+          <label>학교 정보
+            <div style="display:flex;gap:8px;">
+              <input id="schoolInput" name="school" placeholder="학교명 검색" />
+              <button id="schoolSearchBtn" class="btn btn--secondary" type="button">검색</button>
+            </div>
+          </label>
+          <label>경력사항(나열)
+            <textarea id="careerRaw" name="careerRaw" placeholder="예: 영화제 출품 2회, React 앱 제작, 동아리 회장"></textarea>
+          </label>
+          <label>경력 요약(AI 정리)
+            <div style="display:flex;gap:8px;align-items:flex-start;">
+              <textarea id="careerSummary" name="careerSummary" placeholder="AI가 두괄식으로 요약합니다."></textarea>
+              <button id="careerAiBtn" class="btn btn--secondary" type="button">AI 정리</button>
+            </div>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input type="checkbox" id="under22Confirm" name="under22Confirm" style="width:auto;"/> 만 22세 미만 학생임을 확인합니다. (PASS 연동 전 임시)</label>
+          <div style="display:flex;justify-content:flex-end;gap:8px;">
+            <button class="btn btn--secondary" type="button" id="profileEditCancel">취소</button>
+            <button class="btn btn--primary" type="submit">저장</button>
+          </div>
+        </form>
+        <p id="profileMsg" class="form-message"></p>
+      </div>
+    </article>
+  </div>
+
+  <div id="myProjectModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-myproject="true"></div>
+    <article class="modal-panel" style="max-width:760px;">
+      <button class="modal-close" id="myProjectClose" aria-label="닫기">×</button>
+      <div class="modal-media-wrap"><img id="myProjectImage" class="modal-image" alt="프로젝트 이미지" /></div>
+      <div class="modal-content">
+        <p id="myProjectCategory" class="section-kicker" style="margin:0 0 4px;"></p>
+        <h3 id="myProjectTitle" style="margin:0 0 8px;"></h3>
+        <p id="myProjectMeta" class="meta" style="margin:0 0 8px;"></p>
+        <p id="myProjectTeam" class="meta" style="margin:0 0 8px;"></p>
+        <p id="myProjectSocial" class="meta" style="margin:0 0 10px;"></p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <select id="myProjectStatusInput" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:10px;border-radius:8px;">
+            <option>모집 중</option><option>기획 중</option><option>진행 중</option><option>피보팅</option>
+          </select>
+          <select id="myProjectTeamSizeInput" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:10px;border-radius:8px;">
+            <option>1인</option><option>2인</option><option>3인</option><option>4인이상</option>
+          </select>
+        </div>
+        <input id="myProjectRolesInput" style="width:100%;margin-bottom:8px;background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:8px;padding:10px;" placeholder="역할" />
+        <textarea id="myProjectSummaryInput" style="width:100%;min-height:100px;background:rgba(255,255,255,.06);color:#f5f5f5;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:10px;"></textarea>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
+          <button id="myProjectDelete" class="btn btn--secondary" type="button">삭제</button>
+          <button id="myProjectSave" class="btn btn--primary" type="button">수정 저장</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <div id="schoolSearchModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-school="true"></div>
+    <article class="modal-panel" style="max-width:760px;">
+      <button class="modal-close" id="schoolSearchClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 style="margin:0 0 10px;">학교 검색</h3>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input id="schoolSearchInput" placeholder="학교명을 입력하세요" style="flex:1;background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;" />
+          <button id="schoolSearchRun" class="btn btn--primary" type="button">검색</button>
+        </div>
+        <div id="schoolSearchResult" class="list-grid"></div>
+      </div>
+    </article>
+  </div>
+
+  <script src="app.js?v=20260409-103"></script>
+  <script>
+    const authLink = document.querySelector('.js-auth-link');
+
+    try {
+      WETHUS.requireAuth();
+      const st = WETHUS.getState();
+      if (authLink && (st.currentUserId || st.devMode)) {
+        authLink.textContent = '로그아웃';
+        authLink.href = '#';
+        authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
+      }
+
+      const u = WETHUS.currentUser();
+      const hero = document.getElementById('profileHero');
+      const activityBar = document.getElementById('activityBar');
+      const activityList = document.getElementById('activityList');
+      const mine = document.getElementById('myProjects');
+      const projectPaneMy = document.getElementById('projectPaneMy');
+      const projectPaneParticipating = document.getElementById('projectPaneParticipating');
+      const pageTitleEl = document.querySelector('.page-title');
+      const pageSubEl = document.querySelector('.page-sub');
+      const navEl = document.querySelector('.nav');
+      const profileEditModal = document.getElementById('profileEditModal');
+      const profileEditClose = document.getElementById('profileEditClose');
+      const profileEditCancel = document.getElementById('profileEditCancel');
+
+      const fallbackUser = { name: '개발자 모드', nickname: 'dev_mode', email: 'dev@local', bio: '임시 세션으로 로그인됨', founderVerified: false, profileImage: '', age: 17, school: '', careerRaw: '', careerSummary: '', onboardingComplete: true };
+      const user = u || fallbackUser;
+      const founderBadge = user.founderVerified ? '<span class="verify-badge">Founder 인증</span>' : '';
+      const youthBadge = user.youthTag ? '<span class="verify-badge" style="background:#e8f7ee;color:#0f8a47;border-color:#bde8cc;">Youth</span>' : '';
+
+      const careerLines = String(user.careerSummary || '').split('\n').filter(Boolean);
+      const collapsedCareer = careerLines.slice(0, 3).join('\n');
+      const fullCareer = careerLines.join('\n');
+      const avatarSrc = user.profileImage ? `<img src="${user.profileImage}" alt="프로필" class="profile-mini-avatar"/>` : `<span class="profile-avatar-fallback">${(user.name || 'U').slice(0,1)}</span>`;
+
+      hero.innerHTML = `
+        <div class="profile-main" style="width:100%;">
+          <div class="profile-topline" style="justify-content:space-between;align-items:flex-start;">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+              ${avatarSrc}
+              <div>
+                <h2 style="margin:0;">${user.name}</h2>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <span class="profile-nickname">@${user.nickname || (user.name || '').replace(/\s+/g,'').toLowerCase()}</span>
+                  ${founderBadge}
+                  ${youthBadge}
+                </div>
+              </div>
+            </div>
+            ${u ? '<button id="profileEditOpen" class="btn btn--secondary" style="display:inline-flex;align-items:center;gap:6px;">✎ 수정</button>' : ''}
+          </div>
+          <p class="profile-bio">${user.bio || '아직 소개가 없습니다. 프로젝트를 시작해보세요.'}</p>
+          <p class="meta" style="margin:0 0 6px;">${user.school ? user.school + ' · ' : ''}${user.age ? '만 ' + user.age + '세' : ''}</p>
+          ${careerLines.length ? `<p id="careerSummaryText" class="meta" style="margin:0 0 4px;white-space:pre-line;">${careerLines.length > 3 ? collapsedCareer : fullCareer}</p>
+          ${careerLines.length > 3 ? '<button id="careerToggleBtn" class="btn btn--secondary" type="button" style="padding:4px 10px;font-size:.75rem;">더보기</button>' : ''}` : ''}
+          <div class="profile-stats" style="margin-top:10px;">
+            <span><strong>${WETHUS.myProjects().length}</strong> 프로젝트</span>
+            <span><strong>${WETHUS.listProjects().filter(p => p.founderId === (u ? u.id : 'dev-temp')).length}</strong> 등록</span>
+            <span><strong>${u ? '일반' : '개발'}</strong> 모드</span>
+          </div>
+        </div>
+      `;
+
+      if (u) {
+        const profileForm = document.getElementById('profileForm');
+        const profileMsg = document.getElementById('profileMsg');
+        const profileEditOpen = document.getElementById('profileEditOpen');
+        const profileImageFile = document.getElementById('profileImageFile');
+        const profileImagePreview = document.getElementById('profileImagePreview');
+        const profileDropzone = document.getElementById('profileDropzone');
+        const schoolInput = document.getElementById('schoolInput');
+        const schoolSearchBtn = document.getElementById('schoolSearchBtn');
+        const careerRawEl = document.getElementById('careerRaw');
+        const careerSummaryEl = document.getElementById('careerSummary');
+        const careerAiBtn = document.getElementById('careerAiBtn');
+        const under22Confirm = document.getElementById('under22Confirm');
+        const onboardingParam = new URLSearchParams(location.search).get('onboarding') === '1';
+        const ONBOARDING = onboardingParam && !u.onboardingComplete;
+        const NEIS_KEY = '5c4d13bf833b45ec8c97f9f0fe885d6b';
+        const schoolModal = document.getElementById('schoolSearchModal');
+        const schoolSearchClose = document.getElementById('schoolSearchClose');
+        const schoolSearchInput = document.getElementById('schoolSearchInput');
+        const schoolSearchRun = document.getElementById('schoolSearchRun');
+        const schoolSearchResult = document.getElementById('schoolSearchResult');
+        let stagedProfileImage = u.profileImage || '';
+
+        const careerToggleBtn = document.getElementById('careerToggleBtn');
+        const careerSummaryText = document.getElementById('careerSummaryText');
+        if (careerToggleBtn && careerSummaryText) {
+          let expanded = false;
+          const collapsed = careerSummaryText.textContent;
+          const full = String(user.careerSummary || '');
+          careerToggleBtn.addEventListener('click', () => {
+            expanded = !expanded;
+            careerSummaryText.textContent = expanded ? full : collapsed;
+            careerToggleBtn.textContent = expanded ? '접기' : '더보기';
+          });
+        }
+
+        function fillProfileForm(force = false) {
+          profileForm.elements.name.value = u.name || '';
+          profileForm.elements.nickname.value = u.nickname || '';
+          profileForm.elements.bio.value = u.bio || '';
+          profileForm.elements.age.value = u.age || '';
+          profileForm.elements.school.value = u.school || '';
+          profileForm.elements.careerRaw.value = u.careerRaw || '';
+          profileForm.elements.careerSummary.value = u.careerSummary || '';
+          if (profileImagePreview) profileImagePreview.src = stagedProfileImage || u.profileImage || '';
+          under22Confirm.checked = !!u.onboardingComplete;
+          profileMsg.textContent = force ? '초기 프로필 설정을 완료해주세요.' : '';
+        }
+
+        function openProfileEdit(force = false) {
+          fillProfileForm(force);
+          profileEditModal.classList.add('open');
+          profileEditModal.setAttribute('aria-hidden', 'false');
+          document.body.style.overflow = 'hidden';
+        }
+
+        function closeProfileEdit() {
+          profileEditModal.classList.remove('open');
+          profileEditModal.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+        }
+
+        async function runSchoolSearch() {
+          const q = (schoolSearchInput.value || schoolInput.value || '').trim();
+          if (!q) { profileMsg.textContent = '학교명을 입력해주세요.'; return; }
+          schoolSearchResult.innerHTML = '<article class="list-item"><p class="page-sub">검색 중...</p></article>';
+          try {
+            const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=${NEIS_KEY}&Type=json&SCHUL_NM=${encodeURIComponent(q)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            const rows = data?.schoolInfo?.[1]?.row || [];
+            if (!rows.length) {
+              schoolSearchResult.innerHTML = '<article class="list-item"><p class="page-sub">검색 결과가 없습니다.</p></article>';
+              return;
+            }
+            schoolSearchResult.innerHTML = rows.slice(0, 15).map(r => `
+              <article class="list-item" data-school="${(r.SCHUL_NM || '').replace(/"/g,'&quot;')} (${r.ATPT_OFCDC_SC_NM || ''})">
+                <h3 style="margin:0 0 4px;">${r.SCHUL_NM || ''}</h3>
+                <p style="margin:0 0 6px;">${r.ATPT_OFCDC_SC_NM || ''} · ${r.SCHUL_KND_SC_NM || ''}</p>
+                <div class="meta">${r.ORG_RDNMA || ''}</div>
+              </article>
+            `).join('');
+            schoolSearchResult.querySelectorAll('.list-item[data-school]').forEach(el => {
+              el.addEventListener('click', () => {
+                schoolInput.value = el.getAttribute('data-school') || '';
+                schoolModal.classList.remove('open');
+                schoolModal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                profileMsg.textContent = '학교 정보를 선택했습니다.';
+              });
+            });
+          } catch {
+            schoolSearchResult.innerHTML = '<article class="list-item"><p class="page-sub">학교 검색 중 오류가 발생했습니다.</p></article>';
+          }
+        }
+
+        schoolSearchBtn.addEventListener('click', () => {
+          schoolSearchInput.value = schoolInput.value || '';
+          schoolModal.classList.add('open');
+          schoolModal.setAttribute('aria-hidden', 'false');
+          document.body.style.overflow = 'hidden';
+          runSchoolSearch();
+        });
+        schoolSearchRun.addEventListener('click', runSchoolSearch);
+        schoolSearchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSchoolSearch(); });
+        schoolSearchClose.addEventListener('click', () => {
+          schoolModal.classList.remove('open');
+          schoolModal.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+        });
+        schoolModal.addEventListener('click', (e) => {
+          if (e.target && e.target.getAttribute('data-close-school') === 'true') {
+            schoolModal.classList.remove('open');
+            schoolModal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+          }
+        });
+
+        function applyProfileImageFile(file) {
+          if (!file || !file.type.startsWith('image/')) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            stagedProfileImage = reader.result;
+            if (profileImagePreview) profileImagePreview.src = stagedProfileImage;
+          };
+          reader.readAsDataURL(file);
+        }
+
+        profileImageFile?.addEventListener('change', (e) => {
+          applyProfileImageFile(e.target.files && e.target.files[0]);
+        });
+        profileDropzone?.addEventListener('click', () => profileImageFile?.click());
+        ['dragenter','dragover'].forEach(evt => {
+          profileDropzone?.addEventListener(evt, (e) => {
+            e.preventDefault();
+            profileDropzone.style.borderColor = '#ff6a00';
+          });
+        });
+        ['dragleave','drop'].forEach(evt => {
+          profileDropzone?.addEventListener(evt, (e) => {
+            e.preventDefault();
+            profileDropzone.style.borderColor = '#3a3a3a';
+          });
+        });
+        profileDropzone?.addEventListener('drop', (e) => {
+          const file = e.dataTransfer.files && e.dataTransfer.files[0];
+          applyProfileImageFile(file);
+        });
+
+        careerAiBtn.addEventListener('click', async () => {
+          const raw = (careerRawEl.value || '').trim();
+          if (!raw) { profileMsg.textContent = '경력사항을 먼저 입력해주세요.'; return; }
+          profileMsg.textContent = 'AI가 경력을 요약 중입니다...';
+
+          const isLocalHost = ['localhost', '127.0.0.1'].includes(location.hostname);
+          const baseCandidates = isLocalHost
+            ? [
+                window.WETHUS_AI_ENDPOINT,
+                window.WETHUS_API_BASE,
+                'http://127.0.0.1:8787',
+                'http://localhost:8787'
+              ]
+            : [
+                window.WETHUS_AI_ENDPOINT,
+                window.WETHUS_API_BASE || 'https://wethus-api.onrender.com'
+              ];
+          const candidates = Array.from(new Set(baseCandidates.filter(Boolean)))
+            .filter(base => isLocalHost || !/(127\.0\.0\.1|localhost):8787/.test(base));
+          let backendErr = '';
+          let success = false;
+
+          for (const base of candidates) {
+            const aiEndpoint = base.replace(/\/$/, '') + '/ai/career-summary';
+            try {
+              let aiData = null;
+              for (let i = 0; i < 2; i++) {
+                const aiRes = await fetch(aiEndpoint, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ raw })
+                });
+                aiData = await aiRes.json().catch(() => ({}));
+                if (aiRes.ok && aiData?.summary) break;
+                backendErr = aiData?.error || `backend ${aiRes.status}`;
+                await new Promise(r => setTimeout(r, 350));
+              }
+
+              if (!aiData?.summary) throw new Error(backendErr || 'server ai failed');
+              const cleaned = String(aiData.summary).trim();
+              const normalized = cleaned.replace(/^-\s*\((전|현)\)/gm, '-($1)');
+              if (!/^-\((전|현)\)/m.test(normalized)) throw new Error('AI 형식화 실패');
+              careerSummaryEl.value = normalized;
+              profileMsg.textContent = 'AI 요약이 완료되었습니다.';
+              success = true;
+              break;
+            } catch (e) {
+              backendErr = e?.message || backendErr;
+            }
+          }
+
+          if (!success) {
+            profileMsg.textContent = `AI 요약에 실패했습니다. (${backendErr || '인증/AI 서버 연결 실패'})`;
+          }
+        });
+
+        profileEditOpen?.addEventListener('click', () => openProfileEdit(false));
+        profileEditClose?.addEventListener('click', () => { if (!ONBOARDING) closeProfileEdit(); });
+        profileEditCancel?.addEventListener('click', () => { if (!ONBOARDING) closeProfileEdit(); });
+        profileEditModal?.addEventListener('click', (e) => {
+          if (!ONBOARDING && e.target && e.target.getAttribute('data-close-profile') === 'true') closeProfileEdit();
+        });
+
+        if (ONBOARDING) {
+          fillProfileForm(true);
+          if (pageTitleEl) pageTitleEl.textContent = '초기 프로필 설정';
+          if (pageSubEl) pageSubEl.textContent = '홈으로 이동하기 전에 프로필 정보를 먼저 입력해주세요.';
+          if (navEl) {
+            const links = navEl.querySelector('.nav-links');
+            if (links) {
+              links.style.visibility = 'hidden';
+              links.style.pointerEvents = 'none';
+            }
+          }
+
+          const onboardingSection = document.createElement('section');
+          onboardingSection.className = 'profile-card';
+          const cancelMarkup = `<button id="onboardingCancelBtn" class="btn btn--secondary" type="button">취소</button>`;
+          onboardingSection.innerHTML = `
+            <div style="display:flex;justify-content:flex-end;">${cancelMarkup}</div>
+          `;
+
+          const pageHeader = document.querySelector('.page-header');
+          pageHeader?.insertAdjacentElement('afterend', onboardingSection);
+          onboardingSection.appendChild(profileForm);
+          onboardingSection.appendChild(profileMsg);
+
+          hero.style.display = 'none';
+          document.querySelectorAll('.profile-activity-wrap, .projects-head-row, #myProjects').forEach(el => el.style.display = 'none');
+          profileEditModal.remove();
+          const cancelBtn = document.getElementById('profileEditCancel');
+          if (cancelBtn) cancelBtn.style.display = 'none';
+
+          document.getElementById('onboardingCancelBtn')?.addEventListener('click', async () => {
+            const ok = await WETHUS.uiConfirm('초기 프로필 설정을 취소하고 로그인 화면으로 이동할까요?', { title: '설정 취소' });
+            if (!ok) return;
+            WETHUS.logout();
+            location.href = 'login.html';
+          });
+        }
+
+        profileForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const age = Number(fd.get('age') || 0);
+          if (!age || age >= 22) {
+            profileMsg.textContent = '현재는 만 22세 미만 학생만 가입 가능합니다.';
+            return;
+          }
+          if (!under22Confirm.checked) {
+            profileMsg.textContent = '학생/연령 확인에 동의해주세요.';
+            return;
+          }
+          const careerRaw = String(fd.get('careerRaw') || '').trim();
+          const careerSummary = String(fd.get('careerSummary') || '').trim() || careerRaw;
+          WETHUS.updateCurrentUserProfile({
+            name: fd.get('name'),
+            nickname: fd.get('nickname'),
+            bio: fd.get('bio'),
+            age,
+            school: fd.get('school'),
+            careerRaw,
+            careerSummary,
+            profileImage: stagedProfileImage || u.profileImage || '',
+            onboardingComplete: true
+          });
+          closeProfileEdit();
+          location.href = 'index.html';
+        });
+
+      }
+
+      function catToTheme(cat) {
+        const c = String(cat || '').toLowerCase();
+        if (/(film|creative|art|culture)/.test(c)) return 'ArtCulture';
+        if (/(startup|business|app)/.test(c)) return 'StartupBusiness';
+        if (/(policy|campaign|law|society)/.test(c)) return 'SocietyLaw';
+        return 'MathSci';
+      }
+
+      function renderActivity(tab) {
+        const items = tab === 'bookmarked' ? WETHUS.myBookmarkedProjects() : WETHUS.myLikedProjects();
+        activityList.innerHTML = items.length ? items.map(p => `
+          <article class="profile-activity-card" data-open-project="${p.id}" data-open-cat="${catToTheme(p.category)}">
+            <h4>${p.title}</h4>
+            <p>${p.category || ''} · ${p.status || ''}</p>
+          </article>
+        `).join('') : `<article class="list-item"><p class="page-sub">${tab === 'bookmarked' ? '북마크한 프로젝트가 없습니다.' : '좋아요한 프로젝트가 없습니다.'}</p></article>`;
+      }
+
+      let openedActivityTab = null;
+      activityBar?.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-tab]');
+        if (!btn) return;
+        const tab = btn.dataset.tab;
+        if (openedActivityTab === tab && activityList.style.display !== 'none') {
+          openedActivityTab = null;
+          activityBar.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'));
+          activityList.style.display = 'none';
+          return;
+        }
+        openedActivityTab = tab;
+        activityBar.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activityList.style.display = '';
+        renderActivity(tab);
+      });
+
+      activityList?.addEventListener('click', (e) => {
+        const card = e.target.closest('[data-open-project]');
+        if (!card) return;
+        const pid = card.getAttribute('data-open-project');
+        const cat = card.getAttribute('data-open-cat') || 'MathSci';
+        location.href = `explore_theme.html?cat=${encodeURIComponent(cat)}&open=${encodeURIComponent(pid)}`;
+      });
+
+      let myProjectView = localStorage.getItem('wethus_profile_my_view') || 'album';
+      const myProjectViewAlbum = document.getElementById('myProjectViewAlbum');
+      const myProjectViewList = document.getElementById('myProjectViewList');
+      const myProjectModal = document.getElementById('myProjectModal');
+      const myProjectClose = document.getElementById('myProjectClose');
+      const myProjectImage = document.getElementById('myProjectImage');
+      const myProjectCategory = document.getElementById('myProjectCategory');
+      const myProjectTitle = document.getElementById('myProjectTitle');
+      const myProjectMeta = document.getElementById('myProjectMeta');
+      const myProjectTeam = document.getElementById('myProjectTeam');
+      const myProjectSocial = document.getElementById('myProjectSocial');
+      const myProjectStatusInput = document.getElementById('myProjectStatusInput');
+      const myProjectTeamSizeInput = document.getElementById('myProjectTeamSizeInput');
+      const myProjectRolesInput = document.getElementById('myProjectRolesInput');
+      const myProjectSummaryInput = document.getElementById('myProjectSummaryInput');
+      const myProjectSave = document.getElementById('myProjectSave');
+      const myProjectDelete = document.getElementById('myProjectDelete');
+      let currentMyProjectId = null;
+
+      function renderMyProjects() {
+        const list = WETHUS.myProjects();
+        myProjectViewAlbum?.classList.toggle('active', myProjectView === 'album');
+        myProjectViewList?.classList.toggle('active', myProjectView === 'list');
+        if (!list.length) {
+          mine.className = 'list-grid';
+          mine.innerHTML = '<article class="list-item"><h3>프로젝트 없음</h3><p>아직 등록한 프로젝트가 없습니다. + 프로젝트 추가를 눌러 시작해보세요.</p></article>';
+          return;
+        }
+
+        if (myProjectView === 'album') {
+          mine.className = 'project-cards scroll-four';
+          mine.innerHTML = list.map(p => `
+            <article class="card" data-myproject="${p.id}">
+              <div class="card-media">
+                <img src="${p.image || 'https://picsum.photos/seed/wethus-profile-'+encodeURIComponent(p.title)+'/900/560'}" class="card-img" alt="${p.title}" />
+              </div>
+              <span class="card-chip">${p.category || ''}</span>
+              <h3 class="card-title">${p.title}</h3>
+              <p class="card-summary">${p.summary || ''}</p>
+              <div class="team-row">${(p.teamMembers||[]).slice(0,3).map(m=>`<span class='member-pill'><span class='member-name'>${m.name||'팀원'}</span> <span class='member-role'>${m.role||''}</span></span>`).join('')}</div>
+              <div class="meta">${p.status || ''} · ${p.teamSize || ''} · ${p.roles || ''}</div>
+              <div class="card-bottom-row">
+                <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments||[]).length}</span></div>
+                <div style="display:flex;gap:6px;">
+                  <button class="btn btn--secondary my-edit" data-id="${p.id}" type="button">수정</button>
+                  <button class="btn btn--secondary my-delete" data-id="${p.id}" type="button">삭제</button>
+                </div>
+              </div>
+            </article>
+          `).join('');
+        } else {
+          mine.className = 'list-grid scroll-four';
+          mine.innerHTML = list.map(p => `
+            <article class="list-item" data-myproject="${p.id}">
+              <h3>${p.title}</h3>
+              <p class="card-summary">${p.summary}</p>
+              <div class="team-row">${(p.teamMembers||[]).slice(0,3).map(m=>`<span class='member-pill'><span class='member-name'>${m.name||'팀원'}</span> <span class='member-role'>${m.role||''}</span></span>`).join('')}</div>
+              <div class="meta"><span class="badge">${p.category}</span> · ${p.status} · ${p.teamSize || ''} · ${p.duration || ''} · ♡ ${p.likes || 0} · 💬 ${(p.comments||[]).length}</div>
+              <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px;">
+                <button class="btn btn--secondary my-edit" data-id="${p.id}" type="button">수정</button>
+                <button class="btn btn--secondary my-delete" data-id="${p.id}" type="button">삭제</button>
+              </div>
+            </article>
+          `).join('');
+        }
+      }
+
+      function openMyProjectModal(id) {
+        const p = WETHUS.myProjects().find(x => x.id === id);
+        if (!p) return;
+        currentMyProjectId = id;
+        myProjectImage.src = p.image || `https://picsum.photos/seed/wethus-profile-${encodeURIComponent(p.title || 'project')}/900/560`;
+        myProjectCategory.textContent = p.category || '';
+        myProjectTitle.textContent = p.title || '';
+        myProjectMeta.textContent = `${p.status || ''} · ${p.teamSize || ''} · ${p.duration || ''}`;
+        myProjectTeam.textContent = `팀원: ${(p.teamMembers||[]).map(m => `${m.name||'팀원'}(${m.role||''})`).join(', ') || '-'}`;
+        myProjectSocial.textContent = `좋아요 ${p.likes || 0} · 댓글 ${(p.comments||[]).length}`;
+        myProjectStatusInput.value = p.status || '기획 중';
+        myProjectTeamSizeInput.value = p.teamSize || '3인';
+        myProjectRolesInput.value = p.roles || '';
+        myProjectSummaryInput.value = p.summary || '';
+        myProjectModal.classList.add('open');
+        myProjectModal.setAttribute('aria-hidden','false');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeMyProjectModal() {
+        myProjectModal.classList.remove('open');
+        myProjectModal.setAttribute('aria-hidden','true');
+        document.body.style.overflow = '';
+      }
+
+      myProjectViewAlbum?.addEventListener('click', () => { myProjectView = 'album'; localStorage.setItem('wethus_profile_my_view', myProjectView); renderCurrentPane(); });
+      myProjectViewList?.addEventListener('click', () => { myProjectView = 'list'; localStorage.setItem('wethus_profile_my_view', myProjectView); renderCurrentPane(); });
+      mine.addEventListener('click', async (e) => {
+        if (currentPane !== 'my') {
+          const cancelBtn = e.target.closest('.cancel-apply');
+          if (cancelBtn) {
+            e.stopPropagation();
+            const ok = await WETHUS.uiConfirm('지원을 취소하겠습니까?', { title: '지원 취소' });
+            if (!ok) return;
+            WETHUS.cancelApplication(cancelBtn.dataset.project);
+            renderCurrentPane();
+          }
+          return;
+        }
+
+        const editBtn = e.target.closest('.my-edit');
+        if (editBtn) {
+          e.stopPropagation();
+          openMyProjectModal(editBtn.dataset.id);
+          return;
+        }
+        const delBtn = e.target.closest('.my-delete');
+        if (delBtn) {
+          e.stopPropagation();
+          const ok = await WETHUS.uiConfirm('프로젝트를 삭제할까요?', { title: '프로젝트 삭제' });
+          if (!ok) return;
+          WETHUS.deleteProject(delBtn.dataset.id);
+          renderCurrentPane();
+          return;
+        }
+        const card = e.target.closest('[data-myproject]');
+        if (!card) return;
+        openMyProjectModal(card.getAttribute('data-myproject'));
+      });
+      myProjectClose?.addEventListener('click', closeMyProjectModal);
+      myProjectModal?.addEventListener('click', (e) => { if (e.target && e.target.getAttribute('data-close-myproject') === 'true') closeMyProjectModal(); });
+      myProjectSave?.addEventListener('click', () => {
+        if (!currentMyProjectId) return;
+        WETHUS.updateProject(currentMyProjectId, {
+          status: myProjectStatusInput.value,
+          teamSize: myProjectTeamSizeInput.value,
+          roles: (myProjectRolesInput.value || '').trim(),
+          summary: (myProjectSummaryInput.value || '').trim()
+        });
+        closeMyProjectModal();
+        renderCurrentPane();
+      });
+      myProjectDelete?.addEventListener('click', async () => {
+        if (!currentMyProjectId) return;
+        const ok = await WETHUS.uiConfirm('프로젝트를 삭제할까요?', { title: '프로젝트 삭제' });
+        if (!ok) return;
+        WETHUS.deleteProject(currentMyProjectId);
+        closeMyProjectModal();
+        renderCurrentPane();
+      });
+
+      function renderParticipatingProjects() {
+        const participating = WETHUS.myParticipatingProjects();
+        if (myProjectView === 'album') {
+          mine.className = 'project-cards scroll-four';
+          mine.innerHTML = participating.length ? participating.map(p => `
+            <article class="card" data-myproject="${p.id}">
+              <div class="card-media"><img src="${p.image || 'https://picsum.photos/seed/wethus-part-'+encodeURIComponent(p.title)+'/900/560'}" class="card-img" alt="${p.title}" /></div>
+              <span class="card-chip">${p.category || ''}</span>
+              <h3 class="card-title">${p.title}</h3>
+              <p class="card-summary">${p.summary || ''}</p>
+              <div class="meta">${p.status || ''} · ${p.teamSize || ''}</div>
+              <div class="card-bottom-row">
+                <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments||[]).length}</span></div>
+                <button class="apply-btn applied cancel-apply" data-project="${p.id}">지원취소</button>
+              </div>
+            </article>
+          `).join('') : '<article class="list-item"><p class="page-sub">참여중인 프로젝트가 없습니다.</p></article>';
+        } else {
+          mine.className = 'list-grid scroll-four';
+          mine.innerHTML = participating.length ? participating.map(p => `
+            <article class="list-item" data-myproject="${p.id}">
+              <h3>${p.title}</h3>
+              <p class="card-summary">${p.summary || ''}</p>
+              <div class="meta"><span class="badge">${p.category || ''}</span> · ${p.status || ''} · ${p.teamSize || ''} · ♡ ${p.likes || 0} · 💬 ${(p.comments||[]).length}</div>
+              <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px;"><button class="apply-btn applied cancel-apply" data-project="${p.id}">지원취소</button></div>
+            </article>
+          `).join('') : '<article class="list-item"><p class="page-sub">참여중인 프로젝트가 없습니다.</p></article>';
+        }
+      }
+
+      let currentPane = 'my';
+      function renderCurrentPane() {
+        if (currentPane === 'my') renderMyProjects();
+        else renderParticipatingProjects();
+      }
+
+      projectPaneMy?.addEventListener('click', () => {
+        currentPane = 'my';
+        projectPaneMy.classList.add('active');
+        projectPaneParticipating?.classList.remove('active');
+        renderCurrentPane();
+      });
+      projectPaneParticipating?.addEventListener('click', () => {
+        currentPane = 'participating';
+        projectPaneParticipating.classList.add('active');
+        projectPaneMy?.classList.remove('active');
+        renderCurrentPane();
+      });
+
+      renderCurrentPane();
+    } catch (err) {
+      console.error(err);
+    }
+  </script>
+</body>
+</html>

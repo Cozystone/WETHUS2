@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);}
+   gtag('js', new Date());
+  
+   gtag('config', 'G-PKF58GJC08');
+  </script>
+  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | Founder 신청</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="styles.css?v=20260319-23" />
+  <style>
+    .dropzone {
+      border: 1px dashed #4a4a4a;
+      background: #0d0d0d;
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      transition: .15s ease;
+      cursor: pointer;
+    }
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(255,106,0,.12) inset;
+    }
+    .dropzone-title { font-weight: 800; margin-bottom: 4px; }
+    .dropzone-sub { margin: 0; color: var(--text-secondary); font-size: .86rem; }
+    .dropzone-preview {
+      margin-top: 10px;
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #2a2a2a;
+      display: none;
+      position: relative;
+    }
+    .dropzone-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .preview-remove {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      width: 30px;
+      height: 30px;
+      border: 1px solid #3a3a3a;
+      border-radius: 999px;
+      background: rgba(10,10,10,.82);
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .preview-remove:hover { border-color: var(--orange); color: var(--orange); }
+    .image-error { margin-top: 8px; color: #ff4d4d; font-size: .84rem; font-weight: 700; min-height: 18px; }
+    .textarea-wrap { position: relative; }
+    .textarea-wrap textarea { padding-top: 30px; }
+    .char-counter {
+      position: absolute;
+      right: 10px;
+      top: 8px;
+      font-size: .78rem;
+      font-weight: 800;
+      color: #ff4d4d;
+      pointer-events: none;
+    }
+    .char-counter.ok { color: #22c55e; }
+    .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .preview-trigger { background: transparent; border: 1px solid var(--orange); color: var(--orange); }
+    #previewModal .modal-panel {
+      background: linear-gradient(180deg, #141414 0%, #0f0f0f 100%) !important;
+      border: 1px solid #2a2a2a !important;
+      box-shadow: 0 20px 40px rgba(0,0,0,.36) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+    .founder-ghost-btn {
+      background: rgba(255,255,255,.03);
+      border-color: rgba(255,255,255,.26);
+      color: #f1f1f1;
+    }
+    .draft-version-list { display:grid; gap:8px; max-height: 78vh; overflow:auto; }
+    .draft-version-item {
+      display:grid; grid-template-columns: 1fr auto auto; gap:8px; align-items:center;
+      border:1px solid rgba(255,220,192,.52); border-radius:10px; padding:10px;
+      background: linear-gradient(135deg, rgba(255,134,42,.30), rgba(255,106,0,.22));
+    }
+    .draft-version-meta strong { display:block; font-size:.84rem; color:#fff8ef; }
+    .draft-version-meta span { font-size:.76rem; color:#ffe0c6; }
+    .draft-del-btn { border:1px solid rgba(255,190,190,.55); background:rgba(120,22,22,.35); color:#ffd1d1; border-radius:8px; padding:6px 8px; font-size:.74rem; }
+    .entry-loader {
+      position: fixed; inset: 0; z-index: 1000;
+      display: none; place-items: center;
+      background: rgba(6,6,8,.66);
+      backdrop-filter: blur(6px);
+    }
+    .entry-loader.open { display: grid; }
+    .entry-loader-card {
+      min-width: 230px;
+      border: 1px solid rgba(255,220,190,.58);
+      border-radius: 14px;
+      padding: 14px 16px;
+      background: linear-gradient(180deg, rgba(255,130,32,.22), rgba(255,106,0,.18));
+      box-shadow: 0 14px 28px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.24);
+      text-align: center;
+    }
+    .entry-loader-spinner {
+      width: 20px; height: 20px; margin: 0 auto 10px;
+      border: 2px solid rgba(255,255,255,.24);
+      border-top-color: #ff8f45;
+      border-radius: 50%;
+      animation: founderSpin .8s linear infinite;
+    }
+    @keyframes founderSpin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="wordmark">WETHUS</a>
+      <nav class="nav-links">
+        <a href="explore.html" class="nav-link">탐색</a>
+        <a href="founder.html" class="nav-link nav-link--cta">프로젝트 시작하기</a>
+        <a href="project-hub.html" class="nav-link">프로젝트 허브</a>
+        <a href="mentor.html" class="nav-link">멘토</a>
+        <a href="profile.html" class="nav-link">프로필</a>
+        <a href="login.html" class="nav-link js-auth-link">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+      <div>
+        <h1 class="page-title" id="founderPageTitle">Founder 신청</h1>
+        <p class="page-sub" id="founderPageSub">Founder 신청이 승인되면 프로젝트가 공개되고, 신청자는 Founder로 인증됩니다.</p>
+      </div>
+      <button id="draftHistoryBtn" class="btn btn--secondary founder-ghost-btn" type="button">임시저장함</button>
+    </section>
+
+    <section class="founder-form">
+      <form class="application-form" id="founderForm">
+        <label>메인 사진
+          <input id="coverFile" name="coverFile" type="file" accept="image/*" hidden />
+          <div id="dropzone" class="dropzone" tabindex="0">
+            <div class="dropzone-title">드래그 앤 드롭 또는 파일 선택</div>
+            <p class="dropzone-sub">권장 비율 16:9 · JPG/PNG/WebP</p>
+            <div class="form-row" style="justify-content:center;margin-top:10px;">
+              <button id="pickFileBtn" class="btn btn--secondary founder-accent-btn" type="button">파일에서 찾기</button>
+              <button id="genImageBtn" class="btn btn--secondary founder-accent-btn" type="button">AI 이미지 생성</button>
+              <button id="regenImageBtn" class="btn btn--primary" type="button" style="display:none;">다시 생성</button>
+            </div>
+            <div class="dropzone-preview" id="coverPreviewWrap">
+              <img id="coverPreview" alt="메인 사진 미리보기" />
+              <button id="removeImageBtn" class="preview-remove" type="button" aria-label="이미지 삭제">×</button>
+            </div>
+            <p id="imageMsg" class="image-error"></p>
+          </div>
+        </label>
+
+        <p id="imageActionMsg" class="form-message" style="margin:0 0 2px;"></p>
+
+        <label>프로젝트 제목
+          <input required name="title" placeholder="예: 청소년 지역문제 해결 다큐 제작 프로젝트" />
+        </label>
+
+        <label>카테고리
+          <select id="categorySelect" name="category" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
+            <option>Film</option><option>Startup</option><option>Policy</option><option>Campaign</option><option>App</option><option>Creative</option><option>기타</option>
+          </select>
+        </label>
+
+        <label id="customCategoryWrap" style="display:none;">기타 카테고리 직접 입력
+          <input id="customCategory" name="customCategory" placeholder="예: Education, Research, Community" />
+        </label>
+
+        <label>프로젝트 설명 (공백 제외 100자 이상)
+          <div class="textarea-wrap">
+            <span class="char-counter" data-counter="description" data-min="100">0/100</span>
+            <textarea required name="description" data-min="100" placeholder="어떤 문제를 해결하려는 프로젝트인지, 누구를 위한 프로젝트인지, 실행 범위를 구체적으로 적어주세요."></textarea>
+          </div>
+        </label>
+
+        <label>동기 (공백 제외 100자 이상)
+          <div class="textarea-wrap">
+            <span class="char-counter" data-counter="motivation" data-min="100">0/100</span>
+            <textarea required name="motivation" data-min="100" placeholder="왜 이 프로젝트를 시작하는지, 왜 지금 해야 하는지, 본인의 진짜 동기를 적어주세요."></textarea>
+          </div>
+        </label>
+
+        <label>예상 산출물 (공백 제외 100자 이상)
+          <div class="textarea-wrap">
+            <span class="char-counter" data-counter="output" data-min="100">0/100</span>
+            <textarea required name="output" data-min="100" placeholder="최종 결과물 형태를 명확히 써주세요. 예: 10분 단편영화 1편, 정책 제안서 PDF, MVP 웹앱 배포 링크 등"></textarea>
+          </div>
+        </label>
+
+        <label>첫 2주 실행 계획 (공백 제외 100자 이상)
+          <div class="textarea-wrap">
+            <span class="char-counter" data-counter="plan" data-min="100">0/100</span>
+            <textarea required name="plan" data-min="100" placeholder="1~2주차에 실제로 무엇을, 어떤 순서로, 누가 수행할지 작성해주세요. 일정/산출물/검증 방법까지 포함하면 좋아요."></textarea>
+          </div>
+        </label>
+
+        <label>팀 구성원/역할
+          <input name="roles" placeholder="예: 대표 1 · 기획 1 · 디자인 1 · 개발 2" required />
+        </label>
+
+        <label>현재 필요한 역할(선택)
+          <input name="neededRoles" placeholder="예: 프론트 1, 영상편집 1, 리서처 1" />
+        </label>
+
+        <label>필요 나이대(선택)
+          <select name="neededAgeGroup" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
+            <option value="">제한 없음</option><option>중학생만</option><option>고등학생만</option><option>중·고등학생</option><option>대학생</option><option>혼합</option>
+          </select>
+        </label>
+
+        <div class="form-row">
+          <label style="flex:1;min-width:180px;">목표 정원(선택)
+            <input name="targetCapacity" type="number" min="1" max="100" placeholder="예: 5" />
+          </label>
+          <label style="flex:1;min-width:180px;">현재 인원(선택)
+            <input name="currentMembers" type="number" min="1" max="100" placeholder="예: 2" />
+          </label>
+        </div>
+
+        <label>팀 인원
+          <select name="teamSize" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
+            <option>1인</option><option>2인</option><option selected>3인</option><option>4인이상</option>
+          </select>
+        </label>
+
+        <label>단계
+          <select name="status" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
+            <option>모집 중</option><option selected>기획 중</option><option>진행 중</option><option>피보팅</option>
+          </select>
+        </label>
+
+        <div class="form-row">
+          <label style="flex:1;min-width:220px;">시작일
+            <div class="form-row" style="margin:0;">
+              <select id="startYear" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;"></select>
+              <select id="startMonth" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;"></select>
+              <select id="startDay" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;"></select>
+            </div>
+          </label>
+          <label style="flex:1;min-width:220px;">종료일
+            <div class="form-row" style="margin:0;">
+              <select id="endMode" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;min-width:110px;">
+                <option value="current" selected>현재</option>
+                <option value="date">날짜 지정</option>
+              </select>
+              <select id="endYear" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;display:none;"></select>
+              <select id="endMonth" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;display:none;"></select>
+              <select id="endDay" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;display:none;"></select>
+            </div>
+          </label>
+        </div>
+
+        <label>예상 기간
+          <input name="duration" placeholder="예: 8주" required />
+        </label>
+
+        <div class="form-row" style="justify-content:flex-end;">
+          <button id="resetFormBtn" class="btn btn--secondary founder-ghost-btn" type="button">초기화</button>
+          <button id="draftSaveBtn" class="btn btn--secondary" type="button">임시저장</button>
+          <button id="previewBtn" class="btn preview-trigger" type="button">미리보기</button>
+          <button id="submitBtn" class="btn btn--primary" type="submit">신청하기</button>
+        </div>
+      </form>
+      <p id="msg" class="form-message"></p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="wordmark">WETHUS</span>
+        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <div id="previewModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-preview="true"></div>
+    <article class="modal-panel">
+      <button class="modal-close" id="previewClose" aria-label="닫기">×</button>
+      <div class="modal-media-wrap"><img id="previewImage" class="modal-image" alt="프로젝트 미리보기" /></div>
+      <div class="modal-content">
+        <p class="section-kicker" id="previewCategory">CATEGORY</p>
+        <h3 id="previewTitle" style="margin:0 0 4px;font-size:1.45rem;font-weight:800;"></h3>
+        <p id="previewDate" class="modal-date-range" style="margin:0 0 10px;"></p>
+        <p id="previewSummary" style="margin:0 0 12px;color:#f5f5f5;"></p>
+        <p id="previewDesc" style="margin:0 0 18px;color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p>
+        <div class="meta"><span class="card-status" id="previewStatus"></span> · <span id="previewTeamSize"></span> · <span id="previewRoles"></span> · <span id="previewDuration"></span></div>
+        <div class="card-bottom-row" style="margin-top:10px;">
+          <div class="card-social"><span>♡ 0</span><span>💬 0</span></div>
+          <button class="apply-btn" type="button" disabled>지원하기</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <div id="draftVersionsModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-drafts="true"></div>
+    <article class="modal-panel" style="max-width:640px;min-height:72vh;background:linear-gradient(180deg, rgba(255,136,42,.30), rgba(255,106,0,.22));border:1px solid rgba(255,222,194,.64);">
+      <button class="modal-close" id="draftVersionsClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 style="margin:0 0 10px;">임시저장 버전</h3>
+        <div id="draftVersionList" class="draft-version-list"></div>
+      </div>
+    </article>
+  </div>
+
+  <div id="entryLoader" class="entry-loader" aria-hidden="true">
+    <div class="entry-loader-card">
+      <div class="entry-loader-spinner" aria-hidden="true"></div>
+      <strong id="entryLoaderTitle" style="display:block;">프로젝트 시작 준비 중…</strong>
+      <span id="entryLoaderSub" style="font-size:.82rem;color:#e8d7c8;">WETHUS 작성 환경을 불러오고 있습니다</span>
+    </div>
+  </div>
+
+  <script src="local-config.js"></script>
+  <script src="app.js?v=20260409-103"></script>
+  <script>
+    WETHUS.requireAuth();
+    const authLink = document.querySelector('.js-auth-link');
+    const st = WETHUS.getState();
+    if (authLink && (st.currentUserId || st.devMode)) {
+      authLink.textContent = '로그아웃';
+      authLink.href = '#';
+      authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
+    }
+
+    const me = WETHUS.currentUser();
+    const founderPageTitle = document.getElementById('founderPageTitle');
+    const founderPageSub = document.getElementById('founderPageSub');
+    if (me?.founderVerified) {
+      founderPageTitle.textContent = '프로젝트 시작하기';
+      founderPageSub.textContent = 'Founder 인증이 완료되어 바로 프로젝트를 등록할 수 있습니다.';
+      document.title = 'WETHUS | 프로젝트 시작하기';
+    }
+
+    const form = document.getElementById('founderForm');
+    const msg = document.getElementById('msg');
+    const coverFile = document.getElementById('coverFile');
+    const dropzone = document.getElementById('dropzone');
+    const pickFileBtn = document.getElementById('pickFileBtn');
+    const coverPreviewWrap = document.getElementById('coverPreviewWrap');
+    const coverPreview = document.getElementById('coverPreview');
+    const previewBtn = document.getElementById('previewBtn');
+    const draftSaveBtn = document.getElementById('draftSaveBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const genImageBtn = document.getElementById('genImageBtn');
+    const regenImageBtn = document.getElementById('regenImageBtn');
+    const removeImageBtn = document.getElementById('removeImageBtn');
+    const imageMsg = document.getElementById('imageMsg');
+    const imageActionMsg = document.getElementById('imageActionMsg');
+    const categorySelect = document.getElementById('categorySelect');
+    const customCategoryWrap = document.getElementById('customCategoryWrap');
+    const customCategoryInput = document.getElementById('customCategory');
+    const startYear = document.getElementById('startYear');
+    const startMonth = document.getElementById('startMonth');
+    const startDay = document.getElementById('startDay');
+    const endMode = document.getElementById('endMode');
+    const endYear = document.getElementById('endYear');
+    const endMonth = document.getElementById('endMonth');
+    const endDay = document.getElementById('endDay');
+
+    let imageData = '';
+    let aiImageSelected = false;
+    let founderSubmitting = false;
+
+    function noSpaceLen(v) { return String(v || '').replace(/\s/g, '').length; }
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+
+    function buildDate(y, m, d) {
+      return `${y}-${pad2(m)}-${pad2(d)}`;
+    }
+
+    function populateDateSelects(yearEl, monthEl, dayEl, baseDate) {
+      const nowYear = new Date().getFullYear();
+      yearEl.innerHTML = Array.from({ length: 8 }, (_, i) => {
+        const y = nowYear - 2 + i;
+        return `<option value="${y}">${y}년</option>`;
+      }).join('');
+      monthEl.innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i+1}">${i+1}월</option>`).join('');
+      dayEl.innerHTML = Array.from({ length: 31 }, (_, i) => `<option value="${i+1}">${i+1}일</option>`).join('');
+      yearEl.value = String(baseDate.getFullYear());
+      monthEl.value = String(baseDate.getMonth() + 1);
+      dayEl.value = String(baseDate.getDate());
+    }
+
+    function startDateValue() {
+      return buildDate(startYear.value, Number(startMonth.value), Number(startDay.value));
+    }
+
+    function endDateValue() {
+      if (endMode.value === 'current') return '';
+      return buildDate(endYear.value, Number(endMonth.value), Number(endDay.value));
+    }
+
+    function isOngoingNow() {
+      return endMode.value === 'current';
+    }
+
+    function updateCounter(textarea) {
+      const name = textarea.name;
+      const counter = document.querySelector(`.char-counter[data-counter="${name}"]`);
+      if (!counter) return;
+      const min = Number(textarea.dataset.min || 0);
+      const now = noSpaceLen(textarea.value);
+      counter.textContent = `${now}/${min}`;
+      counter.classList.toggle('ok', now >= min);
+    }
+
+    function resolvedCategory() {
+      const raw = String(categorySelect.value || '').trim();
+      if (raw !== '기타') return raw;
+      return String(customCategoryInput.value || '').trim();
+    }
+
+    function formatDateDot(v) {
+      if (!v) return '';
+      return String(v).replaceAll('-', '.');
+    }
+
+    function dateRangeText(startDate, endDate, isOngoing) {
+      const start = formatDateDot(startDate);
+      if (!start) return '';
+      return `${start}~${isOngoing ? '현재' : formatDateDot(endDate)}`;
+    }
+
+    function setImageError(text = '') {
+      imageMsg.textContent = text;
+    }
+
+    function validateStrict(showMessage = false) {
+      if (!imageData && !aiImageSelected) {
+        if (showMessage) setImageError('메인 사진을 업로드하거나 AI 이미지 생성을 선택해주세요.');
+        return false;
+      }
+      setImageError('');
+
+      const requiredFields = ['title','category','description','motivation','output','plan','roles','teamSize','status','duration'];
+      const targetCap = Number(form.elements.targetCapacity?.value || 0);
+      const currentMembers = Number(form.elements.currentMembers?.value || 0);
+      if (targetCap && currentMembers && currentMembers > targetCap) {
+        if (showMessage) msg.textContent = '현재 인원은 목표 정원보다 클 수 없습니다.';
+        return false;
+      }
+      for (const key of requiredFields) {
+        const el = form.elements[key];
+        if (!el || !String(el.value || '').trim()) {
+          if (showMessage) msg.textContent = '모든 항목을 입력해주세요.';
+          return false;
+        }
+      }
+
+      if (categorySelect.value === '기타' && !resolvedCategory()) {
+        if (showMessage) msg.textContent = '기타 카테고리를 입력해주세요.';
+        return false;
+      }
+
+      if (!startDateValue()) {
+        if (showMessage) msg.textContent = '시작일을 선택해주세요.';
+        return false;
+      }
+      if (!isOngoingNow() && !endDateValue()) {
+        if (showMessage) msg.textContent = '종료일을 입력하거나 "현재"를 선택해주세요.';
+        return false;
+      }
+      if (!isOngoingNow()) {
+        const s = new Date(startDateValue());
+        const e = new Date(endDateValue());
+        if (!(e.getTime() > s.getTime())) {
+          if (showMessage) msg.textContent = '종료일은 시작일(신청일) 이후 날짜만 선택할 수 있습니다.';
+          return false;
+        }
+      }
+
+      const limits = { description: 100, motivation: 100, output: 100, plan: 100 };
+      for (const [name, min] of Object.entries(limits)) {
+        const len = noSpaceLen(form.elements[name].value);
+        if (len < min) {
+          if (showMessage) msg.textContent = `${name === 'description' ? '프로젝트 설명' : name === 'motivation' ? '동기' : name === 'output' ? '예상 산출물' : '첫 2주 실행 계획'}은 공백 제외 ${min}자 이상이어야 합니다.`;
+          return false;
+        }
+      }
+
+      msg.textContent = '';
+      return true;
+    }
+
+    function setAiButtonState() {
+      genImageBtn.classList.toggle('btn--primary', aiImageSelected);
+      genImageBtn.classList.toggle('btn--secondary', !aiImageSelected);
+      genImageBtn.textContent = aiImageSelected ? 'AI 이미지 선택됨' : 'AI 이미지 생성';
+      regenImageBtn.style.display = aiImageSelected ? 'inline-flex' : 'none';
+    }
+
+    function handleFile(file) {
+      if (!file || !file.type.startsWith('image/')) {
+        imageActionMsg.textContent = '이미지 파일만 업로드할 수 있습니다.';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        imageData = reader.result;
+        aiImageSelected = false;
+        setAiButtonState();
+        coverPreview.src = imageData;
+        coverPreviewWrap.style.display = 'block';
+        setImageError('');
+        msg.textContent = '';
+        imageActionMsg.textContent = '';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    let lastFilePickerAt = 0;
+    function openFilePicker() {
+      const now = Date.now();
+      if (now - lastFilePickerAt < 350) return;
+      lastFilePickerAt = now;
+      coverFile.click();
+    }
+
+    pickFileBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openFilePicker();
+    });
+    coverFile.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+    categorySelect.addEventListener('change', () => {
+      const custom = categorySelect.value === '기타';
+      customCategoryWrap.style.display = custom ? 'grid' : 'none';
+      customCategoryInput.required = custom;
+      if (!custom) customCategoryInput.value = '';
+    });
+
+    endMode.addEventListener('change', () => {
+      const showDate = endMode.value === 'date';
+      endYear.style.display = showDate ? '' : 'none';
+      endMonth.style.display = showDate ? '' : 'none';
+      endDay.style.display = showDate ? '' : 'none';
+    });
+
+    async function generateAiImage() {
+      const title = String(form.elements.title.value || '').trim();
+      const desc = String(form.elements.description.value || '').trim();
+      const category = resolvedCategory() || String(categorySelect.value || '').trim();
+      if (!title || !desc) {
+        imageActionMsg.textContent = 'AI 이미지 생성을 선택하려면 제목과 프로젝트 설명을 먼저 입력해주세요.';
+        return false;
+      }
+      imageActionMsg.textContent = 'AI가 메인 이미지를 생성 중입니다...';
+      let keyword = `${category} ${title} cinematic poster dark orange accent`;
+      try {
+        const endpoint = (window.WETHUS_AI_ENDPOINT || 'http://127.0.0.1:8787') + '/ai/image-prompt';
+        const ctl = new AbortController();
+        const t = setTimeout(() => ctl.abort(), 5000);
+        const r = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, description: desc, category }),
+          signal: ctl.signal
+        }).finally(() => clearTimeout(t));
+        const d = await r.json().catch(() => ({}));
+        if (r.ok && d?.prompt) keyword = String(d.prompt).trim().slice(0, 120);
+      } catch (_) {
+        try {
+          const k = await WETHUS.askGemini(`Create one concise English visual prompt (max 10 words) for a cinematic poster image. Category: ${category}. Title: ${title}. Description: ${desc.slice(0, 300)}`);
+          keyword = String(k || '').replace(/[\n\r]/g, ' ').trim().slice(0, 120) || keyword;
+        } catch (_) {}
+      }
+
+      const nonce = Date.now();
+      const aiUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(keyword)}?n=${nonce}`;
+      const fallbackUrl = `https://picsum.photos/seed/wethus-ai-${encodeURIComponent(title || 'project')}-${nonce}/1200/700`;
+
+      const loaded = await new Promise((resolve) => {
+        const testImg = new Image();
+        const timeout = setTimeout(() => resolve(false), 6500);
+        testImg.onload = () => { clearTimeout(timeout); resolve(true); };
+        testImg.onerror = () => { clearTimeout(timeout); resolve(false); };
+        testImg.src = aiUrl;
+      });
+
+      imageData = loaded ? aiUrl : fallbackUrl;
+      coverPreview.src = imageData;
+      coverPreviewWrap.style.display = 'block';
+      aiImageSelected = true;
+      setAiButtonState();
+      setImageError('');
+      imageActionMsg.textContent = loaded ? 'AI 이미지 생성 완료.' : 'AI 이미지 생성 실패로 기본 이미지를 적용했습니다.';
+      return true;
+    }
+
+    genImageBtn.addEventListener('click', async () => {
+      await generateAiImage();
+    });
+
+    regenImageBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      await generateAiImage();
+    });
+
+    ['dragenter','dragover'].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+    });
+    ['dragleave','drop'].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      });
+    });
+    dropzone.addEventListener('drop', (e) => {
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      handleFile(file);
+    });
+    dropzone.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      openFilePicker();
+    });
+
+    removeImageBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      imageData = '';
+      aiImageSelected = false;
+      setAiButtonState();
+      coverPreview.src = '';
+      coverPreviewWrap.style.display = 'none';
+      coverFile.value = '';
+      imageActionMsg.textContent = '';
+    });
+
+    form.querySelectorAll('textarea[data-min]').forEach(textarea => {
+      updateCounter(textarea);
+      textarea.addEventListener('input', () => updateCounter(textarea));
+    });
+    const now = new Date();
+    populateDateSelects(startYear, startMonth, startDay, now);
+    populateDateSelects(endYear, endMonth, endDay, now);
+    endMode.value = 'current';
+    endMode.dispatchEvent(new Event('change'));
+    setAiButtonState();
+
+    const DRAFT_KEY = 'wethus_founder_draft_v1';
+    const DRAFT_VERSIONS_KEY = 'wethus_founder_draft_versions_v1';
+
+    const resetFormBtn = document.getElementById('resetFormBtn');
+    const draftHistoryBtn = document.getElementById('draftHistoryBtn');
+    const draftVersionsModal = document.getElementById('draftVersionsModal');
+    const draftVersionsClose = document.getElementById('draftVersionsClose');
+    const draftVersionList = document.getElementById('draftVersionList');
+
+    function collectDraftFromForm() {
+      const fd = new FormData(form);
+      return {
+        title: fd.get('title') || '',
+        category: categorySelect.value || 'Film',
+        customCategory: customCategoryInput.value || '',
+        description: fd.get('description') || '',
+        motivation: fd.get('motivation') || '',
+        output: fd.get('output') || '',
+        plan: fd.get('plan') || '',
+        roles: fd.get('roles') || '',
+        teamSize: fd.get('teamSize') || '3인',
+        status: fd.get('status') || '기획 중',
+        duration: fd.get('duration') || '',
+        startDate: startDateValue(),
+        endMode: endMode.value,
+        endDate: endDateValue(),
+        aiImageSelected,
+        imageData
+      };
+    }
+
+    function applyDraft(d) {
+      form.elements.title.value = d.title || '';
+      categorySelect.value = d.category || 'Film';
+      categorySelect.dispatchEvent(new Event('change'));
+      customCategoryInput.value = d.customCategory || '';
+      form.elements.description.value = d.description || '';
+      form.elements.motivation.value = d.motivation || '';
+      form.elements.output.value = d.output || '';
+      form.elements.plan.value = d.plan || '';
+      form.elements.roles.value = d.roles || '';
+      if (form.elements.neededRoles) form.elements.neededRoles.value = d.neededRoles || '';
+      if (form.elements.neededAgeGroup) form.elements.neededAgeGroup.value = d.neededAgeGroup || '';
+      if (form.elements.targetCapacity) form.elements.targetCapacity.value = d.targetCapacity || '';
+      if (form.elements.currentMembers) form.elements.currentMembers.value = d.currentMembers || '';
+      form.elements.teamSize.value = d.teamSize || '3인';
+      form.elements.status.value = d.status || '기획 중';
+      form.elements.duration.value = d.duration || '';
+
+      const sd = new Date(d.startDate || new Date());
+      startYear.value = String(sd.getFullYear());
+      startMonth.value = String(sd.getMonth() + 1);
+      startDay.value = String(sd.getDate());
+
+      endMode.value = d.endMode || 'current';
+      endMode.dispatchEvent(new Event('change'));
+      if (d.endDate) {
+        const ed = new Date(d.endDate);
+        endYear.value = String(ed.getFullYear());
+        endMonth.value = String(ed.getMonth() + 1);
+        endDay.value = String(ed.getDate());
+      }
+
+      aiImageSelected = !!d.aiImageSelected;
+      imageData = d.imageData || '';
+      if (imageData) {
+        coverPreview.src = imageData;
+        coverPreviewWrap.style.display = 'block';
+      } else {
+        coverPreview.src = '';
+        coverPreviewWrap.style.display = 'none';
+      }
+      setAiButtonState();
+      form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
+    }
+
+    function clearFormAll() {
+      form.reset();
+      imageData = '';
+      aiImageSelected = false;
+      setAiButtonState();
+      coverPreview.src = '';
+      coverPreviewWrap.style.display = 'none';
+      customCategoryWrap.style.display = 'none';
+      customCategoryInput.required = false;
+      const now = new Date();
+      populateDateSelects(startYear, startMonth, startDay, now);
+      populateDateSelects(endYear, endMonth, endDay, now);
+      endMode.value = 'current';
+      endMode.dispatchEvent(new Event('change'));
+      setImageError('');
+      imageActionMsg.textContent = '';
+      msg.textContent = '';
+      form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
+    }
+
+    function getDraftVersions() {
+      try { return JSON.parse(localStorage.getItem(DRAFT_VERSIONS_KEY) || '[]'); }
+      catch (_) { return []; }
+    }
+
+    function saveDraftVersions(items) {
+      localStorage.setItem(DRAFT_VERSIONS_KEY, JSON.stringify(items));
+    }
+
+    function saveDraft() {
+      const draft = collectDraftFromForm();
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      const versions = getDraftVersions();
+      versions.unshift({ id: String(Date.now()), savedAt: new Date().toISOString(), draft });
+      saveDraftVersions(versions.slice(0, 30));
+      msg.textContent = '임시저장되었습니다.';
+    }
+
+    function renderDraftVersions() {
+      const versions = getDraftVersions();
+      if (!versions.length) {
+        draftVersionList.innerHTML = '<p style="color:#9f9f9f;">저장된 임시버전이 없습니다.</p>';
+        return;
+      }
+      draftVersionList.innerHTML = versions.map(v => `
+        <div class="draft-version-item" data-id="${v.id}">
+          <div class="draft-version-meta">
+            <strong>${(v.draft?.title || '제목 없음').slice(0, 40)}</strong>
+            <span>${new Date(v.savedAt).toLocaleString('ko-KR')}</span>
+          </div>
+          <button class="btn btn--secondary" data-load-id="${v.id}" type="button">불러오기</button>
+          <button class="draft-del-btn" data-del-id="${v.id}" type="button">×</button>
+        </div>
+      `).join('');
+
+      draftVersionList.querySelectorAll('[data-load-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-load-id');
+          const item = getDraftVersions().find(x => x.id === id);
+          if (!item) return;
+          applyDraft(item.draft || {});
+          draftVersionsModal.classList.remove('open');
+          draftVersionsModal.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+          msg.textContent = '임시저장 버전을 불러왔습니다.';
+        });
+      });
+
+      draftVersionList.querySelectorAll('[data-del-id]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-del-id');
+          const ok = await WETHUS.uiConfirm('삭제하시겠습니까?', { title: '임시저장 삭제' });
+          if (!ok) return;
+          const next = getDraftVersions().filter(x => x.id !== id);
+          saveDraftVersions(next);
+          renderDraftVersions();
+        });
+      });
+    }
+
+    function openDraftVersions() {
+      renderDraftVersions();
+      draftVersionsModal.classList.add('open');
+      draftVersionsModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeDraftVersions() {
+      draftVersionsModal.classList.remove('open');
+      draftVersionsModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    draftSaveBtn.addEventListener('click', saveDraft);
+    resetFormBtn.addEventListener('click', async () => {
+      const ok = await WETHUS.uiConfirm('작성 중인 내용을 초기화할까요?', { title: '초기화' });
+      if (!ok) return;
+      clearFormAll();
+    });
+    draftHistoryBtn.addEventListener('click', openDraftVersions);
+    draftVersionsClose.addEventListener('click', closeDraftVersions);
+    draftVersionsModal.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close-drafts') === 'true') closeDraftVersions();
+    });
+
+    const entryLoader = document.getElementById('entryLoader');
+    const entryLoaderTitle = document.getElementById('entryLoaderTitle');
+    const entryLoaderSub = document.getElementById('entryLoaderSub');
+
+    function setEntryLoaderCopy(mode = 'entry') {
+      if (!entryLoaderTitle || !entryLoaderSub) return;
+      if (mode === 'submit') {
+        entryLoaderTitle.textContent = '신청 처리 중…';
+        entryLoaderSub.textContent = '곧 홈화면으로 이동합니다';
+      } else {
+        entryLoaderTitle.textContent = '프로젝트 시작 준비 중…';
+        entryLoaderSub.textContent = 'WETHUS 작성 환경을 불러오고 있습니다';
+      }
+    }
+
+    async function initFounderEntry() {
+      clearFormAll();
+      setEntryLoaderCopy('entry');
+      entryLoader?.classList.add('open');
+      entryLoader?.setAttribute('aria-hidden', 'false');
+      await new Promise(r => setTimeout(r, 2500));
+      entryLoader?.classList.remove('open');
+      entryLoader?.setAttribute('aria-hidden', 'true');
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return;
+        const d = JSON.parse(raw);
+        const ok = await WETHUS.uiConfirm('마지막 임시저장 버전을 불러오시겠습니까?', { title: '임시저장 불러오기' });
+        if (ok) applyDraft(d);
+      } catch (_) {}
+    }
+    initFounderEntry();
+
+    const previewModal = document.getElementById('previewModal');
+    function openPreview() {
+      if (!validateStrict(true)) return;
+      const panel = previewModal.querySelector('.modal-panel');
+      if (panel) {
+        panel.style.background = 'linear-gradient(180deg, #141414 0%, #0f0f0f 100%)';
+        panel.style.border = '1px solid #2a2a2a';
+        panel.style.backdropFilter = 'none';
+        panel.style.webkitBackdropFilter = 'none';
+      }
+      const fd = new FormData(form);
+      const fallbackPreview = `https://image.pollinations.ai/prompt/${encodeURIComponent(`${resolvedCategory()} ${fd.get('title')} cinematic poster dark orange`)}`;
+      document.getElementById('previewImage').src = imageData || fallbackPreview;
+      document.getElementById('previewCategory').textContent = resolvedCategory();
+      document.getElementById('previewTitle').textContent = fd.get('title');
+      document.getElementById('previewDate').textContent = dateRangeText(startDateValue(), endDateValue(), isOngoingNow());
+      document.getElementById('previewSummary').textContent = String(fd.get('description')).slice(0, 120);
+      document.getElementById('previewDesc').textContent = fd.get('description');
+      document.getElementById('previewStatus').textContent = fd.get('status');
+      document.getElementById('previewTeamSize').textContent = fd.get('teamSize');
+      document.getElementById('previewRoles').textContent = fd.get('roles');
+      document.getElementById('previewDuration').textContent = fd.get('duration');
+      previewModal.classList.add('open');
+      previewModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+    function closePreview() {
+      previewModal.classList.remove('open');
+      previewModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    previewBtn.addEventListener('click', openPreview);
+    document.getElementById('previewClose').addEventListener('click', closePreview);
+    previewModal.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close-preview') === 'true') closePreview();
+    });
+
+    async function moderateFounderApplication(fd) {
+      const text = [fd.get('title'), fd.get('description'), fd.get('motivation'), fd.get('output'), fd.get('plan')].join('\n');
+      const hardBlock = /(성적|음란|19금|노출|강간|자살|폭탄|테러|혐오|죽여|미성년\s*성)/i;
+      if (hardBlock.test(text)) return { blocked: true, review: false, reason: '안전 정책 위반 가능성이 높은 내용이 감지되었습니다.' };
+
+      try {
+        const out = await WETHUS.askChatGPT(text.slice(0, 2400));
+        const json = JSON.parse(String(out).match(/\{[\s\S]*\}/)?.[0] || '{}');
+        if (json.decision === 'block') return { blocked: true, review: false, reason: json.reason || '안전 정책 위반 가능성으로 자동 반려되었습니다.' };
+        if (json.decision === 'review') return { blocked: false, review: true, reason: json.reason || '수동 검토가 필요합니다.' };
+      } catch (_) {
+        return { blocked: false, review: true, reason: 'AI 호출 실패로 수동 검토로 전환되었습니다.' };
+      }
+      return { blocked: false, review: false };
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (founderSubmitting) return;
+      founderSubmitting = true;
+      submitBtn.disabled = true;
+      submitBtn.textContent = '신청 처리 중...';
+      try {
+        if (!validateStrict(true)) return;
+
+        const fd = new FormData(form);
+        const moderation = await moderateFounderApplication(fd);
+        if (moderation.blocked) {
+          msg.textContent = moderation.reason || '신청서가 안전 정책에 따라 반려되었습니다.';
+          return;
+        }
+
+        const descText = String(fd.get('description') || '').trim();
+        let summary = descText.slice(0, 64);
+        try {
+          const sPrompt = `다음 프로젝트 본문을 한국어 한 줄(최대 60자) 명사구 스타일로 요약해줘. 문장 끝 마침표 금지.\n\n제목:${String(fd.get('title') || '')}\n본문:${descText.slice(0, 1200)}`;
+          const sOut = await WETHUS.askGemini(sPrompt);
+          const clean = String(sOut || '').replace(/\s+/g, ' ').trim().replace(/[.!?。]+$/g, '');
+          if (clean) summary = clean.slice(0, 64);
+        } catch (_) {}
+
+        let finalImage = imageData;
+        if (!finalImage && aiImageSelected) {
+          msg.textContent = 'AI가 메인 이미지를 생성 중입니다...';
+          await generateAiImage();
+          finalImage = imageData;
+        }
+        if (!finalImage) {
+          const title = String(fd.get('title') || 'project').trim();
+          finalImage = `https://picsum.photos/seed/wethus-cover-${encodeURIComponent(title)}-${Date.now()}/1200/700`;
+        }
+
+        WETHUS.addProject({
+          title: fd.get('title'),
+          category: resolvedCategory(),
+          summary,
+          miniSummary: summary,
+          fullDescription: fd.get('description'),
+          motivation: fd.get('motivation'),
+          expectedOutput: fd.get('output'),
+          firstTwoWeekPlan: fd.get('plan'),
+          status: fd.get('status'),
+          teamSize: fd.get('teamSize'),
+          roles: fd.get('roles'),
+          duration: fd.get('duration'),
+          startDate: startDateValue(),
+          endDate: isOngoingNow() ? null : endDateValue(),
+          ongoingNow: isOngoingNow(),
+          image: finalImage,
+          likes: 0,
+          comments: [],
+          moderationStatus: 'manual_review',
+          moderationReason: moderation.reason || 'Founder 제출 건은 운영자 승인 후 탐색 탭에 반영됩니다.'
+        });
+
+        try {
+          const me = WETHUS.currentUser && WETHUS.currentUser();
+          if (me?.email && WETHUS.syncCloudState) await WETHUS.syncCloudState(me.email);
+        } catch (_) {}
+
+        msg.textContent = '신청 완료! 운영자 승인 후 탐색 탭에 반영됩니다. (검토 진행 알림을 확인해주세요)';
+        try { sessionStorage.setItem('wethus_pending_toast', '신청완료 · 검토가 시작되었습니다'); } catch (_) {}
+        localStorage.removeItem(DRAFT_KEY);
+        form.reset();
+        imageData = '';
+        aiImageSelected = false;
+        setAiButtonState();
+        coverPreviewWrap.style.display = 'none';
+        customCategoryWrap.style.display = 'none';
+        customCategoryInput.required = false;
+        const now = new Date();
+        populateDateSelects(startYear, startMonth, startDay, now);
+        populateDateSelects(endYear, endMonth, endDay, now);
+        endMode.value = 'current';
+        endMode.dispatchEvent(new Event('change'));
+        setImageError('');
+        imageActionMsg.textContent = '';
+        form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
+        setEntryLoaderCopy('submit');
+        entryLoader?.classList.add('open');
+        entryLoader?.setAttribute('aria-hidden', 'false');
+        await new Promise(r => setTimeout(r, 2000));
+        location.href = 'index.html?v=founder-submitted';
+      } catch (err) {
+        msg.textContent = err?.message || '신청 처리 중 오류가 발생했습니다. 다시 시도해주세요.';
+      } finally {
+        founderSubmitting = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = '신청하기';
+      }
+    });
+  </script>
+</body>
+</html>

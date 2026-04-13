@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);}
+   gtag('js', new Date());
+  
+   gtag('config', 'G-PKF58GJC08');
+  </script>
+  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | 알림</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="styles.css?v=20260319-23" />
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="wordmark">WETHUS</a>
+      <nav class="nav-links">
+        <a href="explore.html" class="nav-link">탐색</a>
+        <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
+        <a href="project-hub.html" class="nav-link">프로젝트 허브</a>
+        <a href="mentor.html" class="nav-link">멘토</a>
+        <a href="profile.html" class="nav-link">프로필</a>
+        <a href="login.html" class="nav-link js-auth-link">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page-main page-main--standard">
+    <section class="projects-head-row" style="padding-top:28px;">
+      <div>
+        <h1 class="page-title" style="margin:0;">알림</h1>
+        <p class="page-sub">Founder 신청/승인, 팀 참여요청, 메시지 등 주요 업데이트</p>
+      </div>
+      <button id="markAllRead" class="btn btn--secondary">모두 읽음 처리</button>
+    </section>
+
+    <section id="notifyList" class="list-grid"></section>
+  </main>
+
+  <div id="notifyDetailModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-notify="true"></div>
+    <article class="modal-panel" style="max-width:560px;">
+      <button class="modal-close" id="notifyDetailClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <p class="section-kicker" id="notifyDetailType">NOTIFICATION</p>
+        <h3 id="notifyDetailTitle" style="margin:0 0 8px;font-size:1.2rem;"></h3>
+        <p id="notifyDetailSender" style="margin:0 0 4px;color:var(--orange);font-size:.82rem;font-weight:700;"></p>
+        <p id="notifyDetailTime" class="meta" style="margin:0 0 10px;"></p>
+        <p id="notifyDetailBody" style="margin:0;color:#d6d6d6;line-height:1.7;white-space:pre-line;"></p>
+      </div>
+    </article>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="wordmark">WETHUS</span>
+        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js?v=20260409-103"></script>
+  <script>
+    const authLink = document.querySelector('.js-auth-link');
+    const st = WETHUS.getState();
+    if (authLink && (st.currentUserId || st.devMode)) {
+      authLink.textContent = '로그아웃';
+      authLink.href = '#';
+      authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
+    }
+
+    const listEl = document.getElementById('notifyList');
+    const markAllBtn = document.getElementById('markAllRead');
+    const detailModal = document.getElementById('notifyDetailModal');
+
+    function timeText(iso) {
+      const d = new Date(iso);
+      return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+
+    function openDetail(n) {
+      if (!n) return;
+      document.getElementById('notifyDetailType').textContent = (n.type || 'notification').toUpperCase();
+      document.getElementById('notifyDetailTitle').textContent = n.title || '';
+      document.getElementById('notifyDetailSender').textContent = n.sender || 'WETHUS';
+      document.getElementById('notifyDetailTime').textContent = timeText(n.createdAt);
+      document.getElementById('notifyDetailBody').textContent = n.body || '';
+      detailModal.classList.add('open');
+      detailModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeDetail() {
+      detailModal.classList.remove('open');
+      detailModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    function render(focusId) {
+      const items = WETHUS.listNotifications(200);
+      if (!items.length) {
+        listEl.innerHTML = '<article class="list-item"><p class="page-sub">표시할 알림이 없습니다.</p></article>';
+        return;
+      }
+      listEl.innerHTML = items.map(n => `
+        <article class="list-item" data-id="${n.id}" style="border-color:${n.unread ? '#ff6a00' : '#2a2a2a'};">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+            <div>
+              <h3 style="margin:0 0 2px;">${n.title}</h3>
+              <p style="margin:0 0 4px;color:var(--orange);font-size:.82rem;font-weight:700;">${n.sender || 'WETHUS'}</p>
+              <p style="margin:0 0 6px;">${n.body || ''}</p>
+              <div class="meta">${timeText(n.createdAt)}</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              ${n.unread ? '<span class="verify-badge" style="padding:2px 7px;">NEW</span>' : '<button class="btn btn--secondary notify-delete" data-del="'+n.id+'" style="padding:3px 8px;font-size:.72rem;">삭제</button>'}
+            </div>
+          </div>
+        </article>
+      `).join('');
+
+      listEl.querySelectorAll('.list-item[data-id]').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const delBtn = e.target.closest('.notify-delete');
+          if (delBtn) {
+            e.stopPropagation();
+            WETHUS.removeNotification(delBtn.dataset.del);
+            WETHUS.refreshNavBadges?.();
+            render();
+            return;
+          }
+          const id = el.getAttribute('data-id');
+          WETHUS.markNotificationRead(id);
+          WETHUS.refreshNavBadges?.();
+          const picked = WETHUS.listNotifications(200).find(x => x.id === id);
+          render(id);
+          openDetail(picked);
+        });
+      });
+
+      if (focusId) {
+        const focusEl = listEl.querySelector(`.list-item[data-id="${focusId}"]`);
+        if (focusEl) {
+          focusEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          focusEl.style.boxShadow = '0 0 0 2px rgba(255,106,0,.3) inset';
+          setTimeout(() => { focusEl.style.boxShadow = ''; }, 1500);
+        }
+      }
+    }
+
+    markAllBtn.addEventListener('click', () => {
+      WETHUS.markAllNotificationsRead();
+      WETHUS.refreshNavBadges?.();
+      render();
+    });
+
+    document.getElementById('notifyDetailClose').addEventListener('click', closeDetail);
+    detailModal.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close-notify') === 'true') closeDetail();
+    });
+
+    const qid = new URLSearchParams(location.search).get('n');
+    render(qid || undefined);
+    if (qid) {
+      const hit = WETHUS.listNotifications(200).find(x => x.id === qid);
+      if (hit) {
+        WETHUS.markNotificationRead(qid);
+        WETHUS.refreshNavBadges?.();
+        openDetail(hit);
+      }
+    }
+  </script>
+</body>
+</html>

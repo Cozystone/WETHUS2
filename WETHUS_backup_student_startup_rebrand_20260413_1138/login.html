@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);}
+   gtag('js', new Date());
+  
+   gtag('config', 'G-PKF58GJC08');
+  </script>
+  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | 로그인</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="styles.css?v=20260319-23" />
+  <style>
+    .policy-check {
+      accent-color: #ffffff;
+      opacity: 1;
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+    .policy-done {
+      display: none;
+      color: #34d399;
+      font-size: .85rem;
+      align-self: center;
+    }
+    .policy-done.show { display: inline; }
+    .policy-modal-panel {
+      max-width: 840px;
+      width: calc(100vw - 40px);
+    }
+    .policy-modal-content {
+      padding: 16px 18px 14px;
+    }
+    .policy-doc-wrap {
+      padding: 0 14px;
+      margin-bottom: 10px;
+    }
+    .policy-doc-frame {
+      width: 100%;
+      height: 320px;
+      border: 1px solid #d7d7d7;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .policy-check-list {
+      display: grid;
+      gap: 8px;
+      padding: 0 14px;
+      margin-top: 2px;
+    }
+    .policy-check-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: #f5f5f5;
+      font-size: .92rem;
+      padding: 8px 10px;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      background: #151515;
+    }
+    .policy-check-row--all {
+      color: #fff;
+      font-weight: 700;
+      border-color: #3a3a3a;
+      background: #1b1b1b;
+    }
+    .policy-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 10px;
+      align-items: center;
+      padding: 0 14px;
+    }
+    @media (max-width: 640px) {
+      .policy-modal-panel { width: calc(100vw - 20px); }
+      .policy-doc-frame { height: 260px; }
+      .policy-check-row { font-size: .88rem; padding: 7px 8px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="auth-wrap">
+    <section class="auth-card">
+      <a href="#" id="authCloseBtn" class="auth-close" aria-label="닫기">×</a>
+      <h1>WETHUS 계정</h1>
+      <p>로그인하거나, 회원가입 후 바로 프로젝트를 시작할 수 있습니다.</p>
+
+      <div class="auth-tabs">
+        <button id="tabLogin" class="btn btn--secondary auth-tab active" type="button">로그인</button>
+        <button id="tabSignup" class="btn btn--secondary auth-tab" type="button">회원가입</button>
+      </div>
+
+      <form class="auth-form" id="loginForm" novalidate>
+        <input id="loginEmail" name="email" type="email" placeholder="이메일" autocomplete="username email" required />
+        <input name="password" type="password" placeholder="비밀번호" autocomplete="current-password" required />
+        <label style="display:flex;gap:8px;align-items:center;color:#a3a3a3;font-size:.85rem;">
+          <input id="rememberEmail" type="checkbox" /> 아이디(이메일) 저장
+        </label>
+        <button class="btn btn--primary" type="submit">로그인</button>
+      </form>
+
+      <form class="auth-form" id="signupForm" style="display:none;" novalidate>
+        <input name="name" placeholder="이름" autocomplete="name" required />
+        <input name="nickname" placeholder="닉네임" required />
+        <input id="signupEmail" name="email" type="email" placeholder="이메일" autocomplete="email" required />
+        <small id="emailHint" class="note"></small>
+
+        <input id="signupPw" name="password" type="password" placeholder="비밀번호 (영문+숫자 포함 8자 이상)" required />
+        <small id="pwHint" class="note"></small>
+
+        <input id="signupPwConfirm" name="passwordConfirm" type="password" placeholder="비밀번호 확인" required />
+        <small id="pwConfirmHint" class="note"></small>
+
+        <input id="signupBirthYear" name="birthYear" type="number" min="1980" max="2026" placeholder="출생연도 (본인인증)" required />
+        <input id="signupAge" name="age" type="number" placeholder="나이(자동 계산)" readonly />
+        <button id="verifyAgeBtn" class="btn btn--secondary" type="button">본인인증(나이 확인)</button>
+        <small id="verifyAgeMsg" class="note"></small>
+
+        <div style="display:grid;gap:8px;">
+          <button id="openPolicyModal" class="btn btn--secondary" type="button">약관 확인 및 동의하기</button>
+          <label style="display:flex;gap:8px;align-items:flex-start;color:#a3a3a3;font-size:.85rem;line-height:1.5;">
+            <input id="agreeChk" type="checkbox" style="margin-top:2px;" disabled />
+            <span>[필수] 만 22세 미만 학생임 확인 및 필수 약관 전체 동의</span>
+          </label>
+        </div>
+
+        <button id="signupSubmit" class="btn btn--primary" type="submit">회원가입</button>
+      </form>
+
+      <div class="auth-sep" style="display:flex;align-items:center;gap:10px;margin:14px 0 10px;color:#8f8f8f;font-size:.82rem;">
+        <span style="flex:1;height:1px;background:#2a2a2a;"></span>
+        <span>또는 소셜 로그인</span>
+        <span style="flex:1;height:1px;background:#2a2a2a;"></span>
+      </div>
+
+      <div id="googleAuthWrap" style="display:grid;gap:8px;margin-bottom:12px;">
+        <div id="g_id_onload" style="display:none;"></div>
+        <div id="googleBtn" style="display:flex;justify-content:center;"></div>
+        <p id="googleHint" class="note" style="margin:0;text-align:center;"></p>
+      </div>
+
+      <div class="dev-row">
+        <button id="devModeBtn" class="btn btn--secondary" type="button">개발자모드</button>
+      </div>
+      <p id="authMsg" class="form-message"></p>
+    </section>
+  </main>
+
+  <div id="policyModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-policy="true"></div>
+    <article class="modal-panel policy-modal-panel">
+      <button class="modal-close" id="policyCloseBtn" aria-label="닫기">×</button>
+      <div class="modal-content policy-modal-content">
+        <h3 style="margin-top:0;">필수 약관 동의</h3>
+        <p class="page-sub" style="margin-top:0;">한 번에 전체 문서를 확인하고 동의할 수 있습니다.</p>
+
+        <div class="policy-doc-wrap">
+          <iframe id="policyAllFrame" class="policy-doc-frame" src="legal-all.html"></iframe>
+        </div>
+
+        <div class="policy-check-list">
+          <label class="policy-check-row">
+            <span>[필수] 이용약관 동의</span><input id="policyTermsChk" class="policy-check" type="checkbox" />
+          </label>
+          <label class="policy-check-row">
+            <span>[필수] 운영방침 동의</span><input id="policyOpsChk" class="policy-check" type="checkbox" />
+          </label>
+          <label class="policy-check-row">
+            <span>[필수] 개인정보 처리방침 동의</span><input id="policyPrivacyChk" class="policy-check" type="checkbox" />
+          </label>
+          <label class="policy-check-row policy-check-row--all">
+            <span>전체 동의</span><input id="policyAllChk" class="policy-check" type="checkbox" />
+          </label>
+        </div>
+
+        <div class="policy-actions">
+          <button id="policyBackBtn" class="btn btn--secondary" type="button">돌아가기</button>
+          <span id="policyDoneLabel" class="policy-done">완료</span>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="wordmark">WETHUS</span>
+        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="app.js?v=20260409-103"></script>
+  <script>
+    const msg = document.getElementById('authMsg');
+    const tabLogin = document.getElementById('tabLogin');
+    const googleHint = document.getElementById('googleHint');
+
+    let GOOGLE_CLIENT_ID = window.WETHUS_GOOGLE_CLIENT_ID || '196934770979-6ntmgcrs6k6jkifskspasg4uie5irgec.apps.googleusercontent.com';
+    const isLocalHost = ['localhost', '127.0.0.1'].includes(location.hostname);
+    const localBases = ['http://127.0.0.1:8787', 'http://localhost:8787'];
+    const remoteBases = [
+      window.WETHUS_API_BASE,
+      'https://wethus-api.onrender.com/api',
+      'https://wethus-api.onrender.com'
+    ].filter(Boolean);
+    const AUTH_BASES = (isLocalHost
+      ? [`${location.protocol}//${location.hostname}:8787`, ...localBases, ...remoteBases]
+      : remoteBases)
+      .filter(Boolean)
+      .map(b => b.replace(/\/$/, '').replace(/\/api$/, ''));
+    const UNIQUE_AUTH_BASES = Array.from(new Set(AUTH_BASES));
+    const GOOGLE_CONFIG_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/google/config`);
+    const GOOGLE_AUTH_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/google`);
+    const GOOGLE_LINK_PASSWORD_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/google/link-password`);
+    const LOGIN_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/login`);
+    const REGISTER_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/register`);
+    const tabSignup = document.getElementById('tabSignup');
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    const authCloseBtn = document.getElementById('authCloseBtn');
+
+    const loginEmail = document.getElementById('loginEmail');
+    const rememberEmail = document.getElementById('rememberEmail');
+    const signupEmail = document.getElementById('signupEmail');
+    const signupPw = document.getElementById('signupPw');
+    const signupPwConfirm = document.getElementById('signupPwConfirm');
+    const signupBirthYear = document.getElementById('signupBirthYear');
+    const signupAge = document.getElementById('signupAge');
+    const verifyAgeBtn = document.getElementById('verifyAgeBtn');
+    const verifyAgeMsg = document.getElementById('verifyAgeMsg');
+    const emailHint = document.getElementById('emailHint');
+    const pwHint = document.getElementById('pwHint');
+    const pwConfirmHint = document.getElementById('pwConfirmHint');
+    const agreeChk = document.getElementById('agreeChk');
+    const signupSubmit = document.getElementById('signupSubmit');
+    const openPolicyModal = document.getElementById('openPolicyModal');
+    const policyModal = document.getElementById('policyModal');
+    const policyCloseBtn = document.getElementById('policyCloseBtn');
+    const policyBackBtn = document.getElementById('policyBackBtn');
+    const policyAllChk = document.getElementById('policyAllChk');
+    const policyTermsChk = document.getElementById('policyTermsChk');
+    const policyOpsChk = document.getElementById('policyOpsChk');
+    const policyPrivacyChk = document.getElementById('policyPrivacyChk');
+    const policyDoneLabel = document.getElementById('policyDoneLabel');
+    const pwModal = document.getElementById('pwModal');
+    const pwCloseBtn = document.getElementById('pwCloseBtn');
+    const pwModalInput = document.getElementById('pwModalInput');
+    const pwModalMsg = document.getElementById('pwModalMsg');
+    const pwModalSkip = document.getElementById('pwModalSkip');
+    const pwModalSubmit = document.getElementById('pwModalSubmit');
+
+    if (!window.WETHUS) {
+      msg.textContent = '앱 로딩 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.';
+    }
+    // 배포에서도 기본 인증 엔드포인트(remoteBases)를 우선 사용하므로
+    // 초기 경고 문구는 노출하지 않음(실패 시 submit 시점에 정확한 에러 표시)
+
+    const remembered = localStorage.getItem('wethus_saved_email') || '';
+    if (remembered) {
+      loginEmail.value = remembered;
+      rememberEmail.checked = true;
+    }
+
+    let ageVerifiedAt = '';
+
+    function setTab(mode) {
+      const isLogin = mode === 'login';
+      tabLogin.classList.toggle('active', isLogin);
+      tabSignup.classList.toggle('active', !isLogin);
+      loginForm.style.display = isLogin ? 'grid' : 'none';
+      signupForm.style.display = isLogin ? 'none' : 'grid';
+      msg.textContent = '';
+    }
+
+    function askPasswordModal() {
+      return new Promise((resolve) => {
+        if (!pwModal) return resolve('');
+        pwModal.classList.add('open');
+        pwModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        pwModalInput.value = '';
+        pwModalMsg.textContent = '';
+
+        const close = (value = '') => {
+          pwModal.classList.remove('open');
+          pwModal.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+          pwCloseBtn?.removeEventListener('click', onClose);
+          pwModalSkip?.removeEventListener('click', onSkip);
+          pwModalSubmit?.removeEventListener('click', onSubmit);
+          pwModal?.removeEventListener('click', onBackdrop);
+          resolve(value);
+        };
+        const onClose = () => close('');
+        const onSkip = () => close('');
+        const onBackdrop = (e) => { if (e.target?.getAttribute('data-close-pw') === 'true') close(''); };
+        const onSubmit = () => {
+          const v = String(pwModalInput.value || '').trim();
+          if (!v) { pwModalMsg.textContent = '비밀번호를 입력해주세요.'; return; }
+          if (v.length < 8 || !/[A-Za-z]/.test(v) || !/[0-9]/.test(v)) {
+            pwModalMsg.textContent = '영문+숫자 포함 8자 이상으로 입력해주세요.';
+            return;
+          }
+          close(v);
+        };
+
+        pwCloseBtn?.addEventListener('click', onClose);
+        pwModalSkip?.addEventListener('click', onSkip);
+        pwModalSubmit?.addEventListener('click', onSubmit);
+        pwModal?.addEventListener('click', onBackdrop);
+        setTimeout(() => pwModalInput?.focus(), 10);
+      });
+    }
+
+    function syncPolicyConfirmState() {
+      const checks = [policyTermsChk, policyOpsChk, policyPrivacyChk].filter(Boolean);
+      const checkedCount = checks.filter(chk => chk.checked).length;
+      const allChecked = checkedCount === checks.length && checks.length > 0;
+
+      if (policyAllChk) {
+        policyAllChk.checked = allChecked;
+        policyAllChk.indeterminate = checkedCount > 0 && !allChecked;
+      }
+      if (agreeChk) {
+        agreeChk.disabled = !allChecked;
+        agreeChk.checked = allChecked;
+      }
+      if (policyDoneLabel) {
+        policyDoneLabel.classList.toggle('show', allChecked);
+      }
+      validateSignupForm();
+    }
+
+    async function getWithFallback(endpoints) {
+      if (!endpoints.length) throw new Error('인증 API 주소가 설정되지 않았습니다.');
+      let lastErr = null;
+      for (const endpoint of endpoints) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4500);
+        try {
+          const res = await fetch(endpoint, { method: 'GET', signal: controller.signal });
+          const data = await res.json().catch(() => ({}));
+          clearTimeout(timeout);
+          if (!res.ok) throw new Error(data?.error || `요청 실패 (${res.status})`);
+          return data;
+        } catch (e) {
+          clearTimeout(timeout);
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error('인증 서버 연결 실패');
+    }
+
+    async function postWithFallback(endpoints, body) {
+      if (!endpoints.length) throw new Error('인증 API 주소가 설정되지 않았습니다.');
+      let lastErr = null;
+      for (const endpoint of endpoints) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4500);
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body || {}),
+            signal: controller.signal
+          });
+          const data = await res.json().catch(() => ({}));
+          clearTimeout(timeout);
+          if (!res.ok) throw new Error(data?.error || `요청 실패 (${res.status})`);
+          return data;
+        } catch (e) {
+          clearTimeout(timeout);
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error('인증 서버 연결 실패');
+    }
+
+    function decodeJwtPayload(jwt) {
+      try {
+        const seg = String(jwt || '').split('.')[1] || '';
+        const base = seg.replace(/-/g, '+').replace(/_/g, '/');
+        const pad = base.length % 4 ? '='.repeat(4 - (base.length % 4)) : '';
+        const bin = atob(base + pad);
+        const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+        const json = new TextDecoder('utf-8').decode(bytes);
+        return JSON.parse(json);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    async function handleGoogleCredential(response) {
+      try {
+        const credential = response?.credential;
+        if (!credential) throw new Error('Google 인증 토큰이 비어 있습니다.');
+
+        // 1) 프론트 단독 경로로 먼저 로그인 확정 (백엔드 401과 무관하게 진행)
+        const payload = decodeJwtPayload(credential);
+        if (!payload?.email) throw new Error('Google 사용자 정보를 해석할 수 없습니다.');
+
+        const local = WETHUS.oauthLoginGoogle({
+          sub: payload.sub || '',
+          email: payload.email || '',
+          name: payload.name || payload.email,
+          picture: payload.picture || ''
+        });
+        const localUser = local?.user || WETHUS.currentUser();
+
+        // 2) 백엔드 계정 동기화는 best-effort (실패해도 로그인은 유지)
+        let cloudUser = null;
+        try {
+          const data = await postWithFallback(GOOGLE_AUTH_ENDPOINTS, { credential });
+          if (data?.ok && data?.user) {
+            const existingLocal = (WETHUS.getState().users || []).find(u => String(u.email || '').toLowerCase() === String(data?.user?.email || '').toLowerCase());
+            cloudUser = WETHUS.upsertCloudUser(data.user);
+            if (existingLocal) {
+              cloudUser = WETHUS.updateCurrentUserProfile({
+                onboardingComplete: true,
+                bio: existingLocal.bio ?? cloudUser.bio,
+                school: existingLocal.school ?? cloudUser.school,
+                careerRaw: existingLocal.careerRaw ?? cloudUser.careerRaw,
+                careerSummary: existingLocal.careerSummary ?? cloudUser.careerSummary,
+                age: existingLocal.age ?? cloudUser.age
+              }) || cloudUser;
+            }
+            if (!data?.hasPassword) {
+              const userEmail = String((data?.user?.email || cloudUser?.email || localUser?.email || payload?.email || '')).toLowerCase();
+              const onceKey = `wethus_pw_linked_${userEmail}`;
+              const alreadySet = localStorage.getItem(onceKey) === '1';
+              if (!alreadySet) {
+                const pw = await askPasswordModal();
+                if (pw && String(pw).trim()) {
+                  try {
+                    await postWithFallback(GOOGLE_LINK_PASSWORD_ENDPOINTS, { credential, password: String(pw).trim() });
+                    localStorage.setItem(onceKey, '1');
+                  } catch (_) {}
+                }
+              }
+            }
+          }
+        } catch (_) {}
+
+        const user = cloudUser || localUser;
+        try { if (WETHUS.syncCloudState && user?.email) await WETHUS.syncCloudState(user.email); } catch (_) {}
+        location.href = user?.onboardingComplete ? 'index.html' : 'profile.html?onboarding=1';
+      } catch (err) {
+        const m = String(err?.message || '');
+        msg.textContent = m || 'Google 로그인 중 오류가 발생했습니다.';
+      }
+    }
+
+    let gsiInitialized = false;
+    function initGoogleSignIn() {
+      const fallbackClientId = '196934770979-6ntmgcrs6k6jkifskspasg4uie5irgec.apps.googleusercontent.com';
+      const resolvedClientId = String(GOOGLE_CLIENT_ID || fallbackClientId).trim();
+      if (!resolvedClientId) {
+        googleHint.textContent = 'Google 로그인은 아직 설정되지 않았습니다. (Client ID 필요)';
+        return;
+      }
+      if (!(window.google && google.accounts && google.accounts.id)) {
+        googleHint.textContent = 'Google 로그인 SDK 로딩 중입니다. 잠시 후 새로고침해주세요.';
+        return;
+      }
+      if (gsiInitialized || window.__wethusGsiInitialized) return;
+      gsiInitialized = true;
+      window.__wethusGsiInitialized = true;
+      google.accounts.id.initialize({
+        client_id: resolvedClientId,
+        callback: handleGoogleCredential,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+        use_fedcm_for_prompt: false
+      });
+      const googleBtnEl = document.getElementById('googleBtn');
+      if (googleBtnEl && !googleBtnEl.childElementCount) {
+        google.accounts.id.renderButton(googleBtnEl, {
+          theme: 'outline',
+          size: 'large',
+          width: 320,
+          text: 'signin_with'
+        });
+      }
+      googleHint.textContent = '';
+    }
+
+    function verifyAge() {
+      const by = Number(signupBirthYear?.value || NaN);
+      const year = new Date().getFullYear();
+      if (!Number.isFinite(by) || by < 1980 || by > year) {
+        ageVerifiedAt = '';
+        if (signupAge) signupAge.value = '';
+        if (verifyAgeMsg) verifyAgeMsg.textContent = '출생연도를 정확히 입력해주세요.';
+        validateSignupForm();
+        return false;
+      }
+      const age = year - by;
+      if (signupAge) signupAge.value = String(age);
+      ageVerifiedAt = new Date().toISOString();
+      if (verifyAgeMsg) verifyAgeMsg.textContent = `본인인증 완료 · 만 ${age}세 확인`;
+      validateSignupForm();
+      return true;
+    }
+
+    function validateSignupForm() {
+      if (!window.WETHUS) return false;
+      const s = WETHUS.getState();
+      const email = signupEmail.value.trim();
+      const pw = signupPw.value;
+      const pw2 = signupPwConfirm.value;
+
+      let ok = true;
+
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+      if (!email) {
+        emailHint.textContent = '';
+        ok = false;
+      } else if (!emailPattern.test(email)) {
+        emailHint.textContent = '이메일 형식이 올바르지 않습니다.';
+        ok = false;
+      } else if (s.users.some(u => u.email === email)) {
+        emailHint.textContent = '이미 가입된 이메일입니다.';
+        ok = false;
+      } else {
+        emailHint.textContent = '사용 가능한 이메일입니다.';
+      }
+
+      if (!pw) {
+        pwHint.textContent = '';
+        ok = false;
+      } else if (pw.length < 8 || !/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) {
+        pwHint.textContent = '비밀번호는 영문+숫자 포함 8자 이상이어야 합니다.';
+        ok = false;
+      } else {
+        pwHint.textContent = '사용 가능한 비밀번호 형식입니다.';
+      }
+
+      if (!pw2) {
+        pwConfirmHint.textContent = '';
+        ok = false;
+      } else if (pw !== pw2) {
+        pwConfirmHint.textContent = '비밀번호 확인이 일치하지 않습니다.';
+        ok = false;
+      } else {
+        pwConfirmHint.textContent = '비밀번호가 일치합니다.';
+      }
+
+      const age = Number(signupAge?.value || NaN);
+      if (!Number.isFinite(age) || !ageVerifiedAt) {
+        ok = false;
+        if (verifyAgeMsg && !verifyAgeMsg.textContent) verifyAgeMsg.textContent = '회원가입 전 본인인증(나이 확인)을 완료해주세요.';
+      }
+
+      if (!agreeChk.checked) ok = false;
+
+      signupSubmit.style.opacity = ok ? '1' : '.72';
+      return ok;
+    }
+
+    tabLogin.addEventListener('click', () => setTab('login'));
+    tabSignup.addEventListener('click', () => setTab('signup'));
+
+    function closePolicyModal() {
+      policyModal.classList.remove('open');
+      policyModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    openPolicyModal?.addEventListener('click', () => {
+      policyModal.classList.add('open');
+      policyModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      policyDoneLabel?.classList.remove('show');
+      syncPolicyConfirmState();
+    });
+    policyCloseBtn?.addEventListener('click', closePolicyModal);
+    policyBackBtn?.addEventListener('click', closePolicyModal);
+    policyModal?.addEventListener('click', (e) => {
+      if (e.target && e.target.getAttribute('data-close-policy') === 'true') closePolicyModal();
+    });
+
+    [policyTermsChk, policyOpsChk, policyPrivacyChk].forEach(chk => chk?.addEventListener('change', syncPolicyConfirmState));
+    policyAllChk?.addEventListener('change', () => {
+      const checked = !!policyAllChk.checked;
+      [policyTermsChk, policyOpsChk, policyPrivacyChk].forEach(chk => { if (chk) chk.checked = checked; });
+      syncPolicyConfirmState();
+    });
+
+
+
+
+
+    authCloseBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const next = new URLSearchParams(location.search).get('next');
+      let state = null;
+      try { state = JSON.parse(sessionStorage.getItem('wethus_auth_return_state') || 'null'); } catch (_) {}
+      if (next) {
+        location.href = next;
+        return;
+      }
+      if (state?.path) {
+        location.href = state.path + (state.search || '');
+        return;
+      }
+      if (history.length > 1) history.back();
+    });
+
+    [signupEmail, signupPw, signupPwConfirm, signupBirthYear].forEach(el => {
+      el?.addEventListener('input', () => {
+        if (el === signupBirthYear) {
+          ageVerifiedAt = '';
+          if (signupAge) signupAge.value = '';
+          if (verifyAgeMsg) verifyAgeMsg.textContent = '';
+        }
+        validateSignupForm();
+      });
+      el?.addEventListener('blur', validateSignupForm);
+    });
+    verifyAgeBtn?.addEventListener('click', verifyAge);
+    agreeChk.addEventListener('change', () => {
+      if (!agreeChk.checked) policyDoneLabel?.classList.remove('show');
+      validateSignupForm();
+    });
+    syncPolicyConfirmState();
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!window.WETHUS) return;
+      const fd = new FormData(loginForm);
+      const email = String(fd.get('email') || '').trim().toLowerCase();
+      const password = String(fd.get('password') || '');
+      try {
+        try {
+          const data = await postWithFallback(LOGIN_ENDPOINTS, { email, password });
+          WETHUS.upsertCloudUser(data.user || {});
+        } catch (err) {
+          const allowLocalFallback = (window.WETHUS_ALLOW_LOCAL_AUTH_FALLBACK === undefined)
+            ? isLocalHost
+            : !!window.WETHUS_ALLOW_LOCAL_AUTH_FALLBACK;
+          if (isLocalHost && allowLocalFallback) {
+            WETHUS.loginUser({ email, password });
+          } else {
+            throw err;
+          }
+        }
+        if (rememberEmail.checked) localStorage.setItem('wethus_saved_email', email);
+        else localStorage.removeItem('wethus_saved_email');
+        try { if (WETHUS.syncCloudState) await WETHUS.syncCloudState(email); } catch (_) {}
+        location.href = 'index.html';
+      } catch (err) {
+        const m = String(err?.message || '로그인에 실패했습니다.');
+        const localUser = (WETHUS.getState().users || []).find(u => String(u.email || '').toLowerCase() === email);
+
+        if (/가입된 계정이 없습니다/.test(m) && localUser?.password) {
+          try {
+            WETHUS.loginUser({ email, password });
+            if (rememberEmail.checked) localStorage.setItem('wethus_saved_email', email);
+            else localStorage.removeItem('wethus_saved_email');
+            try { if (WETHUS.syncCloudState) await WETHUS.syncCloudState(email); } catch (_) {}
+            const me = WETHUS.currentUser ? WETHUS.currentUser() : null;
+            location.href = me?.onboardingComplete ? 'index.html' : 'profile.html?onboarding=1';
+            return;
+          } catch (_) {}
+        }
+
+        if (localUser && !localUser.password) {
+          msg.textContent = '이 이메일은 Google로 가입된 계정입니다. 아래 Google 로그인 버튼을 이용해주세요.';
+          return;
+        }
+
+        if (/구글 가입 계정|Google 로그인/i.test(m)) {
+          msg.textContent = '이 이메일은 Google로 가입된 계정입니다. 아래 Google 로그인 버튼을 이용해주세요.';
+          return;
+        }
+
+        msg.textContent = /Failed to fetch|CORS|NetworkError/i.test(m)
+          ? '인증 서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.'
+          : m;
+      }
+    });
+
+    signupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!window.WETHUS) return;
+      if (!validateSignupForm()) {
+        msg.textContent = '입력값을 다시 확인해주세요.';
+        return;
+      }
+      const fd = new FormData(signupForm);
+      const email = String(fd.get('email') || '').trim().toLowerCase();
+      const payload = {
+        name: fd.get('name'),
+        nickname: fd.get('nickname'),
+        email,
+        password: fd.get('password'),
+        age: Number(signupAge?.value || NaN),
+        ageVerifiedAt
+      };
+      try {
+        try {
+          const data = await postWithFallback(REGISTER_ENDPOINTS, payload);
+          WETHUS.upsertCloudUser(data.user || {});
+        } catch (err) {
+          if (isLocalHost) {
+            WETHUS.registerUser(payload);
+          } else {
+            throw err;
+          }
+        }
+        location.href = 'profile.html?onboarding=1';
+      } catch (err) {
+        msg.textContent = String(err?.message || '회원가입에 실패했습니다.');
+      }
+    });
+
+    document.getElementById('devModeBtn').addEventListener('click', () => {
+      if (!window.WETHUS) return;
+      const p = prompt('개발자모드 비밀번호를 입력하세요');
+      if (p === '0904') {
+        WETHUS.setCurrentUser('dev-temp', true);
+        msg.textContent = '개발자모드로 진입합니다...';
+        setTimeout(() => { location.href = 'index.html'; }, 250);
+      } else {
+        msg.textContent = '비밀번호가 올바르지 않습니다.';
+      }
+    });
+
+    window.addEventListener('load', async () => {
+      try {
+        const cfg = await getWithFallback(GOOGLE_CONFIG_ENDPOINTS);
+        const cid = String(cfg?.clientId || '').trim();
+        if (cid) GOOGLE_CLIENT_ID = cid;
+      } catch (_) {}
+      initGoogleSignIn();
+    }, { once: true });
+  </script>
+</body>
+</html>
+tGoogleSignIn();
+    }, { once: true });
+  </script>
+</body>
+</html>
+       if (isLocalHost) {
+            WETHUS.registerUser(payload);
+          } else {
+            throw err;
+          }
+        }
+        location.href = 'profile.html?onboarding=1';
+      } catch (err) {
+        msg.textContent = String(err?.message || '회원가입에 실패했습니다.');
+      }
+    });
+
+    document.getElementById('devModeBtn').addEventListener('click', () => {
+      if (!window.WETHUS) return;
+      const p = prompt('개발자모드 비밀번호를 입력하세요');
+      if (p === '0904') {
+        WETHUS.setCurrentUser('dev-temp', true);
+        msg.textContent = '개발자모드로 진입합니다...';
+        setTimeout(() => { location.href = 'index.html'; }, 250);
+      } else {
+        msg.textContent = '비밀번호가 올바르지 않습니다.';
+      }
+    });
+
+    window.addEventListener('load', async () => {
+      try {
+        const cfg = await getWithFallback(GOOGLE_CONFIG_ENDPOINTS);
+        const cid = String(cfg?.clientId || '').trim();
+        if (cid) GOOGLE_CLIENT_ID = cid;
+      } catch (_) {}
+      initGoogleSignIn();
+    }, { once: true });
+  </script>
+</body>
+</html>
+tGoogleSignIn();
+    }, { once: true });
+  </script>
+</body>
+</html>
+nce: true });
+  </script>
+</body>
+</html>
+��로 진입합니다...';
+        setTimeout(() => { location.href = 'index.html'; }, 250);
+      } else {
+        msg.textContent = '비밀번호가 올바르지 않습니다.';
+      }
+    });
+
+    window.addEventListener('load', async () => {
+      try {
+        const cfg = await getWithFallback(GOOGLE_CONFIG_ENDPOINTS);
+        const cid = String(cfg?.clientId || '').trim();
+        if (cid) GOOGLE_CLIENT_ID = cid;
+      } catch (_) {}
+      initGoogleSignIn();
+    }, { once: true });
+  </script>
+</body>
+</html>
+tGoogleSignIn();
+    }, { once: true });
+  </script>
+</body>
+</html>
+nce: true });
+  </script>
+</body>
+</html>
