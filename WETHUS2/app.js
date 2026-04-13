@@ -556,7 +556,6 @@
       const cleanedCategory = sanitizeCategoryName(rawCategory);
       if (cleanedCategory !== rawCategory) {
         next.category = cleanedCategory || '기타';
-        next.youthProjectTag = true;
         changed = true;
       }
       const founder = Array.isArray(parsed.users) ? parsed.users.find(u => u.id === next.founderId) : null;

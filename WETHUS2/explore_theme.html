@@ -478,19 +478,19 @@
       listEl.innerHTML = items.map((p, i) => {
         const stage = normalizeStage(p.status);
         const item = { ...p, image: imageFor(p, i), status: stage };
-        const isYouth = !!(p.youthProjectTag || p.projectTrack === 'Youth' || ((st.users||[]).find(u => u.id === p.founderId)?.youthTag));
+        const isYouth = false;
         const mine = !!actor && p.founderId === actor;
         const label = mine ? '프로젝트로 이동' : (WETHUS.hasApplied(p.id) ? '지원완료' : '지원하기');
         return `
           <article class="list-item" data-project-id="${item.id}">
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
               <div style="flex:1;min-width:0;">
-                <div class="chip-row"><span class="card-chip">${p.category}</span>${(p.youthProjectTag || p.projectTrack === 'Youth' || ((st.users||[]).find(u => u.id === p.founderId)?.youthTag)) ? '<span class="card-chip youth-chip">YOUTH</span>' : ''}</div>
+                <div class="chip-row"><span class="card-chip">${p.category}</span></div>
                 <div class="card-title-row">
                   <h3 class="card-title" style="margin:0 0 4px;">${p.title}</h3>
                   <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
                 </div>
-                <p class="mini-summary ${isYouth ? 'youth-theme' : ''}" style="margin:0 0 6px;">${miniSummaryText(p)}</p>
+                <p class="mini-summary" style="margin:0 0 6px;">${miniSummaryText(p)}</p>
                 <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}${p.neededRoles ? ` · 필요:${p.neededRoles}` : ''}${p.neededAgeGroup ? ` · ${p.neededAgeGroup}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
               </div>
               <button class="apply-btn ${mine ? 'mine' : (WETHUS.hasApplied(p.id)?'applied':'')}" data-apply="${p.id}">${label}</button>
@@ -509,7 +509,7 @@
       listEl.innerHTML = items.map((p, i) => {
         const stage = normalizeStage(p.status);
         const item = { ...p, image: imageFor(p, i), status: stage };
-        const isYouth = !!(p.youthProjectTag || p.projectTrack === 'Youth' || ((st.users||[]).find(u => u.id === p.founderId)?.youthTag));
+        const isYouth = false;
         const mine = !!actor && p.founderId === actor;
         const label = mine ? '프로젝트로 이동' : (WETHUS.hasApplied(p.id)?'지원완료':'지원하기');
         return `
@@ -517,12 +517,12 @@
             <div class="card-media ${fallbackClass[p.category] || 'card-media--film'}">
               <img src="${item.image}" alt="${p.title}" class="card-img" />
             </div>
-            <div class="chip-row"><span class="card-chip">${p.category}</span>${(p.youthProjectTag || p.projectTrack === 'Youth' || ((st.users||[]).find(u => u.id === p.founderId)?.youthTag)) ? '<span class="card-chip youth-chip">YOUTH</span>' : ''}</div>
+            <div class="chip-row"><span class="card-chip">${p.category}</span></div>
             <div class="card-title-row">
               <h3 class="card-title">${p.title}</h3>
               <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
             </div>
-            <p class="card-summary ${isYouth ? 'youth-theme' : ''}">${miniSummaryText(p)}</p>
+            <p class="card-summary">${miniSummaryText(p)}</p>
             ${renderTeam(p.teamMembers, p)}
             <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}${p.neededRoles ? ` · 필요:${p.neededRoles}` : ''}${p.neededAgeGroup ? ` · ${p.neededAgeGroup}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
             <div class="card-bottom-row">
@@ -613,18 +613,7 @@
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       const others = visible.filter(p => !mineApproved.includes(p));
 
-      // Youth/non-Youth 고르게 섞기
-      const isYouth = (p) => !!(p.youthProjectTag || p.projectTrack === 'Youth' || ((st.users||[]).find(u => u.id === p.founderId)?.youthTag));
-      const youth = others.filter(p => isYouth(p));
-      const nonYouth = others.filter(p => !isYouth(p));
-      const mixed = [];
-      let i = 0;
-      while (i < youth.length || i < nonYouth.length) {
-        if (i < youth.length) mixed.push(youth[i]);
-        if (i < nonYouth.length) mixed.push(nonYouth[i]);
-        i++;
-      }
-      return mineApproved.concat(mixed);
+      return mineApproved.concat(others);
     }
 
     function applyFilters() {
