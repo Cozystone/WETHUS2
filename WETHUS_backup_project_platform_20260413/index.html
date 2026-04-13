@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);}
+   gtag('js', new Date());
+  
+   gtag('config', 'G-PKF58GJC08');
+  </script>
+  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | 모든 청소년 프로젝트 플랫폼</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="styles.css?v=20260319-23" />
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="#top" class="wordmark">WETHUS</a>
+      <nav class="nav-links">
+        <a href="explore.html" id="homeExploreNav" class="nav-link">탐색</a>
+        <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
+        <a href="project-hub.html" class="nav-link">프로젝트 허브</a>
+        <a href="mentor.html" class="nav-link">멘토</a>
+        <a href="profile.html" class="nav-link">프로필</a>
+        <a href="login.html" class="nav-link js-auth-link">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero-banner" aria-label="WETHUS Hero Banner">
+      <div class="banner-frame">
+        <img src="KakaoTalk_20260315_235433990.png" alt="WETHUS 시네마틱 배너" class="banner-img" />
+        <div class="banner-overlay"></div>
+        <div class="banner-orange-line" aria-hidden="true"></div>
+        <div class="banner-corner banner-corner--tl" aria-hidden="true"></div>
+        <div class="banner-corner banner-corner--br" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section class="hero-copy" id="start">
+      <div class="container">
+        <h1 class="hero-headline">실체 있는 청소년 프로젝트, 여기서 시작된다.</h1>
+        <p class="hero-support">아이디어를 말로 끝내지 않습니다. 창업, 영화, 정책 제안, 캠페인, 서비스 제작까지. 팀을 만들고 실행하고, 막히는 지점에서 멘토를 호출하세요.</p>
+        <div class="hero-tags">
+          <span class="chip">실행 중심 프로젝트</span>
+          <span class="chip">팀빌딩</span>
+          <span class="chip">멘토 연결</span>
+        </div>
+        <div class="hero-cta">
+          <a href="founder.html" class="btn btn--primary">프로젝트 시작하기</a>
+          <a href="explore.html" id="homeExploreCta" class="btn btn--secondary">프로젝트 탐색하기</a>
+        </div>
+        <div class="hero-ribbon" aria-hidden="true">
+          <div class="ribbon-line">
+            <div class="ribbon-track">
+              <span>WETHUS · YOUTH PROJECT ACCELERATOR · WETHUS · YOUTH PROJECT ACCELERATOR ·</span>
+              <span>WETHUS · YOUTH PROJECT ACCELERATOR · WETHUS · YOUTH PROJECT ACCELERATOR ·</span>
+              <span>WETHUS · YOUTH PROJECT ACCELERATOR · WETHUS · YOUTH PROJECT ACCELERATOR ·</span>
+            </div>
+          </div>
+          <div class="ribbon-line ribbon-line--alt">
+            <div class="ribbon-track">
+              <span>WETHUS · BUILD TEAMS · EXECUTE IDEAS · WETHUS · BUILD TEAMS · EXECUTE IDEAS ·</span>
+              <span>WETHUS · BUILD TEAMS · EXECUTE IDEAS · WETHUS · BUILD TEAMS · EXECUTE IDEAS ·</span>
+              <span>WETHUS · BUILD TEAMS · EXECUTE IDEAS · WETHUS · BUILD TEAMS · EXECUTE IDEAS ·</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section manifesto" id="manifesto">
+      <div class="container">
+        <p class="section-kicker">WETHUS MANIFESTO</p>
+        <h2 class="section-title">우리는 ‘좋은 아이디어’보다<br/>‘끝까지 가는 팀’을 믿습니다.</h2>
+        <p class="manifesto-copy">WETHUS는 청소년의 실행력을 큐레이션하는 프로젝트 네트워크입니다. 선명한 목표, 명확한 역할, 짧은 실행 사이클. 이 세 가지가 준비된 팀만 앞으로 나아갑니다.</p>
+        <div class="manifesto-metrics">
+          <div class="metric"><strong>Execution First</strong><span>실행 우선</span></div>
+          <div class="metric"><strong>Team Building</strong><span>팀 중심 협업</span></div>
+          <div class="metric"><strong>Mentor On Demand</strong><span>필요한 순간 멘토 연결</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section featured" id="explore">
+      <div class="container">
+        <p class="section-kicker">실행 중인 팀</p>
+        <h2 class="section-title">지금 움직이고 있는 프로젝트</h2>
+        <div id="homeFeatured" class="project-cards"></div>
+      </div>
+    </section>
+
+    <section class="section how-it-works" id="how">
+      <div class="container">
+        <p class="section-kicker">작동 방식</p>
+        <h2 class="section-title">WETHUS 작동 방식</h2>
+        <div class="steps">
+          <div class="step"><span class="step-num">01</span><h3 class="step-title">Founder 신청</h3><p class="step-desc">프로젝트 개요, 동기, 2주 실행계획을 작성해 심사받습니다.</p></div>
+          <div class="step-connector"></div>
+          <div class="step"><span class="step-num">02</span><h3 class="step-title">팀원 모집 및 합류</h3><p class="step-desc">참여자는 역할, 가용시간, 2주 기여계획을 제출합니다.</p></div>
+          <div class="step-connector"></div>
+          <div class="step"><span class="step-num">03</span><h3 class="step-title">실행 후 멘토 요청</h3><p class="step-desc">진행 중 막히는 지점에서 검증된 멘토에게 단기 도움을 받습니다.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section mentor-band" id="mentor">
+      <div class="container">
+        <h2 class="mentor-headline">팀이 막히는 순간, 검증된 멘토에게 요청하세요.</h2>
+        <p class="mentor-support">멘토는 프로젝트를 대신 이끄는 사람이 아니라, 막힌 지점을 짚어주는 조력자입니다.</p>
+        <p class="mentor-note">멘토는 팀 시작 후 요청 가능</p>
+      </div>
+    </section>
+
+    <section class="section founder-cta" id="founder">
+      <div class="container">
+        <h2 class="founder-headline">아이디어로 끝내지 말고, 팀으로 증명하세요.</h2>
+        <p class="founder-support">WETHUS는 실행 의지가 있는 프로젝트만 선별해, 더 빠르게 결과까지 밀어붙입니다.</p>
+        <a href="founder.html" class="btn btn--primary btn--large">Founder 신청하기</a>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-inner">
+          <span class="wordmark">WETHUS</span>
+          <p class="footer-copy">A curated execution-first project network for teenagers · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <div id="projectModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close="true"></div>
+    <article class="modal-panel">
+      <button class="modal-close" id="modalClose" aria-label="닫기">×</button>
+      <div class="modal-media-wrap">
+        <img id="modalImage" class="modal-image" alt="프로젝트 이미지" />
+      </div>
+      <div class="modal-content">
+        <p class="section-kicker" id="modalCategory">CATEGORY</p>
+        <div class="card-title-row" style="margin:0 0 4px;align-items:center;">
+          <h3 id="modalTitle" style="margin:0;font-size:1.45rem;font-weight:800;"></h3>
+          <button id="modalBookmarkBtn" class="bookmark-btn" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
+        </div>
+        <p id="modalDateRange" class="modal-date-range" style="margin:0 0 10px;"></p>
+        <p id="modalSummary" style="margin:0 0 12px;color:#f5f5f5;"></p>
+        <p id="modalDesc" style="margin:0 0 18px;color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p>
+        <div id="modalTeam" class="team-row" style="margin-bottom:12px;"></div>
+        <div class="meta"><span class="badge" id="modalCategoryBadge"></span> · <span id="modalStatus"></span> · <span id="modalRoles"></span> · <span id="modalDuration"></span></div>
+        <div class="modal-social-row">
+          <button id="modalLikeBtn" class="btn btn--secondary">♡ <span id="modalLikeCount">0</span></button>
+          <button id="modalCommentBtn" class="btn btn--secondary">💬 <span id="modalCommentCount">0</span></button>
+          <button id="modalApplyBtn" class="apply-btn" type="button">지원하기</button>
+        </div>
+        <div id="modalCommentPanel" class="comment-panel" style="display:none;">
+          <div class="comment-panel-head">
+            <strong>댓글</strong>
+            <button id="modalCommentClose" class="comment-close" type="button">×</button>
+          </div>
+          <div id="modalComments" class="modal-comments"></div>
+          <form id="modalCommentForm" class="modal-comment-form">
+            <input id="modalCommentInput" placeholder="댓글을 입력하세요" />
+            <button class="btn btn--primary" type="submit">등록</button>
+          </form>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  
+  <div id="applyModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-apply="true"></div>
+    <article class="modal-panel" style="max-width:520px;">
+      <button class="modal-close" id="applyClose" aria-label="닫기">×</button>
+      <div class="modal-content">
+        <h3 style="margin:0 0 8px;">프로젝트 참여 지원</h3>
+        <p class="meta" style="margin-bottom:10px;">지원동기를 간단히 작성해주세요.</p>
+        <textarea id="applyMotivation" style="width:100%;min-height:120px;background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+          <button id="applySubmit" class="btn btn--primary">지원서 제출</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <script src="app.js?v=20260402-1510"></script>
+  <script>
+    (function(){
+      if (!window.WETHUS) return;
+      const authLink = document.querySelector('.js-auth-link');
+      const st = WETHUS.getState();
+      if (authLink && (st.currentUserId || st.devMode)) {
+        authLink.textContent = '로그아웃';
+        authLink.href = '#';
+        authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
+      }
+      const el = document.getElementById('homeFeatured');
+      if (!el) return;
+      const normalizeStage = (v) => {
+        const s = String(v || '').replace(/\s+/g,'');
+        if (s === '모집중' || s === '구인중') return '모집 중';
+        if (s === '팀빌딩' || s === '기획중' || s === '초기팀빌딩' || s === '검토대기') return '기획 중';
+        if (s === '진행중') return '진행 중';
+        if (s === '피보팅') return '피보팅';
+        return '기획 중';
+      };
+      function recommendationPool() {
+        const items = (WETHUS.getRecommendedProjects ? WETHUS.getRecommendedProjects(6) : WETHUS.listProjects().slice(0, 6))
+          .filter(p => !WETHUS.hasApplied(p.id));
+        return items.map(p => ({ ...p, status: normalizeStage(p.status) }));
+      }
+      const featured = recommendationPool();
+      try { featured.forEach(p => WETHUS.recordProjectView && WETHUS.recordProjectView(p.id)); } catch (_) {}
+      const fallbackClass = { Film:'card-media--film', App:'card-media--startup', Startup:'card-media--startup', Policy:'card-media--policy', Campaign:'card-media--policy', Creative:'card-media--film' };
+      const memberHref = (m) => `member.html?name=${encodeURIComponent(m?.name||'팀원')}&role=${encodeURIComponent(m?.role||'담당')}&bio=${encodeURIComponent(m?.bio||'소개가 아직 없습니다.')}&founder=${m?.isLeader ? '1' : '0'}`;
+      const renderTeam = (team=[]) => {
+        const leader = team.find(m => m.isLeader) || team[0];
+        const others = team.filter(m => m !== leader);
+        const visible = others.slice(0,2);
+        const hidden = others.slice(2);
+        return `
+          <div class="team-row">
+            <a class="member-pill leader" href="${memberHref(leader)}"><span class="member-name">${leader?.name || '대표'}</span> <span class="member-role">대표</span></a>
+            ${visible.map(m => `<a class="member-pill" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('')}
+            ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length+1}명</button><div class="team-list">${hidden.map(m=>`<a class="member-pill block" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('')}</div>` : ''}
+          </div>`;
+      };
+      el.innerHTML = featured.map(p => `
+        <article class="card list-item" data-project='${JSON.stringify(p).replace(/'/g, "&#39;")}'>
+          <div class="card-media ${fallbackClass[p.category] || 'card-media--film'}">
+            <img src="${p.image || `https://picsum.photos/seed/wethus-${(p.category||'project').toLowerCase()}/900/560`}" alt="${p.title}" class="card-img" />
+          </div>
+          <span class="card-chip">${p.category || ''}</span>
+          <div class="card-title-row">
+            <h3 class="card-title">${p.title}</h3>
+            <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
+          </div>
+          <p class="card-summary">${p.summary || ''}</p>
+          ${renderTeam(p.teamMembers)}
+          <div class="meta"><span class="card-status">${p.status || '기획 중'}</span> · ${p.roles || ''}${p.neededRoles ? ` · 필요:${p.neededRoles}` : ''}${p.neededAgeGroup ? ` · ${p.neededAgeGroup}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
+          <div class="card-bottom-row">
+            <div class="card-social"><span>♡ ${(p.likes||0)}</span><span>💬 ${Array.isArray(p.comments)?p.comments.length:0}</span></div>
+            <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>
+          </div>
+        </article>
+      `).join('');
+
+      const applyModal = document.getElementById('applyModal');
+      const applyMotivation = document.getElementById('applyMotivation');
+      let applyProjectId = null;
+
+      el.addEventListener('click', async (e) => {
+        const bmBtn = e.target.closest('.bookmark-btn');
+        if (bmBtn) {
+          e.stopPropagation();
+          try {
+            const res = WETHUS.toggleBookmark(bmBtn.dataset.bm);
+            bmBtn.classList.toggle('active', !!res?.bookmarked);
+            WETHUS.recordProjectView && WETHUS.recordProjectView(bmBtn.dataset.bm);
+          } catch (_) {}
+          return;
+        }
+
+        const applyBtn = e.target.closest('.apply-btn');
+        if (!applyBtn) return;
+        e.stopPropagation();
+        const st = WETHUS.getState();
+        if (!(st.currentUserId || st.devMode)) {
+          WETHUS.setAuthReturnState?.({ modalProjectId: applyBtn.dataset.apply });
+          location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
+          return;
+        }
+        applyProjectId = applyBtn.dataset.apply;
+        if (applyBtn.classList.contains('applied')) {
+          const ok = await WETHUS.uiConfirm('지원을 취소하겠습니까?', { title: '지원 취소' });
+          if (!ok) return;
+          WETHUS.cancelApplication(applyProjectId);
+          location.reload();
+          return;
+        }
+        applyModal.classList.add('open');
+        applyModal.setAttribute('aria-hidden', 'false');
+      });
+
+      document.getElementById('applyClose')?.addEventListener('click', () => {
+        applyModal.classList.remove('open');
+        applyModal.setAttribute('aria-hidden', 'true');
+      });
+      applyModal?.addEventListener('click', (e) => {
+        if (e.target && e.target.getAttribute('data-close-apply') === 'true') {
+          applyModal.classList.remove('open');
+          applyModal.setAttribute('aria-hidden', 'true');
+        }
+      });
+      document.getElementById('applySubmit')?.addEventListener('click', async () => {
+        if (!applyProjectId) return;
+        const st = WETHUS.getState();
+        if (!(st.currentUserId || st.devMode)) {
+          WETHUS.setAuthReturnState?.({ modalProjectId: applyProjectId });
+          location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
+          return;
+        }
+        const motivation = (applyMotivation.value || '').trim();
+        if (!motivation) { await WETHUS.uiAlert('지원동기를 입력해주세요.', { title: '입력 필요' }); return; }
+        const ok = await WETHUS.uiConfirm('지원하시겠습니까?', { title: '프로젝트 지원' });
+        if (!ok) return;
+        WETHUS.applyToProject(applyProjectId, motivation);
+        const btn = el.querySelector(`.apply-btn[data-apply="${applyProjectId}"]`);
+        if (btn) {
+          btn.classList.add('applied');
+          btn.textContent = '지원완료';
+        }
+        applyMotivation.value = '';
+        applyModal.classList.remove('open');
+        applyModal.setAttribute('aria-hidden', 'true');
+      });
+    })();
+  </script>
+  <script src="app.js?v=20260402-1510"></script>
+  <script>
+    (function forceExplorePublicFromHome(){
+      const go = (e) => {
+        e.preventDefault();
+        location.href = 'explore.html?v=guest-open';
+      };
+      document.getElementById('homeExploreNav')?.addEventListener('click', go);
+      document.getElementById('homeExploreCta')?.addEventListener('click', go);
+    })();
+  </script>
+  <script src="script.js?v=20260319-6"></script>
+</body>
+</html>

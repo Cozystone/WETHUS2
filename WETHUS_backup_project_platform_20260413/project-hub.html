@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-PKF58GJC08');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | 프로젝트 허브</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="styles.css?v=20260319-23" />
+  <style>
+    .hub-shell{margin-top:24px}
+    .hub-list{display:grid;gap:10px}
+    .hub-item{border:1px solid #2a2a2a;border-radius:12px;background:#121212;padding:12px;cursor:pointer}
+    .hub-item:hover{border-color:#3a3a3a;background:#151515}
+    .hub-header{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start;border:1px solid #2a2a2a;border-radius:14px;background:linear-gradient(180deg,#141414,#111);padding:14px}
+    .hub-head-left{display:flex;gap:12px;align-items:flex-start}
+    .hub-thumb{width:84px;height:84px;border-radius:12px;object-fit:cover;border:1px solid #2f2f2f;background:#1b1b1b}
+    .hub-top-team{display:flex;gap:8px;flex-wrap:wrap}
+    .hub-team-pill{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;border:1px solid #303030;background:#151515}
+    .hub-team-pill .meta{color:#ff9a2f !important;}
+    .hub-team-pill-remove{border:0;background:transparent;color:#ffb36d;font-weight:900;cursor:pointer;padding:0 2px;line-height:1;}
+    .hub-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+    .hub-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;justify-content:stretch}
+    .hub-actions .btn{width:100%;min-width:0;justify-content:center;}
+    .hub-tabs-wrap{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:10px;align-items:stretch;margin:14px 0 12px}
+    .hub-tabs{display:flex;gap:8px;align-items:center}
+    .hub-tab{padding:8px 12px;border-radius:999px;border:1px solid #333;background:#151515;color:#ddd;cursor:pointer}
+    .hub-tab.active{background:#ff8a00;color:#111;border-color:#ff8a00;font-weight:700}
+    .hub-llm-box{border:1px solid #2f2f2f;border-radius:10px;background:#151515;padding:6px 8px;min-height:52px}
+    .hub-llm-box h4{margin:0 0 1px;font-size:.84rem}
+    .hub-grid{display:grid;grid-template-columns:1.55fr .8fr;gap:12px}
+    .hub-left{display:grid;gap:10px}
+    .hub-card{border:1px solid #2a2a2a;border-radius:12px;background:#121212;padding:12px}
+    .hub-card h3{margin:0 0 8px;font-size:1rem}
+    .hub-wide{min-height:130px}
+    .tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .tool-card{border:1px solid #333;border-radius:10px;padding:10px;background:#151515}
+    .tool-card .btn{min-height:38px;display:inline-flex;align-items:center;justify-content:center;}
+    .side-stack{display:grid;gap:10px}
+    .meta-bullet{margin:0;padding-left:17px;color:#d6d6d6}
+    .meta-bullet li{margin:4px 0}
+    .hidden{display:none !important}
+    .chat-row{display:grid;gap:4px;max-width:82%;}
+    .chat-row.mine{justify-self:end;}
+    .chat-row.other{justify-self:start;grid-template-columns:34px 1fr;column-gap:8px;align-items:end;}
+    .chat-avatar{width:34px;height:34px;border-radius:999px;border:1px solid #3a3a3a;background:#252525;display:grid;place-items:center;color:#fff;font-size:.75rem;font-weight:700;overflow:hidden}
+    .chat-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+    .chat-name{font-size:.75rem;color:#b9b9b9;margin-bottom:2px}
+    .chat-bubble{padding:10px 12px;border-radius:14px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+    .chat-bubble.mine{background:#ff8a00;color:#111;border-bottom-right-radius:4px}
+    .chat-bubble.other{background:#232323;color:#f5f5f5;border-bottom-left-radius:4px}
+    .chat-meta{font-size:.72rem;color:#9b9b9b}
+    .slash-suggest{position:relative}
+    .slash-list{position:absolute;left:0;right:0;bottom:48px;z-index:20;border:1px solid #2f2f2f;border-radius:10px;background:#111;display:none;max-height:180px;overflow:auto}
+    .slash-item{padding:8px 10px;border-bottom:1px solid #232323;cursor:pointer}
+    .slash-item:last-child{border-bottom:0}
+    .slash-item:hover{background:#1a1a1a}
+    @media (max-width:960px){.hub-grid{grid-template-columns:1fr}.hub-header{grid-template-columns:1fr}.hub-actions{grid-template-columns:repeat(2,minmax(0,1fr));}.hub-tabs-wrap{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="wordmark">WETHUS</a>
+      <nav class="nav-links">
+        <a href="explore.html" class="nav-link">탐색</a>
+        <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
+        <a href="project-hub.html" class="nav-link nav-link--cta">프로젝트 허브</a>
+        <a href="mentor.html" class="nav-link">멘토</a>
+        <a href="profile.html" class="nav-link">프로필</a>
+        <a href="login.html" class="nav-link js-auth-link">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page-main page-main--standard hub-shell">
+    <section id="hubListView">
+      <div class="projects-head-row" style="margin-bottom:8px;">
+        <div>
+          <h1 class="page-title" style="margin:0;">프로젝트 허브</h1>
+          <p class="page-sub" style="margin-top:6px;">내 프로젝트를 선택해 실행 현황, 자료, 팀 협업을 한 번에 관리하세요.</p>
+        </div>
+      </div>
+      <div id="hubProjectList" class="hub-list"></div>
+    </section>
+
+    <section id="hubDetailView" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <button id="hubBackBtn" class="btn btn--secondary" type="button">← 프로젝트 목록으로</button>
+      </div>
+      <section class="hub-header">
+        <div class="hub-head-left">
+          <img id="hubThumb" class="hub-thumb" src="" alt="프로젝트 썸네일" />
+          <div>
+            <h1 id="hubTitle" class="page-title" style="margin:0;"></h1>
+            <div class="hub-badges">
+              <span id="hubCategory" class="badge"></span>
+              <span id="hubStage" class="badge"></span>
+              <span id="hubState" class="badge"></span>
+            </div>
+            <p id="hubSummary" class="page-sub" style="margin-top:8px;"></p>
+          </div>
+        </div>
+        <div class="hub-actions">
+          <button id="hubEditBtn" class="btn btn--secondary" type="button">프로젝트 수정</button>
+          <button id="hubToolBtn" class="btn btn--secondary" type="button">외부 툴 연결</button>
+          <button id="hubChatOpenBtn" class="btn btn--secondary" type="button">팀채팅</button>
+          <button id="hubMentorBtn" class="btn btn--primary" type="button">멘토링 요청</button>
+        </div>
+      </section>
+
+      <section class="hub-card" style="margin-top:8px;padding:8px 10px;">
+        <h3 style="margin:0 0 4px;font-size:.95rem;">팀 구성</h3>
+        <div id="hubTopTeam" class="hub-top-team"></div>
+      </section>
+
+      <div class="hub-tabs-wrap">
+        <div class="hub-tabs" id="hubTabs">
+          <button class="hub-tab active" data-tab="overview" type="button">개요</button>
+          <button class="hub-tab" data-tab="progress" type="button">진행</button>
+          <button class="hub-tab" data-tab="materials" type="button">작업자료</button>
+          <button class="hub-tab" data-tab="integrations" type="button">외부 연동</button>
+          <button class="hub-tab" data-tab="team" type="button">팀원</button>
+        </div>
+        <aside class="hub-llm-box" style="display:flex;gap:8px;align-items:center;">
+          <div style="width:30px;height:30px;border-radius:999px;border:1px solid #3a3a3a;background:linear-gradient(135deg,#6b46ff,#2d7dff);display:grid;place-items:center;color:#fff;font-size:.75rem;font-weight:700;">AI</div>
+          <div>
+            <h4 style="margin:0;">WETHUS AI</h4>
+            <p id="hubLlmStatus" class="meta" style="margin:2px 0 0;">연결됨 · 허브 전역 문맥 기반 지원 활성</p>
+          </div>
+        </aside>
+      </div>
+
+      <section class="hub-grid">
+        <div class="hub-left">
+          <div id="tab-overview">
+            <article class="hub-card"><h3>현재 목표</h3><p id="ovGoal" style="margin:0;"></p></article>
+            <article class="hub-card"><h3>이번 주 할 일</h3><ul id="ovTodos" class="meta-bullet"></ul></article>
+            <article class="hub-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h3 style="margin:0;">최근 활동</h3><button id="ovRecentMoreBtn" class="btn btn--secondary" type="button" style="display:none;padding:6px 10px;">전체보기</button></div><ul id="ovRecent" class="meta-bullet" style="margin-top:8px;"></ul></article>
+            <article class="hub-card hub-wide"><h3>현재 이슈 / 현재 막힌 점</h3><p id="ovBlocker" style="margin:0;"></p></article>
+            <article class="hub-card"><h3>연결된 도구들</h3><div id="ovTools" class="tool-grid"></div></article>
+          </div>
+
+          <div id="tab-progress" class="hidden">
+            <article class="hub-card"><h3>진행 로그</h3><ul id="pgLogs" class="meta-bullet"></ul></article>
+            <article class="hub-card"><h3>로컬 프로젝트 매니지먼트 AI 요약</h3><button id="pgAiSummBtn" class="btn btn--secondary" type="button">외부 툴 기반 요약 생성</button><p id="pgAiSummary" style="margin:10px 0 0;"></p></article>
+          </div>
+
+          <div id="tab-materials" class="hidden">
+            <article class="hub-card">
+              <h3>작업자료</h3>
+              <p class="meta" style="margin:0 0 8px;">외부 툴은 API/Webhook으로 연결하고, 공유 문서/레퍼런스 링크도 여기서 함께 관리하세요.</p>
+              <div style="display:grid;gap:8px;margin-bottom:8px;">
+                <input id="mtLinkInput" type="url" placeholder="공유 링크 추가 (https://...)" style="width:100%;" />
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <input id="mtFileInput" type="file" />
+                  <button id="mtAddBtn" class="btn btn--secondary" type="button">자료 추가</button>
+                </div>
+              </div>
+              <ul id="mtList" class="meta-bullet"></ul>
+            </article>
+          </div>
+
+          <div id="tab-integrations" class="hidden">
+            <article class="hub-card">
+              <h3 style="margin:0 0 8px;">외부 연동 현황</h3>
+              <p class="meta" style="margin:0 0 10px;">외부 툴에서 연결한 리소스와 최근 동기화 상태를 확인합니다.</p>
+              <div id="igList" class="list-grid"></div>
+            </article>
+          </div>
+
+          <div id="tab-team" class="hidden">
+            <article class="hub-card">
+              <h3 style="margin:0 0 8px;">업무기록</h3>
+              <p class="meta" style="margin:0 0 10px;">팀채팅/활동 로그를 기반으로 AI가 팀원별 업무기록을 요약합니다.</p>
+              <div id="tmWorkLog" class="list-grid"></div>
+            </article>
+          </div>
+        </div>
+
+        <aside class="side-stack">
+          <article class="hub-card"><h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">프로젝트 상태 <button id="sdRefreshBtn" class="btn btn--secondary" type="button" style="padding:4px 8px;min-height:auto;line-height:1;">↻</button></h3><ul id="sdStatus" class="meta-bullet"></ul></article>
+          <article class="hub-card"><h3>진행 조언</h3><ul id="sdAdvice" class="meta-bullet"></ul></article>
+          <article class="hub-card"><h3>멘토 또는 AI에게 요청하기</h3><div style="display:grid;gap:8px;"><button id="sdAiBtn" class="btn btn--primary" type="button">AI 멘토 요청</button><button id="sdHumanBtn" class="btn btn--secondary" type="button">인간 멘토 요청</button></div></article>
+        </aside>
+      </section>
+    </section>
+  </main>
+
+  <div id="hubEditModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-edit="true"></div><article class="modal-panel" style="max-width:760px;"><button class="modal-close" id="hubEditClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">프로젝트 수정</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><input id="hubEditTitle" placeholder="제목" /><input id="hubEditSummary" placeholder="요약" /></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><select id="hubEditStatus"><option>모집 중</option><option>기획 중</option><option>진행 중</option><option>피보팅</option><option>완료</option></select><select id="hubEditTeamSize"><option>1인</option><option>2인</option><option>3인</option><option>4인이상</option></select></div><input id="hubEditRoles" placeholder="역할" style="margin-bottom:8px;" /><textarea id="hubEditDesc" style="width:100%;min-height:110px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;" placeholder="프로젝트 설명"></textarea><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="hubEditSave" class="btn btn--primary" type="button">저장</button></div></div></article></div>
+  <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 툴 연결</h3><p class="meta" style="margin:0 0 10px;">OAuth로 계정을 연결한 뒤, 프로젝트에 연결할 문서/시트/채널/파일을 선택하세요.</p><article class="hub-card" style="padding:10px;margin:0 0 10px;"><strong style="display:block;margin-bottom:4px;">연동 구조</strong><p class="meta" style="margin:0;">1) 제공자 선택 → 2) OAuth 인증 → 3) 리소스 선택 → 4) 프로젝트 허브에 연결 반영</p></article><div id="toolLogoGrid" class="tool-grid"></div></div></article></div>
+  <div id="hubChatModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-chat="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubChatClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">팀채팅</h3><p class="meta" style="margin:0 0 8px;">프로젝트 지원 AI는 프로젝트 정보/최근 활동/팀 채팅 문맥을 함께 참고합니다.</p><div id="chatList" style="max-height:320px;overflow:auto;display:grid;gap:8px;"></div><div class="slash-suggest" style="display:flex;gap:8px;margin-top:10px;"><input id="chatInput" style="flex:1;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px;" placeholder="메시지를 입력하세요 (/ai 질문 형태 지원)"/><button id="chatSend" class="btn btn--primary">보내기</button><div id="slashList" class="slash-list"></div></div></div></article></div>
+  <div id="worklogModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-worklog="true"></div><article class="modal-panel" style="max-width:620px;"><button class="modal-close" id="worklogClose">×</button><div class="modal-content"><h3 id="worklogTitle" style="margin:0 0 8px;">업무기록</h3><ul id="worklogList" class="meta-bullet"></ul></div></article></div>
+  <div id="recentModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-recent="true"></div><article class="modal-panel" style="max-width:680px;"><button class="modal-close" id="recentClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">최근 활동 전체</h3><ul id="recentList" class="meta-bullet"></ul></div></article></div>
+  <div id="hubAiAddModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-ai-add="true"></div><article class="modal-panel" style="max-width:520px;"><button class="modal-close" id="hubAiAddClose">×</button><div class="modal-content"><h3 id="hubAiAddTitle" style="margin:0 0 8px;">에이전트를 추가하시겠습니까?</h3><p id="hubAiAddDesc" class="meta" style="margin:0 0 12px;">선택한 AI 멘토를 이 프로젝트 허브 팀에 추가합니다.</p><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubAiAddCancel" class="btn btn--secondary" type="button">취소</button><button id="hubAiAddConfirm" class="btn btn--primary" type="button">확인</button></div></div></article></div>
+  <div id="hubAiRemoveModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-ai-remove="true"></div><article class="modal-panel" style="max-width:520px;"><button class="modal-close" id="hubAiRemoveClose">×</button><div class="modal-content"><h3 id="hubAiRemoveTitle" style="margin:0 0 8px;">에이전트를 제거하시겠습니까?</h3><p id="hubAiRemoveDesc" class="meta" style="margin:0 0 12px;">선택한 AI 멘토를 팀 구성에서 제거합니다.</p><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubAiRemoveCancel" class="btn btn--secondary" type="button">취소</button><button id="hubAiRemoveConfirm" class="btn btn--primary" type="button">확인</button></div></div></article></div>
+  <div id="hubResourceModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-resource="true"></div><article class="modal-panel" style="max-width:680px;"><button class="modal-close" id="hubResourceClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">연결할 리소스 선택</h3><p id="hubResourceHelp" class="meta" style="margin:0 0 10px;">연결할 문서/시트/워크스페이스를 선택하세요.</p><div style="display:flex;gap:8px;align-items:center;margin:0 0 8px;"><button id="hubResourceUp" class="btn btn--secondary" type="button">상위 폴더</button><p id="hubResourcePath" class="meta" style="margin:0;">내 드라이브</p></div><input id="hubResourceSearch" placeholder="문서/시트/폴더 이름 검색" style="width:100%;margin:0 0 8px;" /><div id="hubResourceList" style="max-height:320px;overflow:auto;border:1px solid #2a2a2a;border-radius:10px;padding:6px;background:#111;display:grid;gap:6px;margin-bottom:10px;"></div><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubResourceCancel" class="btn btn--secondary" type="button">취소</button><button id="hubResourceConfirm" class="btn btn--primary" type="button">연결 저장</button></div></div></article></div>
+
+  <footer class="footer"><div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p></div></div></footer>
+
+  <script src="app.js?v=20260409-103"></script>
+  <script>
+    WETHUS.requireAuth();
+    const authLink = document.querySelector('.js-auth-link');
+    const st = WETHUS.getState();
+    if (authLink && (st.currentUserId || st.devMode)) { authLink.textContent='로그아웃'; authLink.href='#'; authLink.addEventListener('click', (e)=>{e.preventDefault();WETHUS.logout();location.href='login.html';}); }
+
+    const hubListView = document.getElementById('hubListView');
+    const hubDetailView = document.getElementById('hubDetailView');
+    const hubProjectList = document.getElementById('hubProjectList');
+    let currentProject = null;
+    let activeTab='overview';
+
+    function hubPersistKey() {
+      const st = WETHUS.getState();
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : 'guest');
+      return `wethus.hub.selected.${actor}`;
+    }
+    function setPersistedProject(id) {
+      try { localStorage.setItem(hubPersistKey(), String(id || '')); } catch (_) {}
+    }
+    function getPersistedProject() {
+      try { return localStorage.getItem(hubPersistKey()) || ''; } catch { return ''; }
+    }
+
+    async function hubApi(path, options = {}) {
+      const st = WETHUS.getState();
+      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : '');
+      const bases = [window.WETHUS_API_BASE || 'https://wethus-api.onrender.com', `${location.protocol}//${location.hostname}:8787`, 'http://127.0.0.1:8787'];
+      let lastErr;
+      for (const b of bases) {
+        try {
+          const r = await fetch(`${String(b).replace(/\/$/, '')}${path}`, {
+            ...options,
+            headers: {
+              'Content-Type': 'application/json',
+              'x-user-id': actor,
+              ...(options.headers || {})
+            }
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok || data?.ok === false) throw new Error(data?.error || `hub api failed (${r.status})`);
+          return data;
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error('hub api unavailable');
+    }
+
+    function fallbackHub(p){
+      return {
+        goal: p.summary || '현재 목표를 설정하세요.',
+        weeklyTodos: ['핵심 과업 1개 완료', '팀 미팅 1회 진행', '다음 주 목표 수립'],
+        recentActivities: [{text:'허브 생성됨',createdAt:new Date().toISOString()}],
+        blocker: '현재 막힌 점을 등록하면 팀 전체가 빠르게 대응할 수 있어요.',
+        tools: [
+          {name:'Google Docs',url:'',desc:'기획 문서'},
+          {name:'Google Sheets',url:'',desc:'일정/지표'},
+          {name:'Notion',url:'',desc:'팀 위키'},
+          {name:'Figma',url:'',desc:'디자인'}
+        ],
+        progress:[{text:'프로젝트 시작',createdAt:p.createdAt||new Date().toISOString()}],
+        materials:[{name:'요구사항 문서',type:'문서'},{name:'와이어프레임',type:'디자인'}],
+        teamChat:[],
+        aiMentors: []
+      };
+    }
+
+    function openModal(id){ const el=document.getElementById(id); el.classList.add('open'); el.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; }
+    function closeModal(id){ const el=document.getElementById(id); el.classList.remove('open'); el.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+
+    function renderProjectList(){
+      const list = WETHUS.myProjects();
+      if(!list.length){ hubProjectList.innerHTML='<article class="hub-item"><h3 style="margin:0 0 6px;">프로젝트가 없습니다.</h3><p class="meta" style="margin:0;">먼저 프로젝트를 시작하면 허브를 사용할 수 있어요.</p><div style="margin-top:10px;"><a href="founder.html" class="btn btn--primary">프로젝트 시작하기</a></div></article>'; return; }
+      hubProjectList.innerHTML = list.map(p=>`<article class="hub-item" data-id="${p.id}" style="display:flex;gap:10px;align-items:flex-start;"><img src="${p.image||'https://picsum.photos/seed/hub-list/84/84'}" alt="프로젝트 대표사진" style="width:44px;height:44px;border-radius:10px;object-fit:cover;border:1px solid #2a2a2a;flex:0 0 auto;"/><div style="min-width:0;"><h3 style="margin:0 0 6px;">${p.title}</h3><p class="meta" style="margin:0 0 4px;">${p.category||''} · ${p.status||''}</p><p style="margin:0;color:#d4d4d4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.summary||''}</p></div></article>`).join('');
+      hubProjectList.querySelectorAll('[data-id]').forEach(el=>el.addEventListener('click',()=>openProject(el.getAttribute('data-id'))));
+    }
+
+    async function renderWorkLogs(team, hub){
+      const names = Array.from(new Set([...(team||[]).map(m=>m.name), ...((hub?.aiMentors||[]).map(a=>a.name))]));
+      const byUser = {};
+      names.forEach(n => byUser[n] = []);
+      (hub?.teamChat || []).forEach(msg => {
+        const key = msg.from || '미확인';
+        byUser[key] = byUser[key] || [];
+        byUser[key].push(msg.text);
+      });
+
+      const workEl = document.getElementById('tmWorkLog');
+      workEl.innerHTML = '<p class="meta">업무기록 업데이트중...</p>';
+      const rows = Object.entries(byUser).filter(([_, logs]) => logs.length);
+      if (!rows.length) { workEl.innerHTML = '<p class="meta">업무기록이 아직 없습니다.</p>'; return; }
+
+      const sourceSig = `${(hub.teamChat||[]).length}:${(hub.teamChat||[]).slice(-1)[0]?.id || ''}`;
+      let display = Array.isArray(hub.workLogs) ? hub.workLogs : [];
+
+      if (!display.length || hub.workLogsSig !== sourceSig) {
+        const items = [];
+        for (const [name, logs] of rows) {
+          const prompt = `다음 텍스트는 ${name}의 최근 팀채팅 발화다. 한국어로 업무기록 요약 2문장 이내로 작성하고, 마지막 줄에 '다음 행동: ...' 1개를 써라.\n${logs.slice(-8).join(' / ')}`;
+          let summary = '';
+          try { summary = await WETHUS.askGemini(prompt); } catch { summary = logs.slice(-2).join(' / '); }
+          items.push({ name, summary, updatedAt: new Date().toISOString(), logs: logs.slice(-12) });
+        }
+        const saved = WETHUS.upsertProjectHub(currentProject.id, { workLogs: items, workLogsSig: sourceSig });
+        display = saved.workLogs || items;
+      }
+
+      workEl.innerHTML = display.map((w, i) => `
+        <article class="list-item" data-work-idx="${i}" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
+          <div><h3 style="margin:0 0 6px;">${w.name}</h3><p class="meta" style="margin:0;">${w.summary}</p></div>
+          <span class="meta" style="white-space:nowrap;">${new Date(w.updatedAt).toLocaleString('ko-KR')}</span>
+        </article>
+      `).join('');
+
+      workEl.querySelectorAll('[data-work-idx]').forEach(el => {
+        el.addEventListener('click', () => {
+          const idx = Number(el.getAttribute('data-work-idx'));
+          const w = display[idx];
+          if (!w) return;
+          document.getElementById('worklogTitle').textContent = `${w.name} 업무기록`;
+          document.getElementById('worklogList').innerHTML = (w.logs || []).map(x => `<li>${x}</li>`).join('') || '<li>기록 없음</li>';
+          openModal('worklogModal');
+        });
+      });
+    }
+
+    async function renderHub(){
+      const p=currentProject; if(!p) return;
+      const hub = Object.assign(fallbackHub(p), WETHUS.getProjectHub(p.id));
+      document.getElementById('hubThumb').src=p.image||'https://picsum.photos/seed/hub-main/240/240';
+      document.getElementById('hubTitle').textContent=p.title||'';
+      document.getElementById('hubCategory').textContent=p.category||'Uncategorized';
+      document.getElementById('hubStage').textContent=p.status||'기획 중';
+      document.getElementById('hubState').textContent='팀 운영중';
+      document.getElementById('hubSummary').textContent=p.summary||'';
+      const teamPills = [...(p.teamMembers||[]).map(m => `<span class='hub-team-pill'><strong>${m.name}</strong><span class='meta'>${m.role||''}</span></span>`), ...(hub.aiMentors||[]).map(a => `<span class='hub-team-pill'><strong>${a.name}</strong><span class='meta'>AI</span><button class='hub-team-pill-remove' data-remove-ai='${a.id}' title='AI 제거' type='button'>×</button></span>`)].join('');
+      document.getElementById('hubTopTeam').innerHTML = teamPills || '<span class="meta">팀 정보 없음</span>';
+      document.querySelectorAll('[data-remove-ai]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          pendingRemoveAiId = btn.getAttribute('data-remove-ai') || '';
+          const ai = (WETHUS.getProjectHub(currentProject.id).aiMentors || []).find(x => x.id === pendingRemoveAiId);
+          document.getElementById('hubAiRemoveDesc').textContent = `${ai?.name || '선택한 AI 멘토'}를 팀 구성에서 제거합니다.`;
+          openModal('hubAiRemoveModal');
+        });
+      });
+      document.getElementById('ovGoal').textContent=hub.goal;
+      document.getElementById('ovTodos').innerHTML=(hub.weeklyTodos||[]).map(t=>`<li>${t}</li>`).join('')||'<li>이번 주 할 일을 등록하세요.</li>';
+      const recentAll = (hub.recentActivities || []);
+      const recentTop = recentAll.slice(0, 5);
+      document.getElementById('ovRecent').innerHTML=recentTop.map(a=>`<li>${a.text} · ${new Date(a.createdAt).toLocaleString('ko-KR')}</li>`).join('')||'<li>최근 활동이 없습니다.</li>';
+      const moreBtn = document.getElementById('ovRecentMoreBtn');
+      moreBtn.style.display = recentAll.length > 10 ? 'inline-flex' : 'none';
+      moreBtn.onclick = () => {
+        document.getElementById('recentList').innerHTML = recentAll.map(a => `<li>${a.text} · ${new Date(a.createdAt).toLocaleString('ko-KR')}</li>`).join('') || '<li>최근 활동이 없습니다.</li>';
+        openModal('recentModal');
+      };
+      document.getElementById('ovBlocker').textContent=hub.blocker;
+      document.getElementById('ovTools').innerHTML=(hub.tools||[]).map(t=>`<article class="tool-card"><strong>${t.name}</strong><p class="meta" style="margin:4px 0 0;">${t.desc||''}</p></article>`).join('');
+      await loadIntegrationsForCurrentProject();
+      renderToolCards();
+      renderIntegrationsTab();
+      document.getElementById('pgLogs').innerHTML=(hub.progress||[]).map(x=>`<li>${x.text} · ${new Date(x.createdAt||Date.now()).toLocaleString('ko-KR')}</li>`).join('')||'<li>진행 로그 없음</li>';
+      document.getElementById('mtList').innerHTML=(hub.materials||[]).map(x=>{
+        const label = `${x.name} (${x.type||'자료'})`;
+        if (x.url) return `<li><a href="${x.url}" target="_blank" rel="noopener noreferrer">${label}</a></li>`;
+        return `<li>${label}</li>`;
+      }).join('')||'<li>자료 없음</li>';
+      renderWorkLogs(p.teamMembers||[], hub).catch(() => {});
+      document.getElementById('sdStatus').innerHTML=`<li>현재 단계: ${p.status||'기획 중'}</li><li>최근 업데이트: ${(hub.updatedAt?new Date(hub.updatedAt).toLocaleString('ko-KR'):'방금')}</li><li>팀원 수: ${(p.teamMembers||[]).length}명</li>`;
+      document.getElementById('sdAdvice').innerHTML='<li>목표를 이번 주 단위로 쪼개세요.</li><li>막힌 점을 카드에 명시하세요.</li><li>멘토링 요청은 구체적으로 작성하세요.</li>';
+      renderTab(activeTab);
+    }
+
+    let insightTimer = null;
+    let insightAutoRefreshTimer = null;
+    const docSignatureByProject = new Map();
+    function setLlmStatus(text) {
+      const el = document.getElementById('hubLlmStatus');
+      if (el) el.textContent = text;
+    }
+    function setHubLoadingState(on, label = '로딩중...') {
+      if (on) {
+        document.getElementById('sdStatus').innerHTML = `<li>${label}</li>`;
+        document.getElementById('sdAdvice').innerHTML = `<li>${label}</li>`;
+      }
+    }
+    function startInsightAutoRefresh() {
+      if (insightAutoRefreshTimer) clearInterval(insightAutoRefreshTimer);
+      insightAutoRefreshTimer = setInterval(() => {
+        if (!currentProject) return;
+        refreshHubInsights('auto-doc-sync', { silent: true });
+      }, 90000);
+    }
+    function stopInsightAutoRefresh() {
+      if (insightAutoRefreshTimer) clearInterval(insightAutoRefreshTimer);
+      insightAutoRefreshTimer = null;
+    }
+    async function refreshHubInsights(reason = 'update', opts = {}) {
+      if (!currentProject) return;
+      const { silent = false } = opts;
+      if (insightTimer) clearTimeout(insightTimer);
+      if (!silent) setHubLoadingState(true, 'WETHUS AI 업데이트중...');
+      insightTimer = setTimeout(async () => {
+        const hub = WETHUS.getProjectHub(currentProject.id);
+        let externalDocContext = '';
+        let externalToolContext = '';
+        let insightCount = 0;
+        let insightNames = '';
+        let insightErrors = 0;
+        let externalToolCount = 0;
+        try {
+          const ext = await hubApi(`/integrations/insights?projectId=${encodeURIComponent(currentProject.id)}`);
+          const allRows = (ext?.insights || []);
+          cachedIntegrationInsights = allRows;
+          renderIntegrationsTab();
+          const insightRows = allRows.filter(d => d?.snippet);
+          insightErrors = allRows.filter(d => d?.error).length;
+          insightCount = insightRows.length;
+          insightNames = insightRows.slice(0, 3).map(d => d.resourceName || d.name).filter(Boolean).join(', ');
+          const docLines = insightRows.map(d => `${d.resourceName || d.name}: ${String(d.snippet || '').slice(0, 500)}`);
+          externalDocContext = docLines.join('\n');
+          const connectedTools = (remoteIntegrations || []).filter(i => i.status === 'connected');
+          externalToolCount = connectedTools.length;
+          if (connectedTools.length) {
+            externalToolContext = connectedTools.map(i => `${i.provider}:${i.integration_type}:${i.external_resource_name || i.external_resource_id || '-'}:${i.last_synced_at || i.updated_at || ''}`).join(' | ');
+          }
+          // 문서 본문을 못 읽어도 연동 메타데이터를 기반으로 최소 요약 맥락을 구성한다.
+          if (!externalDocContext && externalToolContext) {
+            externalDocContext = `연결 리소스 메타데이터 기반 요약: ${externalToolContext}`;
+          }
+          const nonAccountTools = connectedTools.filter(t => t.integration_type !== 'account');
+          if (insightCount === 0 && connectedTools.length > 0 && nonAccountTools.length === 0) {
+            setLlmStatus('연결됨 · Google 계정만 연결됨 (문서/폴더 리소스 선택 필요)');
+          } else if (insightCount === 0 && (allRows.length > 0 || connectedTools.length > 0)) {
+            const firstErr = allRows.find(d => d?.error)?.error || '문서 읽기 권한/포맷 문제';
+            const toolHint = connectedTools.length ? ` · 연결툴 ${connectedTools.length}개` : '';
+            setLlmStatus(`연결됨 · 문서 본문 반영 0건${toolHint} (오류 ${insightErrors}건: ${String(firstErr).slice(0, 60)})`);
+          }
+
+          const nextSig = insightRows
+            .map(d => `${d.resourceId || d.id}|${d.modifiedAt || ''}|${String(d.snippet || '').slice(0, 120)}`)
+            .sort()
+            .join('||');
+          const prevSig = docSignatureByProject.get(currentProject.id);
+          if (prevSig && nextSig && prevSig !== nextSig) {
+            WETHUS.addHubActivity(currentProject.id, '연결된 Google Docs 변경 감지 · 상태/진행조언 자동 업데이트');
+          }
+          if (nextSig) docSignatureByProject.set(currentProject.id, nextSig);
+        } catch (_) {}
+
+        const prompt = `너는 프로젝트 운영 어시스턴트다. 이유:${reason}\n프로젝트:${currentProject.title}\n상태:${currentProject.status}\n목표:${hub.goal}\n할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,6).map(x=>x.text).join(', ')}\n팀채팅:${(hub.teamChat||[]).slice(-8).map(x=>x.text).join(' / ')}\n외부문서건수:${insightCount}\n외부문서이름:${insightNames || '없음'}\n외부문서요약:${externalDocContext || '없음'}\n외부툴연결정보:${externalToolContext || '없음'}\n\n중요 규칙:\n- 외부문서요약에 내용이 있으면 반드시 그 내용의 고유명사/수치/키워드(최소 2개)를 상태요약이나 조언에 반영\n- 문서요약이 없고 외부툴연결정보가 있으면, 연결된 리소스/최근동기화 기준으로 상태와 다음 액션을 구체적으로 제안\n- '업데이트하세요/정리하세요/공유하세요' 같은 일반론만 쓰지 말 것\n- 문서/툴 근거가 부족하면 추측하지 말고 '근거 부족'이라고 명시\n- '상태 요약:' '진행 조언:' 같은 라벨을 쓰지 말고, 결과 문장만 출력\n\n출력 형식(반드시 4줄):\n1줄차: 상태요약 한 줄\n2줄차~4줄차: 진행조언 3줄`;
+        try {
+          const out = await WETHUS.askGemini(prompt);
+          const lines = String(out || '')
+            .split(/\n+/)
+            .map(x => x.trim())
+            .filter(Boolean)
+            .map(x => x.replace(/^(상태\s*요약|진행\s*조언)\s*[:：-]\s*/i, '').replace(/^\d+[\.)]\s*/, '').replace(/^[-*]\s*/, '').trim());
+          if (lines[0]) {
+            document.getElementById('sdStatus').innerHTML = `<li>${lines[0]}</li>`;
+          } else {
+            document.getElementById('sdStatus').innerHTML = `<li>문서 ${insightCount}건 기반으로 상태를 분석했습니다.</li>`;
+          }
+          if (lines.length > 1) {
+            document.getElementById('sdAdvice').innerHTML = lines.slice(1,4).map(x => `<li>${x}</li>`).join('');
+          } else {
+            document.getElementById('sdAdvice').innerHTML = insightCount > 0
+              ? `<li>문서 근거(${insightNames || '연결 문서'}) 중심으로 다음 실행 단계를 세분화하세요.</li><li>문서 기준 성공지표 1~2개를 바로 추가하세요.</li><li>가장 최근 수정 문서부터 검증 우선순위를 잡으세요.</li>`
+              : (externalToolContext
+                ? `<li>연결된 외부툴(${externalToolContext.slice(0, 80)}...) 기준으로 우선순위 액션을 갱신하세요.</li><li>최근 동기화 시각 기준으로 실행 상태를 재판단하세요.</li><li>문서 본문이 필요한 경우 권한/포맷을 재확인하세요.</li>`
+                : '<li>문서 근거 부족: Google Docs 연결/동기화 상태를 먼저 확인하세요.</li>');
+          }
+          const errText = insightErrors > 0 ? ` · 오류 ${insightErrors}건` : '';
+          setLlmStatus(`연결됨 · 문서 ${insightCount}건 반영${errText} · 마지막 갱신 ${new Date().toLocaleTimeString('ko-KR')}`);
+          try {
+            await hubApi('/status-snapshot', {
+              method: 'POST',
+              body: JSON.stringify({
+                project_id: currentProject.id,
+                current_stage: currentProject.status || '',
+                recent_activity_summary: lines[0] || '',
+                recent_activity_at: new Date().toISOString(),
+                blocker_summary: lines[1] || '',
+                suggested_next_action: lines[2] || '',
+                activity_health: 'active'
+              })
+            });
+          } catch (_) {}
+        } catch {
+          setLlmStatus('연결 불안정 · 기본 규칙 조언으로 동작 중');
+        }
+      }, 350);
+    }
+
+    function renderTab(tab){
+      activeTab=tab;
+      document.querySelectorAll('.hub-tab').forEach(b=>b.classList.toggle('active',b.getAttribute('data-tab')===tab));
+      ['overview','progress','materials','integrations','team'].forEach(k=>document.getElementById(`tab-${k}`).classList.toggle('hidden',k!==tab));
+    }
+
+    async function openProject(id){
+      const p=WETHUS.myProjects().find(x=>x.id===id); if(!p) return;
+      currentProject=p;
+      hubListView.classList.add('hidden');
+      hubDetailView.classList.remove('hidden');
+      history.replaceState({},'',`project-hub.html?projectId=${encodeURIComponent(id)}`);
+      setPersistedProject(id);
+      maybeOpenAiAddModal();
+      renderHub().catch(() => {});
+      refreshHubInsights('project-open');
+      startInsightAutoRefresh();
+    }
+
+    function backToList(){
+      stopInsightAutoRefresh();
+      currentProject=null;
+      hubDetailView.classList.add('hidden');
+      hubListView.classList.remove('hidden');
+      history.replaceState({},'',`project-hub.html`);
+    }
+
+    document.getElementById('hubBackBtn').addEventListener('click',backToList);
+
+    // 구버전 캐시 HTML에서도 새로고침 버튼이 보이도록 런타임 보정
+    function ensureStatusRefreshButton() {
+      let btn = document.getElementById('sdRefreshBtn');
+      if (btn) return btn;
+      const statusCardTitle = Array.from(document.querySelectorAll('.side-stack .hub-card h3'))
+        .find(el => String(el.textContent || '').includes('프로젝트 상태'));
+      if (!statusCardTitle) return null;
+      statusCardTitle.style.display = 'flex';
+      statusCardTitle.style.alignItems = 'center';
+      statusCardTitle.style.justifyContent = 'space-between';
+      statusCardTitle.style.gap = '8px';
+      btn = document.createElement('button');
+      btn.id = 'sdRefreshBtn';
+      btn.className = 'btn btn--secondary';
+      btn.type = 'button';
+      btn.textContent = '↻';
+      btn.style.padding = '4px 8px';
+      btn.style.minHeight = 'auto';
+      btn.style.lineHeight = '1';
+      statusCardTitle.appendChild(btn);
+      return btn;
+    }
+
+    ensureStatusRefreshButton()?.addEventListener('click', () => {
+      refreshHubInsights('manual-refresh');
+    });
+    function mentorHref(tab = '') { return `mentor.html?fromHub=1${currentProject ? `&projectId=${encodeURIComponent(currentProject.id)}` : ''}${tab ? `&tab=${tab}` : ''}`; }
+    document.getElementById('hubMentorBtn').addEventListener('click',()=>location.href=mentorHref());
+    document.getElementById('sdAiBtn').addEventListener('click',()=>location.href=mentorHref('ai'));
+    document.getElementById('sdHumanBtn').addEventListener('click',()=>location.href=mentorHref('human'));
+
+    document.getElementById('hubTabs').addEventListener('click',(e)=>{const b=e.target.closest('[data-tab]'); if(!b) return; renderTab(b.getAttribute('data-tab'));});
+
+    document.getElementById('hubEditBtn').addEventListener('click', () => {
+      if (!currentProject) return;
+      document.getElementById('hubEditTitle').value = currentProject.title || '';
+      document.getElementById('hubEditSummary').value = currentProject.summary || '';
+      document.getElementById('hubEditStatus').value = currentProject.status || '기획 중';
+      document.getElementById('hubEditTeamSize').value = currentProject.teamSize || '3인';
+      document.getElementById('hubEditRoles').value = currentProject.roles || '';
+      document.getElementById('hubEditDesc').value = currentProject.desc || currentProject.fullDescription || '';
+      openModal('hubEditModal');
+    });
+    document.getElementById('hubEditClose').addEventListener('click',()=>closeModal('hubEditModal'));
+    document.querySelector('[data-close-edit]').addEventListener('click',()=>closeModal('hubEditModal'));
+    document.getElementById('hubEditSave').addEventListener('click', async () => {
+      if (!currentProject) return;
+      const oneLine = String(document.getElementById('hubEditSummary').value || '').replace(/\s+/g, ' ').trim().slice(0, 64);
+      const patch = {
+        title: document.getElementById('hubEditTitle').value.trim() || currentProject.title,
+        summary: oneLine || currentProject.summary,
+        miniSummary: oneLine || currentProject.miniSummary || currentProject.summary,
+        status: document.getElementById('hubEditStatus').value || currentProject.status,
+        teamSize: document.getElementById('hubEditTeamSize').value || currentProject.teamSize,
+        roles: document.getElementById('hubEditRoles').value.trim() || currentProject.roles,
+        desc: document.getElementById('hubEditDesc').value.trim() || currentProject.desc
+      };
+      const updated = WETHUS.updateProject(currentProject.id, patch);
+      if (updated) currentProject = updated;
+      WETHUS.addHubActivity(currentProject.id, '프로젝트 정보 수정');
+      refreshHubInsights('project-edit');
+      closeModal('hubEditModal');
+      await renderHub();
+      renderProjectList();
+    });
+
+    const toolTargets = [
+      { name:'Notion', provider:'notion', resourceProvider:'notion', type:'workspace', logo:'🧩', home:'https://www.notion.so', desc:'문서와 체크리스트 연결', ready:true },
+      { name:'Google Docs', provider:'google', resourceProvider:'google_docs', type:'document', allowFolderSelect:true, logo:'📝', home:'https://docs.google.com', desc:'프로젝트 문서/폴더 연결', ready:true },
+      { name:'Google Sheets', provider:'google', resourceProvider:'google_sheets', type:'spreadsheet', logo:'📊', home:'https://sheets.google.com', desc:'일정/지표 시트 연결', ready:true },
+      { name:'Slack', provider:'slack', resourceProvider:'slack', type:'channel', logo:'💬', home:'https://slack.com', desc:'프로젝트 채널 활동 연결', ready:true },
+      { name:'Figma', provider:'figma', resourceProvider:'figma', type:'file', logo:'🎨', home:'https://www.figma.com', desc:'디자인 파일 상태 연결', ready:true }
+    ];
+
+    async function fetchToolMeta(url) {
+      const bases = [window.WETHUS_API_BASE || 'https://wethus-api.onrender.com', `${location.protocol}//${location.hostname}:8787`, 'http://127.0.0.1:8787'];
+      let lastErr;
+      for (const base of bases) {
+        try {
+          const r = await fetch(`${String(base).replace(/\/$/, '')}/tools/fetch-meta`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok || !data?.ok) throw new Error(data?.error || `fetch-meta failed (${r.status})`);
+          return data;
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error('연동 메타 조회 실패');
+    }
+
+    let remoteIntegrations = [];
+    let cachedIntegrationInsights = [];
+
+    async function loadIntegrationsForCurrentProject() {
+      if (!currentProject) return [];
+      try {
+        const data = await hubApi(`/integrations?projectId=${encodeURIComponent(currentProject.id)}`);
+        remoteIntegrations = data?.integrations || [];
+      } catch {
+        remoteIntegrations = [];
+      }
+      return remoteIntegrations;
+    }
+
+    function renderIntegrationsTab() {
+      const el = document.getElementById('igList');
+      if (!el) return;
+      const rows = (remoteIntegrations || []).filter(i => i.status === 'connected');
+      const hub = currentProject ? WETHUS.getProjectHub(currentProject.id) : null;
+      const localRows = (hub?.tools || []).filter(t => t.connected).map(t => ({
+        provider: t.name,
+        integration_type: 'local',
+        external_resource_id: t.integrationId || '',
+        external_resource_name: t.desc || t.name,
+        last_synced_at: t.lastSynced || ''
+      }));
+      const merged = rows.length ? rows : localRows;
+      if (!merged.length) {
+        el.innerHTML = '<article class="list-item"><h3>연결된 외부툴 없음</h3><p class="meta">외부 연동을 먼저 연결하면 이곳에 요약이 표시됩니다.</p></article>';
+        return;
+      }
+
+      const actionable = merged.filter(i => i.integration_type !== 'account');
+      const accountOnly = merged.length > 0 && actionable.length === 0;
+      if (accountOnly) {
+        el.innerHTML = `<article class="list-item"><h3>Google 계정만 연결됨</h3><p class="meta">문서 반영을 위해선 Google Docs/폴더 리소스를 추가로 선택해야 합니다.</p><p class="meta" style="margin-top:6px;">우측 외부툴 카드에서 Google Docs의 연결/동기화를 눌러 리소스를 선택하세요.</p></article>`;
+        return;
+      }
+
+      el.innerHTML = actionable.map((i) => {
+        const matches = (cachedIntegrationInsights || []).filter(x =>
+          (x.resourceId || '') === (i.external_resource_id || '') ||
+          (x.sourceFolderId || '') === (i.external_resource_id || '') ||
+          (x.resourceName || '') === (i.external_resource_name || '') ||
+          (x.sourceFolderName || '') === (i.external_resource_name || '')
+        );
+        const firstSnippet = String(matches.find(m => m?.snippet)?.snippet || '').replace(/\s+/g, ' ').trim().slice(0, 180);
+        const matchedCount = matches.filter(m => String(m?.snippet || '').trim().length > 0).length;
+        const errorCount = matches.filter(m => m?.error).length;
+        return `<article class="list-item">
+          <h3>${i.provider} · ${i.integration_type}</h3>
+          <p style="margin:6px 0 4px;">${i.external_resource_name || i.external_resource_id || '-'}</p>
+          <p class="meta" style="margin:0 0 6px;">최근 동기화: ${i.last_synced_at ? new Date(i.last_synced_at).toLocaleString('ko-KR') : '기록 없음'}</p>
+          <p class="meta" style="margin:0;">${firstSnippet || '요약 데이터 없음 (권한/포맷/동기화 상태 확인 필요)'}</p>
+          <p class="meta" style="margin:6px 0 0;">반영 문서: ${matchedCount}건${errorCount ? ` · 오류 ${errorCount}건` : ''}</p>
+        </article>`;
+      }).join('');
+    }
+
+    function currentToolState(tool) {
+      if (!currentProject) return null;
+      let remote = null;
+      if (tool.name === 'Google Docs') {
+        remote = remoteIntegrations.find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder'));
+      } else if (tool.name === 'Google Sheets') {
+        remote = remoteIntegrations.find(x => x.provider === 'google' && x.integration_type === 'spreadsheet');
+      } else {
+        remote = remoteIntegrations.find(x => x.provider === tool.provider && x.integration_type === tool.type)
+          || remoteIntegrations.find(x => x.provider === tool.provider);
+      }
+      if (remote) {
+        return {
+          connected: remote.status === 'connected',
+          everConnected: true,
+          lastSynced: remote.last_synced_at,
+          desc: remote.external_resource_name || '',
+          integrationId: remote.id
+        };
+      }
+      const hub = WETHUS.getProjectHub(currentProject.id);
+      const local = (hub.tools || []).find(t => t.name === tool.name) || null;
+      return local ? { ...local, everConnected: !!local.integrationId } : null;
+    }
+
+    let pendingResourceTool = null;
+    let pendingResourceRows = [];
+    let pendingResourceSelectedId = '';
+    let pendingResourceFolderStack = [{ id: 'root', name: '내 드라이브' }];
+
+    async function loadResourceRowsForCurrentFolder() {
+      const currentFolderId = pendingResourceFolderStack[pendingResourceFolderStack.length - 1]?.id || 'root';
+      const data = await hubApi(`/integrations/resources?provider=${encodeURIComponent(pendingResourceTool.resourceProvider || pendingResourceTool.provider)}&projectId=${encodeURIComponent(currentProject.id)}&parentId=${encodeURIComponent(currentFolderId)}`);
+      pendingResourceRows = data?.resources || [];
+      pendingResourceSelectedId = '';
+      document.getElementById('hubResourcePath').textContent = pendingResourceFolderStack.map(x => x.name).join(' / ');
+      renderResourceRows(document.getElementById('hubResourceSearch').value || '');
+      return data;
+    }
+
+    function renderResourceRows(keyword = '') {
+      const listEl = document.getElementById('hubResourceList');
+      const q = String(keyword || '').trim().toLowerCase();
+      const rows = (pendingResourceRows || []).filter(r => !q || String(r.name || '').toLowerCase().includes(q));
+      listEl.innerHTML = rows.map(r => {
+        const isFolder = r.kind === 'folder';
+        const active = r.id === pendingResourceSelectedId;
+        const canSelectFolder = isFolder && !!pendingResourceTool?.allowFolderSelect;
+        return `<div style="padding:10px;border:1px solid ${active ? '#ff8a1f' : '#2a2a2a'};border-radius:8px;background:${active ? 'rgba(255,138,31,.12)' : '#171717'};color:#f5f5f5;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <span><strong style="display:block;">${isFolder ? '📁 ' : '📄 '}${r.name || r.id}</strong><span class="meta">${r.modifiedAt ? new Date(r.modifiedAt).toLocaleString('ko-KR') : ''}</span></span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            ${isFolder ? '<button type="button" class="btn btn--secondary" data-r-open="' + r.id + '" style="padding:4px 8px;min-height:auto;">열기</button>' : ''}
+            ${canSelectFolder ? '<button type="button" class="btn btn--primary" data-r-select="' + r.id + '" style="padding:4px 8px;min-height:auto;">폴더 연결</button>' : ''}
+            ${!isFolder ? '<button type="button" class="btn btn--secondary" data-r-select="' + r.id + '" style="padding:4px 8px;min-height:auto;">선택</button>' : ''}
+          </div>
+        </div>`;
+      }).join('') || '<p class="meta" style="margin:6px;">검색 결과가 없습니다.</p>';
+
+      listEl.querySelectorAll('[data-r-open]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const rid = btn.getAttribute('data-r-open') || '';
+          const target = (pendingResourceRows || []).find(x => x.id === rid);
+          pendingResourceFolderStack.push({ id: rid, name: target?.name || '폴더' });
+          await loadResourceRowsForCurrentFolder();
+        });
+      });
+
+      listEl.querySelectorAll('[data-r-select]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const rid = btn.getAttribute('data-r-select') || '';
+          pendingResourceSelectedId = rid;
+          renderResourceRows(document.getElementById('hubResourceSearch').value);
+        });
+      });
+    }
+
+    async function openResourceSelector(tool) {
+      if (!currentProject) return;
+      pendingResourceTool = tool;
+      pendingResourceFolderStack = [{ id: 'root', name: '내 드라이브' }];
+      document.getElementById('hubResourceHelp').textContent = tool.allowFolderSelect
+        ? `${tool.name}에서 프로젝트에 연결할 리소스를 선택하세요. (문서 또는 폴더 선택 가능)`
+        : `${tool.name}에서 프로젝트에 연결할 리소스를 선택하세요.`;
+      document.getElementById('hubResourceSearch').value = '';
+      const data = await loadResourceRowsForCurrentFolder();
+      if (!(pendingResourceRows || []).length) {
+        alert(data?.message || '선택 가능한 리소스가 없습니다. 먼저 계정 연결을 완료해주세요.');
+        return;
+      }
+      openModal('hubResourceModal');
+    }
+
+    let pendingOauthToolName = '';
+    window.addEventListener('message', async (ev) => {
+      const msg = ev?.data || {};
+      if (msg?.type !== 'wethus-oauth-connected') return;
+      if (!currentProject) return;
+      const tool = msg.provider === 'google'
+        ? (toolTargets.find(t => t.name === pendingOauthToolName && t.provider === 'google') || toolTargets.find(t => t.name === 'Google Docs'))
+        : toolTargets.find(t => t.provider === msg.provider);
+      pendingOauthToolName = '';
+      if (!tool) return;
+      await loadIntegrationsForCurrentProject();
+      renderToolCards();
+      await openResourceSelector(tool);
+    });
+
+    function renderToolCards() {
+      const toolLogoGrid = document.getElementById('toolLogoGrid');
+      toolLogoGrid.innerHTML = toolTargets.map(t => {
+        const st = currentToolState(t);
+        const connectLabel = st?.connected ? '재연결' : (st?.everConnected ? '재연결' : '연결');
+        const statusLabel = t.ready ? (st?.connected ? '연결됨' : (st?.everConnected ? '연결해제됨' : '미연결')) : '준비중';
+        const actionLabel = st?.connected ? '동기화' : connectLabel;
+        return `<article class="tool-card" data-tool="${t.name}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+            <div>
+              <strong style="font-size:1.15rem;">${t.logo} ${t.name}</strong>
+              <p class="meta" style="margin:4px 0 0;">${t.desc}</p>
+              <p class="meta" style="margin:4px 0 0;">${statusLabel} ${st?.lastSynced ? '· 마지막 반영 ' + new Date(st.lastSynced).toLocaleString('ko-KR') : ''}</p>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
+            <button class="btn btn--primary" data-tool-connect="${t.name}" type="button" ${t.ready ? '' : 'disabled'}>${actionLabel}</button>
+            <button class="btn btn--secondary" data-tool-disconnect="${t.name}" type="button" ${t.ready ? '' : 'disabled'}>해제</button>
+          </div>
+        </article>`;
+      }).join('');
+
+
+      toolLogoGrid.querySelectorAll('[data-tool-connect]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!currentProject) {
+            alert('먼저 프로젝트를 선택해주세요.');
+            return;
+          }
+          const name = btn.getAttribute('data-tool-connect');
+          const tool = toolTargets.find(x => x.name === name);
+          if (!tool) return;
+
+          const integ = tool.name === 'Google Docs'
+            ? ((remoteIntegrations || []).find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder')))
+            : tool.name === 'Google Sheets'
+              ? ((remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'spreadsheet'))
+              : ((remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
+                || (remoteIntegrations || []).find(x => x.provider === tool.provider));
+          const googleAccount = (remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'account' && x.status === 'connected');
+
+          try {
+            if (!tool.ready) {
+              alert('해당 제공자는 곧 지원 예정입니다.');
+              return;
+            }
+
+            // 이미 연결된 경우: 버튼을 동기화로 동작시킨다.
+            if (integ?.status === 'connected') {
+              setLlmStatus(`WETHUS AI · 업데이트중… (${name} 동기화)`);
+              if (tool.provider === 'notion') {
+                await hubApi('/sync/notion', { method: 'POST', body: JSON.stringify({ project_id: currentProject.id, integration_id: integ.id }) });
+              } else {
+                await hubApi(`/integrations/${encodeURIComponent(integ.id)}/sync`, { method: 'POST' });
+              }
+              WETHUS.addHubActivity(currentProject.id, `${name} 수동 동기화 실행`);
+              await loadIntegrationsForCurrentProject();
+              await refreshHubInsights('manual-tool-sync');
+              await renderHub();
+              renderToolCards();
+              return;
+            }
+
+            // Google 계정은 이미 연결되어 있고, 아직 시트/문서 리소스만 미연결이면 바로 리소스 선택으로 이동
+            if (tool.provider === 'google' && googleAccount?.status === 'connected') {
+              await openResourceSelector(tool);
+              return;
+            }
+
+            // 연결 필요 시: 기존 OAuth 연결 동작 유지
+            pendingOauthToolName = tool.name;
+            let popup = null;
+            try {
+              popup = window.open('', '_blank');
+              if (popup && !popup.closed) {
+                try {
+                  popup.document.write('<!doctype html><meta charset="utf-8"><title>WETHUS OAuth</title><body style="font-family:sans-serif;padding:20px;">연결 페이지를 준비중입니다...</body>');
+                  popup.document.close();
+                } catch (_) {}
+              }
+
+              const oauth = await hubApi(`/oauth/${encodeURIComponent(tool.provider)}/start?project_id=${encodeURIComponent(currentProject.id)}`);
+              if (oauth?.setupRequired) {
+                pendingOauthToolName = '';
+                if (popup && !popup.closed) popup.close();
+                alert(`${name} 연결 설정이 아직 완료되지 않았습니다.\n\n사유: ${oauth?.error || 'OAuth 환경변수 미설정'}\n관리자 설정 후 다시 시도해주세요.`);
+                return;
+              }
+              if (oauth?.authUrl) {
+                setLlmStatus(`WETHUS AI · 업데이트중… (${name} OAuth 연결)`);
+                if (popup && !popup.closed) popup.location.href = oauth.authUrl;
+                else window.location.href = oauth.authUrl;
+                WETHUS.addHubActivity(currentProject.id, `${name} OAuth 연결 시작`);
+              } else {
+                pendingOauthToolName = '';
+                if (popup && !popup.closed) popup.close();
+                alert('연결 URL을 생성하지 못했습니다. 설정을 확인해주세요.');
+              }
+            } catch (e) {
+              pendingOauthToolName = '';
+              if (popup && !popup.closed) popup.close();
+              alert(e?.message || '연결/동기화 실패');
+            }
+          } catch (e) {
+            pendingOauthToolName = '';
+            alert(e?.message || '연결/동기화 실패');
+          }
+        });
+      });
+
+
+      toolLogoGrid.querySelectorAll('[data-tool-disconnect]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!currentProject) return;
+          const name = btn.getAttribute('data-tool-disconnect');
+          const tool = toolTargets.find(x => x.name === name);
+          if (!tool) return;
+          const integ = tool.name === 'Google Docs'
+            ? ((remoteIntegrations || []).find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder')))
+            : tool.name === 'Google Sheets'
+              ? ((remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'spreadsheet'))
+              : ((remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
+                || (remoteIntegrations || []).find(x => x.provider === tool.provider));
+          if (!integ) return;
+          try {
+            await hubApi(`/integrations/${encodeURIComponent(integ.id)}`, { method: 'DELETE' });
+            const hub = WETHUS.getProjectHub(currentProject.id);
+            const tools = (hub.tools || []).map(t => t.name === name ? { ...t, connected: false, lastSynced: '', integrationId: '' } : t);
+            WETHUS.upsertProjectHub(currentProject.id, { tools });
+            WETHUS.addHubActivity(currentProject.id, `${name} 연결 해제`);
+            await loadIntegrationsForCurrentProject();
+            renderHub();
+            renderToolCards();
+          } catch (e) {
+            alert(e?.message || '해제 실패');
+          }
+        });
+      });
+      renderIntegrationsTab();
+    }
+
+    renderToolCards();
+
+    document.getElementById('hubToolBtn').addEventListener('click',()=>openModal('hubToolModal'));
+    document.getElementById('hubToolClose').addEventListener('click',()=>closeModal('hubToolModal'));
+    document.querySelector('[data-close-tool]').addEventListener('click',()=>closeModal('hubToolModal'));
+    document.getElementById('hubResourceClose').addEventListener('click',()=>closeModal('hubResourceModal'));
+    document.getElementById('hubResourceCancel').addEventListener('click',()=>closeModal('hubResourceModal'));
+    document.querySelector('[data-close-resource]').addEventListener('click',()=>closeModal('hubResourceModal'));
+    document.getElementById('hubResourceUp').addEventListener('click', async () => {
+      if (pendingResourceFolderStack.length <= 1) return;
+      pendingResourceFolderStack.pop();
+      await loadResourceRowsForCurrentFolder();
+    });
+    document.getElementById('hubResourceSearch').addEventListener('input', (e) => renderResourceRows(e.target.value));
+    document.getElementById('hubResourceConfirm').addEventListener('click', async () => {
+      if (!currentProject || !pendingResourceTool) return;
+      const selectedId = pendingResourceSelectedId;
+      const selected = (pendingResourceRows || []).find(x => x.id === selectedId);
+      if (!selected) { alert('연결할 리소스를 선택해주세요.'); return; }
+      const selectedIsFolder = selected.kind === 'folder';
+      if (selectedIsFolder && !pendingResourceTool.allowFolderSelect) {
+        alert('폴더가 아니라 파일(문서/시트)을 선택해주세요.');
+        return;
+      }
+
+      const integrationType = selectedIsFolder ? 'folder' : pendingResourceTool.type;
+      const created = await hubApi('/integrations', {
+        method: 'POST',
+        body: JSON.stringify({
+          project_id: currentProject.id,
+          integration_type: integrationType,
+          provider: pendingResourceTool.provider,
+          external_resource_id: selected.id,
+          external_resource_name: selected.name || `${pendingResourceTool.name} 리소스`,
+          external_resource_url: selected.url || '',
+          last_synced_at: new Date().toISOString()
+        })
+      });
+
+      const hub = WETHUS.getProjectHub(currentProject.id);
+      const tools = [...(hub.tools || [])];
+      const idx = tools.findIndex(t => t.name === pendingResourceTool.name);
+      const next = { name: pendingResourceTool.name, url: selected.url || '', desc: `${selected.name || `${pendingResourceTool.name} 연결`}${selectedIsFolder ? ' (폴더)' : ''}`, connected: true, lastSynced: new Date().toISOString(), integrationId: created?.integration?.id || '' };
+      if (idx >= 0) tools[idx] = { ...tools[idx], ...next }; else tools.push(next);
+      WETHUS.upsertProjectHub(currentProject.id, { tools });
+      WETHUS.addHubActivity(currentProject.id, `${pendingResourceTool.name} 리소스 연결 완료: ${selected.name || selected.id}`);
+      closeModal('hubResourceModal');
+      await loadIntegrationsForCurrentProject();
+      await renderHub();
+      renderToolCards();
+    });
+
+
+    document.getElementById('hubChatOpenBtn').addEventListener('click',()=>{if(!currentProject)return; openModal('hubChatModal'); renderChat();});
+    document.getElementById('hubChatClose').addEventListener('click',()=>closeModal('hubChatModal'));
+    document.querySelector('[data-close-chat]').addEventListener('click',()=>closeModal('hubChatModal'));
+    document.getElementById('worklogClose').addEventListener('click',()=>closeModal('worklogModal'));
+    document.querySelector('[data-close-worklog]').addEventListener('click',()=>closeModal('worklogModal'));
+    document.getElementById('recentClose').addEventListener('click',()=>closeModal('recentModal'));
+    document.querySelector('[data-close-recent]').addEventListener('click',()=>closeModal('recentModal'));
+
+    const chatInputEl = document.getElementById('chatInput');
+    const chatSendEl = document.getElementById('chatSend');
+    const slashListEl = document.getElementById('slashList');
+    const slashCommands = [
+      { cmd: '/ai', desc: '프로젝트 지원 AI에게 질문' },
+      { cmd: '/summary', desc: '현재 상황 요약 요청' },
+      { cmd: '/next', desc: '다음 행동 3개 제안 요청' }
+    ];
+
+    function renderSlashSuggestions(text) {
+      const v = String(text || '').trim();
+      if (!v.startsWith('/')) { slashListEl.style.display = 'none'; return; }
+      const filtered = slashCommands.filter(x => x.cmd.startsWith(v.split(' ')[0] || '/'));
+      slashListEl.innerHTML = filtered.map(x => `<div class="slash-item" data-cmd="${x.cmd}"><strong>${x.cmd}</strong> <span class="meta">${x.desc}</span></div>`).join('');
+      if (!filtered.length) { slashListEl.style.display = 'none'; return; }
+      slashListEl.style.display = 'block';
+      slashListEl.querySelectorAll('[data-cmd]').forEach(el => {
+        el.addEventListener('click', () => {
+          const c = el.getAttribute('data-cmd');
+          chatInputEl.value = `${c} `;
+          chatInputEl.focus();
+          slashListEl.style.display = 'none';
+        });
+      });
+    }
+
+    chatInputEl.addEventListener('input', () => renderSlashSuggestions(chatInputEl.value));
+    chatInputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') slashListEl.style.display = 'none';
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        slashListEl.style.display = 'none';
+        chatSendEl.click();
+      }
+    });
+
+    async function askProjectAiWithMessage(hub, rawText) {
+      const routed = routeProjectAssistant(hub, currentProject);
+      const query = String(rawText || '').replace(/^\/ai\s*/i, '').trim() || '지금 팀의 우선순위 작업 3가지를 정리해줘';
+      const recentChat = (hub.teamChat || []).slice(-12).map(m => `${m.from}: ${m.text}`).join('\n');
+      const prompt = `${routed.system}\n\n컨텍스트\n프로젝트:${currentProject.title}\n카테고리:${currentProject.category}\n상태:${currentProject.status}\n목표:${hub.goal}\n이번주 할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,6).map(x=>x.text).join(', ')}\n팀채팅 문맥:\n${recentChat || '없음'}\n\n사용자 질문:\n${query}`;
+      let out = '';
+      try { out = await WETHUS.askGemini(prompt); } catch { out = 'AI 응답을 가져오지 못했습니다. API 설정을 확인해주세요.'; }
+      const next=[...(hub.teamChat||[]),{id:Date.now().toString(),from:routed.agentName,kind:'ai',text:out,createdAt:new Date().toISOString()}].slice(-120);
+      WETHUS.upsertProjectHub(currentProject.id,{teamChat:next});
+      renderChat();
+      refreshHubInsights('ai-chat');
+    }
+
+    chatSendEl.addEventListener('click', async ()=>{
+      const v=chatInputEl.value.trim(); if(!v||!currentProject) return;
+      const me=WETHUS.currentUser();
+      const hub=WETHUS.getProjectHub(currentProject.id);
+      const next=[...(hub.teamChat||[]),{id:Date.now().toString(),from:me?.nickname||me?.name||'Me',kind:'human',text:v,createdAt:new Date().toISOString()}].slice(-120);
+      WETHUS.upsertProjectHub(currentProject.id,{teamChat:next});
+      chatInputEl.value=''; renderChat();
+      refreshHubInsights('team-chat');
+      if (/^\/(ai|summary|next)(\s|$)/i.test(v)) {
+        const latest = WETHUS.getProjectHub(currentProject.id);
+        const normalized = /^\/summary/i.test(v)
+          ? '/ai 현재 프로젝트를 5줄로 요약해줘'
+          : (/^\/next/i.test(v) ? '/ai 지금 당장 해야 할 다음 행동 3가지를 우선순위대로 알려줘' : v);
+        await askProjectAiWithMessage(latest, normalized);
+      }
+    });
+
+    function routeProjectAssistant(hub, currentProject) {
+      const textBlob = [
+        ...(hub.weeklyTodos || []),
+        ...(hub.recentActivities || []).map(x => x.text),
+        ...(hub.teamChat || []).slice(-8).map(x => x.text),
+        currentProject?.title || '',
+        currentProject?.summary || ''
+      ].join(' ').toLowerCase();
+
+      const rules = [
+        { key: '개발자 AI', test: /(api|버그|오류|서버|프론트|백엔드|개발|코드|db|배포|성능|리팩터)/ },
+        { key: '브랜딩 AI', test: /(브랜딩|브랜드|톤앤매너|네이밍|로고|포지셔닝|메시지)/ },
+        { key: '마케팅 AI', test: /(마케팅|유입|채널|광고|캠페인|sns|전환|리텐션)/ },
+        { key: '정책제안 AI', test: /(정책|법|제안|공공|사회문제|제도)/ },
+        { key: '영상제작지원 AI', test: /(영상|촬영|편집|스토리보드|영화)/ },
+        { key: '프로젝트 매니지먼트 AI', test: /.*/ }
+      ];
+      const picked = rules.find(r => r.test.test(textBlob)) || rules[rules.length - 1];
+
+      const systemByAgent = {
+        '개발자 AI': '너는 개발자 AI다. 한국어로, 문제 원인 진단 + 구현 우선순위 + 즉시 실행 액션을 제시한다.',
+        '브랜딩 AI': '너는 브랜딩 AI다. 한국어로, 브랜드 메시지/정체성/실행안을 실무적으로 제시한다.',
+        '마케팅 AI': '너는 마케팅 AI다. 한국어로, 타깃/채널/실험 설계를 액션 중심으로 제시한다.',
+        '정책제안 AI': '너는 정책제안 AI다. 한국어로, 근거-대안-효과 구조로 제시한다.',
+        '영상제작지원 AI': '너는 영상제작지원 AI다. 한국어로, 제작 공정과 우선순위를 제시한다.',
+        '프로젝트 매니지먼트 AI': '너는 프로젝트 매니지먼트 AI다. 한국어로, 현재 목표와 실행 순서를 명확하게 제시한다.'
+      };
+
+      return { agentName: picked.key, system: systemByAgent[picked.key] };
+    }
+
+
+    function renderChat(){
+      if(!currentProject) return;
+      const hub=WETHUS.getProjectHub(currentProject.id);
+      const me=WETHUS.currentUser();
+      const meName=me?.nickname||me?.name||'Me';
+      const html=(hub.teamChat||[]).map(m=>{
+        const mine = m.kind === 'human' && m.from === meName;
+        const t = new Date(m.createdAt).toLocaleString('ko-KR');
+        if (mine) {
+          return `<article class="chat-row mine"><div class="chat-bubble mine">${m.text}</div><div class="chat-meta" style="text-align:right;">${t}</div></article>`;
+        }
+        const isAi = /ai|AI|WETHUS/.test(String(m.from || ''));
+        const avatarMap = Object.fromEntries((hub.aiMentors || []).map(a => [a.name, a.avatar || '']));
+        const avatar = avatarMap[m.from] || '';
+        const avatarHtml = avatar ? `<img src="${avatar}" alt="${m.from || 'AI'}"/>` : (isAi ? '🤖' : String(m.from || 'A').slice(0,1).toUpperCase());
+        return `<article class="chat-row other"><div class="chat-avatar">${avatarHtml}</div><div><div class="chat-name">${m.from || '팀원'}</div><div class="chat-bubble other">${m.text}</div><div class="chat-meta">${t}</div></div></article>`;
+      }).join('');
+      const listEl=document.getElementById('chatList');
+      listEl.innerHTML=html||'<p class="meta">아직 대화가 없습니다.</p>';
+      listEl.scrollTop=listEl.scrollHeight;
+    }
+
+    document.getElementById('pgAiSummBtn').addEventListener('click', async ()=>{
+      if(!currentProject) return;
+      const hub=WETHUS.getProjectHub(currentProject.id);
+      const prompt=`프로젝트 허브 요약을 만들어줘. 프로젝트명:${currentProject.title}\n목표:${hub.goal}\n할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,5).map(x=>x.text).join(', ')}\n외부툴:${(hub.tools||[]).map(x=>x.name+':'+(x.url?'연결됨':'미연결')).join(', ')}\n자료:${(hub.materials||[]).map(x=>x.name).join(', ')}`;
+      let out='';
+      try { out = await WETHUS.askGemini(prompt); } catch { out = 'AI 요약에 실패했습니다. API 설정을 확인해주세요.'; }
+      document.getElementById('pgAiSummary').textContent=out;
+      WETHUS.addHubActivity(currentProject.id,'로컬 PM AI 요약 생성');
+      refreshHubInsights('ai-summary');
+    });
+
+    document.getElementById('mtAddBtn').addEventListener('click', async () => {
+      if (!currentProject) return;
+      const fileInput = document.getElementById('mtFileInput');
+      const linkInput = document.getElementById('mtLinkInput');
+      const f = fileInput.files && fileInput.files[0];
+      const link = String(linkInput.value || '').trim();
+      if (!f && !link) { alert('파일 또는 링크를 입력해주세요.'); return; }
+
+      const hub = WETHUS.getProjectHub(currentProject.id);
+      const current = Array.isArray(hub.materials) ? hub.materials : [];
+      const added = [];
+
+      if (link) {
+        let host = '링크';
+        try { host = new URL(link).hostname.replace(/^www\./, ''); } catch (_) {}
+        added.push({ name: host, type: 'link', url: link, addedAt: new Date().toISOString() });
+      }
+      if (f) {
+        added.push({ name: f.name, type: f.type || 'file', size: f.size, addedAt: new Date().toISOString() });
+      }
+
+      const next = [...added, ...current].slice(0, 80);
+      setLlmStatus(`WETHUS AI · 업데이트중… (작업자료 반영)`);
+      WETHUS.upsertProjectHub(currentProject.id, { materials: next });
+      if (link) WETHUS.addHubActivity(currentProject.id, `공유 링크 추가: ${link}`);
+      if (f) WETHUS.addHubActivity(currentProject.id, `작업자료 업로드: ${f.name}`);
+      fileInput.value = '';
+      linkInput.value = '';
+      refreshHubInsights('materials-update');
+      await renderHub();
+    });
+
+    const params=new URLSearchParams(location.search);
+    const pendingAiAdd = {
+      id: params.get('ai_add_id') || '',
+      name: params.get('ai_add_name') || '',
+      avatar: params.get('ai_add_avatar') || '',
+      returnTo: params.get('ai_add_return') || 'mentor.html?tab=ai'
+    };
+    let pendingRemoveAiId = '';
+
+    function clearPendingAiAddQuery() {
+      if (!currentProject) return;
+      history.replaceState({}, '', `project-hub.html?projectId=${encodeURIComponent(currentProject.id)}`);
+    }
+
+    function maybeOpenAiAddModal() {
+      if (!currentProject || !pendingAiAdd.id) return;
+      const titleEl = document.getElementById('hubAiAddTitle');
+      const descEl = document.getElementById('hubAiAddDesc');
+      if (titleEl) titleEl.textContent = '에이전트를 추가하시겠습니까?';
+      if (descEl) descEl.textContent = `${pendingAiAdd.name || '선택한 AI 멘토'}를 이 프로젝트 허브 팀에 추가합니다.`;
+      openModal('hubAiAddModal');
+    }
+
+    document.getElementById('hubAiAddClose')?.addEventListener('click', () => {
+      closeModal('hubAiAddModal');
+      location.href = pendingAiAdd.returnTo || 'mentor.html?tab=ai';
+    });
+    document.getElementById('hubAiAddCancel')?.addEventListener('click', () => {
+      closeModal('hubAiAddModal');
+      location.href = pendingAiAdd.returnTo || 'mentor.html?tab=ai';
+    });
+    document.querySelector('[data-close-ai-add="true"]')?.addEventListener('click', () => {
+      closeModal('hubAiAddModal');
+      location.href = pendingAiAdd.returnTo || 'mentor.html?tab=ai';
+    });
+    document.getElementById('hubAiAddConfirm')?.addEventListener('click', async () => {
+      if (!currentProject || !pendingAiAdd.id) return;
+      const hub = WETHUS.getProjectHub(currentProject.id);
+      const next = [...(hub.aiMentors || [])];
+      if (!next.some(x => x.id === pendingAiAdd.id)) {
+        next.push({ id: pendingAiAdd.id, name: pendingAiAdd.name || 'AI 멘토', avatar: pendingAiAdd.avatar || '', addedAt: new Date().toISOString() });
+        WETHUS.upsertProjectHub(currentProject.id, { aiMentors: next });
+        WETHUS.addHubActivity(currentProject.id, `${pendingAiAdd.name || 'AI 멘토'}가 허브에 추가됨`);
+      }
+      closeModal('hubAiAddModal');
+      clearPendingAiAddQuery();
+      await renderHub();
+    });
+
+    document.getElementById('hubAiRemoveClose')?.addEventListener('click', () => closeModal('hubAiRemoveModal'));
+    document.getElementById('hubAiRemoveCancel')?.addEventListener('click', () => closeModal('hubAiRemoveModal'));
+    document.querySelector('[data-close-ai-remove="true"]')?.addEventListener('click', () => closeModal('hubAiRemoveModal'));
+    document.getElementById('hubAiRemoveConfirm')?.addEventListener('click', async () => {
+      if (!currentProject || !pendingRemoveAiId) return;
+      const hub = WETHUS.getProjectHub(currentProject.id);
+      const target = (hub.aiMentors || []).find(x => x.id === pendingRemoveAiId);
+      const next = (hub.aiMentors || []).filter(x => x.id !== pendingRemoveAiId);
+      WETHUS.upsertProjectHub(currentProject.id, { aiMentors: next });
+      if (target?.name) WETHUS.addHubActivity(currentProject.id, `${target.name} AI 멘토가 팀 구성에서 제거됨`);
+      pendingRemoveAiId = '';
+      closeModal('hubAiRemoveModal');
+      await renderHub();
+    });
+
+    const pid=params.get('projectId') || getPersistedProject();
+    renderProjectList();
+    if(pid) openProject(pid);
+
+  </script>
+</body>
+</html>

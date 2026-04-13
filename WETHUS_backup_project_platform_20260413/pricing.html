@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);}
+   gtag('js', new Date());
+  
+   gtag('config', 'G-PKF58GJC08');
+  </script>
+  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS | 요금제</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="styles.css?v=20260319-23" />
+  <style>
+    .pricing-wrap { padding: 34px 0 42px; }
+    .pricing-head { text-align:center; margin-bottom: 24px; }
+    .pricing-head h1 { margin:0 0 8px; font-size: clamp(1.8rem, 3.2vw, 2.4rem); }
+    .pricing-head p { margin:0; color: var(--text-secondary); }
+    .pricing-grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .plan-card {
+      border-radius: 16px;
+      padding: 18px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      box-shadow: 0 12px 28px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.15);
+      backdrop-filter: blur(14px) saturate(120%);
+      -webkit-backdrop-filter: blur(14px) saturate(120%);
+      display:flex; flex-direction:column; gap:10px;
+      min-height: 430px;
+    }
+    .plan-free { background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); }
+    .plan-premium { background: linear-gradient(180deg, rgba(255,160,84,.24), rgba(255,124,40,.16)); border-color: rgba(255,216,182,.5); }
+    .plan-pro { background: linear-gradient(180deg, rgba(132,169,255,.26), rgba(92,132,255,.18)); border-color: rgba(198,214,255,.56); }
+    .plan-master { background: linear-gradient(180deg, rgba(255,123,182,.28), rgba(255,98,164,.20)); border-color: rgba(255,204,232,.52); }
+    .plan-title { margin:0; font-size:1.45rem; font-weight:900; }
+    .plan-price { margin:0; font-size:2.2rem; font-weight:900; letter-spacing:-.02em; }
+    .plan-price small { font-size:1rem; color:#d4d4d4; font-weight:700; }
+    .plan-feature { margin:0; padding-left:0; list-style:none; display:grid; gap:8px; }
+    .plan-feature li { display:flex; gap:8px; align-items:flex-start; color:#f2f2f2; font-size:.9rem; }
+    .plan-feature li::before { content:'✓'; color:#7ff2d8; font-weight:900; line-height:1; margin-top:2px; }
+    .plan-card .btn { margin-top:auto; width:100%; }
+    @media (max-width: 1280px) { .pricing-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+    @media (max-width: 980px) { .pricing-grid { grid-template-columns: 1fr; } .plan-card { min-height: auto; } }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="wordmark">WETHUS</a>
+      <nav class="nav-links">
+        <a href="explore.html" class="nav-link">탐색</a>
+        <a href="founder.html" class="nav-link">프로젝트 시작하기</a>
+        <a href="project-hub.html" class="nav-link">프로젝트 허브</a>
+        <a href="mentor.html" class="nav-link">멘토</a>
+        <a href="profile.html" class="nav-link">프로필</a>
+        <a href="login.html" class="nav-link js-auth-link">로그인</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page-main page-main--standard">
+    <section class="pricing-wrap">
+      <div class="pricing-head">
+        <h1>Choose the plan that’s right for you</h1>
+        <p>요금제는 언제든 변경 가능하며 결제 연동은 곧 추가됩니다.</p>
+      </div>
+      <div class="pricing-grid">
+        <article class="plan-card plan-free">
+          <h2 class="plan-title">Free</h2>
+          <p class="plan-price">$0<small>/m</small></p>
+          <ul class="plan-feature">
+            <li>탐색/프로필/지원 기본 기능</li>
+            <li>DM 수신 가능</li>
+            <li>프로젝트 참여/신청 가능</li>
+            <li>기본 알림 기능</li>
+            <li>타 사용자 상세 프로필(경력/나이 등) 일부 제한</li>
+          </ul>
+          <button class="btn btn--secondary" data-plan="free">Subscribe to Free</button>
+        </article>
+
+        <article class="plan-card plan-premium">
+          <h2 class="plan-title">Premium</h2>
+          <p class="plan-price">$30<small>/m</small></p>
+          <ul class="plan-feature">
+            <li>Free의 모든 기능</li>
+            <li>타 사용자 상세 프로필(경력/나이/추가 소개) 열람 가능</li>
+            <li>모든 일반 사용자에게 먼저 DM 발신 가능</li>
+            <li>우선 노출/확장 탐색 기능(예정)</li>
+            <li>고급 알림/정리 기능(예정)</li>
+          </ul>
+          <button class="btn btn--primary" data-plan="premium">Subscribe to Premium</button>
+        </article>
+
+        <article class="plan-card plan-pro">
+          <h2 class="plan-title">Pro</h2>
+          <p class="plan-price">$80<small>/m</small></p>
+          <ul class="plan-feature">
+            <li>Premium의 모든 기능</li>
+            <li>모든 사용자 + 멘토에게 먼저 DM 발신 가능</li>
+            <li>상세 프로필 열람 + 고급 팀 검색 기능</li>
+            <li>Founder 운영 확장 권한</li>
+            <li>우선 지원 채널</li>
+          </ul>
+          <button class="btn btn--primary" data-plan="pro">Subscribe to Pro</button>
+        </article>
+
+        <article class="plan-card plan-master">
+          <h2 class="plan-title">Master</h2>
+          <p class="plan-price">$250<small>/m</small></p>
+          <ul class="plan-feature">
+            <li>Pro의 모든 기능</li>
+            <li>WETHUS 팀 맞춤형 지원 제공</li>
+            <li>프로젝트 맞춤 멘토/인맥 직접 연결 및 실행 지원</li>
+            <li>성과 중심 밀착 운영(성공까지 동반)</li>
+            <li>단, 결제만으로 즉시 시작되지 않으며 프로젝트 심사 후 시작</li>
+          </ul>
+          <button class="btn btn--secondary" data-plan="master">Subscribe to Master (준비중)</button>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="wordmark">WETHUS</span>
+        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js?v=20260409-103"></script>
+  <script>
+    WETHUS.requireAuth();
+    const authLink = document.querySelector('.js-auth-link');
+    const st = WETHUS.getState();
+    if (authLink && (st.currentUserId || st.devMode)) {
+      authLink.textContent = '로그아웃';
+      authLink.href = '#';
+      authLink.addEventListener('click', (e) => { e.preventDefault(); WETHUS.logout(); location.href='login.html'; });
+    }
+
+    document.querySelectorAll('[data-plan]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const plan = btn.getAttribute('data-plan');
+        if (plan === 'master') {
+          await WETHUS.uiAlert('MASTER 플랜은 현재 준비중입니다.\n프로젝트 심사 기반 맞춤형 지원 프로그램으로 곧 오픈됩니다.');
+          return;
+        }
+        WETHUS.setCurrentUserPlan(plan);
+        await WETHUS.uiAlert(`${plan.toUpperCase()} 플랜이 적용되었습니다.`);
+        location.reload();
+      });
+    });
+  </script>
+</body>
+</html>
