@@ -574,19 +574,6 @@
       return next;
     });
 
-    // Orphan founderId heal: if a project owner id no longer exists in current users,
-    // attach it to the current signed-in user so "내 프로젝트"가 사라지지 않게 복구.
-    const knownUserIds = new Set((parsed.users || []).map(u => u?.id).filter(Boolean));
-    if (parsed.currentUserId) knownUserIds.add(parsed.currentUserId);
-    parsed.projects = parsed.projects.map(p => {
-      if (!p || p.founderId === 'system') return p;
-      if (!knownUserIds.has(p.founderId) && parsed.currentUserId) {
-        changed = true;
-        return { ...p, founderId: parsed.currentUserId };
-      }
-      return p;
-    });
-
     if (changed) localStorage.setItem(KEY, JSON.stringify(parsed));
 
     return parsed;
