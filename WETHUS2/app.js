@@ -1,6 +1,7 @@
 // WETHUS MVP App State + Gemini integration (dev)
 (function () {
   const KEY = 'wethus_v1';
+  const GLOBAL_PROJECTS_KEY = 'wethus_global_projects_v1';
   const DEFAULT_GEMINI_KEY = 'AIzaSyBb5uOh7OMbtR-Mm4GwT6IU2zSwVUqdnL8';
   const DEFAULT_OPENAI_KEY = '';
   const ADMIN_MODE_USER_ID = 'admin-mode';
@@ -781,7 +782,20 @@
   }
 
   function listProjects() {
-    return load().projects;
+    const local = load().projects || [];
+    let globals = [];
+    try {
+      globals = JSON.parse(localStorage.getItem(GLOBAL_PROJECTS_KEY) || '[]');
+      if (!Array.isArray(globals)) globals = [];
+    } catch (_) { globals = []; }
+    const map = new Map();
+    for (const p of globals) {
+      if (p?.id) map.set(String(p.id), p);
+    }
+    for (const p of local) {
+      if (p?.id) map.set(String(p.id), p);
+    }
+    return Array.from(map.values());
   }
 
   function ensureHubState(s) {
@@ -1123,6 +1137,7 @@
 
     const bases = Array.from(new Set(CLOUD_BASE_CANDIDATES));
     let remoteState = null;
+    let globalProjects = null;
 
     for (const base of bases) {
       try {
@@ -1131,52 +1146,37 @@
         const r = await fetch(u.toString());
         if (!r.ok) continue;
         const j = await r.json().catch(() => ({}));
-        if (j?.state && typeof j.state === 'object') {
-          remoteState = j.state;
-        }
-        if (Array.isArray(j?.globalProjects) && j.globalProjects.length) {
-          const local = load();
-          const m = new Map((local.projects || []).map(p => [String(p.id), p]));
-          for (const gp of j.globalProjects) {
-            if (!gp?.id) continue;
-            const merged = { ...m.get(String(gp.id)), ...gp };
-            if (!merged.founderEmail && merged.founderId) {
-              const founder = (local.users || []).find(u => u.id === merged.founderId);
-              if (founder?.email) merged.founderEmail = String(founder.email).toLowerCase();
-            }
-            m.set(String(gp.id), merged);
-          }
-          local.projects = Array.from(m.values());
-          try { localStorage.setItem(KEY, JSON.stringify(local)); } catch (_) {}
-        }
-        if (remoteState) break;
+        if (j?.state && typeof j.state === 'object') remoteState = j.state;
+        if (Array.isArray(j?.globalProjects)) globalProjects = j.globalProjects;
+        break;
       } catch (_) {}
     }
 
-    const local = load();
-    let chosen = local;
-    if (remoteState && typeof remoteState === 'object') {
-      const localCount = Array.isArray(local.projects) ? local.projects.length : 0;
-      const remoteCount = Array.isArray(remoteState.projects) ? remoteState.projects.length : 0;
-      chosen = remoteCount > localCount ? remoteState : local;
-      if (chosen === remoteState) {
-        try { localStorage.setItem(KEY, JSON.stringify(remoteState)); } catch (_) {}
-      }
+    if (Array.isArray(globalProjects)) {
+      try { localStorage.setItem(GLOBAL_PROJECTS_KEY, JSON.stringify(globalProjects)); } catch (_) {}
     }
 
-    const chosenCount = Array.isArray(chosen.projects) ? chosen.projects.length : 0;
-    const shouldPush = !!remoteState || chosenCount > 0;
-    if (shouldPush) {
-      for (const base of bases) {
-        try {
-          await fetch(new URL('/cloud/state', base).toString(), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, state: chosen })
-          });
-          break;
-        } catch (_) {}
-      }
+    const local = load();
+
+    // 계정 상태는 해당 email의 remote state를 authoritative source로 취급한다.
+    // (전역 탐색 프로젝트는 별도 캐시에 저장)
+    if (remoteState && typeof remoteState === 'object') {
+      try { localStorage.setItem(KEY, JSON.stringify(remoteState)); } catch (_) {}
+    }
+
+    const toPush = load();
+    const chosenCount = Array.isArray(toPush.projects) ? toPush.projects.length : 0;
+
+    // account state만 업로드 (global projects는 서버 projection 사용)
+    for (const base of bases) {
+      try {
+        await fetch(new URL('/cloud/state', base).toString(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, state: toPush })
+        });
+        break;
+      } catch (_) {}
     }
 
     return { ok: true, projects: chosenCount };
