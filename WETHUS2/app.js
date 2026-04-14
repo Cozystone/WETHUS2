@@ -728,6 +728,21 @@
     return registerUser(payload);
   }
 
+  function sanitizeAccountProjects(state, email) {
+    const next = { ...(state || {}) };
+    const users = Array.isArray(next.users) ? next.users : [];
+    const currentId = next.currentUserId || users.find(u => String(u?.email || '').toLowerCase() === email)?.id || null;
+    const projects = Array.isArray(next.projects) ? next.projects : [];
+    next.projects = projects.filter(p => {
+      if (!p || !p.id) return false;
+      const founderEmail = String(p.founderEmail || '').toLowerCase();
+      if (founderEmail && founderEmail === email) return true;
+      if (currentId && p.founderId === currentId) return true;
+      return false;
+    });
+    return next;
+  }
+
   function addProject(payload) {
     const s = load();
     if (!s.currentUserId && !s.devMode) throw new Error('로그인이 필요합니다.');
@@ -1157,15 +1172,18 @@
       try { localStorage.setItem(GLOBAL_PROJECTS_KEY, JSON.stringify(globalProjects)); } catch (_) {}
     }
 
-    const local = load();
+    const local = sanitizeAccountProjects(load(), email);
 
     // 계정 상태는 해당 email의 remote state를 authoritative source로 취급한다.
     // (전역 탐색 프로젝트는 별도 캐시에 저장)
     if (remoteState && typeof remoteState === 'object') {
-      try { localStorage.setItem(KEY, JSON.stringify(remoteState)); } catch (_) {}
+      const sanitizedRemote = sanitizeAccountProjects(remoteState, email);
+      try { localStorage.setItem(KEY, JSON.stringify(sanitizedRemote)); } catch (_) {}
+    } else {
+      try { localStorage.setItem(KEY, JSON.stringify(local)); } catch (_) {}
     }
 
-    const toPush = load();
+    const toPush = sanitizeAccountProjects(load(), email);
     const chosenCount = Array.isArray(toPush.projects) ? toPush.projects.length : 0;
 
     // account state만 업로드 (global projects는 서버 projection 사용)
