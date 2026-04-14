@@ -1861,6 +1861,7 @@ app.post('/cloud/state', (req, res) => {
 
     // 공개 프로젝트 풀 업데이트 (계정 간 탐색 공통 노출)
     const incoming = Array.isArray(state?.projects) ? state.projects : [];
+    const usersById = new Map((Array.isArray(state?.users) ? state.users : []).map(u => [String(u?.id || ''), u]));
     let globals = [];
     try { globals = readCloudProjects(); } catch (_) { globals = []; }
     const map = new Map(globals.map(p => [String(p.id), p]));
@@ -1871,8 +1872,19 @@ app.post('/cloud/state', (req, res) => {
       const prev = map.get(key) || {};
       const prevTs = new Date(prev.updatedAt || prev._updatedAt || prev.createdAt || 0).getTime() || 0;
       const nextTs = new Date(p.updatedAt || p.createdAt || now).getTime() || Date.now();
+      const founderId = String(p?.founderId || '').trim();
+      const founderUser = founderId ? usersById.get(founderId) : null;
+      const founderEmail = normEmail(p?.founderEmail || founderUser?.email || '');
+      const founderName = String(p?.founderName || founderUser?.name || founderUser?.nickname || '').trim();
       if (nextTs >= prevTs) {
-        map.set(key, { ...prev, ...p, _updatedAt: now });
+        map.set(key, {
+          ...prev,
+          ...p,
+          founderId: founderId || p?.founderId || '',
+          founderEmail: founderEmail || prev?.founderEmail || '',
+          founderName: founderName || prev?.founderName || '',
+          _updatedAt: now
+        });
       }
     }
     try { writeCloudProjects(Array.from(map.values())); } catch (_) {}

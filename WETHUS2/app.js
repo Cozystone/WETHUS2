@@ -738,6 +738,7 @@
     const project = {
       id: uid(),
       founderId: actor,
+      founderEmail: String(me?.email || '').toLowerCase(),
       teamMembers: [{ id: uid(), name: me?.nickname || me?.name || '대표', role: '대표', bio: '프로젝트 대표', isLeader: true }],
       createdAt: new Date().toISOString(),
       moderationStatus,
