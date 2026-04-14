@@ -603,13 +603,16 @@
     function sourceProjects() {
       const st = WETHUS.getState();
       const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+      const me = (st.users || []).find(u => u.id === actor) || null;
+      const myEmail = String(me?.email || '').toLowerCase();
+      const isMine = (p) => !!(actor && (p.founderId === actor || (myEmail && String(p.founderEmail || '').toLowerCase() === myEmail)));
       const visible = WETHUS.listProjects().slice().filter(p => {
         const approved = p.moderationStatus !== 'manual_review' && p.moderationStatus !== 'rejected';
         if (approved) return true;
-        return !!actor && p.founderId === actor;
+        return isMine(p);
       }).filter(inTheme);
 
-      const mineApproved = visible.filter(p => actor && p.founderId === actor && p.moderationStatus === 'approved')
+      const mineApproved = visible.filter(p => isMine(p) && p.moderationStatus === 'approved')
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       const others = visible.filter(p => !mineApproved.includes(p));
 
@@ -628,9 +631,12 @@
 
       const st = WETHUS.getState();
       const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+      const me = (st.users || []).find(u => u.id === actor) || null;
+      const myEmail = String(me?.email || '').toLowerCase();
+      const isMine = (p) => !!(actor && (p.founderId === actor || (myEmail && String(p.founderEmail || '').toLowerCase() === myEmail)));
       const sortMode = sortFilter?.value || 'mixed';
       if (sortMode === 'mine') {
-        items = items.filter(p => actor && p.founderId === actor)
+        items = items.filter(p => isMine(p))
           .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
       } else if (sortMode === 'popular') {
         items = items.sort((a,b) => (b.likes||0) - (a.likes||0));
@@ -652,6 +658,13 @@
         items = mixed;
       } else {
         items = items.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }
+
+      // 항상 내 프로젝트를 좌상단 우선 배치
+      if (actor) {
+        const mine = items.filter(isMine).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const others = items.filter(p => !isMine(p));
+        items = mine.concat(others);
       }
 
       buildCategoryChips(allProjects);
