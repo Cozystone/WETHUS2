@@ -452,14 +452,7 @@
     if (!Array.isArray(parsed.agentActivityLogs)) parsed.agentActivityLogs = [];
 
     if (!Array.isArray(parsed.projects)) parsed.projects = [];
-    const existingTitles = new Set(parsed.projects.map(p => p.title));
     let changed = false;
-    seedProjects.forEach(sp => {
-      if (!existingTitles.has(sp.title)) {
-        parsed.projects.push(sp);
-        changed = true;
-      }
-    });
 
     if (Array.isArray(parsed.users)) {
       parsed.users = parsed.users.map(u => {
