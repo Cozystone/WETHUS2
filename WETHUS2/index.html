@@ -216,9 +216,28 @@
         const notApplied = base.filter(p => !WETHUS.hasApplied(p.id));
         const applied = base.filter(p => WETHUS.hasApplied(p.id));
 
-        // 우선 미지원 프로젝트를 보여주되, 부족하면 지원완료 항목으로 채워 항상 6개 노출
-        const filled = notApplied.concat(applied).slice(0, 6);
-        return filled.map(p => ({ ...p, status: normalizeStage(p.status) }));
+        // 우선 미지원 프로젝트를 보여주되, 부족하면 지원완료 항목으로 채워 최대한 채움
+        let filled = notApplied.concat(applied).slice(0, 6);
+
+        // 여전히 부족하면 홈 노출 전용 기본 카드로 6개 보장
+        if (filled.length < 6) {
+          const fallbackProjects = [
+            { id: 'home-fallback-1', title: '학생 로컬 F&B 브랜드 검증팀', category: 'Startup', summary: '메뉴/가격/채널을 빠르게 검증하는 소비자 실험형 창업 프로젝트', status: '모집 중', roles: '브랜딩 1 · 운영 1 · 콘텐츠 1', teamMembers: [{name:'WETHUS Team', role:'운영', isLeader:true}], likes: 0, comments: [] },
+            { id: 'home-fallback-2', title: '청소년 AI 스터디 도구 MVP 팀', category: 'App', summary: '학습 루틴 문제를 해결하는 AI 보조도구 MVP 제작', status: '기획 중', roles: '기획 1 · 프론트 1 · 디자인 1', teamMembers: [{name:'WETHUS Team', role:'운영', isLeader:true}], likes: 0, comments: [] },
+            { id: 'home-fallback-3', title: '캠퍼스 크리에이터 미디어 벤처', category: 'Film', summary: '숏폼 포맷 실험과 수익 모델 검증을 함께 하는 미디어 프로젝트', status: '모집 중', roles: '기획 1 · 촬영 1 · 편집 1', teamMembers: [{name:'WETHUS Team', role:'운영', isLeader:true}], likes: 0, comments: [] },
+            { id: 'home-fallback-4', title: '청소년 공공문제 해결 제안랩', category: 'Policy', summary: '현장 데이터와 인터뷰로 정책 제안 실행안을 만드는 civic 프로젝트', status: '기획 중', roles: '리서치 1 · 문서 1 · 발표 1', teamMembers: [{name:'WETHUS Team', role:'운영', isLeader:true}], likes: 0, comments: [] },
+            { id: 'home-fallback-5', title: '학교 연계 환경 캠페인 운영팀', category: 'Campaign', summary: '행동 전환을 목표로 온·오프라인 실험을 설계하는 실행형 팀', status: '진행 중', roles: '기획 1 · 디자인 1 · 운영 1', teamMembers: [{name:'WETHUS Team', role:'운영', isLeader:true}], likes: 0, comments: [] },
+            { id: 'home-fallback-6', title: '학생 크리에이티브 굿즈 커머스팀', category: 'Creative', summary: '브랜드 톤과 상품 포트폴리오를 빠르게 검증하는 창작-사업화 실험', status: '모집 중', roles: '브랜딩 1 · 제작 1 · 운영 1', teamMembers: [{name:'WETHUS Team', role:'운영', isLeader:true}], likes: 0, comments: [] }
+          ];
+          const existingIds = new Set(filled.map(p => p.id));
+          for (const fp of fallbackProjects) {
+            if (filled.length >= 6) break;
+            if (existingIds.has(fp.id)) continue;
+            filled.push(fp);
+          }
+        }
+
+        return filled.slice(0, 6).map(p => ({ ...p, status: normalizeStage(p.status) }));
       }
       const featured = recommendationPool();
       try { featured.forEach(p => WETHUS.recordProjectView && WETHUS.recordProjectView(p.id)); } catch (_) {}
@@ -236,7 +255,9 @@
             ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length+1}명</button><div class="team-list">${hidden.map(m=>`<a class="member-pill block" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('')}</div>` : ''}
           </div>`;
       };
-      el.innerHTML = featured.map(p => `
+      el.innerHTML = featured.map(p => {
+        const isFallback = String(p.id || '').startsWith('home-fallback-');
+        return `
         <article class="card list-item" data-project='${JSON.stringify(p).replace(/'/g, "&#39;")}'>
           <div class="card-media ${fallbackClass[p.category] || 'card-media--film'}">
             <img src="${p.image || `https://picsum.photos/seed/wethus-${(p.category||'project').toLowerCase()}/900/560`}" alt="${p.title}" class="card-img" />
@@ -251,10 +272,13 @@
           <div class="meta"><span class="card-status">${p.status || '기획 중'}</span> · ${p.roles || ''}${p.neededRoles ? ` · 필요:${p.neededRoles}` : ''}${p.neededAgeGroup ? ` · ${p.neededAgeGroup}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
           <div class="card-bottom-row">
             <div class="card-social"><span>♡ ${(p.likes||0)}</span><span>💬 ${Array.isArray(p.comments)?p.comments.length:0}</span></div>
-            <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>
+            ${isFallback
+              ? '<button class="apply-btn" type="button" disabled style="opacity:.55;cursor:not-allowed;">준비중</button>'
+              : `<button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>`}
           </div>
         </article>
-      `).join('');
+      `;
+      }).join('');
 
       const applyModal = document.getElementById('applyModal');
       const applyMotivation = document.getElementById('applyMotivation');
