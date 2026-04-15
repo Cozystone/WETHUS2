@@ -258,11 +258,11 @@
       el.innerHTML = featured.map(p => {
         const isFallback = String(p.id || '').startsWith('home-fallback-');
         return `
-        <article class="card list-item" data-project='${JSON.stringify(p).replace(/'/g, "&#39;")}'>
+        <article class="card" data-project='${JSON.stringify(p).replace(/'/g, "&#39;")}'>
           <div class="card-media ${fallbackClass[p.category] || 'card-media--film'}">
             <img src="${p.image || `https://picsum.photos/seed/wethus-${(p.category||'project').toLowerCase()}/900/560`}" alt="${p.title}" class="card-img" />
           </div>
-          <span class="card-chip">${p.category || ''}</span>
+          <div class="chip-row"><span class="card-chip">${p.category || ''}</span></div>
           <div class="card-title-row">
             <h3 class="card-title">${p.title}</h3>
             <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${p.id}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
