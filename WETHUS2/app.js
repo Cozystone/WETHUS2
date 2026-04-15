@@ -635,6 +635,7 @@
 
   function save(state) {
     localStorage.setItem(KEY, JSON.stringify(state));
+    scheduleCloudSync('save');
   }
 
   function getState() {
@@ -1102,6 +1103,7 @@
     const admin = isAdminActor();
     if (!admin && target.founderId !== actor) throw new Error('수정 권한이 없습니다.');
     Object.assign(target, patch || {});
+    target.updatedAt = new Date().toISOString();
     save(s);
     return target;
   }
@@ -1237,6 +1239,53 @@
     return target;
   }
 
+  function mergeProjectsByFreshness(localProjects = [], remoteProjects = []) {
+    const map = new Map();
+    const put = (p, source) => {
+      if (!p?.id) return;
+      const key = String(p.id);
+      const prev = map.get(key);
+      if (!prev) {
+        map.set(key, { ...p, _source: source });
+        return;
+      }
+      const prevTs = new Date(prev.updatedAt || prev.moderationReviewedAt || prev.createdAt || 0).getTime() || 0;
+      const nextTs = new Date(p.updatedAt || p.moderationReviewedAt || p.createdAt || 0).getTime() || 0;
+      if (nextTs >= prevTs) map.set(key, { ...p, _source: source });
+    };
+    remoteProjects.forEach(p => put(p, 'remote'));
+    localProjects.forEach(p => put(p, 'local'));
+    return Array.from(map.values()).map(({ _source, ...rest }) => rest);
+  }
+
+  function mergeAccountStates(localState = {}, remoteState = {}, email = '') {
+    const local = sanitizeAccountProjects(localState, email);
+    const remote = sanitizeAccountProjects(remoteState, email);
+    const merged = {
+      ...remote,
+      ...local,
+      projects: mergeProjectsByFreshness(local.projects || [], remote.projects || [])
+    };
+
+    // 사용자 목록은 이메일/ID 기준으로 합치되 로컬 최신값 우선
+    const byKey = new Map();
+    const pushUser = (u) => {
+      if (!u) return;
+      const k = String(u.id || u.email || '').toLowerCase();
+      if (!k) return;
+      byKey.set(k, { ...(byKey.get(k) || {}), ...u });
+    };
+    (remote.users || []).forEach(pushUser);
+    (local.users || []).forEach(pushUser);
+    merged.users = Array.from(byKey.values());
+
+    // 현재 세션의 로그인 컨텍스트는 로컬 유지
+    if (local.currentUserId) merged.currentUserId = local.currentUserId;
+    if (local.devMode !== undefined) merged.devMode = local.devMode;
+
+    return merged;
+  }
+
   async function syncCloudState(emailInput) {
     const email = String(emailInput || currentUser()?.email || '').trim().toLowerCase();
     if (!email) return { ok: false, reason: 'email-missing' };
@@ -1264,11 +1313,10 @@
 
     const local = sanitizeAccountProjects(load(), email);
 
-    // 계정 상태는 해당 email의 remote state를 authoritative source로 취급한다.
-    // (전역 탐색 프로젝트는 별도 캐시에 저장)
+    // 원격/로컬 상태를 병합해서 최신 변경(특히 프로젝트 status)을 잃지 않도록 한다.
     if (remoteState && typeof remoteState === 'object') {
-      const sanitizedRemote = sanitizeAccountProjects(remoteState, email);
-      try { localStorage.setItem(KEY, JSON.stringify(sanitizedRemote)); } catch (_) {}
+      const merged = mergeAccountStates(local, remoteState, email);
+      try { localStorage.setItem(KEY, JSON.stringify(merged)); } catch (_) {}
     } else {
       try { localStorage.setItem(KEY, JSON.stringify(local)); } catch (_) {}
     }
