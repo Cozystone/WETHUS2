@@ -970,6 +970,7 @@
     }
 
     target._liked = liked;
+    target.updatedAt = new Date().toISOString();
     save(s);
     return { likes: target.likes, liked };
   }
@@ -1080,6 +1081,7 @@
     const author = currentUser()?.nickname || currentUser()?.name || '익명';
     if (!Array.isArray(target.comments)) target.comments = [];
     target.comments.push({ id: uid(), author, text, createdAt: new Date().toISOString() });
+    target.updatedAt = new Date().toISOString();
     save(s);
     return target.comments;
   }
@@ -1258,13 +1260,64 @@
     return Array.from(map.values()).map(({ _source, ...rest }) => rest);
   }
 
+  function mergeRowsByFreshness(localRows = [], remoteRows = [], options = {}) {
+    const map = new Map();
+    const idKey = options.idKey || 'id';
+    const getTs = options.getTs || ((row) => new Date(row?.updatedAt || row?.createdAt || 0).getTime() || 0);
+    const getId = options.getId || ((row) => row?.[idKey]);
+
+    const put = (row) => {
+      const id = String(getId(row) || '').trim();
+      if (!id) return;
+      const prev = map.get(id);
+      if (!prev) {
+        map.set(id, row);
+        return;
+      }
+      if (getTs(row) >= getTs(prev)) map.set(id, row);
+    };
+
+    remoteRows.forEach(put);
+    localRows.forEach(put);
+    return Array.from(map.values());
+  }
+
+  function mergeProjectHubs(localHubs = {}, remoteHubs = {}) {
+    const out = { ...(remoteHubs || {}) };
+    for (const [projectId, localHub] of Object.entries(localHubs || {})) {
+      const remoteHub = out[projectId] || {};
+      const localTs = new Date(localHub?.updatedAt || 0).getTime() || 0;
+      const remoteTs = new Date(remoteHub?.updatedAt || 0).getTime() || 0;
+      out[projectId] = localTs >= remoteTs ? localHub : remoteHub;
+    }
+    return out;
+  }
+
   function mergeAccountStates(localState = {}, remoteState = {}, email = '') {
     const local = sanitizeAccountProjects(localState, email);
     const remote = sanitizeAccountProjects(remoteState, email);
     const merged = {
       ...remote,
       ...local,
-      projects: mergeProjectsByFreshness(local.projects || [], remote.projects || [])
+      projects: mergeProjectsByFreshness(local.projects || [], remote.projects || []),
+      applications: mergeRowsByFreshness(local.applications || [], remote.applications || [], {
+        getId: (row) => row?.id || `${row?.projectId || ''}:${row?.userId || ''}:${row?.createdAt || ''}`,
+        getTs: (row) => new Date(row?.cancelledAt || row?.updatedAt || row?.createdAt || 0).getTime() || 0
+      }),
+      bookmarks: mergeRowsByFreshness(local.bookmarks || [], remote.bookmarks || [], {
+        getId: (row) => row?.id || `${row?.projectId || ''}:${row?.userId || ''}`
+      }),
+      notifications: mergeRowsByFreshness(local.notifications || [], remote.notifications || [], {
+        getId: (row) => row?.id || `${row?.type || ''}:${row?.createdAt || ''}:${row?.userId || ''}`
+      }),
+      projectViews: mergeRowsByFreshness(local.projectViews || [], remote.projectViews || [], {
+        getId: (row) => row?.id || `${row?.projectId || ''}:${row?.userId || ''}:${row?.createdAt || ''}`
+      }),
+      dmThreads: mergeRowsByFreshness(local.dmThreads || [], remote.dmThreads || [], {
+        getId: (row) => row?.id,
+        getTs: (row) => new Date(row?.updatedAt || row?.createdAt || 0).getTime() || 0
+      }),
+      projectHubs: mergeProjectHubs(local.projectHubs || {}, remote.projectHubs || {})
     };
 
     // 사용자 목록은 이메일/ID 기준으로 합치되 로컬 최신값 우선
@@ -1782,8 +1835,8 @@
         createdAt: new Date().toISOString(),
         userId: project.founderId || null
       });
+      project.updatedAt = new Date().toISOString();
     }
-    target.updatedAt = new Date().toISOString();
     save(s);
     return app;
   }
@@ -1795,6 +1848,8 @@
     if (!target) return false;
     target.status = 'cancelled';
     target.cancelledAt = new Date().toISOString();
+    const project = s.projects.find(p => p.id === projectId);
+    if (project) project.updatedAt = new Date().toISOString();
     save(s);
     return true;
   }
