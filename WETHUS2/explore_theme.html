@@ -606,15 +606,19 @@
       const me = (st.users || []).find(u => u.id === actor) || null;
       const myEmail = String(me?.email || '').toLowerCase();
       const isMine = (p) => !!(actor && (p.founderId === actor || (myEmail && String(p.founderEmail || '').toLowerCase() === myEmail)));
-      const visible = WETHUS.listProjects().slice().filter(p => {
+      const baseVisible = WETHUS.listProjects().slice().filter(p => {
         const approved = p.moderationStatus !== 'manual_review' && p.moderationStatus !== 'rejected';
         if (approved) return true;
         return isMine(p);
-      }).filter(inTheme);
+      });
 
-      const mineApproved = visible.filter(p => isMine(p) && p.moderationStatus === 'approved')
+      // 테마 필터 결과가 0개면 전체 visible로 안전 폴백
+      const visible = baseVisible.filter(inTheme);
+      const pool = visible.length ? visible : baseVisible;
+
+      const mineApproved = pool.filter(p => isMine(p) && p.moderationStatus === 'approved')
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      const others = visible.filter(p => !mineApproved.includes(p));
+      const others = pool.filter(p => !mineApproved.includes(p));
 
       return mineApproved.concat(others);
     }

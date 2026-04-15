@@ -859,7 +859,8 @@
   }
 
   function listProjects() {
-    const local = load().projects || [];
+    const s = load();
+    const local = s.projects || [];
     let globals = [];
     try {
       globals = JSON.parse(localStorage.getItem(GLOBAL_PROJECTS_KEY) || '[]');
@@ -872,7 +873,16 @@
     for (const p of local) {
       if (p?.id) map.set(String(p.id), p);
     }
-    return Array.from(map.values());
+    const merged = Array.from(map.values());
+    if (merged.length) return merged;
+
+    // 안전 복구: 프로젝트 풀이 비어버린 경우 시드로 복원
+    if (!Array.isArray(s.projects) || !s.projects.length) {
+      s.projects = seedProjects.map(p => ({ ...p, moderationStatus: p.moderationStatus || 'approved' }));
+      save(s);
+      return s.projects.slice();
+    }
+    return s.projects.slice();
   }
 
   function ensureHubState(s) {
