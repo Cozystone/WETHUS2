@@ -212,9 +212,13 @@
         return '기획 중';
       };
       function recommendationPool() {
-        const items = (WETHUS.getRecommendedProjects ? WETHUS.getRecommendedProjects(6) : WETHUS.listProjects().slice(0, 6))
-          .filter(p => !WETHUS.hasApplied(p.id));
-        return items.map(p => ({ ...p, status: normalizeStage(p.status) }));
+        const base = (WETHUS.getRecommendedProjects ? WETHUS.getRecommendedProjects(12) : WETHUS.listProjects().slice(0, 12));
+        const notApplied = base.filter(p => !WETHUS.hasApplied(p.id));
+        const applied = base.filter(p => WETHUS.hasApplied(p.id));
+
+        // 우선 미지원 프로젝트를 보여주되, 부족하면 지원완료 항목으로 채워 항상 6개 노출
+        const filled = notApplied.concat(applied).slice(0, 6);
+        return filled.map(p => ({ ...p, status: normalizeStage(p.status) }));
       }
       const featured = recommendationPool();
       try { featured.forEach(p => WETHUS.recordProjectView && WETHUS.recordProjectView(p.id)); } catch (_) {}
