@@ -171,7 +171,14 @@
 
         <label>카테고리
           <select id="categorySelect" name="category" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
-            <option>Film</option><option>Startup</option><option>Policy</option><option>Campaign</option><option>App</option><option>Creative</option><option>기타</option>
+            <option value="Startup">Startup · Product Venture</option>
+            <option value="App">App/AI · Product Venture</option>
+            <option value="Film">Film/Media · Creative Venture</option>
+            <option value="Creative">Design/Brand · Creative Venture</option>
+            <option value="Policy">Policy · Civic Entrepreneurship</option>
+            <option value="Campaign">Campaign · Civic Entrepreneurship</option>
+            <option value="Science">Science/Research · Research Venture</option>
+            <option value="기타">기타(창업 맥락)</option>
           </select>
         </label>
 
@@ -990,7 +997,9 @@
           if (me?.email && WETHUS.syncCloudState) await WETHUS.syncCloudState(me.email);
         } catch (_) {}
 
-        msg.textContent = '신청 완료! 운영자 승인 후 탐색 탭에 반영됩니다. (검토 진행 알림을 확인해주세요)';
+        msg.textContent = moderation.review
+          ? '신청 완료! 운영자 승인 후 탐색 탭에 반영됩니다. (검토 진행 알림을 확인해주세요)'
+          : '신청 완료! 탐색 탭에 반영되었습니다.';
         try { sessionStorage.setItem('wethus_pending_toast', '신청완료 · 검토가 시작되었습니다'); } catch (_) {}
         localStorage.removeItem(DRAFT_KEY);
         form.reset();

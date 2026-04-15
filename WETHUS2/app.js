@@ -36,6 +36,47 @@
     return map[key] || cleaned;
   }
 
+  const STARTUP_CATEGORY_MAP = {
+    Startup: 'Product Startup',
+    App: 'Product Startup',
+    Film: 'Creative Venture',
+    Creative: 'Creative Venture',
+    Policy: 'Civic Entrepreneurship',
+    Campaign: 'Civic Entrepreneurship',
+    Science: 'Research Venture'
+  };
+
+  function normalizeStartupCategory(category, title = '', summary = '') {
+    const normalized = normalizeCategory(category, title, summary);
+    return STARTUP_CATEGORY_MAP[normalized] || 'Student Venture';
+  }
+
+  function ensureProjectReviewState(project = {}) {
+    const track = project.projectTrack || (project.youthProjectTag ? 'Youth' : 'Open');
+    return {
+      founderReview: {
+        status: project?.review?.founderReview?.status || (project.moderationStatus === 'rejected' ? 'rejected' : (project.moderationStatus === 'manual_review' ? 'pending' : 'approved')),
+        note: project?.review?.founderReview?.note || project.moderationReason || '',
+        reviewedAt: project?.review?.founderReview?.reviewedAt || project.moderationReviewedAt || null
+      },
+      trackReview: {
+        requestedTrack: project?.review?.trackReview?.requestedTrack || track,
+        status: project?.review?.trackReview?.status || (track === 'Youth' ? 'approved' : 'pending'),
+        note: project?.review?.trackReview?.note || '',
+        reviewedAt: project?.review?.trackReview?.reviewedAt || null
+      }
+    };
+  }
+
+  function ensureTrustSignals(project = {}) {
+    return {
+      roleFocus: project?.trustSignals?.roleFocus || project.roles || '',
+      portfolioEvidence: project?.trustSignals?.portfolioEvidence || project.portfolioEvidence || '',
+      recentActivityAt: project?.trustSignals?.recentActivityAt || project.updatedAt || project.createdAt || null,
+      contributionHistory: project?.trustSignals?.contributionHistory || project.contributionHistory || ''
+    };
+  }
+
   function isYouthByAge(age, verifiedAt) {
     const n = Number(age);
     if (!Number.isFinite(n)) return false;
@@ -509,7 +550,7 @@
         next.status = normalized;
         changed = true;
       }
-      const normalizedCategory = normalizeCategory(next.category, next.title, next.summary);
+      const normalizedCategory = normalizeCategory(next.category);
       if (normalizedCategory !== next.category) {
         next.category = normalizedCategory;
         changed = true;
@@ -561,8 +602,27 @@
         next.youthProjectTag = next.founderId === 'system' ? true : !!(founder && normalizeYouthTag(founder));
         changed = true;
       }
-      if (next.projectTrack === undefined && next.youthProjectTag) {
-        next.projectTrack = 'Youth';
+      if (next.projectTrack === undefined) {
+        next.projectTrack = next.youthProjectTag ? 'Youth' : 'Open';
+        changed = true;
+      }
+      const startupCategory = normalizeStartupCategory(next.category, next.title, next.summary);
+      if (next.startupCategory !== startupCategory) {
+        next.startupCategory = startupCategory;
+        changed = true;
+      }
+      const review = ensureProjectReviewState(next);
+      if (JSON.stringify(next.review || {}) !== JSON.stringify(review)) {
+        next.review = review;
+        changed = true;
+      }
+      const trustSignals = ensureTrustSignals(next);
+      if (JSON.stringify(next.trustSignals || {}) !== JSON.stringify(trustSignals)) {
+        next.trustSignals = trustSignals;
+        changed = true;
+      }
+      if (!Array.isArray(next.participationModes) || !next.participationModes.length) {
+        next.participationModes = ['Founder', 'Builder'];
         changed = true;
       }
       return next;
@@ -743,19 +803,27 @@
     const me = s.users.find(u => u.id === s.currentUserId);
     const moderationStatus = payload?.moderationStatus || 'approved';
     const founderYouth = !!(me && normalizeYouthTag(me));
+    const now = new Date().toISOString();
     const project = {
       id: uid(),
       founderId: actor,
       founderEmail: String(me?.email || '').toLowerCase(),
       teamMembers: [{ id: uid(), name: me?.nickname || me?.name || '대표', role: '대표', bio: '프로젝트 대표', isLeader: true }],
-      createdAt: new Date().toISOString(),
+      createdAt: now,
       moderationStatus,
       moderationReason: payload?.moderationReason || '',
       moderationReviewedAt: payload?.moderationReviewedAt || null,
       youthProjectTag: founderYouth,
       projectTrack: founderYouth ? 'Youth' : 'Open',
+      participationModes: Array.isArray(payload?.participationModes) && payload.participationModes.length
+        ? payload.participationModes
+        : ['Founder', 'Builder'],
       ...payload
     };
+    project.category = normalizeCategory(payload?.category || project.category || 'Startup');
+    project.startupCategory = normalizeStartupCategory(project.category, project.title, project.summary);
+    project.review = ensureProjectReviewState(project);
+    project.trustSignals = ensureTrustSignals({ ...project, updatedAt: now });
     s.projects.unshift(project);
     s.notifications = s.notifications || [];
     s.notifications.unshift({
@@ -1042,29 +1110,48 @@
     return true;
   }
 
-  function reviewProject(projectId, decision, note) {
+  function reviewProject(projectId, decision, note, layer = 'founder') {
     const s = load();
     if (!isAdminActor()) throw new Error('관리자 권한이 필요합니다.');
     const target = s.projects.find(p => p.id === projectId);
     if (!target) return null;
-    if (decision === 'approve') {
-      target.moderationStatus = 'approved';
-      target.moderationReason = note || '';
-    } else if (decision === 'reject') {
-      target.moderationStatus = 'rejected';
-      target.moderationReason = note || '운영자 검토 결과 반려되었습니다.';
+    target.review = ensureProjectReviewState(target);
+
+    if (layer === 'track') {
+      if (decision === 'approve') {
+        target.review.trackReview.status = 'approved';
+        target.review.trackReview.note = note || '';
+      } else if (decision === 'reject') {
+        target.review.trackReview.status = 'rejected';
+        target.review.trackReview.note = note || '트랙 검토 결과 반려되었습니다.';
+      } else {
+        return null;
+      }
+      target.review.trackReview.reviewedAt = new Date().toISOString();
     } else {
-      return null;
+      if (decision === 'approve') {
+        target.moderationStatus = 'approved';
+        target.moderationReason = note || '';
+      } else if (decision === 'reject') {
+        target.moderationStatus = 'rejected';
+        target.moderationReason = note || '운영자 검토 결과 반려되었습니다.';
+      } else {
+        return null;
+      }
+      target.moderationReviewedAt = new Date().toISOString();
+      target.review.founderReview.status = target.moderationStatus === 'approved' ? 'approved' : 'rejected';
+      target.review.founderReview.note = target.moderationReason;
+      target.review.founderReview.reviewedAt = target.moderationReviewedAt;
     }
-    target.moderationReviewedAt = new Date().toISOString();
+
     s.notifications = s.notifications || [];
     s.notifications.unshift({
       id: uid(),
-      type: 'review_result',
+      type: layer === 'track' ? 'track_review_result' : 'review_result',
       title: decision === 'approve' ? '프로젝트 승인 완료' : '프로젝트 반려 안내',
       body: decision === 'approve'
-        ? '운영자 검토를 통과했습니다. 탐색 탭에서 확인할 수 있습니다.'
-        : `운영자 검토 결과: ${target.moderationReason || '반려'}`,
+        ? (layer === 'track' ? '트랙 검토를 통과했습니다.' : '운영자 검토를 통과했습니다. 탐색 탭에서 확인할 수 있습니다.')
+        : `운영자 검토 결과: ${note || target.moderationReason || '반려'}`,
       href: `explore_theme.html`,
       sender: 'WETHUS 운영팀',
       unread: true,
@@ -1222,8 +1309,11 @@
     }
   }
 
-  function listReviewProjects() {
-    return load().projects.filter(p => p.moderationStatus === 'manual_review');
+  function listReviewProjects(layer = 'founder') {
+    if (layer === 'track') {
+      return load().projects.filter(p => (p?.review?.trackReview?.status || '') === 'pending');
+    }
+    return load().projects.filter(p => p.moderationStatus === 'manual_review' || (p?.review?.founderReview?.status || '') === 'pending');
   }
 
   function listNotifications(limit = 30) {
