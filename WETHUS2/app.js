@@ -2182,8 +2182,8 @@
           <span class="profile-chip-texts"><strong>${u.name || '사용자'}</strong><em>${(u.plan || 'free').toUpperCase()}</em></span>
         </button>
         <div class="notify-dropdown profile-chip-dropdown" style="display:none;">
-          <a class="notify-item liquid-metal-btn" href="pricing.html"><strong>요금제</strong><p>${(u.plan || 'free').toUpperCase()} Plan</p></a>
-          <a class="notify-item liquid-metal-btn" href="profile.html"><strong>프로필</strong><p>내 프로필 보기 및 수정</p></a>
+          ${state.devMode ? `<a class="notify-item liquid-metal-btn" href="pricing.html"><strong>요금제</strong><p>${(u.plan || 'free').toUpperCase()} Plan</p></a>` : ''}
+          ${state.devMode ? `<a class="notify-item liquid-metal-btn" href="profile.html"><strong>프로필</strong><p>내 프로필 보기 및 수정</p></a>` : ''}
           <button class="notify-more logout-btn" type="button" id="chipLogoutBtn">로그아웃</button>
         </div>
       `;
@@ -2197,10 +2197,10 @@
         </button>
         <aside class="side-drawer" style="display:none;">
           <div class="side-drawer-group-title">빠른 메뉴</div>
-          <a href="dm.html" class="side-drawer-item side-drawer-item--row">
+          ${state.devMode ? `<a href="dm.html" class="side-drawer-item side-drawer-item--row">
             <span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
             <span>DM</span>
-          </a>
+          </a>` : ''}
           <a href="notifications.html" class="side-drawer-item side-drawer-item--row">
             <span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"/><path d="M9 17a3 3 0 0 0 6 0"/></svg><span class="notify-badge side-badge" style="display:none;">0</span></span>
             <span>알림</span>
@@ -2222,7 +2222,7 @@
 
           <div class="side-drawer-group-title side-drawer-settings-title"><span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.33 1V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-.33-1 1.65 1.65 0 0 0-1-.6 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1-.33H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1-.33 1.65 1.65 0 0 0 .6-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6c.3-.21.5-.55.6-1V3a2 2 0 1 1 4 0v.09c.1.45.3.79.6 1a1.65 1.65 0 0 0 1 .6 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.21.3.55.5 1 .6H21a2 2 0 1 1 0 4h-.09c-.45.1-.79.3-1 .6z"/></svg></span><span>설정</span></div>
           <button type="button" class="side-drawer-item side-drawer-item--row" data-lang-switch><span>언어 설정 (KR/EN)</span></button>
-          <a href="profile.html" class="side-drawer-item side-drawer-item--row"><span>계정 설정</span></a>
+          ${state.devMode ? `<a href="profile.html" class="side-drawer-item side-drawer-item--row"><span>계정 설정</span></a>` : ''}
           ${state.devMode ? `<a href="admin.html" class="side-drawer-item side-drawer-item--row"><span>프로젝트 검토</span></a>` : ''}
         </aside>
       `;
@@ -2328,6 +2328,29 @@
     }, true);
   }
 
+  function initDevFeatureGate() {
+    const state = getState();
+    const isDevMode = !!state.devMode;
+    const hiddenForPublic = new Set(['pricing.html', 'dm.html', 'profile.html']);
+    const current = (location.pathname.split('/').pop() || '').toLowerCase();
+
+    if (!isDevMode && hiddenForPublic.has(current)) {
+      location.replace('index.html?dev_locked=1');
+      return;
+    }
+
+    document.querySelectorAll('a[href]').forEach(a => {
+      const href = (a.getAttribute('href') || '').trim();
+      if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto:')) return;
+      const base = href.split('?')[0].split('#')[0].toLowerCase();
+      if (!hiddenForPublic.has(base)) return;
+      if (isDevMode) return;
+      a.style.display = 'none';
+      a.setAttribute('aria-hidden', 'true');
+      a.setAttribute('tabindex', '-1');
+    });
+  }
+
   function applyLanguageUI() {
     let lang = 'ko';
     try { lang = localStorage.getItem('wethus.lang') || 'ko'; } catch (_) {}
@@ -2420,6 +2443,7 @@
       ensureFavicon();
       initGuestNavGuard();
       initGuestApplyGuard();
+      initDevFeatureGate();
       initNotificationNav();
       applyLanguageUI();
       applyAuthReturnState();
@@ -2430,6 +2454,7 @@
     ensureFavicon();
     initGuestNavGuard();
     initGuestApplyGuard();
+    initDevFeatureGate();
     initNotificationNav();
     applyLanguageUI();
     applyAuthReturnState();
