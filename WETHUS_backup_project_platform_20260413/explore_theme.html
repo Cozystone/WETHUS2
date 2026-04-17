@@ -603,13 +603,9 @@
     function sourceProjects() {
       const st = WETHUS.getState();
       const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
-      const visible = WETHUS.listProjects().slice().filter(p => {
-        const approved = p.moderationStatus !== 'manual_review' && p.moderationStatus !== 'rejected';
-        if (approved) return true;
-        return !!actor && p.founderId === actor;
-      }).filter(inTheme);
+      const visible = WETHUS.listProjects().slice().filter(p => p.moderationStatus === 'approved').filter(inTheme);
 
-      const mineApproved = visible.filter(p => actor && p.founderId === actor && p.moderationStatus === 'approved')
+      const mineApproved = visible.filter(p => actor && p.founderId === actor)
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       const others = visible.filter(p => !mineApproved.includes(p));
 

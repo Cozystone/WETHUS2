@@ -307,7 +307,10 @@ function renderList(items) {
     }
 
     function sourceProjects() {
-      return WETHUS.listProjects().slice().filter(p => !WETHUS.hasApplied(p.id));
+      return WETHUS.listProjects()
+        .slice()
+        .filter(p => p.moderationStatus === 'approved')
+        .filter(p => !WETHUS.hasApplied(p.id));
     }
 
     function applyFilters() {

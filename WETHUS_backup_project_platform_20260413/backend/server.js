@@ -1833,7 +1833,9 @@ app.get('/cloud/state', (req, res) => {
     const rows = readCloudStates();
     const row = rows.find(r => normEmail(r.email) === email) || null;
     let globalProjects = [];
-    try { globalProjects = readCloudProjects(); } catch (_) { globalProjects = []; }
+    try {
+      globalProjects = readCloudProjects().filter(p => p?.moderationStatus === 'approved');
+    } catch (_) { globalProjects = []; }
     return res.json({ ok: true, state: row?.state || null, updatedAt: row?.updatedAt || null, globalProjects });
   } catch (e) {
     return res.json({ ok: true, state: null, updatedAt: null, globalProjects: [], degraded: true, error: e?.message || 'cloud state fallback' });
@@ -1866,8 +1868,12 @@ app.post('/cloud/state', (req, res) => {
     const map = new Map(globals.map(p => [String(p.id), p]));
     for (const p of incoming) {
       if (!p?.id) continue;
-      if (p?.moderationStatus === 'rejected') continue;
       const key = String(p.id);
+      if (p?.moderationStatus !== 'approved') {
+        // 공개 풀에는 승인 완료된 프로젝트만 유지
+        map.delete(key);
+        continue;
+      }
       const prev = map.get(key) || {};
       const prevTs = new Date(prev.updatedAt || prev._updatedAt || prev.createdAt || 0).getTime() || 0;
       const nextTs = new Date(p.updatedAt || p.createdAt || now).getTime() || Date.now();
