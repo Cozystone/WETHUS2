@@ -50,11 +50,11 @@ a { color: inherit; text-decoration: none; }
 }
 .nav-inner { width: min(80vw, var(--container)); max-width: var(--container); margin: 0 auto; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
 .wordmark { font-size: 1.2rem; font-weight: 900; letter-spacing: .02em; }
-.nav-links { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin-left: 14px; }
-.nav-link { font-size: .82rem; color: var(--text-secondary); font-weight: 700; position: relative; padding-bottom: 3px; }
+.nav-links { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin-left: 14px; position: relative; z-index: 20; }
+.nav-link { font-size: .82rem; color: var(--text-secondary); font-weight: 700; position: relative; padding-bottom: 3px; z-index: 1; }
 .notify-wrap { position: relative; }
-.nav-links .js-profile-chip { margin-right: -4px; }
-.nav-links .js-side-menu { margin-left: 4px; margin-right: -6px; }
+.nav-links .js-profile-chip { margin-right: -4px; z-index: 60; }
+.nav-links .js-side-menu { margin-left: 4px; margin-right: -6px; z-index: 55; }
 .notify-link { display:inline-flex; align-items:center; justify-content:center; position:relative; }
 .notify-link--text { gap: 5px; }
 .notify-link .notify-badge {
@@ -66,6 +66,7 @@ a { color: inherit; text-decoration: none; }
 
 .profile-chip-btn {
   position: relative;
+  z-index: 70;
   display:flex; align-items:center; gap:8px;
   color:#fff;
   border:0;
@@ -125,6 +126,7 @@ a { color: inherit; text-decoration: none; }
 .profile-chip-dropdown {
   right:0;
   width:240px;
+  z-index: 80;
   opacity: 1 !important;
   background: linear-gradient(180deg, rgba(44,24,8,.72), rgba(255,116,30,.78)) !important;
   background-color: rgba(62,34,12,.74) !important;
