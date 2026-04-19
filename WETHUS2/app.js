@@ -2183,7 +2183,7 @@
         </button>
         <div class="notify-dropdown profile-chip-dropdown" style="display:none;">
           ${state.devMode ? `<a class="notify-item liquid-metal-btn" href="pricing.html"><strong>요금제</strong><p>${(u.plan || 'free').toUpperCase()} Plan</p></a>` : ''}
-          <a class="notify-item liquid-metal-btn" href="profile.html"><strong>프로필</strong><p>내 프로필 보기 및 수정</p></a>
+          ${state.devMode ? `<a class="notify-item liquid-metal-btn" href="profile.html"><strong>프로필</strong><p>내 프로필 보기 및 수정</p></a>` : ''}
           <button class="notify-more logout-btn" type="button" id="chipLogoutBtn">로그아웃</button>
         </div>
       `;
@@ -2234,66 +2234,17 @@
       const chipBtn = chipWrap.querySelector('.profile-chip-btn');
       const chipLogoutBtn = chipWrap.querySelector('#chipLogoutBtn');
       let closeTimer = null;
-      let lockedOpen = false;
       const openDrop = () => {
         if (closeTimer) clearTimeout(closeTimer);
         chipDrop.style.display = 'block';
-        chipBtn?.setAttribute('aria-expanded', 'true');
       };
-      const closeDrop = (force = false) => {
-        if (!force && lockedOpen) return;
+      const closeDrop = () => {
         if (closeTimer) clearTimeout(closeTimer);
-        closeTimer = setTimeout(() => {
-          chipDrop.style.display = 'none';
-          chipBtn?.setAttribute('aria-expanded', 'false');
-          lockedOpen = false;
-        }, 180);
+        closeTimer = setTimeout(() => { chipDrop.style.display = 'none'; }, 140);
       };
       chipBtn?.addEventListener('mouseenter', openDrop);
       chipWrap?.addEventListener('mouseenter', openDrop);
-      chipWrap?.addEventListener('mouseleave', () => closeDrop(false));
-
-      const blockNavBubble = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
-      };
-
-      // 캡처 단계에서 먼저 차단해서 홈 링크 등으로 이벤트가 새지 않게 한다
-      const captureGuard = (e) => {
-        const inChip = e.target?.closest?.('.js-profile-chip');
-        if (!inChip) return;
-        const inDropdownAction = e.target?.closest?.('.profile-chip-dropdown a, .profile-chip-dropdown button');
-        if (inDropdownAction) return; // 드롭다운 액션은 허용
-        blockNavBubble(e);
-      };
-      document.addEventListener('pointerdown', captureGuard, true);
-      document.addEventListener('mousedown', captureGuard, true);
-      document.addEventListener('click', captureGuard, true);
-
-      chipBtn?.addEventListener('pointerdown', blockNavBubble);
-      chipBtn?.addEventListener('mousedown', blockNavBubble);
-      chipBtn?.addEventListener('mouseup', blockNavBubble);
-
-      chipBtn?.addEventListener('click', (e) => {
-        blockNavBubble(e);
-        const isOpen = chipDrop.style.display === 'block';
-        if (isOpen) {
-          lockedOpen = false;
-          closeDrop(true);
-        } else {
-          lockedOpen = true;
-          openDrop();
-        }
-      });
-      chipWrap?.addEventListener('click', (e) => {
-        const inDropdownAction = e.target?.closest?.('.profile-chip-dropdown a, .profile-chip-dropdown button');
-        if (inDropdownAction) return;
-        blockNavBubble(e);
-      });
-      document.addEventListener('click', (e) => {
-        if (!chipWrap.contains(e.target)) closeDrop(true);
-      });
+      chipWrap?.addEventListener('mouseleave', closeDrop);
       chipLogoutBtn?.addEventListener('click', () => {
         logout();
         location.href = 'login.html';
