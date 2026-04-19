@@ -2252,9 +2252,18 @@
       chipBtn?.addEventListener('mouseenter', openDrop);
       chipWrap?.addEventListener('mouseenter', openDrop);
       chipWrap?.addEventListener('mouseleave', () => closeDrop(false));
-      chipBtn?.addEventListener('click', (e) => {
+
+      const blockNavBubble = (e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      };
+      chipBtn?.addEventListener('pointerdown', blockNavBubble);
+      chipBtn?.addEventListener('mousedown', blockNavBubble);
+      chipBtn?.addEventListener('mouseup', blockNavBubble);
+
+      chipBtn?.addEventListener('click', (e) => {
+        blockNavBubble(e);
         const isOpen = chipDrop.style.display === 'block';
         if (isOpen) {
           lockedOpen = false;
@@ -2263,6 +2272,11 @@
           lockedOpen = true;
           openDrop();
         }
+      });
+      chipWrap?.addEventListener('click', (e) => {
+        // 드롭다운 내부 링크 클릭은 허용
+        if (e.target?.closest('.profile-chip-dropdown a, .profile-chip-dropdown button')) return;
+        blockNavBubble(e);
       });
       document.addEventListener('click', (e) => {
         if (!chipWrap.contains(e.target)) closeDrop(true);
