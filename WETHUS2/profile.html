@@ -40,6 +40,7 @@
     </section>
 
     <section class="profile-hero" id="profileHero"></section>
+    <section class="profile-card" id="profileInfoBox" style="border-radius:12px;"></section>
 
     <section class="profile-activity-wrap">
       <div class="profile-activity-bar" id="activityBar">
@@ -181,6 +182,7 @@
       const hero = document.getElementById('profileHero');
       const activityBar = document.getElementById('activityBar');
       const activityList = document.getElementById('activityList');
+      const profileInfoBox = document.getElementById('profileInfoBox');
       const mine = document.getElementById('myProjects');
       const projectPaneMy = document.getElementById('projectPaneMy');
       const projectPaneParticipating = document.getElementById('projectPaneParticipating');
@@ -228,6 +230,19 @@
           </div>
         </div>
       `;
+
+      if (profileInfoBox) {
+        const joinedAt = user.createdAt ? new Date(user.createdAt).toLocaleDateString('ko-KR') : '기록 없음';
+        profileInfoBox.innerHTML = `
+          <h3 style="margin:0 0 8px;">프로필 박스</h3>
+          <div style="display:grid;grid-template-columns:110px 1fr;gap:6px 10px;">
+            <span class="meta">이메일</span><strong style="word-break:break-all;">${user.email || '-'}</strong>
+            <span class="meta">학교/나이</span><strong>${user.school || '미입력'}${user.age ? ` · 만 ${user.age}세` : ''}</strong>
+            <span class="meta">가입일</span><strong>${joinedAt}</strong>
+            <span class="meta">활동</span><strong>내 프로젝트 ${WETHUS.myProjects().length}개 · 참여 ${WETHUS.myParticipatingProjects().length}개</strong>
+          </div>
+        `;
+      }
 
       if (u) {
         const profileForm = document.getElementById('profileForm');
