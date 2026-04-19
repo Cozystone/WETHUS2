@@ -127,6 +127,7 @@
         <a href="explore.html" class="nav-link">탐색</a>
         <a href="founder.html" class="nav-link nav-link--cta">프로젝트 시작하기</a>
         <a href="project-hub.html" class="nav-link">프로젝트 허브</a>
+        <a href="opportunities.html" class="nav-link">기회</a>
         <a href="mentor.html" class="nav-link">멘토</a>
         <a href="profile.html" class="nav-link">프로필</a>
         <a href="login.html" class="nav-link js-auth-link">로그인</a>
@@ -145,6 +146,7 @@
 
     <section class="founder-form">
       <form class="application-form" id="founderForm">
+        <input type="hidden" name="opportunityId" id="opportunityId" />
         <label>메인 사진
           <input id="coverFile" name="coverFile" type="file" accept="image/*" hidden />
           <div id="dropzone" class="dropzone" tabindex="0">
@@ -379,6 +381,32 @@
     const endYear = document.getElementById('endYear');
     const endMonth = document.getElementById('endMonth');
     const endDay = document.getElementById('endDay');
+
+    const oppParams = new URLSearchParams(location.search);
+    const oppId = String(oppParams.get('opportunityId') || '').trim();
+    const oppTitle = String(oppParams.get('oppTitle') || '').trim();
+    const oppOrg = String(oppParams.get('oppOrg') || '').trim();
+    const oppDeadline = String(oppParams.get('oppDeadline') || '').trim();
+    const oppType = String(oppParams.get('oppType') || '').trim();
+    const oppSummary = String(oppParams.get('oppSummary') || '').trim();
+
+    if (oppId) {
+      const oppField = document.getElementById('opportunityId');
+      if (oppField) oppField.value = oppId;
+      const titleInput = form?.elements?.title;
+      if (titleInput && !String(titleInput.value || '').trim()) {
+        titleInput.value = `${oppTitle || '기회 기반'} 실행 프로젝트`;
+      }
+      if (oppType && categorySelect) {
+        const normalized = oppType === '해커톤' ? 'App' : 'Startup';
+        categorySelect.value = normalized;
+      }
+      const descInput = form?.elements?.description;
+      if (descInput && !String(descInput.value || '').trim()) {
+        descInput.value = `선택한 기회: ${oppTitle || '-'}\n주최: ${oppOrg || '-'}\n마감: ${oppDeadline || '-'}\n\n이 기회를 기반으로 학생 창업 프로젝트를 실행합니다.\n문제정의, MVP 범위, 팀 구성, 검증지표를 4주 안에 구체화합니다.\n\n기회 요약:\n${oppSummary || '상세 내용을 확인하고 실행 계획으로 전환합니다.'}`;
+      }
+      msg.textContent = '기회 기반 프로젝트 생성 모드입니다. 초안이 자동 입력되었습니다.';
+    }
 
     let imageData = '';
     let aiImageSelected = false;
@@ -982,6 +1010,7 @@
           teamSize: fd.get('teamSize'),
           roles: fd.get('roles'),
           duration: fd.get('duration'),
+          opportunityId: String(fd.get('opportunityId') || '').trim() || null,
           startDate: startDateValue(),
           endDate: isOngoingNow() ? null : endDateValue(),
           ongoingNow: isOngoingNow(),
