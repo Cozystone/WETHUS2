@@ -2234,17 +2234,39 @@
       const chipBtn = chipWrap.querySelector('.profile-chip-btn');
       const chipLogoutBtn = chipWrap.querySelector('#chipLogoutBtn');
       let closeTimer = null;
+      let lockedOpen = false;
       const openDrop = () => {
         if (closeTimer) clearTimeout(closeTimer);
         chipDrop.style.display = 'block';
+        chipBtn?.setAttribute('aria-expanded', 'true');
       };
-      const closeDrop = () => {
+      const closeDrop = (force = false) => {
+        if (!force && lockedOpen) return;
         if (closeTimer) clearTimeout(closeTimer);
-        closeTimer = setTimeout(() => { chipDrop.style.display = 'none'; }, 140);
+        closeTimer = setTimeout(() => {
+          chipDrop.style.display = 'none';
+          chipBtn?.setAttribute('aria-expanded', 'false');
+          lockedOpen = false;
+        }, 180);
       };
       chipBtn?.addEventListener('mouseenter', openDrop);
       chipWrap?.addEventListener('mouseenter', openDrop);
-      chipWrap?.addEventListener('mouseleave', closeDrop);
+      chipWrap?.addEventListener('mouseleave', () => closeDrop(false));
+      chipBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isOpen = chipDrop.style.display === 'block';
+        if (isOpen) {
+          lockedOpen = false;
+          closeDrop(true);
+        } else {
+          lockedOpen = true;
+          openDrop();
+        }
+      });
+      document.addEventListener('click', (e) => {
+        if (!chipWrap.contains(e.target)) closeDrop(true);
+      });
       chipLogoutBtn?.addEventListener('click', () => {
         logout();
         location.href = 'login.html';
