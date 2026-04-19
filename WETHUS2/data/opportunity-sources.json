@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "updatedAt": "2026-04-19T15:45:00+09:00",
+  "sources": [
+    {
+      "name": "Contest Korea",
+      "type": "contest-aggregator",
+      "baseUrl": "https://www.contestkorea.com",
+      "priority": "high",
+      "notes": "공모전/대외활동 메타 소스"
+    },
+    {
+      "name": "K-Startup",
+      "type": "government-startup",
+      "baseUrl": "https://www.k-startup.go.kr",
+      "priority": "high",
+      "notes": "창업지원사업/대회"
+    },
+    {
+      "name": "창업진흥원",
+      "type": "startup-foundation",
+      "baseUrl": "https://www.kised.or.kr",
+      "priority": "medium"
+    },
+    {
+      "name": "서울창업허브/캠퍼스타운",
+      "type": "local-program",
+      "baseUrl": "https://sba.seoul.kr",
+      "priority": "medium"
+    },
+    {
+      "name": "대학교 창업지원단",
+      "type": "university",
+      "baseUrl": "https://www.google.com",
+      "priority": "medium",
+      "notes": "학교별 공지 파편적이므로 검색 기반 수집"
+    },
+    {
+      "name": "해커톤 주최사(Devfolio/Unstop 등)",
+      "type": "hackathon",
+      "baseUrl": "https://www.google.com",
+      "priority": "medium"
+    }
+  ]
+}
