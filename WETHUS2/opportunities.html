@@ -52,10 +52,9 @@ WETHUS.requireAuth();
 const typeFilters=['전체','공모전','창업대회','지원사업','해커톤','프로그램/행사'];
 const eligibilityFilters=['중학생 가능','고등학생 가능','대학생 가능','개인 가능','팀 필수','마감임박'];
 const categoryFilters=['AI/IT','콘텐츠','교육','바이오/헬스케어','F&B','사회혁신','과학기술','브랜드/커머스'];
-const seed=[{id:'opp1',title:'캠퍼스 AI 서비스 창업대회',organizer:'K-Startup Campus',type:'창업대회',summary:'학생 창업팀 대상 MVP/검증 중심 대회',description:'AI/IT 기반 문제해결 서비스 팀 모집',eligibility:['대학생 가능','고등학생 가능','팀 필수'],teamRequirement:'team',deadline:'2026-05-03',applyStart:'2026-04-10',applyEnd:'2026-05-03',judgeStart:'2026-05-04',judgeEnd:'2026-05-20',resultDate:'2026-05-22',tags:['AI/IT','브랜드/커머스'],benefits:'상금 600만원 + 액셀러레이터 멘토링',benefitScore:90,official_url:'https://example.com/ai-campus',poster_url:'https://picsum.photos/seed/opp-ai-campus/1200/700',status:'open',created_at:'2026-04-15',schedule:'서류 5/3 · 발표 5/20'},{id:'opp2',title:'청년 사회혁신 공모전',organizer:'임팩트재단',type:'공모전',summary:'사회문제 해결 아이디어/프로토타입 공모',description:'교육·환경·지역문제 해결형 프로젝트',eligibility:['대학생 가능','고등학생 가능','개인 가능'],teamRequirement:'either',deadline:'2026-05-17',applyStart:'2026-04-08',applyEnd:'2026-05-17',judgeStart:'2026-05-18',judgeEnd:'2026-05-30',resultDate:'2026-06-02',tags:['사회혁신','교육'],benefits:'상금 300만원 + 후속 프로그램',benefitScore:70,official_url:'https://example.com/impact',poster_url:'https://picsum.photos/seed/opp-social/1200/700',status:'open',created_at:'2026-04-10',schedule:'접수 5/17 · 결과 5/30'}];
 const state={q:'',types:new Set(['전체']),elig:new Set(),cats:new Set(),sort:'recommended',current:null};
-const OPP='wethus_opportunities_v2',INT='wethus_opportunity_interest_v1';
-const opps=(()=>{try{const v=JSON.parse(localStorage.getItem(OPP)||'[]');if(Array.isArray(v)&&v.length)return v;}catch{}localStorage.setItem(OPP,JSON.stringify(seed));return seed.slice();})();
+const INT='wethus_opportunity_interest_v1';
+let opps=[];
 const actor=()=>{const s=WETHUS.getState();return s.currentUserId||(s.devMode?'dev-temp':'guest')};
 const intMap=()=>{try{return JSON.parse(localStorage.getItem(INT)||'{}')}catch{return{}}};
 const myInt=()=>new Set(intMap()[actor()]||[]);
@@ -75,6 +74,7 @@ function render(){
   row('categoryFilters',categoryFilters,state.cats,false);
   const el=document.getElementById('oppList');
   const rs=filters();
+  if(!rs.length){ el.innerHTML='<article class="opp-item"><div class="opp-main"><div class="opp-title">검증된 공고를 불러오는 중입니다</div><div class="opp-sub">잠시 후 다시 확인해주세요.</div></div></article>'; return; }
   el.innerHTML=rs.map(o=>{
     const d=days(o.deadline);
     const dText=d===null?'D-확인중':(d<0?`D+${Math.abs(d)}`:`D-${d}`);
@@ -106,7 +106,16 @@ function render(){
   el.querySelectorAll('[data-open]').forEach(card=>card.onclick=()=>open(card.dataset.open));
 }
 document.getElementById('searchInput').oninput=e=>{state.q=e.target.value.trim();render()};document.getElementById('sortSelect').onchange=e=>{state.sort=e.target.value;render()};document.getElementById('modalClose').onclick=()=>document.getElementById('oppModal').classList.remove('open');document.querySelector('[data-close="1"]').onclick=()=>document.getElementById('oppModal').classList.remove('open');document.getElementById('mRelated').onclick=()=>document.getElementById('mRelatedList').scrollIntoView({behavior:'smooth'});document.getElementById('mInterest').onclick=()=>{if(!state.current)return;toggleInt(state.current.id);open(state.current.id)};document.getElementById('mOfficial').onclick=()=>state.current&&window.open(state.current.official_url,'_blank');
-render();
+async function init(){
+  try{
+    const res=await fetch(`data/opportunity-published.json?ts=${Date.now()}`);
+    const data=await res.json();
+    const rows=Array.isArray(data?.items)?data.items:[];
+    opps=rows.filter(o=>o && o.title && o.organizer && o.official_url);
+  }catch(_){ opps=[]; }
+  render();
+}
+init();
 </script>
 </body>
 </html>
