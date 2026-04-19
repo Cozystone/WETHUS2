@@ -2183,7 +2183,7 @@
         </button>
         <div class="notify-dropdown profile-chip-dropdown" style="display:none;">
           ${state.devMode ? `<a class="notify-item liquid-metal-btn" href="pricing.html"><strong>요금제</strong><p>${(u.plan || 'free').toUpperCase()} Plan</p></a>` : ''}
-          ${state.devMode ? `<a class="notify-item liquid-metal-btn" href="profile.html"><strong>프로필</strong><p>내 프로필 보기 및 수정</p></a>` : ''}
+          <a class="notify-item liquid-metal-btn" href="profile.html"><strong>프로필</strong><p>내 프로필 보기 및 수정</p></a>
           <button class="notify-more logout-btn" type="button" id="chipLogoutBtn">로그아웃</button>
         </div>
       `;
