@@ -14,14 +14,22 @@
     .opp-chip{padding:7px 11px;border-radius:999px;border:1px solid #333;background:#151515;color:#ddd;cursor:pointer;font-size:.82rem}
     .opp-chip.active{background:#ff8a00;color:#111;border-color:#ff8a00;font-weight:700}
     .opp-sort{background:#111;border:1px solid #333;color:#f5f5f5;border-radius:9px;padding:8px 10px}
-    .opp-table{display:grid;gap:8px}.opp-item{border:1px solid #2a2a2a;border-radius:12px;background:#111;padding:11px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+    .opp-table{display:grid;gap:10px}
+    .opp-item{border:1px solid #2a2a2a;border-radius:12px;background:#111;padding:12px;display:grid;grid-template-columns:1fr 320px;gap:12px;align-items:center}
     .opp-main{min-width:0}.opp-title{font-weight:700}.opp-sub{color:#bdbdbd;font-size:.84rem;margin-top:3px}
-    .opp-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.opp-act{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+    .opp-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+    .opp-right{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:start}
+    .opp-period{font-size:.9rem;line-height:1.45}
+    .opp-period .k{font-weight:800;color:#ffb252;display:inline-block;min-width:34px}
+    .opp-period .k.judge{color:#58c7cf}.opp-period .k.result{color:#ff7c7c}
+    .opp-dday{font-size:58px;line-height:1;font-weight:300;color:#ffb252;letter-spacing:-.03em;text-align:right}
+    .opp-status{justify-self:end;background:#d99535;color:#fff;border-radius:999px;padding:8px 16px;font-weight:800;font-size:.86rem}
+    .opp-act{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;grid-column:1 / -1}
     .badge-soft{padding:4px 8px;border-radius:999px;background:#1a1a1a;border:1px solid #2f2f2f;color:#d8d8d8;font-size:.74rem}
     .modal{position:fixed;inset:0;display:none;z-index:90}.modal.open{display:block}.modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.6)}
     .modal-panel{position:relative;max-width:760px;width:min(96vw,760px);margin:48px auto;background:#101010;border:1px solid #2a2a2a;border-radius:14px;padding:14px;max-height:86vh;overflow:auto}
     .opp-detail-grid{display:grid;grid-template-columns:130px 1fr;gap:8px 10px;margin-top:10px}.opp-detail-grid .k{color:#9c9c9c}
-    @media (max-width:860px){.opp-item{grid-template-columns:1fr}.opp-act{justify-content:flex-start}.opp-detail-grid{grid-template-columns:1fr}}
+    @media (max-width:860px){.opp-item{grid-template-columns:1fr}.opp-act{justify-content:flex-start}.opp-detail-grid{grid-template-columns:1fr}.opp-right{grid-template-columns:1fr}.opp-dday{text-align:left;font-size:44px}.opp-status{justify-self:start}}
   </style>
 </head>
 <body>
@@ -43,7 +51,7 @@ WETHUS.requireAuth();
 const typeFilters=['전체','공모전','창업대회','지원사업','해커톤','프로그램/행사'];
 const eligibilityFilters=['중학생 가능','고등학생 가능','대학생 가능','개인 가능','팀 필수','마감임박'];
 const categoryFilters=['AI/IT','콘텐츠','교육','바이오/헬스케어','F&B','사회혁신','과학기술','브랜드/커머스'];
-const seed=[{id:'opp1',title:'캠퍼스 AI 서비스 창업대회',organizer:'K-Startup Campus',type:'창업대회',summary:'학생 창업팀 대상 MVP/검증 중심 대회',description:'AI/IT 기반 문제해결 서비스 팀 모집',eligibility:['대학생 가능','고등학생 가능','팀 필수'],teamRequirement:'team',deadline:'2026-05-03',tags:['AI/IT','브랜드/커머스'],benefits:'상금 600만원 + 액셀러레이터 멘토링',benefitScore:90,official_url:'https://example.com/ai-campus',status:'open',created_at:'2026-04-15',schedule:'서류 5/3 · 발표 5/20'},{id:'opp2',title:'청년 사회혁신 공모전',organizer:'임팩트재단',type:'공모전',summary:'사회문제 해결 아이디어/프로토타입 공모',description:'교육·환경·지역문제 해결형 프로젝트',eligibility:['대학생 가능','고등학생 가능','개인 가능'],teamRequirement:'either',deadline:'2026-05-17',tags:['사회혁신','교육'],benefits:'상금 300만원 + 후속 프로그램',benefitScore:70,official_url:'https://example.com/impact',status:'open',created_at:'2026-04-10',schedule:'접수 5/17 · 결과 5/30'}];
+const seed=[{id:'opp1',title:'캠퍼스 AI 서비스 창업대회',organizer:'K-Startup Campus',type:'창업대회',summary:'학생 창업팀 대상 MVP/검증 중심 대회',description:'AI/IT 기반 문제해결 서비스 팀 모집',eligibility:['대학생 가능','고등학생 가능','팀 필수'],teamRequirement:'team',deadline:'2026-05-03',applyStart:'2026-04-10',applyEnd:'2026-05-03',judgeStart:'2026-05-04',judgeEnd:'2026-05-20',resultDate:'2026-05-22',tags:['AI/IT','브랜드/커머스'],benefits:'상금 600만원 + 액셀러레이터 멘토링',benefitScore:90,official_url:'https://example.com/ai-campus',status:'open',created_at:'2026-04-15',schedule:'서류 5/3 · 발표 5/20'},{id:'opp2',title:'청년 사회혁신 공모전',organizer:'임팩트재단',type:'공모전',summary:'사회문제 해결 아이디어/프로토타입 공모',description:'교육·환경·지역문제 해결형 프로젝트',eligibility:['대학생 가능','고등학생 가능','개인 가능'],teamRequirement:'either',deadline:'2026-05-17',applyStart:'2026-04-08',applyEnd:'2026-05-17',judgeStart:'2026-05-18',judgeEnd:'2026-05-30',resultDate:'2026-06-02',tags:['사회혁신','교육'],benefits:'상금 300만원 + 후속 프로그램',benefitScore:70,official_url:'https://example.com/impact',status:'open',created_at:'2026-04-10',schedule:'접수 5/17 · 결과 5/30'}];
 const state={q:'',types:new Set(['전체']),elig:new Set(),cats:new Set(),sort:'recommended',current:null};
 const OPP='wethus_opportunities_v2',INT='wethus_opportunity_interest_v1';
 const opps=(()=>{try{const v=JSON.parse(localStorage.getItem(OPP)||'[]');if(Array.isArray(v)&&v.length)return v;}catch{}localStorage.setItem(OPP,JSON.stringify(seed));return seed.slice();})();
@@ -53,12 +61,53 @@ const myInt=()=>new Set(intMap()[actor()]||[]);
 const toggleInt=(id)=>{const all=intMap(),k=actor(),s=new Set(all[k]||[]);s.has(id)?s.delete(id):s.add(id);all[k]=[...s];localStorage.setItem(INT,JSON.stringify(all));return s.has(id)};
 const related=(id)=>WETHUS.listProjects().filter(p=>String(p.opportunityId||'')===String(id));
 const days=(d)=>Math.ceil((new Date(d).getTime()-Date.now())/86400000);
+const fmtMD=(v)=>{if(!v)return '-'; const dt=new Date(v); if(Number.isNaN(dt.getTime())) return v; const mm=String(dt.getMonth()+1).padStart(2,'0'); const dd=String(dt.getDate()).padStart(2,'0'); return `${mm}.${dd}`;};
+const statusLabel=(o)=>{ const d=days(o.deadline); if(d<0) return '마감'; if(d===0) return '오늘마감'; if(o.applyStart && new Date(o.applyStart)>new Date()) return '접수예정'; return '접수중'; };
 const score=(o)=>((myInt().has(o.id)?18:0)+(o.type==='창업대회'||o.type==='지원사업'?16:6)+Math.max(0,40-Math.max(days(o.deadline),0))+(related(o.id).length*2));
 function filters(){return opps.filter(o=>{const t=[o.title,o.organizer,o.summary,(o.tags||[]).join(' '),o.type].join(' ').toLowerCase();if(state.q&&!t.includes(state.q.toLowerCase()))return false;if(!state.types.has('전체')&&!state.types.has(o.type))return false;if(state.elig.size){for(const f of state.elig){if(f==='마감임박'&&days(o.deadline)>7)return false;if(f!=='마감임박'&&!o.eligibility.includes(f))return false;}}if(state.cats.size&&!(o.tags||[]).some(t=>state.cats.has(t)))return false;return true;}).sort((a,b)=>state.sort==='deadline'?days(a.deadline)-days(b.deadline):state.sort==='latest'?new Date(b.created_at)-new Date(a.created_at):state.sort==='benefit'?(b.benefitScore||0)-(a.benefitScore||0):score(b)-score(a));}
 function row(id,arr,set,single){const el=document.getElementById(id);el.innerHTML=arr.map(v=>`<button class="opp-chip ${set.has(v)?'active':''}" data-v="${v}">${v}</button>`).join('');el.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{const v=b.dataset.v;if(single){if(v==='전체'){set.clear();set.add('전체')}else{set.delete('전체');set.has(v)?set.delete(v):set.add(v);if(!set.size)set.add('전체')}}else{set.has(v)?set.delete(v):set.add(v)};render()});}
 function start(id){const o=opps.find(x=>x.id===id);if(!o)return;const q=new URLSearchParams({opportunityId:o.id,oppTitle:o.title,oppOrg:o.organizer,oppDeadline:o.deadline,oppType:o.type,oppSummary:o.summary});location.href=`founder.html?${q}`}
-function open(id){const o=opps.find(x=>x.id===id);if(!o)return;state.current=o;document.getElementById('mTitle').textContent=o.title;document.getElementById('mSummary').textContent=o.description||o.summary;document.getElementById('mOrg').textContent=o.organizer;document.getElementById('mDeadline').textContent=`${o.status==='open'?'모집중':'마감'} · ${o.deadline}`;document.getElementById('mEligibility').textContent=o.eligibility.join(', ');document.getElementById('mTeamReq').textContent=o.teamRequirement==='team'?'팀 필수':'개인/팀 가능';document.getElementById('mBenefits').textContent=o.benefits;document.getElementById('mSchedule').textContent=o.schedule||'-';document.getElementById('mLink').innerHTML=`<a href="${o.official_url}" target="_blank">${o.official_url}</a>`;const r=related(o.id);document.getElementById('mRelatedList').innerHTML=r.length?r.map(p=>`<article class="list-item"><h3>${p.title}</h3></article>`).join(''):'<article class="list-item"><p class="meta">아직 관련 팀이 없습니다.</p></article>';const on=myInt().has(o.id),b=document.getElementById('mInterest');b.textContent=on?'관심 저장됨':'관심 저장';b.className=on?'btn btn--primary':'btn btn--secondary';document.getElementById('oppModal').classList.add('open');}
-function render(){row('typeFilters',typeFilters,state.types,true);row('eligibilityFilters',eligibilityFilters,state.elig,false);row('categoryFilters',categoryFilters,state.cats,false);const el=document.getElementById('oppList');const rs=filters();el.innerHTML=rs.map(o=>`<article class="opp-item"><div class="opp-main"><div class="opp-title">${o.title}</div><div class="opp-sub">${o.organizer} · ${o.type} · 마감 ${o.deadline}</div><div class="opp-sub">${o.summary}</div><div class="opp-meta"><span class="badge-soft">${o.eligibility.join(' · ')}</span><span class="badge-soft">관련 프로젝트 ${related(o.id).length}</span></div></div><div class="opp-act"><button class="btn btn--secondary" data-d="${o.id}">상세보기</button><button class="btn btn--primary" data-s="${o.id}">프로젝트 시작</button></div></article>`).join('');el.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>open(b.dataset.d));el.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>start(b.dataset.s));}
+function open(id){const o=opps.find(x=>x.id===id);if(!o)return;state.current=o;document.getElementById('mTitle').textContent=o.title;document.getElementById('mSummary').textContent=o.description||o.summary;document.getElementById('mOrg').textContent=o.organizer;document.getElementById('mDeadline').textContent=`${statusLabel(o)} · 마감 ${o.deadline} (${days(o.deadline)>=0?`D-${days(o.deadline)}`:`D+${Math.abs(days(o.deadline))}`})`;document.getElementById('mEligibility').textContent=o.eligibility.join(', ');document.getElementById('mTeamReq').textContent=o.teamRequirement==='team'?'팀 필수':'개인/팀 가능';document.getElementById('mBenefits').textContent=o.benefits;document.getElementById('mSchedule').textContent=`접수 ${fmtMD(o.applyStart)}~${fmtMD(o.applyEnd||o.deadline)} / 심사 ${fmtMD(o.judgeStart)}~${fmtMD(o.judgeEnd)}${o.resultDate?` / 발표 ${fmtMD(o.resultDate)}`:''}`;document.getElementById('mLink').innerHTML=`<a href="${o.official_url}" target="_blank">${o.official_url}</a>`;const r=related(o.id);document.getElementById('mRelatedList').innerHTML=r.length?r.map(p=>`<article class="list-item"><h3>${p.title}</h3></article>`).join(''):'<article class="list-item"><p class="meta">아직 관련 팀이 없습니다.</p></article>';const on=myInt().has(o.id),b=document.getElementById('mInterest');b.textContent=on?'관심 저장됨':'관심 저장';b.className=on?'btn btn--primary':'btn btn--secondary';document.getElementById('oppModal').classList.add('open');}
+function render(){
+  row('typeFilters',typeFilters,state.types,true);
+  row('eligibilityFilters',eligibilityFilters,state.elig,false);
+  row('categoryFilters',categoryFilters,state.cats,false);
+  const el=document.getElementById('oppList');
+  const rs=filters();
+  el.innerHTML=rs.map(o=>{
+    const d=days(o.deadline);
+    const dText=d<0?`D+${Math.abs(d)}`:`D-${d}`;
+    const status=statusLabel(o);
+    return `<article class="opp-item">
+      <div class="opp-main">
+        <div class="opp-title">${o.title}</div>
+        <div class="opp-sub">주최 ${o.organizer} · ${o.type}</div>
+        <div class="opp-sub">${o.summary}</div>
+        <div class="opp-meta">
+          <span class="badge-soft">대상 ${o.eligibility.join(' · ')}</span>
+          <span class="badge-soft">관련 프로젝트 ${related(o.id).length}</span>
+        </div>
+      </div>
+      <div class="opp-right">
+        <div class="opp-period">
+          <div><span class="k">접수</span> ${fmtMD(o.applyStart)} ~ ${fmtMD(o.applyEnd || o.deadline)}</div>
+          <div><span class="k judge">심사</span> ${fmtMD(o.judgeStart)} ~ ${fmtMD(o.judgeEnd)}</div>
+          ${o.resultDate ? `<div><span class="k result">발표</span> ${fmtMD(o.resultDate)}</div>` : ''}
+        </div>
+        <div>
+          <div class="opp-dday">${dText}</div>
+          <div class="opp-status">${status}</div>
+        </div>
+        <div class="opp-act">
+          <button class="btn btn--secondary" data-d="${o.id}">상세보기</button>
+          <button class="btn btn--primary" data-s="${o.id}">프로젝트 시작</button>
+        </div>
+      </div>
+    </article>`;
+  }).join('');
+  el.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>open(b.dataset.d));
+  el.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>start(b.dataset.s));
+}
 document.getElementById('searchInput').oninput=e=>{state.q=e.target.value.trim();render()};document.getElementById('sortSelect').onchange=e=>{state.sort=e.target.value;render()};document.getElementById('modalClose').onclick=()=>document.getElementById('oppModal').classList.remove('open');document.querySelector('[data-close="1"]').onclick=()=>document.getElementById('oppModal').classList.remove('open');document.getElementById('mStart').onclick=()=>state.current&&start(state.current.id);document.getElementById('mRelated').onclick=()=>document.getElementById('mRelatedList').scrollIntoView({behavior:'smooth'});document.getElementById('mInterest').onclick=()=>{if(!state.current)return;toggleInt(state.current.id);open(state.current.id)};document.getElementById('mOfficial').onclick=()=>state.current&&window.open(state.current.official_url,'_blank');
 render();
 </script>
