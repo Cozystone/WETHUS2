@@ -15,16 +15,16 @@
     .opp-chip.active{background:#ff8a00;color:#111;border-color:#ff8a00;font-weight:700}
     .opp-sort{background:#111;border:1px solid #333;color:#f5f5f5;border-radius:9px;padding:8px 10px}
     .opp-table{display:grid;gap:8px}
-    .opp-item{border:1px solid #262626;border-radius:10px;background:#101010;padding:10px;display:grid;grid-template-columns:1fr 260px;gap:10px;align-items:center}
+    .opp-item{border:1px solid #262626;border-radius:10px;background:#101010;padding:10px;display:grid;grid-template-columns:1fr 260px;gap:10px;align-items:center;cursor:pointer}
     .opp-main{min-width:0}.opp-title{font-weight:700;font-size:.95rem}.opp-sub{color:#bdbdbd;font-size:.78rem;margin-top:2px}
     .opp-meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
     .opp-right{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:start}
     .opp-period{font-size:.78rem;line-height:1.35}
-    .opp-period .k{font-weight:700;color:#ffb252;display:inline-block;min-width:30px}
-    .opp-period .k.judge{color:#58c7cf}.opp-period .k.result{color:#ff7c7c}
-    .opp-dday{font-size:40px;line-height:1;font-weight:400;color:#ffb252;letter-spacing:-.02em;text-align:right}
-    .opp-status{justify-self:end;background:#c98b35;color:#fff;border-radius:999px;padding:5px 10px;font-weight:700;font-size:.74rem}
-    .opp-act{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;grid-column:1 / -1}
+    .opp-period .k{font-weight:700;color:#ff9a2f;display:inline-block;min-width:30px}
+    .opp-period .k.judge{color:#ff9a2f}.opp-period .k.result{color:#ff9a2f}
+    .opp-dday{font-size:40px;line-height:1;font-weight:400;color:#ff9a2f;letter-spacing:-.02em;text-align:right}
+    .opp-status{justify-self:end;background:#ff8a00;color:#111;border-radius:999px;padding:5px 10px;font-weight:800;font-size:.74rem}
+    .opp-act{display:none}
     .badge-soft{padding:3px 7px;border-radius:999px;background:#1a1a1a;border:1px solid #2c2c2c;color:#d8d8d8;font-size:.69rem}
     .opp-poster{width:100%;max-height:220px;object-fit:cover;border-radius:10px;border:1px solid #2b2b2b;margin-top:10px}
     .modal{position:fixed;inset:0;display:none;z-index:90}.modal.open{display:block}.modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.6)}
@@ -45,7 +45,7 @@
 </section>
 <section id="oppList" class="opp-table"></section>
 </main>
-<div id="oppModal" class="modal" aria-hidden="true"><div class="modal-bg" data-close="1"></div><article class="modal-panel"><button id="modalClose" class="btn btn--secondary" type="button" style="float:right;">닫기</button><h2 id="mTitle" style="margin:0 0 8px;"></h2><p id="mSummary" class="page-sub" style="margin:0;"></p><img id="mPoster" class="opp-poster" alt="안내 포스터" /><div class="opp-detail-grid"><div class="k">주최</div><div id="mOrg"></div><div class="k">상태/마감</div><div id="mDeadline"></div><div class="k">지원대상</div><div id="mEligibility"></div><div class="k">개인/팀</div><div id="mTeamReq"></div><div class="k">혜택</div><div id="mBenefits"></div><div class="k">일정</div><div id="mSchedule"></div><div class="k">공식 링크</div><div id="mLink"></div></div><div class="opp-row" style="margin-top:12px;"><button id="mStart" class="btn btn--primary" type="button">이 기회로 프로젝트 시작</button><button id="mRelated" class="btn btn--secondary" type="button">관련 팀 보기</button><button id="mInterest" class="btn btn--secondary" type="button">관심 저장</button><button id="mOfficial" class="btn btn--secondary" type="button">공식 페이지 이동</button></div><div id="mRelatedList" class="list-grid" style="margin-top:10px;"></div></article></div>
+<div id="oppModal" class="modal" aria-hidden="true"><div class="modal-bg" data-close="1"></div><article class="modal-panel"><button id="modalClose" class="btn btn--secondary" type="button" style="float:right;">닫기</button><h2 id="mTitle" style="margin:0 0 8px;"></h2><p id="mSummary" class="page-sub" style="margin:0;"></p><img id="mPoster" class="opp-poster" alt="안내 포스터" /><div class="opp-detail-grid"><div class="k">주최</div><div id="mOrg"></div><div class="k">상태/마감</div><div id="mDeadline"></div><div class="k">지원대상</div><div id="mEligibility"></div><div class="k">개인/팀</div><div id="mTeamReq"></div><div class="k">혜택</div><div id="mBenefits"></div><div class="k">일정</div><div id="mSchedule"></div><div class="k">공식 링크</div><div id="mLink"></div></div><div class="opp-row" style="margin-top:12px;"><button id="mRelated" class="btn btn--secondary" type="button">관련 팀 보기</button><button id="mInterest" class="btn btn--secondary" type="button">관심 저장</button><button id="mOfficial" class="btn btn--secondary" type="button">공식 페이지 이동</button></div><div id="mRelatedList" class="list-grid" style="margin-top:10px;"></div></article></div>
 <script src="app.js?v=20260419-206"></script>
 <script>
 WETHUS.requireAuth();
@@ -79,7 +79,7 @@ function render(){
     const d=days(o.deadline);
     const dText=d<0?`D+${Math.abs(d)}`:`D-${d}`;
     const status=statusLabel(o);
-    return `<article class="opp-item">
+    return `<article class="opp-item" data-open="${o.id}">
       <div class="opp-main">
         <div class="opp-title">${o.title}</div>
         <div class="opp-sub">주최 ${o.organizer} · ${o.type}</div>
@@ -99,17 +99,13 @@ function render(){
           <div class="opp-dday">${dText}</div>
           <div class="opp-status">${status}</div>
         </div>
-        <div class="opp-act">
-          <button class="btn btn--secondary" data-d="${o.id}">상세보기</button>
-          <button class="btn btn--primary" data-s="${o.id}">프로젝트 시작</button>
-        </div>
+        <div class="opp-act"></div>
       </div>
     </article>`;
   }).join('');
-  el.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>open(b.dataset.d));
-  el.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>start(b.dataset.s));
+  el.querySelectorAll('[data-open]').forEach(card=>card.onclick=()=>open(card.dataset.open));
 }
-document.getElementById('searchInput').oninput=e=>{state.q=e.target.value.trim();render()};document.getElementById('sortSelect').onchange=e=>{state.sort=e.target.value;render()};document.getElementById('modalClose').onclick=()=>document.getElementById('oppModal').classList.remove('open');document.querySelector('[data-close="1"]').onclick=()=>document.getElementById('oppModal').classList.remove('open');document.getElementById('mStart').onclick=()=>state.current&&start(state.current.id);document.getElementById('mRelated').onclick=()=>document.getElementById('mRelatedList').scrollIntoView({behavior:'smooth'});document.getElementById('mInterest').onclick=()=>{if(!state.current)return;toggleInt(state.current.id);open(state.current.id)};document.getElementById('mOfficial').onclick=()=>state.current&&window.open(state.current.official_url,'_blank');
+document.getElementById('searchInput').oninput=e=>{state.q=e.target.value.trim();render()};document.getElementById('sortSelect').onchange=e=>{state.sort=e.target.value;render()};document.getElementById('modalClose').onclick=()=>document.getElementById('oppModal').classList.remove('open');document.querySelector('[data-close="1"]').onclick=()=>document.getElementById('oppModal').classList.remove('open');document.getElementById('mRelated').onclick=()=>document.getElementById('mRelatedList').scrollIntoView({behavior:'smooth'});document.getElementById('mInterest').onclick=()=>{if(!state.current)return;toggleInt(state.current.id);open(state.current.id)};document.getElementById('mOfficial').onclick=()=>state.current&&window.open(state.current.official_url,'_blank');
 render();
 </script>
 </body>
