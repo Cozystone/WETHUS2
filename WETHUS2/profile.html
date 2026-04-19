@@ -233,13 +233,15 @@
 
       if (profileInfoBox) {
         const joinedAt = user.createdAt ? new Date(user.createdAt).toLocaleDateString('ko-KR') : '기록 없음';
+        const myProjectCount = WETHUS.myProjects().length;
+        const participatingCount = (typeof WETHUS.myParticipatingProjects === 'function') ? WETHUS.myParticipatingProjects().length : 0;
         profileInfoBox.innerHTML = `
           <h3 style="margin:0 0 8px;">프로필 박스</h3>
           <div style="display:grid;grid-template-columns:110px 1fr;gap:6px 10px;">
             <span class="meta">이메일</span><strong style="word-break:break-all;">${user.email || '-'}</strong>
-            <span class="meta">학교/나이</span><strong>${user.school || '미입력'}${user.age ? ` · 만 ${user.age}세` : ''}</strong>
+            <span class="meta">학교/나이</span><strong>${user.school || '미입력'}${user.age ? ' · 만 ' + user.age + '세' : ''}</strong>
             <span class="meta">가입일</span><strong>${joinedAt}</strong>
-            <span class="meta">활동</span><strong>내 프로젝트 ${WETHUS.myProjects().length}개 · 참여 ${WETHUS.myParticipatingProjects().length}개</strong>
+            <span class="meta">활동</span><strong>내 프로젝트 ${myProjectCount}개 · 참여 ${participatingCount}개</strong>
           </div>
         `;
       }
