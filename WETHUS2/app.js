@@ -36,47 +36,6 @@
     return map[key] || cleaned;
   }
 
-  const STARTUP_CATEGORY_MAP = {
-    Startup: 'Product Startup',
-    App: 'Product Startup',
-    Film: 'Creative Venture',
-    Creative: 'Creative Venture',
-    Policy: 'Civic Entrepreneurship',
-    Campaign: 'Civic Entrepreneurship',
-    Science: 'Research Venture'
-  };
-
-  function normalizeStartupCategory(category, title = '', summary = '') {
-    const normalized = normalizeCategory(category, title, summary);
-    return STARTUP_CATEGORY_MAP[normalized] || 'Student Venture';
-  }
-
-  function ensureProjectReviewState(project = {}) {
-    const track = project.projectTrack || (project.youthProjectTag ? 'Youth' : 'Open');
-    return {
-      founderReview: {
-        status: project?.review?.founderReview?.status || (project.moderationStatus === 'rejected' ? 'rejected' : (project.moderationStatus === 'manual_review' ? 'pending' : 'approved')),
-        note: project?.review?.founderReview?.note || project.moderationReason || '',
-        reviewedAt: project?.review?.founderReview?.reviewedAt || project.moderationReviewedAt || null
-      },
-      trackReview: {
-        requestedTrack: project?.review?.trackReview?.requestedTrack || track,
-        status: project?.review?.trackReview?.status || (track === 'Youth' ? 'approved' : 'pending'),
-        note: project?.review?.trackReview?.note || '',
-        reviewedAt: project?.review?.trackReview?.reviewedAt || null
-      }
-    };
-  }
-
-  function ensureTrustSignals(project = {}) {
-    return {
-      roleFocus: project?.trustSignals?.roleFocus || project.roles || '',
-      portfolioEvidence: project?.trustSignals?.portfolioEvidence || project.portfolioEvidence || '',
-      recentActivityAt: project?.trustSignals?.recentActivityAt || project.updatedAt || project.createdAt || null,
-      contributionHistory: project?.trustSignals?.contributionHistory || project.contributionHistory || ''
-    };
-  }
-
   function isYouthByAge(age, verifiedAt) {
     const n = Number(age);
     if (!Number.isFinite(n)) return false;
@@ -602,27 +561,8 @@
         next.youthProjectTag = next.founderId === 'system' ? true : !!(founder && normalizeYouthTag(founder));
         changed = true;
       }
-      if (next.projectTrack === undefined) {
-        next.projectTrack = next.youthProjectTag ? 'Youth' : 'Open';
-        changed = true;
-      }
-      const startupCategory = normalizeStartupCategory(next.category, next.title, next.summary);
-      if (next.startupCategory !== startupCategory) {
-        next.startupCategory = startupCategory;
-        changed = true;
-      }
-      const review = ensureProjectReviewState(next);
-      if (JSON.stringify(next.review || {}) !== JSON.stringify(review)) {
-        next.review = review;
-        changed = true;
-      }
-      const trustSignals = ensureTrustSignals(next);
-      if (JSON.stringify(next.trustSignals || {}) !== JSON.stringify(trustSignals)) {
-        next.trustSignals = trustSignals;
-        changed = true;
-      }
-      if (!Array.isArray(next.participationModes) || !next.participationModes.length) {
-        next.participationModes = ['Founder', 'Builder'];
+      if (next.projectTrack === undefined && next.youthProjectTag) {
+        next.projectTrack = 'Youth';
         changed = true;
       }
       return next;
@@ -635,7 +575,6 @@
 
   function save(state) {
     localStorage.setItem(KEY, JSON.stringify(state));
-    scheduleCloudSync('save');
   }
 
   function getState() {
@@ -804,27 +743,20 @@
     const me = s.users.find(u => u.id === s.currentUserId);
     const moderationStatus = payload?.moderationStatus || 'approved';
     const founderYouth = !!(me && normalizeYouthTag(me));
-    const now = new Date().toISOString();
     const project = {
       id: uid(),
       founderId: actor,
       founderEmail: String(me?.email || '').toLowerCase(),
       teamMembers: [{ id: uid(), name: me?.nickname || me?.name || '대표', role: '대표', bio: '프로젝트 대표', isLeader: true }],
-      createdAt: now,
+      createdAt: new Date().toISOString(),
       moderationStatus,
       moderationReason: payload?.moderationReason || '',
       moderationReviewedAt: payload?.moderationReviewedAt || null,
       youthProjectTag: founderYouth,
       projectTrack: founderYouth ? 'Youth' : 'Open',
-      participationModes: Array.isArray(payload?.participationModes) && payload.participationModes.length
-        ? payload.participationModes
-        : ['Founder', 'Builder'],
       ...payload
     };
     project.category = normalizeCategory(payload?.category || project.category || 'Startup');
-    project.startupCategory = normalizeStartupCategory(project.category, project.title, project.summary);
-    project.review = ensureProjectReviewState(project);
-    project.trustSignals = ensureTrustSignals({ ...project, updatedAt: now });
     s.projects.unshift(project);
     s.notifications = s.notifications || [];
     s.notifications.unshift({
@@ -860,8 +792,7 @@
   }
 
   function listProjects() {
-    const s = load();
-    const local = s.projects || [];
+    const local = load().projects || [];
     let globals = [];
     try {
       globals = JSON.parse(localStorage.getItem(GLOBAL_PROJECTS_KEY) || '[]');
@@ -874,16 +805,7 @@
     for (const p of local) {
       if (p?.id) map.set(String(p.id), p);
     }
-    const merged = Array.from(map.values());
-    if (merged.length) return merged;
-
-    // 안전 복구: 프로젝트 풀이 비어버린 경우 시드로 복원
-    if (!Array.isArray(s.projects) || !s.projects.length) {
-      s.projects = seedProjects.map(p => ({ ...p, moderationStatus: p.moderationStatus || 'approved' }));
-      save(s);
-      return s.projects.slice();
-    }
-    return s.projects.slice();
+    return Array.from(map.values());
   }
 
   function ensureHubState(s) {
@@ -970,7 +892,6 @@
     }
 
     target._liked = liked;
-    target.updatedAt = new Date().toISOString();
     save(s);
     return { likes: target.likes, liked };
   }
@@ -1081,7 +1002,6 @@
     const author = currentUser()?.nickname || currentUser()?.name || '익명';
     if (!Array.isArray(target.comments)) target.comments = [];
     target.comments.push({ id: uid(), author, text, createdAt: new Date().toISOString() });
-    target.updatedAt = new Date().toISOString();
     save(s);
     return target.comments;
   }
@@ -1105,7 +1025,6 @@
     const admin = isAdminActor();
     if (!admin && target.founderId !== actor) throw new Error('수정 권한이 없습니다.');
     Object.assign(target, patch || {});
-    target.updatedAt = new Date().toISOString();
     save(s);
     return target;
   }
@@ -1124,48 +1043,29 @@
     return true;
   }
 
-  function reviewProject(projectId, decision, note, layer = 'founder') {
+  function reviewProject(projectId, decision, note) {
     const s = load();
     if (!isAdminActor()) throw new Error('관리자 권한이 필요합니다.');
     const target = s.projects.find(p => p.id === projectId);
     if (!target) return null;
-    target.review = ensureProjectReviewState(target);
-
-    if (layer === 'track') {
-      if (decision === 'approve') {
-        target.review.trackReview.status = 'approved';
-        target.review.trackReview.note = note || '';
-      } else if (decision === 'reject') {
-        target.review.trackReview.status = 'rejected';
-        target.review.trackReview.note = note || '트랙 검토 결과 반려되었습니다.';
-      } else {
-        return null;
-      }
-      target.review.trackReview.reviewedAt = new Date().toISOString();
+    if (decision === 'approve') {
+      target.moderationStatus = 'approved';
+      target.moderationReason = note || '';
+    } else if (decision === 'reject') {
+      target.moderationStatus = 'rejected';
+      target.moderationReason = note || '운영자 검토 결과 반려되었습니다.';
     } else {
-      if (decision === 'approve') {
-        target.moderationStatus = 'approved';
-        target.moderationReason = note || '';
-      } else if (decision === 'reject') {
-        target.moderationStatus = 'rejected';
-        target.moderationReason = note || '운영자 검토 결과 반려되었습니다.';
-      } else {
-        return null;
-      }
-      target.moderationReviewedAt = new Date().toISOString();
-      target.review.founderReview.status = target.moderationStatus === 'approved' ? 'approved' : 'rejected';
-      target.review.founderReview.note = target.moderationReason;
-      target.review.founderReview.reviewedAt = target.moderationReviewedAt;
+      return null;
     }
-
+    target.moderationReviewedAt = new Date().toISOString();
     s.notifications = s.notifications || [];
     s.notifications.unshift({
       id: uid(),
-      type: layer === 'track' ? 'track_review_result' : 'review_result',
+      type: 'review_result',
       title: decision === 'approve' ? '프로젝트 승인 완료' : '프로젝트 반려 안내',
       body: decision === 'approve'
-        ? (layer === 'track' ? '트랙 검토를 통과했습니다.' : '운영자 검토를 통과했습니다. 탐색 탭에서 확인할 수 있습니다.')
-        : `운영자 검토 결과: ${note || target.moderationReason || '반려'}`,
+        ? '운영자 검토를 통과했습니다. 탐색 탭에서 확인할 수 있습니다.'
+        : `운영자 검토 결과: ${target.moderationReason || '반려'}`,
       href: `explore_theme.html`,
       sender: 'WETHUS 운영팀',
       unread: true,
@@ -1241,104 +1141,6 @@
     return target;
   }
 
-  function mergeProjectsByFreshness(localProjects = [], remoteProjects = []) {
-    const map = new Map();
-    const put = (p, source) => {
-      if (!p?.id) return;
-      const key = String(p.id);
-      const prev = map.get(key);
-      if (!prev) {
-        map.set(key, { ...p, _source: source });
-        return;
-      }
-      const prevTs = new Date(prev.updatedAt || prev.moderationReviewedAt || prev.createdAt || 0).getTime() || 0;
-      const nextTs = new Date(p.updatedAt || p.moderationReviewedAt || p.createdAt || 0).getTime() || 0;
-      if (nextTs >= prevTs) map.set(key, { ...p, _source: source });
-    };
-    remoteProjects.forEach(p => put(p, 'remote'));
-    localProjects.forEach(p => put(p, 'local'));
-    return Array.from(map.values()).map(({ _source, ...rest }) => rest);
-  }
-
-  function mergeRowsByFreshness(localRows = [], remoteRows = [], options = {}) {
-    const map = new Map();
-    const idKey = options.idKey || 'id';
-    const getTs = options.getTs || ((row) => new Date(row?.updatedAt || row?.createdAt || 0).getTime() || 0);
-    const getId = options.getId || ((row) => row?.[idKey]);
-
-    const put = (row) => {
-      const id = String(getId(row) || '').trim();
-      if (!id) return;
-      const prev = map.get(id);
-      if (!prev) {
-        map.set(id, row);
-        return;
-      }
-      if (getTs(row) >= getTs(prev)) map.set(id, row);
-    };
-
-    remoteRows.forEach(put);
-    localRows.forEach(put);
-    return Array.from(map.values());
-  }
-
-  function mergeProjectHubs(localHubs = {}, remoteHubs = {}) {
-    const out = { ...(remoteHubs || {}) };
-    for (const [projectId, localHub] of Object.entries(localHubs || {})) {
-      const remoteHub = out[projectId] || {};
-      const localTs = new Date(localHub?.updatedAt || 0).getTime() || 0;
-      const remoteTs = new Date(remoteHub?.updatedAt || 0).getTime() || 0;
-      out[projectId] = localTs >= remoteTs ? localHub : remoteHub;
-    }
-    return out;
-  }
-
-  function mergeAccountStates(localState = {}, remoteState = {}, email = '') {
-    const local = sanitizeAccountProjects(localState, email);
-    const remote = sanitizeAccountProjects(remoteState, email);
-    const merged = {
-      ...remote,
-      ...local,
-      projects: mergeProjectsByFreshness(local.projects || [], remote.projects || []),
-      applications: mergeRowsByFreshness(local.applications || [], remote.applications || [], {
-        getId: (row) => row?.id || `${row?.projectId || ''}:${row?.userId || ''}:${row?.createdAt || ''}`,
-        getTs: (row) => new Date(row?.cancelledAt || row?.updatedAt || row?.createdAt || 0).getTime() || 0
-      }),
-      bookmarks: mergeRowsByFreshness(local.bookmarks || [], remote.bookmarks || [], {
-        getId: (row) => row?.id || `${row?.projectId || ''}:${row?.userId || ''}`
-      }),
-      notifications: mergeRowsByFreshness(local.notifications || [], remote.notifications || [], {
-        getId: (row) => row?.id || `${row?.type || ''}:${row?.createdAt || ''}:${row?.userId || ''}`
-      }),
-      projectViews: mergeRowsByFreshness(local.projectViews || [], remote.projectViews || [], {
-        getId: (row) => row?.id || `${row?.projectId || ''}:${row?.userId || ''}:${row?.createdAt || ''}`
-      }),
-      dmThreads: mergeRowsByFreshness(local.dmThreads || [], remote.dmThreads || [], {
-        getId: (row) => row?.id,
-        getTs: (row) => new Date(row?.updatedAt || row?.createdAt || 0).getTime() || 0
-      }),
-      projectHubs: mergeProjectHubs(local.projectHubs || {}, remote.projectHubs || {})
-    };
-
-    // 사용자 목록은 이메일/ID 기준으로 합치되 로컬 최신값 우선
-    const byKey = new Map();
-    const pushUser = (u) => {
-      if (!u) return;
-      const k = String(u.id || u.email || '').toLowerCase();
-      if (!k) return;
-      byKey.set(k, { ...(byKey.get(k) || {}), ...u });
-    };
-    (remote.users || []).forEach(pushUser);
-    (local.users || []).forEach(pushUser);
-    merged.users = Array.from(byKey.values());
-
-    // 현재 세션의 로그인 컨텍스트는 로컬 유지
-    if (local.currentUserId) merged.currentUserId = local.currentUserId;
-    if (local.devMode !== undefined) merged.devMode = local.devMode;
-
-    return merged;
-  }
-
   async function syncCloudState(emailInput) {
     const email = String(emailInput || currentUser()?.email || '').trim().toLowerCase();
     if (!email) return { ok: false, reason: 'email-missing' };
@@ -1366,10 +1168,11 @@
 
     const local = sanitizeAccountProjects(load(), email);
 
-    // 원격/로컬 상태를 병합해서 최신 변경(특히 프로젝트 status)을 잃지 않도록 한다.
+    // 계정 상태는 해당 email의 remote state를 authoritative source로 취급한다.
+    // (전역 탐색 프로젝트는 별도 캐시에 저장)
     if (remoteState && typeof remoteState === 'object') {
-      const merged = mergeAccountStates(local, remoteState, email);
-      try { localStorage.setItem(KEY, JSON.stringify(merged)); } catch (_) {}
+      const sanitizedRemote = sanitizeAccountProjects(remoteState, email);
+      try { localStorage.setItem(KEY, JSON.stringify(sanitizedRemote)); } catch (_) {}
     } else {
       try { localStorage.setItem(KEY, JSON.stringify(local)); } catch (_) {}
     }
@@ -1420,11 +1223,8 @@
     }
   }
 
-  function listReviewProjects(layer = 'founder') {
-    if (layer === 'track') {
-      return load().projects.filter(p => (p?.review?.trackReview?.status || '') === 'pending');
-    }
-    return load().projects.filter(p => p.moderationStatus === 'manual_review' || (p?.review?.founderReview?.status || '') === 'pending');
+  function listReviewProjects() {
+    return load().projects.filter(p => p.moderationStatus === 'manual_review');
   }
 
   function listNotifications(limit = 30) {
@@ -1835,8 +1635,8 @@
         createdAt: new Date().toISOString(),
         userId: project.founderId || null
       });
-      project.updatedAt = new Date().toISOString();
     }
+    target.updatedAt = new Date().toISOString();
     save(s);
     return app;
   }
@@ -1848,8 +1648,6 @@
     if (!target) return false;
     target.status = 'cancelled';
     target.cancelledAt = new Date().toISOString();
-    const project = s.projects.find(p => p.id === projectId);
-    if (project) project.updatedAt = new Date().toISOString();
     save(s);
     return true;
   }
@@ -2182,8 +1980,8 @@
           <span class="profile-chip-texts"><strong>${u.name || '사용자'}</strong><em>${(u.plan || 'free').toUpperCase()}</em></span>
         </button>
         <div class="notify-dropdown profile-chip-dropdown" style="display:none;">
-          ${state.devMode ? `<a class="notify-item liquid-metal-btn" href="pricing.html"><strong>요금제</strong><p>${(u.plan || 'free').toUpperCase()} Plan</p></a>` : ''}
-          ${state.devMode ? `<a class="notify-item liquid-metal-btn" href="profile.html"><strong>프로필</strong><p>내 프로필 보기 및 수정</p></a>` : ''}
+          <a class="notify-item liquid-metal-btn" href="pricing.html"><strong>요금제</strong><p>${(u.plan || 'free').toUpperCase()} Plan</p></a>
+          <a class="notify-item liquid-metal-btn" href="profile.html"><strong>프로필</strong><p>내 프로필 보기 및 수정</p></a>
           <button class="notify-more logout-btn" type="button" id="chipLogoutBtn">로그아웃</button>
         </div>
       `;
@@ -2197,10 +1995,10 @@
         </button>
         <aside class="side-drawer" style="display:none;">
           <div class="side-drawer-group-title">빠른 메뉴</div>
-          ${state.devMode ? `<a href="dm.html" class="side-drawer-item side-drawer-item--row">
+          <a href="dm.html" class="side-drawer-item side-drawer-item--row">
             <span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
             <span>DM</span>
-          </a>` : ''}
+          </a>
           <a href="notifications.html" class="side-drawer-item side-drawer-item--row">
             <span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"/><path d="M9 17a3 3 0 0 0 6 0"/></svg><span class="notify-badge side-badge" style="display:none;">0</span></span>
             <span>알림</span>
@@ -2222,7 +2020,7 @@
 
           <div class="side-drawer-group-title side-drawer-settings-title"><span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.33 1V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-.33-1 1.65 1.65 0 0 0-1-.6 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1-.33H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1-.33 1.65 1.65 0 0 0 .6-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6c.3-.21.5-.55.6-1V3a2 2 0 1 1 4 0v.09c.1.45.3.79.6 1a1.65 1.65 0 0 0 1 .6 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.21.3.55.5 1 .6H21a2 2 0 1 1 0 4h-.09c-.45.1-.79.3-1 .6z"/></svg></span><span>설정</span></div>
           <button type="button" class="side-drawer-item side-drawer-item--row" data-lang-switch><span>언어 설정 (KR/EN)</span></button>
-          ${state.devMode ? `<a href="profile.html" class="side-drawer-item side-drawer-item--row"><span>계정 설정</span></a>` : ''}
+          <a href="profile.html" class="side-drawer-item side-drawer-item--row"><span>계정 설정</span></a>
           ${state.devMode ? `<a href="admin.html" class="side-drawer-item side-drawer-item--row"><span>프로젝트 검토</span></a>` : ''}
         </aside>
       `;
@@ -2328,29 +2126,6 @@
     }, true);
   }
 
-  function initDevFeatureGate() {
-    const state = getState();
-    const isDevMode = !!state.devMode;
-    const hiddenForPublic = new Set(['pricing.html', 'dm.html', 'profile.html']);
-    const current = (location.pathname.split('/').pop() || '').toLowerCase();
-
-    if (!isDevMode && hiddenForPublic.has(current)) {
-      location.replace('index.html?dev_locked=1');
-      return;
-    }
-
-    document.querySelectorAll('a[href]').forEach(a => {
-      const href = (a.getAttribute('href') || '').trim();
-      if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto:')) return;
-      const base = href.split('?')[0].split('#')[0].toLowerCase();
-      if (!hiddenForPublic.has(base)) return;
-      if (isDevMode) return;
-      a.style.display = 'none';
-      a.setAttribute('aria-hidden', 'true');
-      a.setAttribute('tabindex', '-1');
-    });
-  }
-
   function applyLanguageUI() {
     let lang = 'ko';
     try { lang = localStorage.getItem('wethus.lang') || 'ko'; } catch (_) {}
@@ -2443,7 +2218,6 @@
       ensureFavicon();
       initGuestNavGuard();
       initGuestApplyGuard();
-      initDevFeatureGate();
       initNotificationNav();
       applyLanguageUI();
       applyAuthReturnState();
@@ -2454,7 +2228,6 @@
     ensureFavicon();
     initGuestNavGuard();
     initGuestApplyGuard();
-    initDevFeatureGate();
     initNotificationNav();
     applyLanguageUI();
     applyAuthReturnState();
