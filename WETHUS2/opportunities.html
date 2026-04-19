@@ -219,13 +219,7 @@
       el.querySelectorAll('[data-start]').forEach(b=>b.addEventListener('click',()=>startProject(b.dataset.start)));
     }
 
-    function renderRec(){
-      const byScore=opps.slice().sort((a,b)=>score(b)-score(a));
-      const byDeadline=opps.slice().sort((a,b)=>daysLeft(a.deadline)-daysLeft(b.deadline));
-      const startNow=byScore.filter(o=>o.teamRequirement!=='team' || relatedProjects(o.id).length>0).slice(0,4);
-      const rec=(id,arr)=>{ const el=document.getElementById(id); el.innerHTML=arr.slice(0,4).map(o=>`<button class="opp-rec-item" data-open="${o.id}" type="button">${o.title}</button>`).join('')||'<span class="meta">없음</span>'; el.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.open))); };
-      rec('recForMe',byScore); rec('recStartNow',startNow); rec('recDeadline',byDeadline.filter(o=>daysLeft(o.deadline)<=10));
-    }
+    function renderRec() { return; }
 
     function openModal(id){
       const o=opps.find(x=>x.id===id); if(!o) return; state.current=o;
@@ -266,6 +260,11 @@
     document.getElementById('mInterest').addEventListener('click',()=>{ if(!state.current) return; toggleInterest(state.current.id); updateInterestBtn(); renderAll(); });
     document.getElementById('mOfficial').addEventListener('click',()=>{ if(state.current?.official_url) window.open(state.current.official_url,'_blank'); });
 
+    function renderAll(){ renderFilterRow('typeFilters',typeFilters,state.types,true); renderFilterRow('eligibilityFilters',eligibilityFilters,state.elig,false); renderFilterRow('categoryFilters',categoryFilters,state.cats,false); renderRec(); renderList(); }
+    renderAll();
+  </script>
+</body>
+</html>
     function renderAll(){ renderFilterRow('typeFilters',typeFilters,state.types,true); renderFilterRow('eligibilityFilters',eligibilityFilters,state.elig,false); renderFilterRow('categoryFilters',categoryFilters,state.cats,false); renderRec(); renderList(); }
     renderAll();
   </script>
