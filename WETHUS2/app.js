@@ -2258,6 +2258,19 @@
         e.stopPropagation();
         if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
       };
+
+      // 캡처 단계에서 먼저 차단해서 홈 링크 등으로 이벤트가 새지 않게 한다
+      const captureGuard = (e) => {
+        const inChip = e.target?.closest?.('.js-profile-chip');
+        if (!inChip) return;
+        const inDropdownAction = e.target?.closest?.('.profile-chip-dropdown a, .profile-chip-dropdown button');
+        if (inDropdownAction) return; // 드롭다운 액션은 허용
+        blockNavBubble(e);
+      };
+      document.addEventListener('pointerdown', captureGuard, true);
+      document.addEventListener('mousedown', captureGuard, true);
+      document.addEventListener('click', captureGuard, true);
+
       chipBtn?.addEventListener('pointerdown', blockNavBubble);
       chipBtn?.addEventListener('mousedown', blockNavBubble);
       chipBtn?.addEventListener('mouseup', blockNavBubble);
@@ -2274,8 +2287,8 @@
         }
       });
       chipWrap?.addEventListener('click', (e) => {
-        // 드롭다운 내부 링크 클릭은 허용
-        if (e.target?.closest('.profile-chip-dropdown a, .profile-chip-dropdown button')) return;
+        const inDropdownAction = e.target?.closest?.('.profile-chip-dropdown a, .profile-chip-dropdown button');
+        if (inDropdownAction) return;
         blockNavBubble(e);
       });
       document.addEventListener('click', (e) => {
