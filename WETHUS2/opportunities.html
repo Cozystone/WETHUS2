@@ -61,14 +61,14 @@ const intMap=()=>{try{return JSON.parse(localStorage.getItem(INT)||'{}')}catch{r
 const myInt=()=>new Set(intMap()[actor()]||[]);
 const toggleInt=(id)=>{const all=intMap(),k=actor(),s=new Set(all[k]||[]);s.has(id)?s.delete(id):s.add(id);all[k]=[...s];localStorage.setItem(INT,JSON.stringify(all));return s.has(id)};
 const related=(id)=>WETHUS.listProjects().filter(p=>String(p.opportunityId||'')===String(id));
-const days=(d)=>Math.ceil((new Date(d).getTime()-Date.now())/86400000);
-const fmtMD=(v)=>{if(!v)return '-'; const dt=new Date(v); if(Number.isNaN(dt.getTime())) return v; const mm=String(dt.getMonth()+1).padStart(2,'0'); const dd=String(dt.getDate()).padStart(2,'0'); return `${mm}.${dd}`;};
-const statusLabel=(o)=>{ const d=days(o.deadline); if(d<0) return '마감'; if(d===0) return '오늘마감'; if(o.applyStart && new Date(o.applyStart)>new Date()) return '접수예정'; return '접수중'; };
+const days=(d)=>{ const dt=new Date(d); if(!d || Number.isNaN(dt.getTime())) return null; return Math.ceil((dt.getTime()-Date.now())/86400000); };
+const fmtMD=(v)=>{if(!v)return '확인중'; const dt=new Date(v); if(Number.isNaN(dt.getTime())) return '확인중'; const mm=String(dt.getMonth()+1).padStart(2,'0'); const dd=String(dt.getDate()).padStart(2,'0'); return `${mm}.${dd}`;};
+const statusLabel=(o)=>{ const d=days(o.deadline); if(d===null) return '일정확인중'; if(d<0) return '마감'; if(d===0) return '오늘마감'; if(o.applyStart && new Date(o.applyStart)>new Date()) return '접수예정'; return '접수중'; };
 const score=(o)=>((myInt().has(o.id)?18:0)+(o.type==='창업대회'||o.type==='지원사업'?16:6)+Math.max(0,40-Math.max(days(o.deadline),0))+(related(o.id).length*2));
 function filters(){return opps.filter(o=>{const t=[o.title,o.organizer,o.summary,(o.tags||[]).join(' '),o.type].join(' ').toLowerCase();if(state.q&&!t.includes(state.q.toLowerCase()))return false;if(!state.types.has('전체')&&!state.types.has(o.type))return false;if(state.elig.size){for(const f of state.elig){if(f==='마감임박'&&days(o.deadline)>7)return false;if(f!=='마감임박'&&!o.eligibility.includes(f))return false;}}if(state.cats.size&&!(o.tags||[]).some(t=>state.cats.has(t)))return false;return true;}).sort((a,b)=>state.sort==='deadline'?days(a.deadline)-days(b.deadline):state.sort==='latest'?new Date(b.created_at)-new Date(a.created_at):state.sort==='benefit'?(b.benefitScore||0)-(a.benefitScore||0):score(b)-score(a));}
 function row(id,arr,set,single){const el=document.getElementById(id);el.innerHTML=arr.map(v=>`<button class="opp-chip ${set.has(v)?'active':''}" data-v="${v}">${v}</button>`).join('');el.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{const v=b.dataset.v;if(single){if(v==='전체'){set.clear();set.add('전체')}else{set.delete('전체');set.has(v)?set.delete(v):set.add(v);if(!set.size)set.add('전체')}}else{set.has(v)?set.delete(v):set.add(v)};render()});}
 function start(id){const o=opps.find(x=>x.id===id);if(!o)return;const q=new URLSearchParams({opportunityId:o.id,oppTitle:o.title,oppOrg:o.organizer,oppDeadline:o.deadline,oppType:o.type,oppSummary:o.summary});location.href=`founder.html?${q}`}
-function open(id){const o=opps.find(x=>x.id===id);if(!o)return;state.current=o;document.getElementById('mTitle').textContent=o.title;document.getElementById('mSummary').textContent=o.description||o.summary;const poster=document.getElementById('mPoster'); if (poster) { if (o.poster_url) { poster.src=o.poster_url; poster.style.display='block'; } else { poster.style.display='none'; } } document.getElementById('mOrg').textContent=o.organizer;document.getElementById('mDeadline').textContent=`${statusLabel(o)} · 마감 ${o.deadline} (${days(o.deadline)>=0?`D-${days(o.deadline)}`:`D+${Math.abs(days(o.deadline))}`})`;document.getElementById('mEligibility').textContent=o.eligibility.join(', ');document.getElementById('mTeamReq').textContent=o.teamRequirement==='team'?'팀 필수':'개인/팀 가능';document.getElementById('mBenefits').textContent=o.benefits;document.getElementById('mSchedule').textContent=`접수 ${fmtMD(o.applyStart)}~${fmtMD(o.applyEnd||o.deadline)} / 심사 ${fmtMD(o.judgeStart)}~${fmtMD(o.judgeEnd)}${o.resultDate?` / 발표 ${fmtMD(o.resultDate)}`:''}`;document.getElementById('mLink').innerHTML=`<a href="${o.official_url}" target="_blank">${o.official_url}</a>`;const r=related(o.id);document.getElementById('mRelatedList').innerHTML=r.length?r.map(p=>`<article class="list-item"><h3>${p.title}</h3></article>`).join(''):'<article class="list-item"><p class="meta">아직 관련 팀이 없습니다.</p></article>';const on=myInt().has(o.id),b=document.getElementById('mInterest');b.textContent=on?'관심 저장됨':'관심 저장';b.className=on?'btn btn--primary':'btn btn--secondary';document.getElementById('oppModal').classList.add('open');}
+function open(id){const o=opps.find(x=>x.id===id);if(!o)return;state.current=o;document.getElementById('mTitle').textContent=o.title;document.getElementById('mSummary').textContent=o.description||o.summary;const poster=document.getElementById('mPoster'); if (poster) { if (o.poster_url) { poster.src=o.poster_url; poster.style.display='block'; } else { poster.style.display='none'; } } document.getElementById('mOrg').textContent=o.organizer;const md=days(o.deadline);document.getElementById('mDeadline').textContent=`${statusLabel(o)} · 마감 ${o.deadline || '확인중'} (${md===null?'D-확인중':(md>=0?`D-${md}`:`D+${Math.abs(md)}`)})`;document.getElementById('mEligibility').textContent=o.eligibility.join(', ');document.getElementById('mTeamReq').textContent=o.teamRequirement==='team'?'팀 필수':'개인/팀 가능';document.getElementById('mBenefits').textContent=o.benefits;document.getElementById('mSchedule').textContent=`접수 ${fmtMD(o.applyStart)}~${fmtMD(o.applyEnd||o.deadline)} / 심사 ${fmtMD(o.judgeStart)}~${fmtMD(o.judgeEnd)}${o.resultDate?` / 발표 ${fmtMD(o.resultDate)}`:''}`;document.getElementById('mLink').innerHTML=`<a href="${o.official_url}" target="_blank">${o.official_url}</a>`;const r=related(o.id);document.getElementById('mRelatedList').innerHTML=r.length?r.map(p=>`<article class="list-item"><h3>${p.title}</h3></article>`).join(''):'<article class="list-item"><p class="meta">아직 관련 팀이 없습니다.</p></article>';const on=myInt().has(o.id),b=document.getElementById('mInterest');b.textContent=on?'관심 저장됨':'관심 저장';b.className=on?'btn btn--primary':'btn btn--secondary';document.getElementById('oppModal').classList.add('open');}
 function render(){
   row('typeFilters',typeFilters,state.types,true);
   row('eligibilityFilters',eligibilityFilters,state.elig,false);
@@ -77,7 +77,7 @@ function render(){
   const rs=filters();
   el.innerHTML=rs.map(o=>{
     const d=days(o.deadline);
-    const dText=d<0?`D+${Math.abs(d)}`:`D-${d}`;
+    const dText=d===null?'D-확인중':(d<0?`D+${Math.abs(d)}`:`D-${d}`);
     const status=statusLabel(o);
     return `<article class="opp-item" data-open="${o.id}">
       <div class="opp-main">
@@ -93,7 +93,7 @@ function render(){
         <div class="opp-period">
           <div><span class="k">접수</span> ${fmtMD(o.applyStart)} ~ ${fmtMD(o.applyEnd || o.deadline)}</div>
           <div><span class="k judge">심사</span> ${fmtMD(o.judgeStart)} ~ ${fmtMD(o.judgeEnd)}</div>
-          ${o.resultDate ? `<div><span class="k result">발표</span> ${fmtMD(o.resultDate)}</div>` : ''}
+          <div><span class="k result">발표</span> ${fmtMD(o.resultDate)}</div>
         </div>
         <div>
           <div class="opp-dday">${dText}</div>
