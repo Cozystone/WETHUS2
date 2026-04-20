@@ -132,9 +132,31 @@ function toTypeLabel(v){
   return '프로그램/행사';
 }
 function toEligibility(v){
-  if (Array.isArray(v)) return v.filter(Boolean);
-  if (!v) return ['확인중'];
-  return String(v).split(/[\n,·/|]/).map(s=>s.trim()).filter(Boolean).slice(0,5);
+  const raw = Array.isArray(v) ? v : (!v ? [] : String(v).split(/[\n,·/|]/).map(s=>s.trim()).filter(Boolean));
+  const blob = raw.join(' ');
+  const out = new Set();
+  if (/(중학생|중등|중학교)/.test(blob)) out.add('중학생 가능');
+  if (/(고등학생|고등|고교|고등학교)/.test(blob)) out.add('고등학생 가능');
+  if (/(대학생|대학|학부|재학생|휴학생)/.test(blob)) out.add('대학생 가능');
+  if (/(개인|개별|1인)/.test(blob)) out.add('개인 가능');
+  if (/(팀 필수|팀만|팀 구성 필수|팀참가 필수)/.test(blob)) out.add('팀 필수');
+  if (!out.size && raw.length) raw.slice(0,5).forEach(x=>out.add(x));
+  if (!out.size) out.add('확인중');
+  return [...out];
+}
+function detectTags(o){
+  const blob=[(o.tags||[]).join(' '),o.title,o.summary,o.description,o.organizer,o.benefits].filter(Boolean).join(' ');
+  const out=[];
+  const add=(k,rx)=>{ if(rx.test(blob)) out.push(k); };
+  add('AI/IT', /(AI|인공지능|IT|ICT|데이터|소프트웨어|앱|플랫폼|클라우드|SaaS|디지털)/i);
+  add('콘텐츠', /(콘텐츠|영상|미디어|크리에이터|디자인|스토리|웹툰|게임|문화예술)/i);
+  add('교육', /(교육|에듀|학습|러닝|EdTech|에듀테크)/i);
+  add('바이오/헬스케어', /(바이오|헬스|의료|제약|웰니스|디지털헬스)/i);
+  add('F&B', /(F&B|식품|푸드|외식|식음료|농식품|푸드테크)/i);
+  add('사회혁신', /(사회혁신|소셜|임팩트|ESG|공공문제|지역문제|지속가능)/i);
+  add('과학기술', /(과학|기술|연구|R&D|실험|공학|메이커)/i);
+  add('브랜드/커머스', /(브랜드|커머스|유통|리테일|마케팅|이커머스|D2C)/i);
+  return out.length ? [...new Set(out)] : ['AI/IT'];
 }
 function detectRegions(o){
   const blob=[o.region,o.location,o.title,o.organizer,o.summary,o.description,(o.tags||[]).join(' ')].filter(Boolean).join(' ');
@@ -152,7 +174,7 @@ function normalizeOpportunity(o, idx){
     summary: o.summary || o.description || '상세 정보 확인중',
     description: o.description || o.summary || '',
     type: toTypeLabel(o.type),
-    eligibility: toEligibility(o.eligibility),
+    eligibility: (()=>{ const e=toEligibility(o.eligibility); if(String(o.teamRequirement||'').toLowerCase()==='team' && !e.includes('팀 필수')) e.push('팀 필수'); return e; })(),
     teamRequirement: (String(o.teamRequirement||'').toLowerCase()==='team') ? 'team' : 'optional',
     benefits: o.benefits || '혜택 확인중',
     applyStart: o.applyStart || null,
@@ -161,7 +183,7 @@ function normalizeOpportunity(o, idx){
     judgeStart: o.judgeStart || null,
     judgeEnd: o.judgeEnd || null,
     resultDate: o.resultDate || null,
-    tags: Array.isArray(o.tags) ? o.tags : [],
+    tags: Array.isArray(o.tags) && o.tags.length ? o.tags : detectTags(o),
     regions: Array.isArray(o.regions) && o.regions.length ? o.regions : detectRegions(o),
     official_url: o.official_url || o.source_url || '',
     poster_url: o.poster_url || '',
