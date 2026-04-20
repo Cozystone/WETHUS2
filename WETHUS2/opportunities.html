@@ -65,7 +65,14 @@ const days=(d)=>{ const dt=new Date(d); if(!d || Number.isNaN(dt.getTime())) ret
 const fmtMD=(v)=>{if(!v)return '확인중'; const dt=new Date(v); if(Number.isNaN(dt.getTime())) return '확인중'; const mm=String(dt.getMonth()+1).padStart(2,'0'); const dd=String(dt.getDate()).padStart(2,'0'); return `${mm}.${dd}`;};
 const statusLabel=(o)=>{ const d=days(o.deadline); if(d===null) return '일정확인중'; if(d<0) return '마감'; if(d===0) return '오늘마감'; if(o.applyStart && new Date(o.applyStart)>new Date()) return '접수예정'; return '접수중'; };
 const score=(o)=>((myInt().has(o.id)?18:0)+(o.type==='창업대회'||o.type==='지원사업'?16:6)+Math.max(0,40-Math.max(days(o.deadline),0))+(related(o.id).length*2));
-function filters(){return opps.filter(o=>{const t=[o.title,o.organizer,o.summary,(o.tags||[]).join(' '),o.type,(o.regions||[]).join(' ')].join(' ').toLowerCase();if(state.q&&!t.includes(state.q.toLowerCase()))return false;if(!state.types.has('전체')&&!state.types.has(o.type))return false;if(state.elig.size){for(const f of state.elig){if(f==='마감임박'&&days(o.deadline)>7)return false;if(f!=='마감임박'&&!o.eligibility.includes(f))return false;}}if(state.cats.size&&!(o.tags||[]).some(t=>state.cats.has(t)))return false;if(state.regions.size&&!(o.regions||[]).some(r=>state.regions.has(r)))return false;return true;}).sort((a,b)=>state.sort==='deadline'?days(a.deadline)-days(b.deadline):state.sort==='latest'?new Date(b.created_at)-new Date(a.created_at):state.sort==='benefit'?(b.benefitScore||0)-(a.benefitScore||0):score(b)-score(a));}
+function filters(){return opps.filter(o=>{const t=[o.title,o.organizer,o.summary,(o.tags||[]).join(' '),o.type,(o.regions||[]).join(' ')].join(' ').toLowerCase();if(state.q&&!t.includes(state.q.toLowerCase()))return false;if(!state.types.has('전체')&&!state.types.has(o.type))return false;if(state.elig.size){for(const f of state.elig){if(f==='마감임박'&&days(o.deadline)>7)return false;if(f!=='마감임박'&&!o.eligibility.includes(f))return false;}}if(state.cats.size&&!(o.tags||[]).some(t=>state.cats.has(t)))return false;
+if(state.regions.size){
+  const rs=(o.regions||[]);
+  const matched=rs.some(r=>state.regions.has(r));
+  const nationwide=rs.includes('전국');
+  if(!matched && !nationwide) return false;
+}
+return true;}).sort((a,b)=>state.sort==='deadline'?days(a.deadline)-days(b.deadline):state.sort==='latest'?new Date(b.created_at)-new Date(a.created_at):state.sort==='benefit'?(b.benefitScore||0)-(a.benefitScore||0):score(b)-score(a));}
 function row(id,arr,set,single){const el=document.getElementById(id);el.innerHTML=arr.map(v=>`<button class="opp-chip ${set.has(v)?'active':''}" data-v="${v}">${v}</button>`).join('');el.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{const v=b.dataset.v;if(single){if(v==='전체'){set.clear();set.add('전체')}else{set.delete('전체');set.has(v)?set.delete(v):set.add(v);if(!set.size)set.add('전체')}}else{set.has(v)?set.delete(v):set.add(v)};render()});}
 function start(id){const o=opps.find(x=>x.id===id);if(!o)return;const q=new URLSearchParams({opportunityId:o.id,oppTitle:o.title,oppOrg:o.organizer,oppDeadline:o.deadline,oppType:o.type,oppSummary:o.summary});location.href=`founder.html?${q}`}
 function normalizeUrl(u){
@@ -82,7 +89,7 @@ function render(){
   row('regionFilters',regionFilters,state.regions,false);
   const el=document.getElementById('oppList');
   const rs=filters();
-  if(!rs.length){ el.innerHTML='<article class="opp-item"><div class="opp-main"><div class="opp-title">검증된 공고를 불러오는 중입니다</div><div class="opp-sub">잠시 후 다시 확인해주세요.</div></div></article>'; return; }
+  if(!rs.length){ el.innerHTML='<article class="opp-item"><div class="opp-main"><div class="opp-title">조건에 맞는 공고가 없어요</div><div class="opp-sub">필터를 조금 완화하거나 지역을 전국으로 포함해보세요.</div></div></article>'; return; }
   el.innerHTML=rs.map(o=>{
     const d=days(o.deadline);
     const dText=d===null?'D-확인중':(d<0?`D+${Math.abs(d)}`:`D-${d}`);
