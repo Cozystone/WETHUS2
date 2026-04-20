@@ -40,7 +40,7 @@
 <main class="container page-main page-main--standard opp-shell">
 <section class="opp-top"><h1 class="page-title" style="margin:0;">기회 찾기</h1><p class="page-sub" style="margin:0;">학생 창업에 맞는 대회와 공모전을 찾고, 바로 프로젝트로 시작하세요.</p>
 <label class="opp-search-wrap"><span style="color:#ff9a2f">⌕</span><input id="searchInput" class="opp-search" placeholder="제목 · 주최 · 키워드 · 카테고리 검색"/></label>
-<div class="opp-row" id="typeFilters"></div><div class="opp-row" id="eligibilityFilters"></div><div class="opp-row" id="categoryFilters"></div>
+<div class="opp-row" id="typeFilters"></div><div class="opp-row" id="eligibilityFilters"></div><div class="opp-row" id="categoryFilters"></div><div class="opp-row" id="regionFilters"></div>
 <div class="opp-row" style="justify-content:space-between;align-items:center;"><span class="meta">정렬</span><select id="sortSelect" class="opp-sort"><option value="recommended">추천순</option><option value="deadline">마감임박순</option><option value="latest">최신등록순</option><option value="benefit">상금/혜택순</option></select></div>
 </section>
 <section id="oppList" class="opp-table"></section>
@@ -52,7 +52,8 @@ WETHUS.requireAuth();
 const typeFilters=['전체','공모전','창업대회','지원사업','해커톤','프로그램/행사'];
 const eligibilityFilters=['중학생 가능','고등학생 가능','대학생 가능','개인 가능','팀 필수','마감임박'];
 const categoryFilters=['AI/IT','콘텐츠','교육','바이오/헬스케어','F&B','사회혁신','과학기술','브랜드/커머스'];
-const state={q:'',types:new Set(['전체']),elig:new Set(),cats:new Set(),sort:'recommended',current:null};
+const regionFilters=['전국','서울','경기','인천','부산','대구','광주','대전','울산','세종','강원','충북','충남','전북','전남','경북','경남','제주'];
+const state={q:'',types:new Set(['전체']),elig:new Set(),cats:new Set(),regions:new Set(),sort:'recommended',current:null};
 const INT='wethus_opportunity_interest_v1';
 let opps=[];
 const actor=()=>{const s=WETHUS.getState();return s.currentUserId||(s.devMode?'dev-temp':'guest')};
@@ -64,7 +65,7 @@ const days=(d)=>{ const dt=new Date(d); if(!d || Number.isNaN(dt.getTime())) ret
 const fmtMD=(v)=>{if(!v)return '확인중'; const dt=new Date(v); if(Number.isNaN(dt.getTime())) return '확인중'; const mm=String(dt.getMonth()+1).padStart(2,'0'); const dd=String(dt.getDate()).padStart(2,'0'); return `${mm}.${dd}`;};
 const statusLabel=(o)=>{ const d=days(o.deadline); if(d===null) return '일정확인중'; if(d<0) return '마감'; if(d===0) return '오늘마감'; if(o.applyStart && new Date(o.applyStart)>new Date()) return '접수예정'; return '접수중'; };
 const score=(o)=>((myInt().has(o.id)?18:0)+(o.type==='창업대회'||o.type==='지원사업'?16:6)+Math.max(0,40-Math.max(days(o.deadline),0))+(related(o.id).length*2));
-function filters(){return opps.filter(o=>{const t=[o.title,o.organizer,o.summary,(o.tags||[]).join(' '),o.type].join(' ').toLowerCase();if(state.q&&!t.includes(state.q.toLowerCase()))return false;if(!state.types.has('전체')&&!state.types.has(o.type))return false;if(state.elig.size){for(const f of state.elig){if(f==='마감임박'&&days(o.deadline)>7)return false;if(f!=='마감임박'&&!o.eligibility.includes(f))return false;}}if(state.cats.size&&!(o.tags||[]).some(t=>state.cats.has(t)))return false;return true;}).sort((a,b)=>state.sort==='deadline'?days(a.deadline)-days(b.deadline):state.sort==='latest'?new Date(b.created_at)-new Date(a.created_at):state.sort==='benefit'?(b.benefitScore||0)-(a.benefitScore||0):score(b)-score(a));}
+function filters(){return opps.filter(o=>{const t=[o.title,o.organizer,o.summary,(o.tags||[]).join(' '),o.type,(o.regions||[]).join(' ')].join(' ').toLowerCase();if(state.q&&!t.includes(state.q.toLowerCase()))return false;if(!state.types.has('전체')&&!state.types.has(o.type))return false;if(state.elig.size){for(const f of state.elig){if(f==='마감임박'&&days(o.deadline)>7)return false;if(f!=='마감임박'&&!o.eligibility.includes(f))return false;}}if(state.cats.size&&!(o.tags||[]).some(t=>state.cats.has(t)))return false;if(state.regions.size&&!(o.regions||[]).some(r=>state.regions.has(r)))return false;return true;}).sort((a,b)=>state.sort==='deadline'?days(a.deadline)-days(b.deadline):state.sort==='latest'?new Date(b.created_at)-new Date(a.created_at):state.sort==='benefit'?(b.benefitScore||0)-(a.benefitScore||0):score(b)-score(a));}
 function row(id,arr,set,single){const el=document.getElementById(id);el.innerHTML=arr.map(v=>`<button class="opp-chip ${set.has(v)?'active':''}" data-v="${v}">${v}</button>`).join('');el.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{const v=b.dataset.v;if(single){if(v==='전체'){set.clear();set.add('전체')}else{set.delete('전체');set.has(v)?set.delete(v):set.add(v);if(!set.size)set.add('전체')}}else{set.has(v)?set.delete(v):set.add(v)};render()});}
 function start(id){const o=opps.find(x=>x.id===id);if(!o)return;const q=new URLSearchParams({opportunityId:o.id,oppTitle:o.title,oppOrg:o.organizer,oppDeadline:o.deadline,oppType:o.type,oppSummary:o.summary});location.href=`founder.html?${q}`}
 function normalizeUrl(u){
@@ -78,6 +79,7 @@ function render(){
   row('typeFilters',typeFilters,state.types,true);
   row('eligibilityFilters',eligibilityFilters,state.elig,false);
   row('categoryFilters',categoryFilters,state.cats,false);
+  row('regionFilters',regionFilters,state.regions,false);
   const el=document.getElementById('oppList');
   const rs=filters();
   if(!rs.length){ el.innerHTML='<article class="opp-item"><div class="opp-main"><div class="opp-title">검증된 공고를 불러오는 중입니다</div><div class="opp-sub">잠시 후 다시 확인해주세요.</div></div></article>'; return; }
@@ -92,6 +94,7 @@ function render(){
         <div class="opp-sub">${o.summary}</div>
         <div class="opp-meta">
           <span class="badge-soft">대상 ${o.eligibility.join(' · ')}</span>
+          <span class="badge-soft">지역 ${(o.regions||['전국']).join(' · ')}</span>
           <span class="badge-soft">관련 프로젝트 ${related(o.id).length}</span>
         </div>
       </div>
@@ -126,6 +129,13 @@ function toEligibility(v){
   if (!v) return ['확인중'];
   return String(v).split(/[\n,·/|]/).map(s=>s.trim()).filter(Boolean).slice(0,5);
 }
+function detectRegions(o){
+  const blob=[o.region,o.location,o.title,o.organizer,o.summary,o.description,(o.tags||[]).join(' ')].filter(Boolean).join(' ');
+  const map=['서울','경기','인천','부산','대구','광주','대전','울산','세종','강원','충북','충남','전북','전남','경북','경남','제주'];
+  const hit=map.filter(r=>blob.includes(r));
+  if (hit.length) return [...new Set(hit)];
+  return ['전국'];
+}
 function normalizeOpportunity(o, idx){
   const id = String(o.id || o.dedupe_key || `${o.title||'opportunity'}-${idx}`).trim();
   return {
@@ -145,6 +155,7 @@ function normalizeOpportunity(o, idx){
     judgeEnd: o.judgeEnd || null,
     resultDate: o.resultDate || null,
     tags: Array.isArray(o.tags) ? o.tags : [],
+    regions: Array.isArray(o.regions) && o.regions.length ? o.regions : detectRegions(o),
     official_url: o.official_url || o.source_url || '',
     poster_url: o.poster_url || '',
     created_at: o.created_at || o.updated_at || o.collected_at || new Date().toISOString(),
