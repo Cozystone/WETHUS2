@@ -65,7 +65,18 @@ const days=(d)=>{ const dt=new Date(d); if(!d || Number.isNaN(dt.getTime())) ret
 const fmtMD=(v)=>{if(!v)return '확인중'; const dt=new Date(v); if(Number.isNaN(dt.getTime())) return '확인중'; const mm=String(dt.getMonth()+1).padStart(2,'0'); const dd=String(dt.getDate()).padStart(2,'0'); return `${mm}.${dd}`;};
 const statusLabel=(o)=>{ const d=days(o.deadline); if(d===null) return '일정확인중'; if(d<0) return '마감'; if(d===0) return '오늘마감'; if(o.applyStart && new Date(o.applyStart)>new Date()) return '접수예정'; return '접수중'; };
 const score=(o)=>((myInt().has(o.id)?18:0)+(o.type==='창업대회'||o.type==='지원사업'?16:6)+Math.max(0,40-Math.max(days(o.deadline),0))+(related(o.id).length*2));
-function filters(){return opps.filter(o=>{const t=[o.title,o.organizer,o.summary,(o.tags||[]).join(' '),o.type,(o.regions||[]).join(' ')].join(' ').toLowerCase();if(state.q&&!t.includes(state.q.toLowerCase()))return false;if(!state.types.has('전체')&&!state.types.has(o.type))return false;if(state.elig.size){for(const f of state.elig){if(f==='마감임박'&&days(o.deadline)>7)return false;if(f!=='마감임박'&&!o.eligibility.includes(f))return false;}}if(state.cats.size&&!(o.tags||[]).some(t=>state.cats.has(t)))return false;
+function filters(){return opps.filter(o=>{const t=[o.title,o.organizer,o.summary,(o.tags||[]).join(' '),o.type,(o.regions||[]).join(' ')].join(' ').toLowerCase();if(state.q&&!t.includes(state.q.toLowerCase()))return false;if(!state.types.has('전체')&&!state.types.has(o.type))return false;if(state.elig.size){
+  const eligSelected=[...state.elig].filter(f=>f!=='마감임박');
+  const wantsUrgent=state.elig.has('마감임박');
+  if(wantsUrgent){
+    const d=days(o.deadline);
+    if(d===null || d>7 || d<0) return false;
+  }
+  if(eligSelected.length){
+    const hit=eligSelected.some(f=>o.eligibility.includes(f));
+    if(!hit) return false;
+  }
+}if(state.cats.size&&!(o.tags||[]).some(t=>state.cats.has(t)))return false;
 if(state.regions.size){
   const rs=(o.regions||[]);
   const matched=rs.some(r=>state.regions.has(r));
