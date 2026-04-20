@@ -106,12 +106,51 @@ function render(){
   el.querySelectorAll('[data-open]').forEach(card=>card.onclick=()=>open(card.dataset.open));
 }
 document.getElementById('searchInput').oninput=e=>{state.q=e.target.value.trim();render()};document.getElementById('sortSelect').onchange=e=>{state.sort=e.target.value;render()};document.getElementById('modalClose').onclick=()=>document.getElementById('oppModal').classList.remove('open');document.querySelector('[data-close="1"]').onclick=()=>document.getElementById('oppModal').classList.remove('open');document.getElementById('mRelated').onclick=()=>document.getElementById('mRelatedList').scrollIntoView({behavior:'smooth'});document.getElementById('mInterest').onclick=()=>{if(!state.current)return;toggleInt(state.current.id);open(state.current.id)};document.getElementById('mOfficial').onclick=()=>state.current&&window.open(state.current.official_url,'_blank');
+
+function toTypeLabel(v){
+  const x=String(v||'').toLowerCase();
+  if (x==='contest' || x.includes('공모')) return '공모전';
+  if (x==='startup-competition' || x.includes('창업대회') || x.includes('경진')) return '창업대회';
+  if (x==='support-program' || x.includes('지원사업')) return '지원사업';
+  if (x==='hackathon' || x.includes('해커톤')) return '해커톤';
+  return '프로그램/행사';
+}
+function toEligibility(v){
+  if (Array.isArray(v)) return v.filter(Boolean);
+  if (!v) return ['확인중'];
+  return String(v).split(/[\n,·/|]/).map(s=>s.trim()).filter(Boolean).slice(0,5);
+}
+function normalizeOpportunity(o, idx){
+  const id = String(o.id || o.dedupe_key || `${o.title||'opportunity'}-${idx}`).trim();
+  return {
+    id,
+    title: o.title || '제목 확인중',
+    organizer: o.organizer || '주최 확인중',
+    summary: o.summary || o.description || '상세 정보 확인중',
+    description: o.description || o.summary || '',
+    type: toTypeLabel(o.type),
+    eligibility: toEligibility(o.eligibility),
+    teamRequirement: (String(o.teamRequirement||'').toLowerCase()==='team') ? 'team' : 'optional',
+    benefits: o.benefits || '혜택 확인중',
+    applyStart: o.applyStart || null,
+    applyEnd: o.applyEnd || o.deadline || null,
+    deadline: o.deadline || o.applyEnd || null,
+    judgeStart: o.judgeStart || null,
+    judgeEnd: o.judgeEnd || null,
+    resultDate: o.resultDate || null,
+    tags: Array.isArray(o.tags) ? o.tags : [],
+    official_url: o.official_url || o.source_url || '',
+    poster_url: o.poster_url || '',
+    created_at: o.created_at || o.updated_at || o.collected_at || new Date().toISOString(),
+    benefitScore: Number(o.benefitScore||0) || 0,
+  };
+}
 async function init(){
   try{
     const res=await fetch(`data/opportunity-published.json?ts=${Date.now()}`);
     const data=await res.json();
     const rows=Array.isArray(data?.items)?data.items:[];
-    opps=rows.filter(o=>o && o.title && o.organizer && o.official_url);
+    opps=rows.map(normalizeOpportunity).filter(o=>o && o.title && o.organizer && o.official_url);
   }catch(_){ opps=[]; }
   render();
 }
