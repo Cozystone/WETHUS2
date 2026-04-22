@@ -239,12 +239,6 @@
           </label>
         </div>
 
-        <label>팀 인원
-          <select name="teamSize" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
-            <option>1인</option><option>2인</option><option selected>3인</option><option>4인이상</option>
-          </select>
-        </label>
-
         <label>단계
           <select name="status" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
             <option>모집 중</option><option selected>기획 중</option><option>진행 중</option><option>피보팅</option>
@@ -307,7 +301,7 @@
         <p id="previewDate" class="modal-date-range" style="margin:0 0 10px;"></p>
         <p id="previewSummary" style="margin:0 0 12px;color:#f5f5f5;"></p>
         <p id="previewDesc" style="margin:0 0 18px;color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p>
-        <div class="meta"><span class="card-status" id="previewStatus"></span> · <span id="previewTeamSize"></span> · <span id="previewRoles"></span> · <span id="previewDuration"></span></div>
+        <div class="meta"><span class="card-status" id="previewStatus"></span> · <span id="previewRoles"></span> · <span id="previewDuration"></span></div>
         <div class="card-bottom-row" style="margin-top:10px;">
           <div class="card-social"><span>♡ 0</span><span>💬 0</span></div>
           <button class="apply-btn" type="button" disabled>지원하기</button>
@@ -484,7 +478,7 @@
       }
       setImageError('');
 
-      const requiredFields = ['title','category','description','motivation','output','plan','roles','teamSize','status','duration'];
+      const requiredFields = ['title','category','description','motivation','output','plan','roles','status','duration'];
       const targetCap = Number(form.elements.targetCapacity?.value || 0);
       const currentMembers = Number(form.elements.currentMembers?.value || 0);
       if (targetCap && currentMembers && currentMembers > targetCap) {
@@ -714,7 +708,6 @@
         output: fd.get('output') || '',
         plan: fd.get('plan') || '',
         roles: fd.get('roles') || '',
-        teamSize: fd.get('teamSize') || '3인',
         status: fd.get('status') || '기획 중',
         duration: fd.get('duration') || '',
         startDate: startDateValue(),
@@ -739,7 +732,6 @@
       if (form.elements.neededAgeGroup) form.elements.neededAgeGroup.value = d.neededAgeGroup || '';
       if (form.elements.targetCapacity) form.elements.targetCapacity.value = d.targetCapacity || '';
       if (form.elements.currentMembers) form.elements.currentMembers.value = d.currentMembers || '';
-      form.elements.teamSize.value = d.teamSize || '3인';
       form.elements.status.value = d.status || '기획 중';
       form.elements.duration.value = d.duration || '';
 
@@ -926,7 +918,6 @@
       document.getElementById('previewSummary').textContent = String(fd.get('description')).slice(0, 120);
       document.getElementById('previewDesc').textContent = fd.get('description');
       document.getElementById('previewStatus').textContent = fd.get('status');
-      document.getElementById('previewTeamSize').textContent = fd.get('teamSize');
       document.getElementById('previewRoles').textContent = fd.get('roles');
       document.getElementById('previewDuration').textContent = fd.get('duration');
       previewModal.classList.add('open');
@@ -1007,7 +998,7 @@
           expectedOutput: fd.get('output'),
           firstTwoWeekPlan: fd.get('plan'),
           status: fd.get('status'),
-          teamSize: fd.get('teamSize'),
+          teamSize: '미정',
           roles: fd.get('roles'),
           duration: fd.get('duration'),
           opportunityId: String(fd.get('opportunityId') || '').trim() || null,
