@@ -612,9 +612,7 @@
         return isMine(p);
       });
 
-      // 테마 필터 결과가 0개면 전체 visible로 안전 폴백
-      const visible = baseVisible.filter(inTheme);
-      const pool = visible.length ? visible : baseVisible;
+      const pool = baseVisible.filter(inTheme);
 
       const mineApproved = pool.filter(p => isMine(p) && p.moderationStatus === 'approved')
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
