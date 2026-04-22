@@ -791,7 +791,7 @@
     return project;
   }
 
-  function listProjects() {
+  function listProjects(options = {}) {
     const local = load().projects || [];
     let globals = [];
     try {
@@ -805,7 +805,16 @@
     for (const p of local) {
       if (p?.id) map.set(String(p.id), p);
     }
-    return Array.from(map.values());
+
+    const includePending = !!options.includePending;
+    const includeRejected = !!options.includeRejected;
+    return Array.from(map.values()).filter((p) => {
+      const status = String(p?.moderationStatus || 'approved');
+      if (status === 'approved') return true;
+      if (status === 'manual_review') return includePending;
+      if (status === 'rejected') return includeRejected;
+      return false;
+    });
   }
 
   function ensureHubState(s) {
