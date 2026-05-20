@@ -163,8 +163,8 @@
       </div>
 
       <section style="margin-top:22px;">
-        <h2 style="margin:0 0 10px;font-size:1.1rem;">예시 프로젝트 (탐색탭 노출)</h2>
-        <p style="margin:0 0 12px;color:#b8b8b8;font-size:.92rem;">승인된 프로젝트만 표시됩니다. 카드 클릭 시 해당 카테고리 탐색으로 이동합니다.</p>
+        <h2 style="margin:0 0 10px;font-size:1.1rem;">최근 프로젝트 미리보기</h2>
+        <p style="margin:0 0 12px;color:#b8b8b8;font-size:.92rem;">홈에서 보이는 예시 프로젝트를 여기서도 바로 확인할 수 있어요.</p>
         <div id="explorePreviewList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;"></div>
       </section>
     </section>
@@ -179,7 +179,7 @@
     </div>
   </footer>
 
-  <script src="app.js?v=20260520-1307"></script>
+  <script src="app.js?v=20260419-206"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
     const st = WETHUS.getState();
@@ -196,35 +196,19 @@
     (function renderPreview(){
       const el = document.getElementById('explorePreviewList');
       if (!el) return;
-      const all = (WETHUS.listProjects ? WETHUS.listProjects() : []) || [];
-      const items = all
-        .filter(p => p && p.moderationStatus !== 'manual_review' && p.moderationStatus !== 'rejected')
-        .sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0))
-        .slice(0, 8);
-
+      const items = (WETHUS.getRecommendedProjects ? WETHUS.getRecommendedProjects(6) : WETHUS.listProjects().slice(0, 6)) || [];
       if (!items.length) {
-        el.innerHTML = '<div style="color:#b8b8b8;">표시할 예시 프로젝트가 없습니다. (승인 상태 확인 필요)</div>';
+        el.innerHTML = '<div style="color:#b8b8b8;">표시할 프로젝트가 아직 없습니다.</div>';
         return;
       }
-
-      const mapCat = (cat='') => {
-        const c = String(cat).toLowerCase();
-        if (c.includes('policy') || c.includes('campaign')) return 'SocietyLaw';
-        if (c.includes('film') || c.includes('creative') || c.includes('art')) return 'ArtCulture';
-        if (c.includes('science') || c.includes('math') || c.includes('data')) return 'MathSci';
-        return 'StartupBusiness';
-      };
-
       el.innerHTML = items.map(p => {
         const img = p.image || `https://picsum.photos/seed/wethus-${encodeURIComponent(p.title||'project')}/900/560`;
-        const sum = String(p.summary || '').slice(0, 64);
-        const cat = mapCat(p.category || '');
+        const sum = String(p.summary || '').slice(0, 60);
         return `
-          <a href="explore_theme.html?cat=${encodeURIComponent(cat)}" style="display:block;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,.14);border-radius:12px;overflow:hidden;background:#111;">
+          <a href="explore_theme.html?cat=${encodeURIComponent((p.category||'').includes('Policy')?'SocietyLaw':(p.category||'').includes('Film')?'ArtCulture':(p.category||'').includes('Science')?'MathSci':'StartupBusiness')}" style="display:block;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,.14);border-radius:12px;overflow:hidden;background:#111;">
             <img src="${img}" alt="${p.title||''}" style="width:100%;height:120px;object-fit:cover;display:block;"/>
             <div style="padding:10px;">
               <div style="font-weight:700;margin-bottom:4px;">${p.title||'프로젝트'}</div>
-              <div style="color:#ffb86b;font-size:.75rem;margin-bottom:4px;">${p.category||'기타'} · ${(p.status||'기획 중')}</div>
               <div style="color:#b8b8b8;font-size:.86rem;">${sum}</div>
             </div>
           </a>
