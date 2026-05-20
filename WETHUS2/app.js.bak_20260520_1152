@@ -724,17 +724,7 @@
   function sanitizeAccountProjects(state, email) {
     const next = { ...(state || {}) };
     const users = Array.isArray(next.users) ? next.users : [];
-    const me = users.find(u => String(u?.email || '').toLowerCase() === email) || null;
-    const isAdminEmail = email === 'admin@wethus.ai';
-    const isAdminRole = String(me?.role || '').toLowerCase() === 'admin';
-
-    // 관리자 계정은 검수 큐 포함 전체 프로젝트를 볼 수 있어야 한다.
-    if (isAdminEmail || isAdminRole) {
-      next.projects = Array.isArray(next.projects) ? next.projects : [];
-      return next;
-    }
-
-    const currentId = next.currentUserId || me?.id || null;
+    const currentId = next.currentUserId || users.find(u => String(u?.email || '').toLowerCase() === email)?.id || null;
     const projects = Array.isArray(next.projects) ? next.projects : [];
     next.projects = projects.filter(p => {
       if (!p || !p.id) return false;
