@@ -161,12 +161,6 @@
       <div class="gateway-actions">
         <a href="explore_v1.html" id="devExploreLink" class="btn btn--secondary" style="display:none;">WETHUS 1.0 탐색 열기</a>
       </div>
-
-      <section style="margin-top:22px;">
-        <h2 style="margin:0 0 10px;font-size:1.1rem;">최근 프로젝트 미리보기</h2>
-        <p style="margin:0 0 12px;color:#b8b8b8;font-size:.92rem;">홈에서 보이는 예시 프로젝트를 여기서도 바로 확인할 수 있어요.</p>
-        <div id="explorePreviewList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;"></div>
-      </section>
     </section>
   </main>
 
@@ -192,29 +186,6 @@
       const dev = document.getElementById('devExploreLink');
       if (dev) dev.style.display = 'inline-flex';
     }
-
-    (function renderPreview(){
-      const el = document.getElementById('explorePreviewList');
-      if (!el) return;
-      const items = (WETHUS.getRecommendedProjects ? WETHUS.getRecommendedProjects(6) : WETHUS.listProjects().slice(0, 6)) || [];
-      if (!items.length) {
-        el.innerHTML = '<div style="color:#b8b8b8;">표시할 프로젝트가 아직 없습니다.</div>';
-        return;
-      }
-      el.innerHTML = items.map(p => {
-        const img = p.image || `https://picsum.photos/seed/wethus-${encodeURIComponent(p.title||'project')}/900/560`;
-        const sum = String(p.summary || '').slice(0, 60);
-        return `
-          <a href="explore_theme.html?cat=${encodeURIComponent((p.category||'').includes('Policy')?'SocietyLaw':(p.category||'').includes('Film')?'ArtCulture':(p.category||'').includes('Science')?'MathSci':'StartupBusiness')}" style="display:block;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,.14);border-radius:12px;overflow:hidden;background:#111;">
-            <img src="${img}" alt="${p.title||''}" style="width:100%;height:120px;object-fit:cover;display:block;"/>
-            <div style="padding:10px;">
-              <div style="font-weight:700;margin-bottom:4px;">${p.title||'프로젝트'}</div>
-              <div style="color:#b8b8b8;font-size:.86rem;">${sum}</div>
-            </div>
-          </a>
-        `;
-      }).join('');
-    })();
   </script>
 </body>
 </html>
