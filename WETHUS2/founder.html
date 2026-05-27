@@ -383,6 +383,8 @@
     const oppDeadline = String(oppParams.get('oppDeadline') || '').trim();
     const oppType = String(oppParams.get('oppType') || '').trim();
     const oppSummary = String(oppParams.get('oppSummary') || '').trim();
+    const ideaTitle = String(oppParams.get('idea') || '').trim();
+    const ideaCategory = String(oppParams.get('category') || '').trim();
 
     if (oppId) {
       const oppField = document.getElementById('opportunityId');
@@ -400,6 +402,21 @@
         descInput.value = `선택한 기회: ${oppTitle || '-'}\n주최: ${oppOrg || '-'}\n마감: ${oppDeadline || '-'}\n\n이 기회를 기반으로 학생 창업 프로젝트를 실행합니다.\n문제정의, MVP 범위, 팀 구성, 검증지표를 4주 안에 구체화합니다.\n\n기회 요약:\n${oppSummary || '상세 내용을 확인하고 실행 계획으로 전환합니다.'}`;
       }
       msg.textContent = '기회 기반 프로젝트 생성 모드입니다. 초안이 자동 입력되었습니다.';
+    }
+
+    if (ideaTitle && !oppId) {
+      const titleInput = form?.elements?.title;
+      if (titleInput && !String(titleInput.value || '').trim()) titleInput.value = ideaTitle;
+      if (ideaCategory && categorySelect) categorySelect.value = ideaCategory;
+      const descInput = form?.elements?.description;
+      if (descInput && !String(descInput.value || '').trim()) {
+        descInput.value = `${ideaTitle}를 학생창업 초기 프로젝트로 검증합니다.\n\n대상 고객은 주변 학생 또는 학교 커뮤니티로 좁히고, 첫 2주 동안 인터뷰 5명과 작은 MVP 1개를 실행합니다. 문제 가설, 예상 사용자, 검증 지표를 명확히 잡아 실제 팀 모집과 산출물 제작으로 이어지게 합니다.`;
+      }
+      const planInput = form?.elements?.plan;
+      if (planInput && !String(planInput.value || '').trim()) {
+        planInput.value = '1주차에는 문제 가설을 정리하고 잠재 사용자 5명을 인터뷰합니다. 2주차에는 가장 자주 나온 불편 하나를 골라 랜딩 페이지, 설문, 노션 프로토타입, 간단한 앱 화면 중 하나로 검증합니다. 마지막에는 사용 의향, 피드백, 팀 모집에 필요한 역할을 정리합니다.';
+      }
+      msg.textContent = '추천 아이디어 기반 초안을 불러왔습니다. 동기와 산출물을 본인 프로젝트에 맞게 채워주세요.';
     }
 
     let imageData = '';
@@ -988,7 +1005,7 @@
           finalImage = `https://picsum.photos/seed/wethus-cover-${encodeURIComponent(title)}-${Date.now()}/1200/700`;
         }
 
-        WETHUS.addProject({
+        const createdProject = WETHUS.addProject({
           title: fd.get('title'),
           category: resolvedCategory(),
           summary,
@@ -1039,7 +1056,7 @@
         entryLoader?.classList.add('open');
         entryLoader?.setAttribute('aria-hidden', 'false');
         await new Promise(r => setTimeout(r, 2000));
-        location.href = 'index.html?v=founder-submitted';
+        location.href = `explore.html?analyzeProject=${encodeURIComponent(createdProject.id)}`;
       } catch (err) {
         msg.textContent = err?.message || '신청 처리 중 오류가 발생했습니다. 다시 시도해주세요.';
       } finally {

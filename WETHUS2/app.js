@@ -52,6 +52,23 @@
     return normalizeYouthTag(user) ? 'Youth' : 'Open';
   }
 
+  const INTEREST_CATALOG = [
+    { tag: 'AI/앱', category: 'Startup', keywords: ['AI', '앱', 'MVP', '자동화'] },
+    { tag: '콘텐츠/미디어', category: 'Film', keywords: ['영상', '콘텐츠', '숏폼', '브랜드'] },
+    { tag: '사회문제', category: 'Policy', keywords: ['지역', '정책', '캠페인', '문제해결'] },
+    { tag: '교육', category: 'App', keywords: ['학습', '학교', '멘토링', '커뮤니티'] },
+    { tag: '환경', category: 'Science', keywords: ['기후', '데이터', '측정', '캠페인'] },
+    { tag: '커머스/브랜드', category: 'Startup', keywords: ['브랜드', '판매', '고객', '실험'] },
+    { tag: '바이오/헬스', category: 'Science', keywords: ['건강', '바이오', '습관', '케어'] },
+    { tag: '데이터/리서치', category: 'Science', keywords: ['데이터', '조사', '대시보드', '리서치'] }
+  ];
+
+  function normalizeInterestTags(input) {
+    const allowed = new Set(INTEREST_CATALOG.map(i => i.tag));
+    const arr = Array.isArray(input) ? input : String(input || '').split(',');
+    return Array.from(new Set(arr.map(v => String(v || '').trim()).filter(v => allowed.has(v)))).slice(0, 8);
+  }
+
   function isYouthProject(project, users = []) {
     const founder = users.find(u => u.id === project?.founderId);
     return !!(project?.youthProjectTag || (founder && normalizeYouthTag(founder)));
@@ -468,6 +485,7 @@
         if (next.school === undefined) next.school = '';
         if (next.careerRaw === undefined) next.careerRaw = '';
         if (next.careerSummary === undefined) next.careerSummary = '';
+        next.interestTags = normalizeInterestTags(next.interestTags || next.interests || []);
         return next;
       });
     }
@@ -648,6 +666,7 @@
         school: '',
         careerRaw: '',
         careerSummary: '',
+        interestTags: [],
         onboardingComplete: false,
         createdAt: new Date().toISOString()
       };
@@ -667,7 +686,7 @@
     return { user, isNew };
   }
 
-  function registerUser({ name, nickname, email, password, age = null, ageVerifiedAt = null }) {
+  function registerUser({ name, nickname, email, password, age = null, ageVerifiedAt = null, interestTags = [] }) {
     const s = load();
     const normalizedEmail = String(email || '').trim().toLowerCase();
     const exists = s.users.find(u => String(u.email || '').toLowerCase() === normalizedEmail);
@@ -692,6 +711,7 @@
       school: '',
       careerRaw: '',
       careerSummary: '',
+      interestTags: normalizeInterestTags(interestTags),
       onboardingComplete: false,
       createdAt: new Date().toISOString()
     };
@@ -1013,6 +1033,104 @@
     return ranked;
   }
 
+  function getStartupIdeaRecommendations(limit = 6) {
+    const user = currentUser();
+    const interests = normalizeInterestTags(user?.interestTags || []);
+    const selected = interests.length ? interests : ['AI/앱', '사회문제', '콘텐츠/미디어'];
+    const templates = {
+      'AI/앱': [
+        ['학교 행사 일정 자동 정리 앱', '동아리·대회·수행평가 일정을 모아 개인별 실행 체크리스트로 바꿉니다.'],
+        ['학생 포트폴리오 자동 정리 도구', '활동 기록을 입력하면 결과물·역할·배운 점을 입시/진로용 카드로 정리합니다.']
+      ],
+      '콘텐츠/미디어': [
+        ['지역 소상공인 숏폼 스튜디오', '학생 팀이 동네 가게의 이야기를 촬영하고 전환율을 실험합니다.'],
+        ['학교 문제 다큐 시리즈', '교내 문제를 인터뷰와 데이터로 기록해 제안서와 영상으로 공개합니다.']
+      ],
+      '사회문제': [
+        ['통학 안전 지도 프로젝트', '위험 구간 제보와 현장 조사를 모아 개선 제안을 만듭니다.'],
+        ['청소년 정책 실험랩', '학생이 겪는 불편을 설문·인터뷰로 검증하고 정책 제안으로 연결합니다.']
+      ],
+      '교육': [
+        ['또래 멘토링 매칭 실험', '잘하는 과목과 필요한 도움을 연결하고 2주 학습 성과를 측정합니다.'],
+        ['수행평가 템플릿 마켓', '보고서·발표·실험 기록 템플릿을 만들고 실제 사용성을 검증합니다.']
+      ],
+      '환경': [
+        ['교실 공기질 데이터랩', 'CO2·미세먼지 데이터를 모아 환기 행동을 바꾸는 캠페인을 실험합니다.'],
+        ['제로웨이스트 매점 실험', '학교 매점 쓰레기를 줄이는 리워드와 디자인을 테스트합니다.']
+      ],
+      '커머스/브랜드': [
+        ['학생 제작 굿즈 검증 스토어', '소량 제작 상품을 예약 판매로 검증하고 브랜드 스토리를 만듭니다.'],
+        ['동아리 후원 패키지 실험', '학교 동아리의 활동을 지역 후원 상품으로 패키징합니다.']
+      ],
+      '바이오/헬스': [
+        ['청소년 수면 습관 챌린지', '수면 기록과 리마인더로 2주 행동 변화를 측정합니다.'],
+        ['운동 루틴 동기부여 앱', '친구와 함께 체크인하고 작은 보상으로 지속률을 검증합니다.']
+      ],
+      '데이터/리서치': [
+        ['학교생활 불편 데이터 대시보드', '설문과 제보를 모아 우선순위와 해결안을 시각화합니다.'],
+        ['지역 청소년 공간 지도', '공부·모임·창작이 가능한 공간을 조사하고 추천 지도를 만듭니다.']
+      ]
+    };
+    const out = [];
+    selected.forEach(tag => {
+      (templates[tag] || []).forEach(([title, summary], idx) => {
+        const meta = INTEREST_CATALOG.find(i => i.tag === tag) || INTEREST_CATALOG[0];
+        out.push({
+          id: `idea-${tag}-${idx}`.replace(/\s+/g, '-'),
+          title,
+          summary,
+          tag,
+          category: meta.category,
+          firstStep: '인터뷰 5명, 문제 가설 1개, 2주 MVP 범위를 먼저 정하세요.',
+          href: `founder.html?idea=${encodeURIComponent(title)}&category=${encodeURIComponent(meta.category)}`
+        });
+      });
+    });
+    return out.slice(0, Math.max(1, Number(limit || 6)));
+  }
+
+  function analyzeProjectIdea(projectIdOrPayload) {
+    const state = load();
+    const project = typeof projectIdOrPayload === 'object'
+      ? projectIdOrPayload
+      : (state.projects || []).find(p => String(p.id) === String(projectIdOrPayload));
+    if (!project) return null;
+    const all = listProjects({ includePending: true, includeRejected: false }).filter(p => p.id !== project.id);
+    const blob = `${project.title || ''} ${project.summary || ''} ${project.fullDescription || ''} ${project.category || ''}`.toLowerCase();
+    const tokens = Array.from(new Set(blob.split(/[^가-힣a-zA-Z0-9]+/).filter(w => w.length >= 2))).slice(0, 40);
+    const similar = all.map(p => {
+      const t = `${p.title || ''} ${p.summary || ''} ${p.fullDescription || ''} ${p.category || ''}`.toLowerCase();
+      const overlap = tokens.filter(w => t.includes(w)).length;
+      const categoryBoost = p.category && p.category === project.category ? 4 : 0;
+      return { ...p, _similarScore: overlap + categoryBoost };
+    }).filter(p => p._similarScore > 0).sort((a, b) => b._similarScore - a._similarScore).slice(0, 4);
+    const query = `${project.title || ''} ${project.category || ''} 청소년 창업 유사 서비스`;
+    const searchUrls = [
+      { label: 'Google', url: `https://www.google.com/search?q=${encodeURIComponent(query)}` },
+      { label: 'Naver', url: `https://search.naver.com/search.naver?query=${encodeURIComponent(query)}` },
+      { label: 'Product Hunt', url: `https://www.producthunt.com/search?q=${encodeURIComponent(project.title || project.category || 'student startup')}` }
+    ];
+    const risks = [];
+    if (similar.length) risks.push('플랫폼 안에 유사 주제가 있어 차별화 포인트를 먼저 잡아야 합니다.');
+    if (String(project.fullDescription || project.summary || '').length < 180) risks.push('문제·고객·검증 방법 설명이 아직 얕습니다.');
+    if (!String(project.roles || '').trim()) risks.push('초기 팀 역할이 약해 실행력이 낮아질 수 있습니다.');
+    return {
+      project,
+      similar,
+      searchUrls,
+      opportunities: [
+        '첫 고객을 학생/동아리/학교 중 하나로 좁히면 빠르게 검증할 수 있습니다.',
+        '2주 안에 보여줄 산출물을 하나로 제한하면 팀 모집 메시지가 선명해집니다.'
+      ],
+      risks: risks.length ? risks : ['현재 입력만으로는 큰 위험 신호는 적지만, 실제 수요 검증은 필요합니다.'],
+      nextActions: [
+        '비슷한 프로젝트 3개를 보고 겹치는 기능과 빠진 고객군을 표시하세요.',
+        '인터뷰 질문 5개를 만들고 잠재 사용자 5명에게 확인하세요.',
+        '2주 MVP를 기능 1개와 측정 지표 1개로 줄이세요.'
+      ]
+    };
+  }
+
   function addComment(projectId, text) {
     const s = load();
     const target = s.projects.find(p => p.id === projectId);
@@ -1065,7 +1183,19 @@
   function reviewProject(projectId, decision, note) {
     const s = load();
     if (!isAdminActor()) throw new Error('관리자 권한이 필요합니다.');
-    const target = s.projects.find(p => p.id === projectId);
+    let target = s.projects.find(p => p.id === projectId);
+    let globalProjects = [];
+    try {
+      globalProjects = JSON.parse(localStorage.getItem(GLOBAL_PROJECTS_KEY) || '[]');
+      if (!Array.isArray(globalProjects)) globalProjects = [];
+    } catch (_) { globalProjects = []; }
+    if (!target) {
+      const globalTarget = globalProjects.find(p => p.id === projectId);
+      if (globalTarget) {
+        target = { ...globalTarget };
+        s.projects.unshift(target);
+      }
+    }
     if (!target) return null;
     if (decision === 'approve') {
       target.moderationStatus = 'approved';
@@ -1091,6 +1221,11 @@
       createdAt: new Date().toISOString(),
       userId: target.founderId || null
     });
+    const globalIdx = globalProjects.findIndex(p => p.id === projectId);
+    if (globalIdx >= 0) {
+      globalProjects[globalIdx] = { ...globalProjects[globalIdx], ...target };
+      try { localStorage.setItem(GLOBAL_PROJECTS_KEY, JSON.stringify(globalProjects)); } catch (_) {}
+    }
     save(s);
     return target;
   }
@@ -1100,6 +1235,7 @@
     const u = s.users.find(x => x.id === s.currentUserId);
     if (!u) return null;
     Object.assign(u, patch || {});
+    u.interestTags = normalizeInterestTags(u.interestTags || []);
     u.youthTag = normalizeYouthTag(u);
     u.userTrack = getUserTrack(u);
     save(s);
@@ -1128,6 +1264,7 @@
         school: user?.school || '',
         careerRaw: user?.careerRaw || '',
         careerSummary: user?.careerSummary || '',
+        interestTags: normalizeInterestTags(user?.interestTags || user?.interests || []),
         onboardingComplete: user?.onboardingComplete === undefined ? true : !!user?.onboardingComplete,
         createdAt: user?.createdAt || new Date().toISOString(),
         googleSub: user?.googleSub || ''
@@ -1150,6 +1287,7 @@
         school: user?.school ?? target.school,
         careerRaw: user?.careerRaw ?? target.careerRaw,
         careerSummary: user?.careerSummary ?? target.careerSummary,
+        interestTags: normalizeInterestTags(user?.interestTags ?? target.interestTags ?? []),
         onboardingComplete: user?.onboardingComplete === undefined ? target.onboardingComplete : !!user.onboardingComplete,
         googleSub: user?.googleSub ?? target.googleSub
       });
@@ -1243,7 +1381,15 @@
   }
 
   function listReviewProjects() {
-    return load().projects.filter(p => p.moderationStatus === 'manual_review');
+    const map = new Map();
+    (load().projects || []).forEach(p => { if (p?.id) map.set(String(p.id), p); });
+    try {
+      const globals = JSON.parse(localStorage.getItem(GLOBAL_PROJECTS_KEY) || '[]');
+      if (Array.isArray(globals)) {
+        globals.forEach(p => { if (p?.id && !map.has(String(p.id))) map.set(String(p.id), p); });
+      }
+    } catch (_) {}
+    return Array.from(map.values()).filter(p => p.moderationStatus === 'manual_review');
   }
 
   function listNotifications(limit = 30) {
@@ -2275,6 +2421,9 @@
     myLikedProjects,
     recordProjectView,
     getRecommendedProjects,
+    getStartupIdeaRecommendations,
+    analyzeProjectIdea,
+    normalizeInterestTags,
     addComment,
     updateProject,
     deleteProject,

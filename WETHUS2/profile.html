@@ -93,6 +93,20 @@
           <label>이름 <input name="name" required /></label>
           <label>별명 <input name="nickname" required /></label>
           <label>자기소개 <textarea name="bio" placeholder="어떤 프로젝트를 왜 하는지 간단히 소개해보세요."></textarea></label>
+          <fieldset class="interest-picker" aria-label="관심 분야 선택">
+            <legend>관심 분야</legend>
+            <p>탐색탭 추천과 프로젝트 아이디어 분석에 반영됩니다.</p>
+            <div class="interest-grid">
+              <label><input type="checkbox" name="interestTags" value="AI/앱" /> AI/앱</label>
+              <label><input type="checkbox" name="interestTags" value="콘텐츠/미디어" /> 콘텐츠/미디어</label>
+              <label><input type="checkbox" name="interestTags" value="사회문제" /> 사회문제</label>
+              <label><input type="checkbox" name="interestTags" value="교육" /> 교육</label>
+              <label><input type="checkbox" name="interestTags" value="환경" /> 환경</label>
+              <label><input type="checkbox" name="interestTags" value="커머스/브랜드" /> 커머스/브랜드</label>
+              <label><input type="checkbox" name="interestTags" value="바이오/헬스" /> 바이오/헬스</label>
+              <label><input type="checkbox" name="interestTags" value="데이터/리서치" /> 데이터/리서치</label>
+            </div>
+          </fieldset>
           <label>나이 <input name="age" type="number" min="10" max="30" placeholder="만 나이" required /></label>
           <label>학교 정보
             <div style="display:flex;gap:8px;">
@@ -200,6 +214,10 @@
       const collapsedCareer = careerLines.slice(0, 3).join('\n');
       const fullCareer = careerLines.join('\n');
       const avatarSrc = user.profileImage ? `<img src="${user.profileImage}" alt="프로필" class="profile-mini-avatar"/>` : `<span class="profile-avatar-fallback">${(user.name || 'U').slice(0,1)}</span>`;
+      const interestTags = WETHUS.normalizeInterestTags ? WETHUS.normalizeInterestTags(user.interestTags || []) : (user.interestTags || []);
+      const interestMarkup = interestTags.length
+        ? `<div class="hero-tags" style="margin:8px 0 0;">${interestTags.map(tag => `<span class="chip">${tag}</span>`).join('')}</div>`
+        : '';
 
       hero.innerHTML = `
         <div class="profile-main" style="width:100%;">
@@ -218,6 +236,7 @@
             ${u ? '<button id="profileEditOpen" class="btn btn--secondary" style="display:inline-flex;align-items:center;gap:6px;">✎ 수정</button>' : ''}
           </div>
           <p class="profile-bio">${user.bio || '아직 소개가 없습니다. 프로젝트를 시작해보세요.'}</p>
+          ${interestMarkup}
           <p class="meta" style="margin:0 0 6px;">${user.school ? user.school + ' · ' : ''}${user.age ? '만 ' + user.age + '세' : ''}</p>
           ${careerLines.length ? `<p id="careerSummaryText" class="meta" style="margin:0 0 4px;white-space:pre-line;">${careerLines.length > 3 ? collapsedCareer : fullCareer}</p>
           ${careerLines.length > 3 ? '<button id="careerToggleBtn" class="btn btn--secondary" type="button" style="padding:4px 10px;font-size:.75rem;">더보기</button>' : ''}` : ''}
@@ -273,6 +292,8 @@
           profileForm.elements.school.value = u.school || '';
           profileForm.elements.careerRaw.value = u.careerRaw || '';
           profileForm.elements.careerSummary.value = u.careerSummary || '';
+          const interestSet = new Set(WETHUS.normalizeInterestTags ? WETHUS.normalizeInterestTags(u.interestTags || []) : (u.interestTags || []));
+          profileForm.querySelectorAll('input[name="interestTags"]').forEach(el => { el.checked = interestSet.has(el.value); });
           if (profileImagePreview) profileImagePreview.src = stagedProfileImage || u.profileImage || '';
           under22Confirm.checked = !!u.onboardingComplete;
           profileMsg.textContent = force ? '초기 프로필 설정을 완료해주세요.' : '';
@@ -491,6 +512,10 @@
             profileMsg.textContent = '학생/연령 확인에 동의해주세요.';
             return;
           }
+          if (!fd.getAll('interestTags').length) {
+            profileMsg.textContent = '관심 분야를 1개 이상 선택해주세요.';
+            return;
+          }
           const careerRaw = String(fd.get('careerRaw') || '').trim();
           const careerSummary = String(fd.get('careerSummary') || '').trim() || careerRaw;
           WETHUS.updateCurrentUserProfile({
@@ -501,6 +526,7 @@
             school: fd.get('school'),
             careerRaw,
             careerSummary,
+            interestTags: fd.getAll('interestTags'),
             profileImage: stagedProfileImage || u.profileImage || '',
             onboardingComplete: true
           });

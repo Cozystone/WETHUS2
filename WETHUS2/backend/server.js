@@ -32,6 +32,12 @@ const NICE_SITE_CODE = process.env.NICE_SITE_CODE || '';
 const NICE_SITE_PASSWORD = process.env.NICE_SITE_PASSWORD || '';
 const PASS_RETURN_URL = process.env.PASS_RETURN_URL || 'http://localhost:8787/pass/success';
 const PASS_ERROR_URL = process.env.PASS_ERROR_URL || 'http://localhost:8787/pass/fail';
+const INTEREST_TAGS = new Set(['AI/앱', '콘텐츠/미디어', '사회문제', '교육', '환경', '커머스/브랜드', '바이오/헬스', '데이터/리서치']);
+
+function normalizeInterestTags(input) {
+  const arr = Array.isArray(input) ? input : String(input || '').split(',');
+  return Array.from(new Set(arr.map(v => String(v || '').trim()).filter(v => INTEREST_TAGS.has(v)))).slice(0, 8);
+}
 
 // Integration OAuth placeholders (Phase 1 foundation)
 const INTEGRATION_APP_URL = process.env.INTEGRATION_APP_URL || 'https://wethus-api.onrender.com';
@@ -1666,6 +1672,7 @@ app.post('/auth/register', (req, res) => {
     const password = String(req.body?.password || '');
     const age = Number(req.body?.age);
     const ageVerifiedAt = String(req.body?.ageVerifiedAt || '').trim();
+    const interestTags = normalizeInterestTags(req.body?.interestTags);
     if (!name || !email || !password) return res.status(400).json({ ok: false, error: 'name/email/password required' });
     const users = readUsers();
     if (users.some(u => normEmail(u.email) === email)) return res.status(409).json({ ok: false, error: '이미 가입된 이메일입니다.' });
@@ -1688,6 +1695,7 @@ app.post('/auth/register', (req, res) => {
       school: '',
       careerRaw: '',
       careerSummary: '',
+      interestTags,
       createdAt: now,
       updatedAt: now
     };
@@ -1753,6 +1761,7 @@ app.post('/auth/google', async (req, res) => {
         school: '',
         careerRaw: '',
         careerSummary: '',
+        interestTags: [],
         googleSub: payload.sub,
         createdAt: now,
         updatedAt: now
