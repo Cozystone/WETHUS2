@@ -641,6 +641,39 @@
     return true;
   }
 
+  function localPasswordSalt(user) {
+    return `${String(user?.id || '')}:${String(user?.email || '').trim().toLowerCase()}`;
+  }
+
+  async function sha256Hex(text) {
+    if (!window.crypto?.subtle || typeof TextEncoder === 'undefined') {
+      throw new Error('이 브라우저에서는 안전한 로컬 비밀번호 저장을 사용할 수 없습니다.');
+    }
+    const bytes = new TextEncoder().encode(String(text || ''));
+    const digest = await window.crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function makeLocalPasswordHash(user, password) {
+    return `local_sha256$${await sha256Hex(`${localPasswordSalt(user)}:${String(password || '')}`)}`;
+  }
+
+  function constantTimeTextEqual(a, b) {
+    const left = String(a || '');
+    const right = String(b || '');
+    let diff = left.length ^ right.length;
+    const max = Math.max(left.length, right.length);
+    for (let i = 0; i < max; i += 1) {
+      diff |= left.charCodeAt(i % left.length || 0) ^ right.charCodeAt(i % right.length || 0);
+    }
+    return diff === 0;
+  }
+
+  async function verifyLocalPassword(user, password) {
+    if (!user?.passwordHash) return false;
+    return constantTimeTextEqual(user.passwordHash, await makeLocalPasswordHash(user, password));
+  }
+
   function oauthLoginGoogle({ sub, email, name, picture }) {
     const s = load();
     let isNew = false;
@@ -686,20 +719,20 @@
     return { user, isNew };
   }
 
-  function registerUser({ name, nickname, email, password, age = null, ageVerifiedAt = null, interestTags = [] }) {
+  async function registerUser({ name, nickname, email, password, age = null, ageVerifiedAt = null, interestTags = [] }) {
     const s = load();
     const normalizedEmail = String(email || '').trim().toLowerCase();
     const exists = s.users.find(u => String(u.email || '').toLowerCase() === normalizedEmail);
     if (exists) throw new Error('이미 가입된 이메일입니다.');
     if (String(password || '').length < 8) throw new Error('비밀번호는 8자 이상이어야 합니다.');
     if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) throw new Error('비밀번호는 영문+숫자를 포함해야 합니다.');
-    if (s.users.some(u => u.password === password)) throw new Error('이미 사용 중인 비밀번호입니다. 다른 비밀번호를 사용해주세요.');
     const user = {
       id: uid(),
       name,
       nickname: nickname || name,
       email: normalizedEmail,
-      password,
+      password: '',
+      passwordHash: '',
       bio: '',
       founderVerified: false,
       profileImage: '',
@@ -715,6 +748,7 @@
       onboardingComplete: false,
       createdAt: new Date().toISOString()
     };
+    user.passwordHash = await makeLocalPasswordHash(user, password);
     s.users.push(user);
     s.currentUserId = user.id;
     s.devMode = false;
@@ -722,19 +756,27 @@
     return user;
   }
 
-  function loginUser({ email, password }) {
+  async function loginUser({ email, password }) {
     const s = load();
     const normalizedEmail = String(email || '').trim().toLowerCase();
     const user = s.users.find(u => String(u.email || '').toLowerCase() === normalizedEmail);
     if (!user) throw new Error('가입된 계정이 없습니다.');
-    if (user.password !== password) throw new Error('비밀번호가 일치하지 않습니다.');
+    if (user.passwordHash) {
+      if (!(await verifyLocalPassword(user, password))) throw new Error('비밀번호가 일치하지 않습니다.');
+    } else if (user.password) {
+      if (user.password !== password) throw new Error('비밀번호가 일치하지 않습니다.');
+      user.passwordHash = await makeLocalPasswordHash(user, password);
+      user.password = '';
+    } else {
+      throw new Error('Google 가입 계정입니다. Google 로그인 후 앱 비밀번호를 먼저 설정해주세요.');
+    }
     s.currentUserId = user.id;
     s.devMode = false;
     save(s);
     return user;
   }
 
-  function registerOrLogin(payload) {
+  async function registerOrLogin(payload) {
     const s = load();
     const user = s.users.find(u => u.email === payload.email);
     if (user) return loginUser({ email: payload.email, password: payload.password });

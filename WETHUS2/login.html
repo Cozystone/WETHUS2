@@ -685,7 +685,7 @@
             ? isLocalHost
             : !!window.WETHUS_ALLOW_LOCAL_AUTH_FALLBACK;
           if (isLocalHost && allowLocalFallback) {
-            WETHUS.loginUser({ email, password });
+            await WETHUS.loginUser({ email, password });
           } else {
             throw err;
           }
@@ -698,9 +698,9 @@
         const m = String(err?.message || '로그인에 실패했습니다.');
         const localUser = (WETHUS.getState().users || []).find(u => String(u.email || '').toLowerCase() === email);
 
-        if (/가입된 계정이 없습니다/.test(m) && localUser?.password) {
+        if (/가입된 계정이 없습니다/.test(m) && (localUser?.password || localUser?.passwordHash)) {
           try {
-            WETHUS.loginUser({ email, password });
+            await WETHUS.loginUser({ email, password });
             if (rememberEmail.checked) localStorage.setItem('wethus_saved_email', email);
             else localStorage.removeItem('wethus_saved_email');
             try { if (WETHUS.syncCloudState) await WETHUS.syncCloudState(email); } catch (_) {}
@@ -710,7 +710,7 @@
           } catch (_) {}
         }
 
-        if (localUser && !localUser.password) {
+        if (localUser && !localUser.password && !localUser.passwordHash) {
           msg.textContent = '이 이메일은 Google로 가입된 계정입니다. 아래 Google 로그인 버튼을 이용해주세요.';
           return;
         }
@@ -750,7 +750,7 @@
           WETHUS.upsertCloudUser(data.user || {});
         } catch (err) {
           if (isLocalHost) {
-            WETHUS.registerUser(payload);
+            await WETHUS.registerUser(payload);
           } else {
             throw err;
           }
