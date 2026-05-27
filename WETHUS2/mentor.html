@@ -207,10 +207,23 @@
     }
 
     function currentList(){ return activeTab === 'human' ? humanMentors : aiMentors; }
+    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[ch]));
+    const safeUrl = (value, fallback = '') => {
+      const raw = String(value || '').trim();
+      if (!raw) return fallback;
+      if (/^(https?:|\.\/|\/|[a-z0-9_.-]+\.html(?:[?#].*)?$)/i.test(raw)) return raw;
+      return fallback;
+    };
 
     function renderCategories(){
       const cats = ['전체', ...Array.from(new Set(currentList().map(x => x.category)))];
-      mentorCats.innerHTML = cats.map(c => `<button class="mentor-chip ${c===activeCategory?'active':''}" data-cat="${c}" type="button">${c}</button>`).join('');
+      mentorCats.innerHTML = cats.map(c => `<button class="mentor-chip ${c===activeCategory?'active':''}" data-cat="${esc(c)}" type="button">${esc(c)}</button>`).join('');
       mentorCats.querySelectorAll('.mentor-chip').forEach(btn => {
         btn.addEventListener('click', () => { activeCategory = btn.getAttribute('data-cat') || '전체'; renderCategories(); renderMentors(); });
       });
@@ -242,7 +255,7 @@
       if (!myProjects.length) {
         consultProjectSelect.innerHTML = '<option value="__idea__">아이디어 단계(프로젝트 없음)</option>';
       } else {
-        consultProjectSelect.innerHTML = `<option value="__idea__">아이디어 단계(프로젝트 없음)</option>` + myProjects.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
+        consultProjectSelect.innerHTML = `<option value="__idea__">아이디어 단계(프로젝트 없음)</option>` + myProjects.map(p => `<option value="${esc(p.id)}">${esc(p.title)}</option>`).join('');
       }
       consultNote.value = '';
       if (consultNoteMsg) consultNoteMsg.textContent = '';
@@ -267,24 +280,24 @@
 
       targetEl.innerHTML = filtered.map(m => {
         const avatarTxt = (m.name || 'M').trim().charAt(0).toUpperCase();
-        const avatarHtml = m.avatar ? `<img src="${m.avatar}" alt="${m.name || 'mentor'}" />` : avatarTxt;
+        const avatarHtml = m.avatar ? `<img src="${esc(safeUrl(m.avatar))}" alt="${esc(m.name || 'mentor')}" />` : esc(avatarTxt);
         if (activeTab === 'human') {
           const isFull = Number(m.activeTeams || 0) >= Number(m.capacity || 0);
           return `
-            <article class="mentor-item" data-open-human="${m.id}" style="cursor:pointer;">
+            <article class="mentor-item" data-open-human="${esc(m.id)}" style="cursor:pointer;">
               <div class="mentor-avatar">${avatarHtml}</div>
               <div>
-                <h3 class="mentor-name">${m.name} 멘토</h3>
-                <p class="mentor-sub">${m.title}</p>
-                <p class="mentor-role">${m.role}</p>
-                <p class="mentor-sub" style="margin-top:4px;color:#d0d0d0;">경력: ${m.career || '경력 정보 준비중'}</p>
+                <h3 class="mentor-name">${esc(m.name)} 멘토</h3>
+                <p class="mentor-sub">${esc(m.title)}</p>
+                <p class="mentor-role">${esc(m.role)}</p>
+                <p class="mentor-sub" style="margin-top:4px;color:#d0d0d0;">경력: ${esc(m.career || '경력 정보 준비중')}</p>
                 <p class="mentor-load">자문중인 팀 ${m.activeTeams}/${m.capacity} ${isFull ? '· 정원마감(대기가능)' : ''}</p>
               </div>
               <div class="mentor-actions">
                 ${isFull
-                  ? `<button class="btn btn--primary" data-wait-human="${m.id}" type="button">대기 신청하기</button>`
-                  : `<button class="btn btn--primary" data-consult-human="${m.id}" type="button">자문 요청하기</button>`}
-                ${canHumanDm ? `<button class="btn btn--primary" data-dm-human="${m.id}" type="button">DM 보내기</button>` : ''}
+                  ? `<button class="btn btn--primary" data-wait-human="${esc(m.id)}" type="button">대기 신청하기</button>`
+                  : `<button class="btn btn--primary" data-consult-human="${esc(m.id)}" type="button">자문 요청하기</button>`}
+                ${canHumanDm ? `<button class="btn btn--primary" data-dm-human="${esc(m.id)}" type="button">DM 보내기</button>` : ''}
               </div>
             </article>`;
         }
@@ -292,12 +305,12 @@
           <article class="mentor-item">
             <div class="mentor-avatar">${avatarHtml || '🤖'}</div>
             <div>
-              <h3 class="mentor-name">${m.name}</h3>
-              <p class="mentor-sub">${m.title}</p>
-              <p class="mentor-role">${m.role}</p>
+              <h3 class="mentor-name">${esc(m.name)}</h3>
+              <p class="mentor-sub">${esc(m.title)}</p>
+              <p class="mentor-role">${esc(m.role)}</p>
             </div>
             <div class="mentor-actions">
-              <button class="btn btn--primary" data-consult-ai="${m.id}" type="button">자문 요청하기</button>
+              <button class="btn btn--primary" data-consult-ai="${esc(m.id)}" type="button">자문 요청하기</button>
             </div>
           </article>`;
       }).join('');

@@ -103,6 +103,13 @@
       detailModal.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
     }
+    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[ch]));
 
     function render(focusId) {
       const items = WETHUS.listNotifications(200);
@@ -111,16 +118,16 @@
         return;
       }
       listEl.innerHTML = items.map(n => `
-        <article class="list-item" data-id="${n.id}" style="border-color:${n.unread ? '#ff6a00' : '#2a2a2a'};">
+        <article class="list-item" data-id="${esc(n.id)}" style="border-color:${n.unread ? '#ff6a00' : '#2a2a2a'};">
           <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
             <div>
-              <h3 style="margin:0 0 2px;">${n.title}</h3>
-              <p style="margin:0 0 4px;color:var(--orange);font-size:.82rem;font-weight:700;">${n.sender || 'WETHUS'}</p>
-              <p style="margin:0 0 6px;">${n.body || ''}</p>
-              <div class="meta">${timeText(n.createdAt)}</div>
+              <h3 style="margin:0 0 2px;">${esc(n.title)}</h3>
+              <p style="margin:0 0 4px;color:var(--orange);font-size:.82rem;font-weight:700;">${esc(n.sender || 'WETHUS')}</p>
+              <p style="margin:0 0 6px;">${esc(n.body || '')}</p>
+              <div class="meta">${esc(timeText(n.createdAt))}</div>
             </div>
             <div style="display:flex;gap:6px;align-items:center;">
-              ${n.unread ? '<span class="verify-badge" style="padding:2px 7px;">NEW</span>' : '<button class="btn btn--secondary notify-delete" data-del="'+n.id+'" style="padding:3px 8px;font-size:.72rem;">삭제</button>'}
+              ${n.unread ? '<span class="verify-badge" style="padding:2px 7px;">NEW</span>' : '<button class="btn btn--secondary notify-delete" data-del="'+esc(n.id)+'" style="padding:3px 8px;font-size:.72rem;">삭제</button>'}
             </div>
           </div>
         </article>

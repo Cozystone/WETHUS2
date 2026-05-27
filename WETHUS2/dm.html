@@ -136,9 +136,22 @@
     }
 
     function formatTime(ts){ try { return new Date(ts).toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }); } catch { return ''; } }
+    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[ch]));
+    const safeUrl = (value, fallback = '') => {
+      const raw = String(value || '').trim();
+      if (!raw) return fallback;
+      if (/^(https?:|\.\/|\/|[a-z0-9_.-]+\.html(?:[?#].*)?$)/i.test(raw)) return raw;
+      return fallback;
+    };
     function avatarMarkup(name, avatar) {
-      if (avatar) return `<span class="dm-avatar"><img src="${avatar}" alt="${name||'avatar'}" /></span>`;
-      return `<span class="dm-avatar">${String(name || 'U').trim().slice(0,1).toUpperCase()}</span>`;
+      if (avatar) return `<span class="dm-avatar"><img src="${esc(safeUrl(avatar))}" alt="${esc(name||'avatar')}" /></span>`;
+      return `<span class="dm-avatar">${esc(String(name || 'U').trim().slice(0,1).toUpperCase())}</span>`;
     }
 
     function applyPlanUi() {
@@ -152,11 +165,11 @@
     function renderThreads(list = currentThreads) {
       if (!list.length) { threadEl.innerHTML = '<div class="dm-empty" style="height:100%;">대화가 없습니다.</div>'; return; }
       threadEl.innerHTML = list.map(t => `
-        <article class="dm-thread ${currentThreadId === t.id ? 'active' : ''}" data-id="${t.id}">
+        <article class="dm-thread ${currentThreadId === t.id ? 'active' : ''}" data-id="${esc(t.id)}">
           ${avatarMarkup(t.peerName || t.targetName || '대화 상대', t.peerAvatar || t.targetAvatar || '')}
           <div style="min-width:0;">
-            <h4 class="dm-thread-name">${t.peerName || t.targetName || '대화 상대'}</h4>
-            <p class="dm-thread-last">${t.lastMessage || '메시지가 없습니다.'}</p>
+            <h4 class="dm-thread-name">${esc(t.peerName || t.targetName || '대화 상대')}</h4>
+            <p class="dm-thread-last">${esc(t.lastMessage || '메시지가 없습니다.')}</p>
           </div>
         </article>
       `).join('');
@@ -187,15 +200,15 @@
       titleEl.textContent = thread.peerName || thread.targetName || '대화';
       subEl.textContent = `${thread.messageCount || 0}개 메시지`;
       headAvatarEl.innerHTML = thread.peerAvatar || thread.targetAvatar
-        ? `<img src="${thread.peerAvatar || thread.targetAvatar}" alt="avatar" />`
-        : String(thread.peerName || thread.targetName || 'U').trim().slice(0,1).toUpperCase();
+        ? `<img src="${esc(safeUrl(thread.peerAvatar || thread.targetAvatar))}" alt="avatar" />`
+        : esc(String(thread.peerName || thread.targetName || 'U').trim().slice(0,1).toUpperCase());
       const msgs = await WETHUS.listDmMessages(thread.id);
       const me = WETHUS.currentUser();
       const myName = me?.nickname || me?.name || WETHUS.getState().currentUserId || '';
       const myId = String(WETHUS.getState().currentUserId || '');
       msgEl.innerHTML = msgs.length ? msgs.map(m => {
         const mine = String(m.fromId || '') === myId || String(m.from || '').trim() === String(myName).trim();
-        return `<article class="dm-bubble ${mine ? 'me' : 'other'}"><div>${m.text || ''}</div><div class="dm-meta">${m.from || ''} · ${formatTime(m.createdAt)}</div></article>`;
+        return `<article class="dm-bubble ${mine ? 'me' : 'other'}"><div>${esc(m.text || '')}</div><div class="dm-meta">${esc(m.from || '')} · ${esc(formatTime(m.createdAt))}</div></article>`;
       }).join('') : '<div class="dm-empty">아직 메시지가 없습니다.</div>';
       msgEl.scrollTop = msgEl.scrollHeight;
     }
