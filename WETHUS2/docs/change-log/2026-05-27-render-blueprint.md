@@ -4,6 +4,7 @@
 - Added root-level `render.yaml` for the WETHUS backend service.
 - The blueprint pins the service name, runtime, root directory, build command, start command, health check path, and non-secret production defaults.
 - Secret environment variables are declared with `sync: false` so they must be supplied in Render and are not committed.
+- Static validation now checks that the Render blueprint keeps the expected backend root, commands, origins, and secret handling.
 
 ## Reason
 - Production API drift is the current top operational risk.
@@ -14,6 +15,7 @@
 - Render can be configured or reconciled from the repository root with a deterministic backend service definition.
 - The service should build from `WETHUS2/backend` using `npm ci` and start with `npm start`.
 - Once Render runs this baseline, `/health` should identify `service: "wethus-backend"` and include security flag state.
+- CI will fail if the blueprint drifts away from this backend deploy contract.
 
 ## Risks
 - Applying a blueprint to an existing service may update service settings. Review plan, region, environment variables, and custom domains before syncing.

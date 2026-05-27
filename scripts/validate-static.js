@@ -37,6 +37,52 @@ function walk(dir) {
   return out;
 }
 
+function validateRenderBlueprint() {
+  const file = path.join(repoRoot, 'render.yaml');
+  if (!fs.existsSync(file)) {
+    fail('render.yaml must exist at repo root to pin the Render backend deploy root');
+    return;
+  }
+
+  const text = read(file);
+  const requiredSnippets = [
+    'services:',
+    'type: web',
+    'name: wethus-api',
+    'runtime: node',
+    'rootDir: WETHUS2/backend',
+    'buildCommand: npm ci',
+    'startCommand: npm start',
+    'healthCheckPath: /health',
+    'key: NODE_ENV',
+    'value: production',
+    'key: ALLOWED_ORIGINS',
+    'https://wethus.co.kr,https://www.wethus.co.kr'
+  ];
+  for (const snippet of requiredSnippets) {
+    if (!text.includes(snippet)) fail(`render.yaml must include: ${snippet}`);
+  }
+
+  const secretKeys = [
+    'JWT_SECRET',
+    'ADMIN_BOOTSTRAP_PASSWORD',
+    'GOOGLE_CLIENT_ID',
+    'OPENAI_API_KEY'
+  ];
+  for (const key of secretKeys) {
+    const blockMatch = text.match(new RegExp(`-\\s+key:\\s*${key}\\n((?:\\s{8}.+\\n?)*)`));
+    const block = blockMatch ? blockMatch[0] : '';
+    if (!block) {
+      fail(`render.yaml must declare secret ${key}`);
+      continue;
+    }
+    if (!/sync:\s*false/.test(block)) fail(`render.yaml secret ${key} must use sync: false`);
+    if (/\n\s+value:\s*/.test(block)) fail(`render.yaml secret ${key} must not have a committed value`);
+  }
+}
+
+validateRenderBlueprint();
+
 if (!fs.existsSync(appRoot)) {
   fail(`Missing app root: ${path.relative(repoRoot, appRoot)}`);
 } else {
