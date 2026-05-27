@@ -83,6 +83,28 @@ function validateRenderBlueprint() {
 
 validateRenderBlueprint();
 
+function validateOpsRunbooks() {
+  const renderRunbook = path.join(appRoot, 'docs', 'ops', 'render-backend-redeploy.md');
+  if (!fs.existsSync(renderRunbook)) {
+    fail('WETHUS2/docs/ops/render-backend-redeploy.md must document the live API redeploy and strict smoke procedure');
+    return;
+  }
+  const text = read(renderRunbook);
+  const requiredSnippets = [
+    'https://wethus-api.onrender.com/health',
+    'render.yaml',
+    'WETHUS2/backend',
+    'REQUIRE_WETHUS_API_SECURITY_HEADERS=true',
+    'REQUIRE_WETHUS_API_HEALTH_METADATA=true',
+    'require_hardened_api=true'
+  ];
+  for (const snippet of requiredSnippets) {
+    if (!text.includes(snippet)) fail(`Render redeploy runbook must include: ${snippet}`);
+  }
+}
+
+validateOpsRunbooks();
+
 if (!fs.existsSync(appRoot)) {
   fail(`Missing app root: ${path.relative(repoRoot, appRoot)}`);
 } else {
