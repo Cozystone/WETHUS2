@@ -60,6 +60,8 @@ const intMap=()=>{try{return JSON.parse(localStorage.getItem(INT)||'{}')}catch{r
 const myInt=()=>new Set(intMap()[actor()]||[]);
 const toggleInt=(id)=>{const all=intMap(),k=actor(),s=new Set(all[k]||[]);s.has(id)?s.delete(id):s.add(id);all[k]=[...s];localStorage.setItem(INT,JSON.stringify(all));return s.has(id)};
 const related=(id)=>WETHUS.listProjects().filter(p=>String(p.opportunityId||'')===String(id));
+const esc=(v)=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const safeUrl=(v,fb='')=>{const raw=String(v||'').trim();if(!raw)return fb;if(/^https?:\/\//i.test(raw))return raw;return fb;};
 const days=(d)=>{ const dt=new Date(d); if(!d || Number.isNaN(dt.getTime())) return null; return Math.ceil((dt.getTime()-Date.now())/86400000); };
 const fmtMD=(v)=>{if(!v)return '확인중'; const dt=new Date(v); if(Number.isNaN(dt.getTime())) return '확인중'; const mm=String(dt.getMonth()+1).padStart(2,'0'); const dd=String(dt.getDate()).padStart(2,'0'); return `${mm}.${dd}`;};
 const statusLabel=(o)=>{ const d=days(o.deadline); if(d===null) return '일정확인중'; if(d<0) return '마감'; if(d===0) return '오늘마감'; if(o.applyStart && new Date(o.applyStart)>new Date()) return '접수예정'; return '접수중'; };
@@ -85,7 +87,7 @@ if(state.regions.size){
   if(!matched && !nationwide) return false;
 }
 return true;}).sort((a,b)=>state.sort==='deadline'?deadlineRank(a)-deadlineRank(b):state.sort==='latest'?(Number(isClosed(a))-Number(isClosed(b)) || new Date(b.created_at)-new Date(a.created_at)):state.sort==='benefit'?(Number(isClosed(a))-Number(isClosed(b)) || (b.benefitScore||0)-(a.benefitScore||0)):score(b)-score(a));}
-function row(id,arr,set,single){const el=document.getElementById(id);el.innerHTML=arr.map(v=>`<button class="opp-chip ${set.has(v)?'active':''}" data-v="${v}">${v}</button>`).join('');el.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{const v=b.dataset.v;if(single){if(v==='전체'){set.clear();set.add('전체')}else{set.delete('전체');set.has(v)?set.delete(v):set.add(v);if(!set.size)set.add('전체')}}else{set.has(v)?set.delete(v):set.add(v)};render()});}
+function row(id,arr,set,single){const el=document.getElementById(id);el.innerHTML=arr.map(v=>`<button class="opp-chip ${set.has(v)?'active':''}" data-v="${esc(v)}">${esc(v)}</button>`).join('');el.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{const v=b.dataset.v;if(single){if(v==='전체'){set.clear();set.add('전체')}else{set.delete('전체');set.has(v)?set.delete(v):set.add(v);if(!set.size)set.add('전체')}}else{set.has(v)?set.delete(v):set.add(v)};render()});}
 function start(id){const o=opps.find(x=>x.id===id);if(!o)return;const q=new URLSearchParams({opportunityId:o.id,oppTitle:o.title,oppOrg:o.organizer,oppDeadline:o.deadline,oppType:o.type,oppSummary:o.summary});location.href=`founder.html?${q}`}
 function normalizeUrl(u){
   const raw=String(u||'').trim();
@@ -93,7 +95,7 @@ function normalizeUrl(u){
   if(/^https?:\/\//i.test(raw)) return raw;
   return `https://${raw.replace(/^\/+/, '')}`;
 }
-function open(id){const o=opps.find(x=>x.id===id);if(!o)return;state.current=o;document.getElementById('mTitle').textContent=o.title;document.getElementById('mSummary').textContent=o.description||o.summary;const poster=document.getElementById('mPoster'); if (poster) { if (o.poster_url) { poster.src=o.poster_url; poster.style.display='block'; } else { poster.style.display='none'; } } document.getElementById('mOrg').textContent=o.organizer;const md=days(o.deadline);document.getElementById('mDeadline').textContent=`${statusLabel(o)} · 마감 ${o.deadline || '확인중'} (${md===null?'D-확인중':(md>=0?`D-${md}`:`D+${Math.abs(md)}`)})`;document.getElementById('mEligibility').textContent=o.eligibility.join(', ');document.getElementById('mTeamReq').textContent=o.teamRequirement==='team'?'팀 필수':'개인/팀 가능';document.getElementById('mBenefits').textContent=o.benefits;document.getElementById('mSchedule').textContent=`접수 ${fmtMD(o.applyStart)}~${fmtMD(o.applyEnd||o.deadline)} / 심사 ${fmtMD(o.judgeStart)}~${fmtMD(o.judgeEnd)}${o.resultDate?` / 발표 ${fmtMD(o.resultDate)}`:''}`;const official=normalizeUrl(o.official_url);document.getElementById('mLink').innerHTML=official?`<a href="${official}" target="_blank" rel="noopener noreferrer">${official}</a>`:'확인중';const offBtn=document.getElementById('mOfficial');if(offBtn){offBtn.setAttribute('href', official || '#');offBtn.style.pointerEvents=official?'auto':'none';offBtn.style.opacity=official?'1':'.5';}const r=related(o.id);document.getElementById('mRelatedList').innerHTML=r.length?r.map(p=>`<article class="list-item"><h3>${p.title}</h3></article>`).join(''):'<article class="list-item"><p class="meta">아직 관련 팀이 없습니다.</p></article>';const on=myInt().has(o.id),b=document.getElementById('mInterest');b.textContent=on?'관심 저장됨':'관심 저장';b.className=on?'btn btn--primary':'btn btn--secondary';document.getElementById('oppModal').classList.add('open');}
+function open(id){const o=opps.find(x=>x.id===id);if(!o)return;state.current=o;document.getElementById('mTitle').textContent=o.title;document.getElementById('mSummary').textContent=o.description||o.summary;const poster=document.getElementById('mPoster'); if (poster) { const posterUrl=safeUrl(normalizeUrl(o.poster_url)); if (posterUrl) { poster.src=posterUrl; poster.style.display='block'; } else { poster.style.display='none'; } } document.getElementById('mOrg').textContent=o.organizer;const md=days(o.deadline);document.getElementById('mDeadline').textContent=`${statusLabel(o)} · 마감 ${o.deadline || '확인중'} (${md===null?'D-확인중':(md>=0?`D-${md}`:`D+${Math.abs(md)}`)})`;document.getElementById('mEligibility').textContent=o.eligibility.join(', ');document.getElementById('mTeamReq').textContent=o.teamRequirement==='team'?'팀 필수':'개인/팀 가능';document.getElementById('mBenefits').textContent=o.benefits;document.getElementById('mSchedule').textContent=`접수 ${fmtMD(o.applyStart)}~${fmtMD(o.applyEnd||o.deadline)} / 심사 ${fmtMD(o.judgeStart)}~${fmtMD(o.judgeEnd)}${o.resultDate?` / 발표 ${fmtMD(o.resultDate)}`:''}`;const official=safeUrl(normalizeUrl(o.official_url));document.getElementById('mLink').innerHTML=official?`<a href="${esc(official)}" target="_blank" rel="noopener noreferrer">${esc(official)}</a>`:'확인중';const offBtn=document.getElementById('mOfficial');if(offBtn){offBtn.setAttribute('href', official || '#');offBtn.style.pointerEvents=official?'auto':'none';offBtn.style.opacity=official?'1':'.5';}const r=related(o.id);document.getElementById('mRelatedList').innerHTML=r.length?r.map(p=>`<article class="list-item"><h3>${esc(p.title)}</h3></article>`).join(''):'<article class="list-item"><p class="meta">아직 관련 팀이 없습니다.</p></article>';const on=myInt().has(o.id),b=document.getElementById('mInterest');b.textContent=on?'관심 저장됨':'관심 저장';b.className=on?'btn btn--primary':'btn btn--secondary';document.getElementById('oppModal').classList.add('open');}
 function render(){
   row('typeFilters',typeFilters,state.types,true);
   row('eligibilityFilters',eligibilityFilters,state.elig,false);
@@ -108,14 +110,14 @@ function render(){
     const d=days(o.deadline);
     const dText=d===null?'D-확인중':(d<0?`D+${Math.abs(d)}`:`D-${d}`);
     const status=statusLabel(o);
-    return `<article class="opp-item" data-open="${o.id}">
+    return `<article class="opp-item" data-open="${esc(o.id)}">
       <div class="opp-main">
-        <div class="opp-title">${o.title}</div>
-        <div class="opp-sub">주최 ${o.organizer} · ${o.type}</div>
-        <div class="opp-sub">${o.summary}</div>
+        <div class="opp-title">${esc(o.title)}</div>
+        <div class="opp-sub">주최 ${esc(o.organizer)} · ${esc(o.type)}</div>
+        <div class="opp-sub">${esc(o.summary)}</div>
         <div class="opp-meta">
-          <span class="badge-soft">대상 ${o.eligibility.join(' · ')}</span>
-          <span class="badge-soft">지역 ${(o.regions||['전국']).join(' · ')}</span>
+          <span class="badge-soft">대상 ${(o.eligibility||[]).map(esc).join(' · ')}</span>
+          <span class="badge-soft">지역 ${(o.regions||['전국']).map(esc).join(' · ')}</span>
           <span class="badge-soft">관련 프로젝트 ${related(o.id).length}</span>
         </div>
       </div>
