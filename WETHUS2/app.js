@@ -2,7 +2,7 @@
 (function () {
   const KEY = 'wethus_v1';
   const GLOBAL_PROJECTS_KEY = 'wethus_global_projects_v1';
-  const DEFAULT_GEMINI_KEY = 'AIzaSyBb5uOh7OMbtR-Mm4GwT6IU2zSwVUqdnL8';
+  const DEFAULT_GEMINI_KEY = '';
   const DEFAULT_OPENAI_KEY = '';
   const ADMIN_MODE_USER_ID = 'admin-mode';
   const CLOUD_BASE_CANDIDATES = [
@@ -439,13 +439,13 @@
         ],
         agents: [],
         agentActivityLogs: [],
-        geminiApiKey: DEFAULT_GEMINI_KEY
+        geminiApiKey: ''
       };
       localStorage.setItem(KEY, JSON.stringify(init));
       return init;
     }
     const parsed = JSON.parse(raw);
-    if (!parsed.geminiApiKey) parsed.geminiApiKey = DEFAULT_GEMINI_KEY;
+    if (!parsed.geminiApiKey) parsed.geminiApiKey = '';
     if (!Array.isArray(parsed.applications)) parsed.applications = [];
     if (!Array.isArray(parsed.bookmarks)) parsed.bookmarks = [];
     if (!Array.isArray(parsed.notifications)) parsed.notifications = [];
@@ -1959,6 +1959,7 @@
 
     // 2) fallback: 직접 Gemini 호출
     const apiKey = getGeminiApiKey();
+    if (!apiKey) throw backendErr || new Error('AI API 키는 서버 프록시에서만 설정하세요.');
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     async function once(timeoutMs = 15000) {

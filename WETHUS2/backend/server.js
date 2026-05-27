@@ -14,6 +14,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT || 8787);
 const DEFAULT_GOOGLE_CLIENT_ID = '196934770979-6ntmgcrs6k6jkifskspasg4uie5irgec.apps.googleusercontent.com';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
@@ -27,7 +28,7 @@ const AI_PROVIDER = (process.env.AI_PROVIDER || 'openai').toLowerCase();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const ADMIN_EMAIL = normEmail(process.env.ADMIN_EMAIL || 'admin@wethus.ai');
+const ADMIN_EMAIL_RAW = process.env.ADMIN_EMAIL || 'admin@wethus.ai';
 const ADMIN_BOOTSTRAP_PASSWORD = process.env.ADMIN_BOOTSTRAP_PASSWORD || process.env.ADMIN_PASSWORD || '';
 const PASS_ENABLED = String(process.env.PASS_ENABLED || 'false').toLowerCase() === 'true';
 const NICE_SITE_CODE = process.env.NICE_SITE_CODE || '';
@@ -158,6 +159,41 @@ function normEmail(email) {
 }
 function hashPw(pw) {
   return crypto.createHash('sha256').update(String(pw || '')).digest('hex');
+}
+
+function timingSafeEqualText(a, b) {
+  const left = Buffer.from(String(a || ''), 'utf8');
+  const right = Buffer.from(String(b || ''), 'utf8');
+  if (left.length !== right.length) return false;
+  return crypto.timingSafeEqual(left, right);
+}
+
+function makePasswordHash(pw) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const iterations = 210000;
+  const digest = crypto.pbkdf2Sync(String(pw || ''), salt, iterations, 32, 'sha256').toString('hex');
+  return `pbkdf2_sha256$${iterations}$${salt}$${digest}`;
+}
+
+function verifyPassword(pw, stored) {
+  const value = String(stored || '');
+  if (value.startsWith('pbkdf2_sha256$')) {
+    const [, iterRaw, salt, expected] = value.split('$');
+    const iterations = Number(iterRaw);
+    if (!Number.isFinite(iterations) || !salt || !expected) return false;
+    const digest = crypto.pbkdf2Sync(String(pw || ''), salt, iterations, 32, 'sha256').toString('hex');
+    return timingSafeEqualText(digest, expected);
+  }
+  return timingSafeEqualText(hashPw(pw), value);
+}
+
+function isLegacyPasswordHash(stored) {
+  return !!stored && !String(stored).startsWith('pbkdf2_sha256$');
+}
+
+function isStrongBootstrapPassword(pw) {
+  const v = String(pw || '');
+  return v.length >= 8 && /[A-Za-z]/.test(v) && /[0-9]/.test(v);
 }
 
 function getActorId(req) {
@@ -1678,7 +1714,7 @@ app.post('/auth/register', (req, res) => {
       name,
       nickname,
       email,
-      passwordHash: hashPw(password),
+      passwordHash: makePasswordHash(password),
       plan: 'free',
       founderVerified: false,
       profileImage: '',
@@ -1710,14 +1746,18 @@ app.post('/auth/login', (req, res) => {
     if (!email || !password) return res.status(400).json({ ok: false, error: 'email/password required' });
     const users = readUsers();
     let user = users.find(u => normEmail(u.email) === email);
-    if (!user && ADMIN_BOOTSTRAP_PASSWORD && email === ADMIN_EMAIL && password === ADMIN_BOOTSTRAP_PASSWORD) {
+    const adminEmail = normEmail(ADMIN_EMAIL_RAW);
+    if (!user && ADMIN_BOOTSTRAP_PASSWORD && email === adminEmail && password === ADMIN_BOOTSTRAP_PASSWORD) {
+      if (!isStrongBootstrapPassword(ADMIN_BOOTSTRAP_PASSWORD)) {
+        return res.status(500).json({ ok: false, error: 'ADMIN_BOOTSTRAP_PASSWORD must be at least 8 chars and include letters and numbers.' });
+      }
       const now = new Date().toISOString();
       user = {
         id: crypto.randomUUID(),
         name: 'WETHUS Admin',
         nickname: 'admin',
         email,
-        passwordHash: hashPw(password),
+        passwordHash: makePasswordHash(password),
         role: 'admin',
         plan: 'pro',
         founderVerified: true,
@@ -1740,7 +1780,12 @@ app.post('/auth/login', (req, res) => {
     }
     if (!user) return res.status(404).json({ ok: false, error: '가입된 계정이 없습니다.' });
     if (!user.passwordHash) return res.status(400).json({ ok: false, error: '구글 가입 계정입니다. Google 로그인 후 앱 비밀번호를 먼저 설정해주세요.' });
-    if (user.passwordHash !== hashPw(password)) return res.status(401).json({ ok: false, error: '비밀번호가 일치하지 않습니다.' });
+    if (!verifyPassword(password, user.passwordHash)) return res.status(401).json({ ok: false, error: '비밀번호가 일치하지 않습니다.' });
+    if (isLegacyPasswordHash(user.passwordHash)) {
+      user.passwordHash = makePasswordHash(password);
+      user.updatedAt = new Date().toISOString();
+      writeUsers(users);
+    }
     return res.json({ ok: true, user: { ...user, passwordHash: undefined }, hasPassword: !!user.passwordHash });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'login failed' });
@@ -1802,7 +1847,7 @@ app.post('/auth/google', async (req, res) => {
     const token = jwt.sign({ sub: payload.sub, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
     res.cookie('wethus_session', token, {
       httpOnly: true,
-      secure: false,
+      secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
@@ -1833,7 +1878,7 @@ app.post('/auth/google/link-password', async (req, res) => {
     const user = users.find(u => normEmail(u.email) === email);
     if (!user) return res.status(404).json({ ok: false, error: '가입된 계정이 없습니다.' });
 
-    user.passwordHash = hashPw(password);
+    user.passwordHash = makePasswordHash(password);
     user.updatedAt = new Date().toISOString();
     writeUsers(users);
 
