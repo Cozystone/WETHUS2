@@ -23,7 +23,12 @@ const GOOGLE_CLIENT_IDS = Array.from(new Set([
   DEFAULT_GOOGLE_CLIENT_ID,
   ...(process.env.GOOGLE_CLIENT_IDS || '').split(',').map(s => s.trim()).filter(Boolean)
 ]));
-const JWT_SECRET = process.env.JWT_SECRET || 'change-me';
+const RAW_JWT_SECRET = String(process.env.JWT_SECRET || '').trim();
+const JWT_SECRET_WEAK = !RAW_JWT_SECRET || RAW_JWT_SECRET === 'change-me' || RAW_JWT_SECRET.length < 32;
+if (process.env.NODE_ENV === 'production' && JWT_SECRET_WEAK) {
+  throw new Error('JWT_SECRET must be set to a strong random value in production.');
+}
+const JWT_SECRET = JWT_SECRET_WEAK ? crypto.randomBytes(32).toString('hex') : RAW_JWT_SECRET;
 const AI_PROVIDER = (process.env.AI_PROVIDER || 'openai').toLowerCase();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
