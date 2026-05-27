@@ -1,0 +1,98 @@
+const fs = require('fs');
+const path = require('path');
+
+const repoRoot = path.resolve(__dirname, '..');
+const appRoot = path.join(repoRoot, 'WETHUS2');
+const errors = [];
+
+function fail(message) {
+  errors.push(message);
+}
+
+function read(file) {
+  return fs.readFileSync(file, 'utf8');
+}
+
+function countMatches(text, pattern) {
+  return (text.match(pattern) || []).length;
+}
+
+function walk(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...walk(full));
+    else out.push(full);
+  }
+  return out;
+}
+
+if (!fs.existsSync(appRoot)) {
+  fail(`Missing app root: ${path.relative(repoRoot, appRoot)}`);
+} else {
+  for (const name of fs.readdirSync(appRoot)) {
+    if (/\.bak_|\.bak$/.test(name)) {
+      fail(`Backup artifact is exposed from deploy root: WETHUS2/${name}`);
+    }
+  }
+
+  for (const file of walk(appRoot)) {
+    const rel = path.relative(repoRoot, file).replace(/\\/g, '/');
+    if (rel.includes('/backups/') || rel.includes('/docs/change-log/')) continue;
+
+    if (file.endsWith('.json')) {
+      try {
+        JSON.parse(read(file));
+      } catch (err) {
+        fail(`Invalid JSON in ${rel}: ${err.message}`);
+      }
+    }
+
+    if (file.endsWith('.html')) {
+      const text = read(file);
+      const htmlClose = countMatches(text, /^\s*<\/html>\s*$/gm);
+      const bodyClose = countMatches(text, /^\s*<\/body>\s*$/gm);
+      if (htmlClose !== 1) fail(`${rel} must contain exactly one </html>; found ${htmlClose}`);
+      if (bodyClose !== 1) fail(`${rel} must contain exactly one </body>; found ${bodyClose}`);
+
+      const afterHtml = text.slice(text.lastIndexOf('</html>') + '</html>'.length).trim();
+      if (afterHtml) fail(`${rel} has trailing content after </html>`);
+
+      if (/^\s*tGoogleSignIn\(|^\s*nce: true\}\);/m.test(text)) {
+        fail(`${rel} contains known leaked script fragments`);
+      }
+    }
+  }
+
+  const login = path.join(appRoot, 'login.html');
+  if (fs.existsSync(login)) {
+    const text = read(login);
+    if (!/id="devModeRow"\s+style="display:none;"/.test(text)) {
+      fail('login.html must keep dev mode hidden by default in production markup');
+    }
+    if (!/const allowDevMode = isLocalHost \|\| window\.WETHUS_ENABLE_DEV_MODE === true;/.test(text)) {
+      fail('login.html must gate dev mode to localhost or explicit opt-in');
+    }
+  }
+
+  const opportunities = path.join(appRoot, 'opportunities.html');
+  if (fs.existsSync(opportunities)) {
+    const text = read(opportunities);
+    if (!text.includes('id="includeClosedToggle"')) {
+      fail('opportunities.html must expose the expired-opportunity toggle');
+    }
+    if (!text.includes('includeClosed:false')) {
+      fail('opportunities.html must hide expired opportunities by default');
+    }
+    if (!text.includes('!state.includeClosed&&isClosed(o)')) {
+      fail('opportunities.html must filter expired opportunities unless opted in');
+    }
+  }
+}
+
+if (errors.length) {
+  console.error(errors.map(error => `- ${error}`).join('\n'));
+  process.exit(1);
+}
+
+console.log('Static validation passed.');
