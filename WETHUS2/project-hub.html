@@ -215,6 +215,19 @@
     const hubProjectList = document.getElementById('hubProjectList');
     let currentProject = null;
     let activeTab='overview';
+    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[ch]));
+    const safeUrl = (value, fallback = '') => {
+      const raw = String(value || '').trim();
+      if (!raw) return fallback;
+      if (/^(https?:|\.\/|\/|[a-z0-9_.-]+\.html(?:[?#].*)?$)/i.test(raw)) return raw;
+      return fallback;
+    };
 
     function hubPersistKey() {
       const st = WETHUS.getState();
@@ -278,7 +291,7 @@
     function renderProjectList(){
       const list = WETHUS.myProjects();
       if(!list.length){ hubProjectList.innerHTML='<article class="hub-item"><h3 style="margin:0 0 6px;">프로젝트가 없습니다.</h3><p class="meta" style="margin:0;">먼저 프로젝트를 시작하면 허브를 사용할 수 있어요.</p><div style="margin-top:10px;"><a href="founder.html" class="btn btn--primary">프로젝트 시작하기</a></div></article>'; return; }
-      hubProjectList.innerHTML = list.map(p=>`<article class="hub-item" data-id="${p.id}" style="display:flex;gap:10px;align-items:flex-start;"><img src="${p.image||'https://picsum.photos/seed/hub-list/84/84'}" alt="프로젝트 대표사진" style="width:44px;height:44px;border-radius:10px;object-fit:cover;border:1px solid #2a2a2a;flex:0 0 auto;"/><div style="min-width:0;"><h3 style="margin:0 0 6px;">${p.title}</h3><p class="meta" style="margin:0 0 4px;">${p.category||''} · ${p.status||''}</p><p style="margin:0;color:#d4d4d4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.summary||''}</p></div></article>`).join('');
+      hubProjectList.innerHTML = list.map(p=>`<article class="hub-item" data-id="${esc(p.id)}" style="display:flex;gap:10px;align-items:flex-start;"><img src="${esc(safeUrl(p.image||'https://picsum.photos/seed/hub-list/84/84'))}" alt="project" style="width:44px;height:44px;border-radius:10px;object-fit:cover;border:1px solid #2a2a2a;flex:0 0 auto;"/><div style="min-width:0;"><h3 style="margin:0 0 6px;">${esc(p.title)}</h3><p class="meta" style="margin:0 0 4px;">${esc(p.category||'')} · ${esc(p.status||'')}</p><p style="margin:0;color:#d4d4d4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.summary||'')}</p></div></article>`).join('');
       hubProjectList.querySelectorAll('[data-id]').forEach(el=>el.addEventListener('click',()=>openProject(el.getAttribute('data-id'))));
     }
 
@@ -314,7 +327,7 @@
 
       workEl.innerHTML = display.map((w, i) => `
         <article class="list-item" data-work-idx="${i}" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
-          <div><h3 style="margin:0 0 6px;">${w.name}</h3><p class="meta" style="margin:0;">${w.summary}</p></div>
+          <div><h3 style="margin:0 0 6px;">${esc(w.name)}</h3><p class="meta" style="margin:0;">${esc(w.summary)}</p></div>
           <span class="meta" style="white-space:nowrap;">${new Date(w.updatedAt).toLocaleString('ko-KR')}</span>
         </article>
       `).join('');
@@ -325,7 +338,7 @@
           const w = display[idx];
           if (!w) return;
           document.getElementById('worklogTitle').textContent = `${w.name} 업무기록`;
-          document.getElementById('worklogList').innerHTML = (w.logs || []).map(x => `<li>${x}</li>`).join('') || '<li>기록 없음</li>';
+          document.getElementById('worklogList').innerHTML = (w.logs || []).map(x => `<li>${esc(x)}</li>`).join('') || '<li>기록 없음</li>';
           openModal('worklogModal');
         });
       });
@@ -334,13 +347,13 @@
     async function renderHub(){
       const p=currentProject; if(!p) return;
       const hub = Object.assign(fallbackHub(p), WETHUS.getProjectHub(p.id));
-      document.getElementById('hubThumb').src=p.image||'https://picsum.photos/seed/hub-main/240/240';
+      document.getElementById('hubThumb').src=safeUrl(p.image||'https://picsum.photos/seed/hub-main/240/240');
       document.getElementById('hubTitle').textContent=p.title||'';
       document.getElementById('hubCategory').textContent=p.category||'Uncategorized';
       document.getElementById('hubStage').textContent=p.status||'기획 중';
       document.getElementById('hubState').textContent='팀 운영중';
       document.getElementById('hubSummary').textContent=p.summary||'';
-      const teamPills = [...(p.teamMembers||[]).map(m => `<span class='hub-team-pill'><strong>${m.name}</strong><span class='meta'>${m.role||''}</span></span>`), ...(hub.aiMentors||[]).map(a => `<span class='hub-team-pill'><strong>${a.name}</strong><span class='meta'>AI</span><button class='hub-team-pill-remove' data-remove-ai='${a.id}' title='AI 제거' type='button'>×</button></span>`)].join('');
+      const teamPills = [...(p.teamMembers||[]).map(m => `<span class='hub-team-pill'><strong>${esc(m.name)}</strong><span class='meta'>${esc(m.role||'')}</span></span>`), ...(hub.aiMentors||[]).map(a => `<span class='hub-team-pill'><strong>${esc(a.name)}</strong><span class='meta'>AI</span><button class='hub-team-pill-remove' data-remove-ai='${esc(a.id)}' title='AI 제거' type='button'>×</button></span>`)].join('');
       document.getElementById('hubTopTeam').innerHTML = teamPills || '<span class="meta">팀 정보 없음</span>';
       document.querySelectorAll('[data-remove-ai]').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -352,29 +365,29 @@
         });
       });
       document.getElementById('ovGoal').textContent=hub.goal;
-      document.getElementById('ovTodos').innerHTML=(hub.weeklyTodos||[]).map(t=>`<li>${t}</li>`).join('')||'<li>이번 주 할 일을 등록하세요.</li>';
+      document.getElementById('ovTodos').innerHTML=(hub.weeklyTodos||[]).map(t=>`<li>${esc(t)}</li>`).join('')||'<li>이번 주 할 일을 등록하세요.</li>';
       const recentAll = (hub.recentActivities || []);
       const recentTop = recentAll.slice(0, 5);
-      document.getElementById('ovRecent').innerHTML=recentTop.map(a=>`<li>${a.text} · ${new Date(a.createdAt).toLocaleString('ko-KR')}</li>`).join('')||'<li>최근 활동이 없습니다.</li>';
+      document.getElementById('ovRecent').innerHTML=recentTop.map(a=>`<li>${esc(a.text)} · ${esc(new Date(a.createdAt).toLocaleString('ko-KR'))}</li>`).join('')||'<li>최근 활동이 없습니다.</li>';
       const moreBtn = document.getElementById('ovRecentMoreBtn');
       moreBtn.style.display = recentAll.length > 10 ? 'inline-flex' : 'none';
       moreBtn.onclick = () => {
-        document.getElementById('recentList').innerHTML = recentAll.map(a => `<li>${a.text} · ${new Date(a.createdAt).toLocaleString('ko-KR')}</li>`).join('') || '<li>최근 활동이 없습니다.</li>';
+        document.getElementById('recentList').innerHTML = recentAll.map(a => `<li>${esc(a.text)} · ${esc(new Date(a.createdAt).toLocaleString('ko-KR'))}</li>`).join('') || '<li>최근 활동이 없습니다.</li>';
         openModal('recentModal');
       };
       document.getElementById('ovBlocker').textContent=hub.blocker;
-      document.getElementById('ovTools').innerHTML=(hub.tools||[]).map(t=>`<article class="tool-card"><strong>${t.name}</strong><p class="meta" style="margin:4px 0 0;">${t.desc||''}</p></article>`).join('');
+      document.getElementById('ovTools').innerHTML=(hub.tools||[]).map(t=>`<article class="tool-card"><strong>${esc(t.name)}</strong><p class="meta" style="margin:4px 0 0;">${esc(t.desc||'')}</p></article>`).join('');
       await loadIntegrationsForCurrentProject();
       renderToolCards();
       renderIntegrationsTab();
-      document.getElementById('pgLogs').innerHTML=(hub.progress||[]).map(x=>`<li>${x.text} · ${new Date(x.createdAt||Date.now()).toLocaleString('ko-KR')}</li>`).join('')||'<li>진행 로그 없음</li>';
+      document.getElementById('pgLogs').innerHTML=(hub.progress||[]).map(x=>`<li>${esc(x.text)} · ${esc(new Date(x.createdAt||Date.now()).toLocaleString('ko-KR'))}</li>`).join('')||'<li>진행 로그 없음</li>';
       document.getElementById('mtList').innerHTML=(hub.materials||[]).map(x=>{
         const label = `${x.name} (${x.type||'자료'})`;
-        if (x.url) return `<li><a href="${x.url}" target="_blank" rel="noopener noreferrer">${label}</a></li>`;
-        return `<li>${label}</li>`;
+        if (x.url) return `<li><a href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener noreferrer">${esc(label)}</a></li>`;
+        return `<li>${esc(label)}</li>`;
       }).join('')||'<li>자료 없음</li>';
       renderWorkLogs(p.teamMembers||[], hub).catch(() => {});
-      document.getElementById('sdStatus').innerHTML=`<li>현재 단계: ${p.status||'기획 중'}</li><li>최근 업데이트: ${(hub.updatedAt?new Date(hub.updatedAt).toLocaleString('ko-KR'):'방금')}</li><li>팀원 수: ${(p.teamMembers||[]).length}명</li>`;
+      document.getElementById('sdStatus').innerHTML=`<li>현재 단계: ${esc(p.status||'기획 중')}</li><li>최근 업데이트: ${(hub.updatedAt?new Date(hub.updatedAt).toLocaleString('ko-KR'):'방금')}</li><li>팀원 수: ${(p.teamMembers||[]).length}명</li>`;
       document.getElementById('sdAdvice').innerHTML='<li>목표를 이번 주 단위로 쪼개세요.</li><li>막힌 점을 카드에 명시하세요.</li><li>멘토링 요청은 구체적으로 작성하세요.</li>';
       renderTab(activeTab);
     }
@@ -388,8 +401,8 @@
     }
     function setHubLoadingState(on, label = '로딩중...') {
       if (on) {
-        document.getElementById('sdStatus').innerHTML = `<li>${label}</li>`;
-        document.getElementById('sdAdvice').innerHTML = `<li>${label}</li>`;
+        document.getElementById('sdStatus').innerHTML = `<li>${esc(label)}</li>`;
+        document.getElementById('sdAdvice').innerHTML = `<li>${esc(label)}</li>`;
       }
     }
     function startInsightAutoRefresh() {
@@ -465,12 +478,12 @@
             .filter(Boolean)
             .map(x => x.replace(/^(상태\s*요약|진행\s*조언)\s*[:：-]\s*/i, '').replace(/^\d+[\.)]\s*/, '').replace(/^[-*]\s*/, '').trim());
           if (lines[0]) {
-            document.getElementById('sdStatus').innerHTML = `<li>${lines[0]}</li>`;
+            document.getElementById('sdStatus').innerHTML = `<li>${esc(lines[0])}</li>`;
           } else {
             document.getElementById('sdStatus').innerHTML = `<li>문서 ${insightCount}건 기반으로 상태를 분석했습니다.</li>`;
           }
           if (lines.length > 1) {
-            document.getElementById('sdAdvice').innerHTML = lines.slice(1,4).map(x => `<li>${x}</li>`).join('');
+            document.getElementById('sdAdvice').innerHTML = lines.slice(1,4).map(x => `<li>${esc(x)}</li>`).join('');
           } else {
             document.getElementById('sdAdvice').innerHTML = insightCount > 0
               ? `<li>문서 근거(${insightNames || '연결 문서'}) 중심으로 다음 실행 단계를 세분화하세요.</li><li>문서 기준 성공지표 1~2개를 바로 추가하세요.</li><li>가장 최근 수정 문서부터 검증 우선순위를 잡으세요.</li>`
@@ -796,17 +809,17 @@
         const connectLabel = st?.connected ? '재연결' : (st?.everConnected ? '재연결' : '연결');
         const statusLabel = t.ready ? (st?.connected ? '연결됨' : (st?.everConnected ? '연결해제됨' : '미연결')) : '준비중';
         const actionLabel = st?.connected ? '동기화' : connectLabel;
-        return `<article class="tool-card" data-tool="${t.name}">
+        return `<article class="tool-card" data-tool="${esc(t.name)}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
             <div>
-              <strong style="font-size:1.15rem;">${t.logo} ${t.name}</strong>
-              <p class="meta" style="margin:4px 0 0;">${t.desc}</p>
+              <strong style="font-size:1.15rem;">${esc(t.logo)} ${esc(t.name)}</strong>
+              <p class="meta" style="margin:4px 0 0;">${esc(t.desc)}</p>
               <p class="meta" style="margin:4px 0 0;">${statusLabel} ${st?.lastSynced ? '· 마지막 반영 ' + new Date(st.lastSynced).toLocaleString('ko-KR') : ''}</p>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
-            <button class="btn btn--primary" data-tool-connect="${t.name}" type="button" ${t.ready ? '' : 'disabled'}>${actionLabel}</button>
-            <button class="btn btn--secondary" data-tool-disconnect="${t.name}" type="button" ${t.ready ? '' : 'disabled'}>해제</button>
+            <button class="btn btn--primary" data-tool-connect="${esc(t.name)}" type="button" ${t.ready ? '' : 'disabled'}>${esc(actionLabel)}</button>
+            <button class="btn btn--secondary" data-tool-disconnect="${esc(t.name)}" type="button" ${t.ready ? '' : 'disabled'}>해제</button>
           </div>
         </article>`;
       }).join('');
@@ -1098,13 +1111,13 @@
         const mine = m.kind === 'human' && m.from === meName;
         const t = new Date(m.createdAt).toLocaleString('ko-KR');
         if (mine) {
-          return `<article class="chat-row mine"><div class="chat-bubble mine">${m.text}</div><div class="chat-meta" style="text-align:right;">${t}</div></article>`;
+          return `<article class="chat-row mine"><div class="chat-bubble mine">${esc(m.text)}</div><div class="chat-meta" style="text-align:right;">${esc(t)}</div></article>`;
         }
         const isAi = /ai|AI|WETHUS/.test(String(m.from || ''));
         const avatarMap = Object.fromEntries((hub.aiMentors || []).map(a => [a.name, a.avatar || '']));
         const avatar = avatarMap[m.from] || '';
-        const avatarHtml = avatar ? `<img src="${avatar}" alt="${m.from || 'AI'}"/>` : (isAi ? '🤖' : String(m.from || 'A').slice(0,1).toUpperCase());
-        return `<article class="chat-row other"><div class="chat-avatar">${avatarHtml}</div><div><div class="chat-name">${m.from || '팀원'}</div><div class="chat-bubble other">${m.text}</div><div class="chat-meta">${t}</div></div></article>`;
+        const avatarHtml = avatar ? `<img src="${esc(safeUrl(avatar))}" alt="${esc(m.from || 'AI')}"/>` : (isAi ? '🤖' : esc(String(m.from || 'A').slice(0,1).toUpperCase()));
+        return `<article class="chat-row other"><div class="chat-avatar">${avatarHtml}</div><div><div class="chat-name">${esc(m.from || '팀원')}</div><div class="chat-bubble other">${esc(m.text)}</div><div class="chat-meta">${esc(t)}</div></div></article>`;
       }).join('');
       const listEl=document.getElementById('chatList');
       listEl.innerHTML=html||'<p class="meta">아직 대화가 없습니다.</p>';
