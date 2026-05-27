@@ -17,6 +17,15 @@ function countMatches(text, pattern) {
   return (text.match(pattern) || []).length;
 }
 
+function activeOpportunityCount(items) {
+  const now = Date.now();
+  return items.filter(item => {
+    const raw = String(item?.deadline || item?.applyEnd || '').trim();
+    const date = raw ? new Date(`${raw}T23:59:59+09:00`) : null;
+    return date && !Number.isNaN(date.getTime()) && date.getTime() >= now;
+  }).length;
+}
+
 function walk(dir) {
   const out = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -86,6 +95,16 @@ if (!fs.existsSync(appRoot)) {
     }
     if (!text.includes('!state.includeClosed&&isClosed(o)')) {
       fail('opportunities.html must filter expired opportunities unless opted in');
+    }
+  }
+
+  const publishedFeed = path.join(appRoot, 'data', 'opportunity-published.json');
+  if (fs.existsSync(publishedFeed)) {
+    const data = JSON.parse(read(publishedFeed));
+    const items = Array.isArray(data.items) ? data.items : [];
+    const activeCount = activeOpportunityCount(items);
+    if (activeCount < 1) {
+      fail('opportunity-published.json must contain at least one non-expired opportunity');
     }
   }
 }

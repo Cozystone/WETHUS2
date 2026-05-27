@@ -22,7 +22,8 @@ const checks = [
   {
     path: '/data/opportunity-published.json',
     status: 200,
-    json: true
+    json: true,
+    minActiveOpportunities: 1
   },
   {
     url: `${API_BASE_URL}/auth/google/config`,
@@ -40,6 +41,15 @@ const checks = [
 ];
 
 const errors = [];
+
+function activeOpportunityCount(items) {
+  const now = Date.now();
+  return items.filter(item => {
+    const raw = String(item?.deadline || item?.applyEnd || '').trim();
+    const date = raw ? new Date(`${raw}T23:59:59+09:00`) : null;
+    return date && !Number.isNaN(date.getTime()) && date.getTime() >= now;
+  }).length;
+}
 
 async function runCheck(check) {
   const url = check.url || `${BASE_URL}${check.path}`;
@@ -73,6 +83,13 @@ async function runCheck(check) {
       const parsed = JSON.parse(body);
       if (check.path === '/data/opportunity-published.json' && !Array.isArray(parsed.items)) {
         errors.push(`${url} JSON must contain an items array`);
+      }
+      if (check.minActiveOpportunities) {
+        const items = Array.isArray(parsed.items) ? parsed.items : [];
+        const activeCount = activeOpportunityCount(items);
+        if (activeCount < check.minActiveOpportunities) {
+          errors.push(`${url} must contain at least ${check.minActiveOpportunities} non-expired opportunity; found ${activeCount}`);
+        }
       }
       for (const [key, expected] of Object.entries(check.requireObject || {})) {
         if (expected === true && parsed[key] !== true) errors.push(`${url} JSON field ${key} must be true`);
