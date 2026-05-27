@@ -1,5 +1,6 @@
 const BASE_URL = (process.env.WETHUS_BASE_URL || 'https://www.wethus.co.kr').replace(/\/$/, '');
 const API_BASE_URL = (process.env.WETHUS_API_BASE_URL || 'https://wethus-api.onrender.com').replace(/\/$/, '');
+const REQUIRE_API_SECURITY_HEADERS = String(process.env.REQUIRE_WETHUS_API_SECURITY_HEADERS || 'false').toLowerCase() === 'true';
 
 const checks = [
   {
@@ -44,12 +45,22 @@ const checks = [
     }
   },
   {
+    url: `${API_BASE_URL}/health`,
+    status: 200,
+    json: true,
+    requireObject: {
+      ok: true
+    },
+    securityHeaders: true
+  },
+  {
     path: '/app.js.bak_20260520_1152',
     status: 404
   }
 ];
 
 const errors = [];
+const warnings = [];
 
 function activeOpportunityCount(items) {
   const now = Date.now();
@@ -108,6 +119,23 @@ async function runCheck(check) {
       errors.push(`${url} returned invalid JSON: ${err.message}`);
     }
   }
+
+  if (check.securityHeaders) {
+    const requiredHeaders = {
+      'content-security-policy': "default-src 'none'",
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'DENY',
+      'referrer-policy': 'no-referrer'
+    };
+    for (const [header, expected] of Object.entries(requiredHeaders)) {
+      const actual = response.headers.get(header) || '';
+      if (!actual.includes(expected)) {
+        const message = `${url} missing security header ${header}: ${expected}`;
+        if (REQUIRE_API_SECURITY_HEADERS) errors.push(message);
+        else warnings.push(message);
+      }
+    }
+  }
 }
 
 (async () => {
@@ -118,6 +146,10 @@ async function runCheck(check) {
   if (errors.length) {
     console.error(errors.map(error => `- ${error}`).join('\n'));
     process.exit(1);
+  }
+
+  if (warnings.length) {
+    console.warn(warnings.map(warning => `- WARNING: ${warning}`).join('\n'));
   }
 
   console.log(`Production smoke passed for ${BASE_URL}.`);
