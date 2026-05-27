@@ -149,7 +149,7 @@
         <p id="googleHint" class="note" style="margin:0;text-align:center;"></p>
       </div>
 
-      <div class="dev-row" id="devModeRow" hidden>
+      <div class="dev-row" id="devModeRow" style="display:none;">
         <button id="devModeBtn" class="btn btn--secondary" type="button">개발자모드</button>
       </div>
       <p id="authMsg" class="form-message"></p>
@@ -265,7 +265,7 @@
     const devModeRow = document.getElementById('devModeRow');
     const devModeBtn = document.getElementById('devModeBtn');
 
-    if (devModeRow && allowDevMode) devModeRow.hidden = false;
+    if (devModeRow && allowDevMode) devModeRow.style.display = 'flex';
 
     if (!window.WETHUS) {
       msg.textContent = '앱 로딩 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.';
