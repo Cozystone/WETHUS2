@@ -207,6 +207,19 @@
       const dev = document.getElementById('devExploreLink');
       if (dev) dev.style.display = 'inline-flex';
     }
+    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[ch]));
+    const safeUrl = (value, fallback = '#') => {
+      const raw = String(value || '').trim();
+      if (!raw) return fallback;
+      if (/^(https?:|\.\/|\/|[a-z0-9_.-]+\.html(?:[?#].*)?$)/i.test(raw)) return raw;
+      return fallback;
+    };
 
     (function renderStartupRecommendations(){
       const ideaEl = document.getElementById('startupIdeaList');
@@ -220,11 +233,11 @@
       const ideas = WETHUS.getStartupIdeaRecommendations(6);
       ideaEl.innerHTML = ideas.map(idea => `
         <article class="startup-idea-card">
-          <div class="card-chip">${idea.tag}</div>
-          <h3>${idea.title}</h3>
-          <p>${idea.summary}</p>
-          <div class="meta">${idea.firstStep}</div>
-          <a class="btn btn--primary" href="${idea.href}">이 아이디어로 시작</a>
+          <div class="card-chip">${esc(idea.tag)}</div>
+          <h3>${esc(idea.title)}</h3>
+          <p>${esc(idea.summary)}</p>
+          <div class="meta">${esc(idea.firstStep)}</div>
+          <a class="btn btn--primary" href="${esc(safeUrl(idea.href))}">이 아이디어로 시작</a>
         </article>
       `).join('');
     })();
@@ -237,13 +250,13 @@
       const analysis = WETHUS.analyzeProjectIdea(projectId);
       if (!analysis) return;
       const similar = analysis.similar.length
-        ? analysis.similar.map(p => `<li><strong>${p.title}</strong><span>${p.category || ''} · ${String(p.summary || '').slice(0, 70)}</span></li>`).join('')
+        ? analysis.similar.map(p => `<li><strong>${esc(p.title)}</strong><span>${esc(p.category || '')} · ${esc(String(p.summary || '').slice(0, 70))}</span></li>`).join('')
         : '<li><strong>플랫폼 내 강한 중복 없음</strong><span>현재 입력 기준으로는 유사 프로젝트가 많지 않습니다.</span></li>';
       panel.style.display = 'block';
       panel.innerHTML = `
         <div class="startup-analysis-head">
           <span class="eyebrow">IDEA DUE DILIGENCE</span>
-          <h2>${analysis.project.title} 유사 아이디어 분석</h2>
+          <h2>${esc(analysis.project.title)} 유사 아이디어 분석</h2>
           <p>제출한 아이디어가 플랫폼 안에서 어디와 겹치는지, 브라우저로 어떤 외부 사례를 조사하면 좋을지 정리했습니다.</p>
         </div>
         <div class="startup-analysis-grid">
@@ -253,19 +266,19 @@
           </article>
           <article>
             <h3>브라우저 조사 후보</h3>
-            <div class="analysis-links">${analysis.searchUrls.map(x => `<a href="${x.url}" target="_blank" rel="noopener">${x.label}에서 조사</a>`).join('')}</div>
+            <div class="analysis-links">${analysis.searchUrls.map(x => `<a href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener">${esc(x.label)}에서 조사</a>`).join('')}</div>
             <p class="meta">운영 AI 키가 정상화되면 이 조사 결과를 요약하는 자동 분석까지 연결할 수 있습니다.</p>
           </article>
           <article>
             <h3>기회와 리스크</h3>
             <ul class="analysis-list">
-              ${analysis.opportunities.map(x => `<li><strong>${x}</strong></li>`).join('')}
-              ${analysis.risks.map(x => `<li><span>${x}</span></li>`).join('')}
+              ${analysis.opportunities.map(x => `<li><strong>${esc(x)}</strong></li>`).join('')}
+              ${analysis.risks.map(x => `<li><span>${esc(x)}</span></li>`).join('')}
             </ul>
           </article>
           <article>
             <h3>다음 액션</h3>
-            <ul class="analysis-list">${analysis.nextActions.map(x => `<li><strong>${x}</strong></li>`).join('')}</ul>
+            <ul class="analysis-list">${analysis.nextActions.map(x => `<li><strong>${esc(x)}</strong></li>`).join('')}</ul>
           </article>
         </div>
       `;
@@ -299,11 +312,11 @@
         const cat = mapCat(p.category || '');
         return `
           <a href="explore_theme.html?cat=${encodeURIComponent(cat)}" style="display:block;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,.14);border-radius:12px;overflow:hidden;background:#111;">
-            <img src="${img}" alt="${p.title||''}" style="width:100%;height:120px;object-fit:cover;display:block;"/>
+            <img src="${esc(safeUrl(img, ''))}" alt="${esc(p.title||'')}" style="width:100%;height:120px;object-fit:cover;display:block;"/>
             <div style="padding:10px;">
-              <div style="font-weight:700;margin-bottom:4px;">${p.title||'프로젝트'}</div>
-              <div style="color:#ffb86b;font-size:.75rem;margin-bottom:4px;">${p.category||'기타'} · ${(p.status||'기획 중')}</div>
-              <div style="color:#b8b8b8;font-size:.86rem;">${sum}</div>
+              <div style="font-weight:700;margin-bottom:4px;">${esc(p.title||'프로젝트')}</div>
+              <div style="color:#ffb86b;font-size:.75rem;margin-bottom:4px;">${esc(p.category||'기타')} · ${esc(p.status||'기획 중')}</div>
+              <div style="color:#b8b8b8;font-size:.86rem;">${esc(sum)}</div>
             </div>
           </a>
         `;

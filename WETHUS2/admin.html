@@ -38,6 +38,13 @@
       const list = document.getElementById('reviewList');
       const st = WETHUS.getState();
       const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
+      const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
       if (!actor) { location.href = 'login.html'; return; }
       if (!WETHUS.isAdminActor()) {
         list.innerHTML = '<article class="list-item"><h3>권한 없음</h3><p>관리자 계정에서만 접근 가능합니다.</p></article>';
@@ -51,11 +58,11 @@
           return;
         }
         list.innerHTML = items.map(p => `
-          <article class="list-item" data-id="${p.id}">
-            <h3>${p.title}</h3>
-            <p>${p.summary || ''}</p>
-            <p class="meta">카테고리: ${p.category || '-'} · 상태: ${p.status || '-'} · 신청자: ${p.founderId || '-'}</p>
-            <p style="white-space:pre-wrap;color:#bdbdbd;">${(p.fullDescription || '').slice(0, 400)}</p>
+          <article class="list-item" data-id="${esc(p.id)}">
+            <h3>${esc(p.title)}</h3>
+            <p>${esc(p.summary || '')}</p>
+            <p class="meta">카테고리: ${esc(p.category || '-')} · 상태: ${esc(p.status || '-')} · 신청자: ${esc(p.founderId || '-')}</p>
+            <p style="white-space:pre-wrap;color:#bdbdbd;">${esc((p.fullDescription || '').slice(0, 400))}</p>
             <div style="display:flex;gap:8px;justify-content:flex-end;">
               <button class="btn btn--secondary js-reject">X 거부</button>
               <button class="btn btn--primary js-approve">V 승인</button>
