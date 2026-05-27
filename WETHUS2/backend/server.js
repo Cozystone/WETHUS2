@@ -8,6 +8,8 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+import dns from 'dns/promises';
+import net from 'net';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -72,6 +74,10 @@ const ALLOWED_ORIGINS = Array.from(new Set([
   ...DEFAULT_ALLOWED_ORIGINS,
   ...(process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean)
 ]));
+const RATE_LIMIT_DISABLED = String(process.env.RATE_LIMIT_DISABLED || 'false').toLowerCase() === 'true';
+const RATE_LIMIT_SWEEP_MS = 5 * 60 * 1000;
+const rateLimitBuckets = new Map();
+let lastRateLimitSweep = 0;
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 const DATA_DIR = path.join(__dirname, 'data');
@@ -138,6 +144,98 @@ function readCollection(filePath, key) {
 function writeCollection(filePath, key, rows) {
   ensureDb();
   fs.writeFileSync(filePath, JSON.stringify({ [key]: rows }, null, 2));
+}
+
+function securityHeaders(req, res, next) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  if (!String(req.path || '').startsWith('/oauth/')) {
+    res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
+  }
+  next();
+}
+
+function clientKey(req) {
+  return `${req.ip || req.socket?.remoteAddress || 'unknown'}:${req.method}:${req.path}`;
+}
+
+function createRateLimit({ windowMs, max, name }) {
+  return (req, res, next) => {
+    if (RATE_LIMIT_DISABLED) return next();
+    const now = Date.now();
+    if (now - lastRateLimitSweep > RATE_LIMIT_SWEEP_MS) {
+      lastRateLimitSweep = now;
+      for (const [key, bucket] of rateLimitBuckets.entries()) {
+        if (!bucket || bucket.resetAt <= now) rateLimitBuckets.delete(key);
+      }
+    }
+    const key = `${name}:${clientKey(req)}`;
+    const bucket = rateLimitBuckets.get(key) || { count: 0, resetAt: now + windowMs };
+    if (bucket.resetAt <= now) {
+      bucket.count = 0;
+      bucket.resetAt = now + windowMs;
+    }
+    bucket.count += 1;
+    rateLimitBuckets.set(key, bucket);
+    const remaining = Math.max(0, max - bucket.count);
+    res.setHeader('RateLimit-Limit', String(max));
+    res.setHeader('RateLimit-Remaining', String(remaining));
+    res.setHeader('RateLimit-Reset', String(Math.ceil(bucket.resetAt / 1000)));
+    if (bucket.count > max) {
+      res.setHeader('Retry-After', String(Math.ceil((bucket.resetAt - now) / 1000)));
+      return res.status(429).json({ ok: false, error: 'too many requests' });
+    }
+    return next();
+  };
+}
+
+function isPrivateIp(address) {
+  const version = net.isIP(address);
+  if (!version) return false;
+  if (version === 4) {
+    const parts = address.split('.').map(n => Number(n));
+    const [a, b] = parts;
+    return (
+      a === 0 ||
+      a === 10 ||
+      a === 127 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a >= 224)
+    );
+  }
+  const v = address.toLowerCase();
+  return v === '::1' || v === '::' || v.startsWith('fc') || v.startsWith('fd') || v.startsWith('fe80:');
+}
+
+async function assertPublicHttpUrl(rawUrl) {
+  const url = new URL(rawUrl);
+  if (!['http:', 'https:'].includes(url.protocol)) throw new Error('http(s) url required');
+  const host = url.hostname.toLowerCase();
+  if (host === 'localhost' || host.endsWith('.localhost') || isPrivateIp(host)) {
+    throw new Error('private or local URL is not allowed');
+  }
+  const records = await dns.lookup(host, { all: true, verbatim: true });
+  if (!records.length || records.some(r => isPrivateIp(r.address))) {
+    throw new Error('private or local URL is not allowed');
+  }
+  return url;
+}
+
+async function fetchPublicHttpUrl(rawUrl, options = {}, maxRedirects = 3) {
+  let url = await assertPublicHttpUrl(rawUrl);
+  for (let i = 0; i <= maxRedirects; i += 1) {
+    const response = await fetch(url, { ...options, redirect: 'manual' });
+    if (![301, 302, 303, 307, 308].includes(response.status)) return response;
+    const location = response.headers.get('location');
+    if (!location) return response;
+    url = await assertPublicHttpUrl(new URL(location, url).href);
+  }
+  throw new Error('too many redirects');
 }
 
 function readIntegrations() { return readCollection(INTEGRATIONS_DB, 'integrations'); }
@@ -295,6 +393,12 @@ function threadPeer(thread, actorId) {
   return { peerId: peer, peerName, peerAvatar };
 }
 
+const authRateLimit = createRateLimit({ windowMs: 15 * 60 * 1000, max: 30, name: 'auth' });
+const aiRateLimit = createRateLimit({ windowMs: 60 * 1000, max: 40, name: 'ai' });
+const webhookRateLimit = createRateLimit({ windowMs: 60 * 1000, max: 120, name: 'webhook' });
+const toolRateLimit = createRateLimit({ windowMs: 60 * 1000, max: 20, name: 'tool' });
+
+app.use(securityHeaders);
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin) return cb(null, true);
@@ -305,6 +409,10 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
+app.use(['/auth/login', '/auth/register', '/auth/google', '/auth/google/link-password', '/pass/start'], authRateLimit);
+app.use('/ai', aiRateLimit);
+app.use('/webhooks', webhookRateLimit);
+app.use('/tools/fetch-meta', toolRateLimit);
 
 app.get('/health', (_, res) => res.json({ ok: true }));
 
@@ -1662,12 +1770,14 @@ app.post('/ai/chat', async (req, res) => {
 app.post('/tools/fetch-meta', async (req, res) => {
   try {
     const rawUrl = String(req.body?.url || '').trim();
-    if (!/^https?:\/\//i.test(rawUrl)) return res.status(400).json({ ok: false, error: 'http(s) url required' });
-
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 12000);
-    const r = await fetch(rawUrl, { redirect: 'follow', signal: controller.signal });
-    clearTimeout(timeout);
+    let r;
+    try {
+      r = await fetchPublicHttpUrl(rawUrl, { signal: controller.signal });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     const text = await r.text();
     const titleMatch = text.match(/<title[^>]*>([^<]+)<\/title>/i);
@@ -1680,6 +1790,9 @@ app.post('/tools/fetch-meta', async (req, res) => {
       fetchedAt: new Date().toISOString()
     });
   } catch (e) {
+    if (/http\(s\) url required|private or local URL|too many redirects|Invalid URL/i.test(e?.message || '')) {
+      return res.status(400).json({ ok: false, error: e?.message || 'invalid url' });
+    }
     return res.status(500).json({ ok: false, error: e?.message || 'fetch meta failed' });
   }
 });
