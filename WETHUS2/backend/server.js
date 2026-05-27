@@ -85,7 +85,9 @@ const rateLimitBuckets = new Map();
 let lastRateLimitSweep = 0;
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.WETHUS_DATA_DIR
+  ? path.resolve(process.env.WETHUS_DATA_DIR)
+  : path.join(__dirname, 'data');
 const USERS_DB = path.join(DATA_DIR, 'users.json');
 const DM_DB = path.join(DATA_DIR, 'dm.json');
 const INTEGRATIONS_DB = path.join(DATA_DIR, 'integrations.json');

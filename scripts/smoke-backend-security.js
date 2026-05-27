@@ -1,6 +1,8 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const crypto = require('crypto');
+const fs = require('fs');
+const os = require('os');
 
 const repoRoot = path.resolve(__dirname, '..');
 const backendRoot = path.join(repoRoot, 'WETHUS2', 'backend');
@@ -15,6 +17,18 @@ function fail(message) {
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function stopChild(child) {
+  if (!child || child.exitCode !== null || child.signalCode !== null) return Promise.resolve();
+  return new Promise(resolve => {
+    const timeout = setTimeout(resolve, 3000);
+    child.once('exit', () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+    child.kill();
+  });
 }
 
 function base64url(value) {
@@ -167,24 +181,28 @@ async function expectIntegrationActorGuard() {
 
 (async () => {
   const logs = { text: '' };
-  const child = spawn(process.execPath, ['server.js'], {
-    cwd: backendRoot,
-    env: {
-      ...process.env,
-      PORT: String(port),
-      RATE_LIMIT_DISABLED: 'false',
-      CLOUD_STATE_REQUIRE_SESSION: 'true',
-      INTEGRATIONS_REQUIRE_ACTOR: 'true',
-      INTEGRATIONS_REQUIRE_SESSION: 'true',
-      JWT_SECRET: TEST_JWT_SECRET
-    },
-    stdio: ['ignore', 'pipe', 'pipe']
-  });
-
-  child.stdout.on('data', data => { logs.text += data.toString(); });
-  child.stderr.on('data', data => { logs.text += data.toString(); });
+  const smokeDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wethus-backend-smoke-'));
+  let child;
 
   try {
+    child = spawn(process.execPath, ['server.js'], {
+      cwd: backendRoot,
+      env: {
+        ...process.env,
+        PORT: String(port),
+        WETHUS_DATA_DIR: smokeDataDir,
+        RATE_LIMIT_DISABLED: 'false',
+        CLOUD_STATE_REQUIRE_SESSION: 'true',
+        INTEGRATIONS_REQUIRE_ACTOR: 'true',
+        INTEGRATIONS_REQUIRE_SESSION: 'true',
+        JWT_SECRET: TEST_JWT_SECRET
+      },
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+
+    child.stdout.on('data', data => { logs.text += data.toString(); });
+    child.stderr.on('data', data => { logs.text += data.toString(); });
+
     await waitForServer(child, logs);
     await expectSecurityHeaders();
     await expectSsrfGuard();
@@ -192,7 +210,8 @@ async function expectIntegrationActorGuard() {
     await expectCloudStateGuard();
     await expectIntegrationActorGuard();
   } finally {
-    child.kill();
+    await stopChild(child);
+    fs.rmSync(smokeDataDir, { recursive: true, force: true });
   }
 
   if (errors.length) {
