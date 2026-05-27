@@ -891,7 +891,7 @@
       if (!entryLoaderTitle || !entryLoaderSub) return;
       if (mode === 'submit') {
         entryLoaderTitle.textContent = '신청 처리 중…';
-        entryLoaderSub.textContent = '곧 홈화면으로 이동합니다';
+        entryLoaderSub.textContent = '곧 탐색 화면으로 이동합니다';
       } else {
         entryLoaderTitle.textContent = '프로젝트 시작 준비 중…';
         entryLoaderSub.textContent = 'WETHUS 작성 환경을 불러오고 있습니다';
@@ -903,7 +903,7 @@
       setEntryLoaderCopy('entry');
       entryLoader?.classList.add('open');
       entryLoader?.setAttribute('aria-hidden', 'false');
-      await new Promise(r => setTimeout(r, 2500));
+      await new Promise(r => setTimeout(r, 650));
       entryLoader?.classList.remove('open');
       entryLoader?.setAttribute('aria-hidden', 'true');
       try {
@@ -1067,7 +1067,7 @@
         setEntryLoaderCopy('submit');
         entryLoader?.classList.add('open');
         entryLoader?.setAttribute('aria-hidden', 'false');
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 800));
         location.href = `explore.html?analyzeProject=${encodeURIComponent(createdProject.id)}`;
       } catch (err) {
         msg.textContent = err?.message || '신청 처리 중 오류가 발생했습니다. 다시 시도해주세요.';
