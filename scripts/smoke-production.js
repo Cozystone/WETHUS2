@@ -1,4 +1,4 @@
-const BASE_URL = (process.env.WETHUS_BASE_URL || 'https://www.wethus.co.kr').replace(/\/$/, '');
+﻿const BASE_URL = (process.env.WETHUS_BASE_URL || 'https://www.wethus.co.kr').replace(/\/$/, '');
 const API_BASE_URL = (process.env.WETHUS_API_BASE_URL || 'https://wethus-api.onrender.com').replace(/\/$/, '');
 const REQUIRE_API_SECURITY_HEADERS = String(process.env.REQUIRE_WETHUS_API_SECURITY_HEADERS || 'false').toLowerCase() === 'true';
 
@@ -6,17 +6,17 @@ const checks = [
   {
     path: '/',
     status: 200,
-    includes: ['WETHUS', '모든 학생 창업 프로젝트', 'app.js?v=20260527-1612', 'script.js?v=20260527-1612']
+    includes: ['WETHUS', '紐⑤뱺 ?숈깮 李쎌뾽 ?꾨줈?앺듃', 'app.js?v=20260527-1811', 'script.js?v=20260527-1612']
   },
   {
     path: '/opportunities.html',
     status: 200,
-    includes: ['includeClosedToggle', '마감 포함', 'includeClosed:false']
+    includes: ['includeClosedToggle', '留덇컧 ?ы븿', 'includeClosed:false']
   },
   {
     path: '/login.html',
     status: 200,
-    includes: ['app.js?v=20260527-1612', 'id="devModeRow" style="display:none;"', 'const allowDevMode = isLocalHost || window.WETHUS_ENABLE_DEV_MODE === true;'],
+    includes: ['app.js?v=20260527-1811', 'id="devModeRow" style="display:none;"', 'const allowDevMode = isLocalHost || window.WETHUS_ENABLE_DEV_MODE === true;'],
     excludes: ['\n</html>\ntGoogleSignIn'],
     excludesRegex: [/^\s*tGoogleSignIn\(\);/m, /^\s*nce: true\}\);/m]
   },
@@ -24,9 +24,9 @@ const checks = [
     path: '/founder.html',
     status: 200,
     includes: [
-      'app.js?v=20260527-1612',
+      'app.js?v=20260527-1811',
       "const moderationStatus = moderation.review ? 'manual_review' : 'approved'",
-      'AI 검수를 통과해 탐색 탭에 바로 반영됩니다.'
+      'AI 寃?섎? ?듦낵???먯깋 ??뿉 諛붾줈 諛섏쁺?⑸땲??'
     ]
   },
   {

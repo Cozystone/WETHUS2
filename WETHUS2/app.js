@@ -1352,7 +1352,7 @@
       try {
         const u = new URL('/cloud/state', base);
         u.searchParams.set('email', email);
-        const r = await fetch(u.toString());
+        const r = await fetch(u.toString(), { credentials: 'include' });
         if (!r.ok) continue;
         const j = await r.json().catch(() => ({}));
         if (j?.state && typeof j.state === 'object') remoteState = j.state;
@@ -1385,6 +1385,7 @@
         await fetch(new URL('/cloud/state', base).toString(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ email, state: toPush })
         });
         break;

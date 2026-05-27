@@ -75,6 +75,7 @@ const ALLOWED_ORIGINS = Array.from(new Set([
   ...(process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean)
 ]));
 const RATE_LIMIT_DISABLED = String(process.env.RATE_LIMIT_DISABLED || 'false').toLowerCase() === 'true';
+const CLOUD_STATE_REQUIRE_SESSION = String(process.env.CLOUD_STATE_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
 const RATE_LIMIT_SWEEP_MS = 5 * 60 * 1000;
 const rateLimitBuckets = new Map();
 let lastRateLimitSweep = 0;
@@ -297,6 +298,46 @@ function isLegacyPasswordHash(stored) {
 function isStrongBootstrapPassword(pw) {
   const v = String(pw || '');
   return v.length >= 8 && /[A-Za-z]/.test(v) && /[0-9]/.test(v);
+}
+
+function createSessionToken(user) {
+  return jwt.sign({ sub: user.id || user.googleSub, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+}
+
+function setSessionCookie(req, res, token) {
+  const secure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  res.cookie('wethus_session', token, {
+    httpOnly: true,
+    secure,
+    sameSite: secure ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+}
+
+function getSession(req) {
+  const token = req.cookies?.wethus_session || String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+  if (!token) return null;
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch {
+    return null;
+  }
+}
+
+function requireEmailSession(req, res, email) {
+  if (!CLOUD_STATE_REQUIRE_SESSION) return true;
+  const session = getSession(req);
+  if (!session?.email) {
+    res.status(401).json({ ok: false, error: 'session required' });
+    return false;
+  }
+  const requested = normEmail(email);
+  const sessionEmail = normEmail(session.email);
+  if (!requested || requested !== sessionEmail) {
+    res.status(403).json({ ok: false, error: 'session email mismatch' });
+    return false;
+  }
+  return true;
 }
 
 function getActorId(req) {
@@ -1851,6 +1892,7 @@ app.post('/auth/register', (req, res) => {
     };
     users.push(user);
     writeUsers(users);
+    setSessionCookie(req, res, createSessionToken(user));
     return res.json({ ok: true, user: { ...user, passwordHash: undefined }, hasPassword: !!user.passwordHash });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'register failed' });
@@ -1904,6 +1946,7 @@ app.post('/auth/login', (req, res) => {
       user.updatedAt = new Date().toISOString();
       writeUsers(users);
     }
+    setSessionCookie(req, res, createSessionToken(user));
     return res.json({ ok: true, user: { ...user, passwordHash: undefined }, hasPassword: !!user.passwordHash });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'login failed' });
@@ -1962,13 +2005,7 @@ app.post('/auth/google', async (req, res) => {
     }
     writeUsers(users);
 
-    const token = jwt.sign({ sub: payload.sub, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-    res.cookie('wethus_session', token, {
-      httpOnly: true,
-      secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    });
+    setSessionCookie(req, res, createSessionToken(user));
 
     return res.json({ ok: true, user: { ...user, passwordHash: undefined }, hasPassword: !!user.passwordHash });
   } catch (err) {
@@ -2000,6 +2037,7 @@ app.post('/auth/google/link-password', async (req, res) => {
     user.updatedAt = new Date().toISOString();
     writeUsers(users);
 
+    setSessionCookie(req, res, createSessionToken(user));
     return res.json({ ok: true, user: { ...user, passwordHash: undefined }, hasPassword: true });
   } catch (err) {
     return res.status(401).json({ ok: false, error: err?.message || 'Google password link failed' });
@@ -2026,6 +2064,7 @@ app.get('/cloud/state', (req, res) => {
   try {
     const email = normEmail(req.query?.email);
     if (!email) return res.status(400).json({ ok: false, error: 'email required' });
+    if (!requireEmailSession(req, res, email)) return;
     const rows = readCloudStates();
     const row = rows.find(r => normEmail(r.email) === email) || null;
     let globalProjects = [];
@@ -2041,6 +2080,7 @@ app.post('/cloud/state', (req, res) => {
     const email = normEmail(req.body?.email);
     const state = req.body?.state;
     if (!email || !state || typeof state !== 'object') return res.status(400).json({ ok: false, error: 'email/state required' });
+    if (!requireEmailSession(req, res, email)) return;
 
     const rows = readCloudStates();
     const now = new Date().toISOString();

@@ -67,6 +67,18 @@ async function expectRateLimit() {
   if (!limited) fail('/auth/login rate limit did not trigger after repeated requests');
 }
 
+async function expectCloudStateGuard() {
+  const readResponse = await fetch(`${baseUrl}/cloud/state?email=victim@example.com`);
+  if (readResponse.status !== 401) fail(`/cloud/state GET should require a session when guard is enabled, got ${readResponse.status}`);
+
+  const writeResponse = await fetch(`${baseUrl}/cloud/state`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: 'victim@example.com', state: { users: [], projects: [] } })
+  });
+  if (writeResponse.status !== 401) fail(`/cloud/state POST should require a session when guard is enabled, got ${writeResponse.status}`);
+}
+
 (async () => {
   const logs = { text: '' };
   const child = spawn(process.execPath, ['server.js'], {
@@ -74,7 +86,9 @@ async function expectRateLimit() {
     env: {
       ...process.env,
       PORT: String(port),
-      RATE_LIMIT_DISABLED: 'false'
+      RATE_LIMIT_DISABLED: 'false',
+      CLOUD_STATE_REQUIRE_SESSION: 'true',
+      JWT_SECRET: process.env.JWT_SECRET || 'backend-security-smoke-secret-1234567890'
     },
     stdio: ['ignore', 'pipe', 'pipe']
   });
@@ -87,6 +101,7 @@ async function expectRateLimit() {
     await expectSecurityHeaders();
     await expectSsrfGuard();
     await expectRateLimit();
+    await expectCloudStateGuard();
   } finally {
     child.kill();
   }
