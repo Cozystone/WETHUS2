@@ -30,6 +30,7 @@ function walk(dir) {
   const out = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
+    if (entry.isDirectory() && entry.name === 'node_modules') continue;
     if (entry.isDirectory()) out.push(...walk(full));
     else out.push(full);
   }
