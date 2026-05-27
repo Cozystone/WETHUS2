@@ -44,6 +44,19 @@
   var applyClose = document.getElementById('applyClose');
   var currentProjectId = null;
 
+  function esc(value) {
+    return String(value ?? '').replace(/[&<>"']/g, function (ch) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+    });
+  }
+
+  function safeUrl(value, fallback) {
+    var raw = String(value || '').trim();
+    if (!raw) return fallback || '';
+    if (/^(https?:|\.\/|\/|[a-z0-9_.-]+\.html(?:[?#].*)?$)/i.test(raw)) return raw;
+    return fallback || '';
+  }
+
   function memberHref(m) {
     return 'member.html?name=' + encodeURIComponent(m?.name || '팀원') + '&role=' + encodeURIComponent(m?.role || '담당') + '&bio=' + encodeURIComponent(m?.bio || '소개가 아직 없습니다.') + '&founder=' + (m?.isLeader ? '1' : '0');
   }
@@ -53,8 +66,8 @@
     if (!team || !team.length) { modalTeamEl.innerHTML = ''; return; }
     var leader = team.find(function (m) { return m.isLeader; }) || team[0];
     var rest = team.filter(function (m) { return m !== leader; });
-    modalTeamEl.innerHTML = '<a class="member-pill leader" href="'+memberHref(leader)+'"><span class="member-name">'+(leader.name||'대표')+'</span> <span class="member-role">대표</span></a>' +
-      rest.slice(0,3).map(function (m) { return '<a class="member-pill" href="'+memberHref(m)+'"><span class="member-name">'+(m.name||'팀원')+'</span> <span class="member-role">'+(m.role||'')+'</span></a>'; }).join('');
+    modalTeamEl.innerHTML = '<a class="member-pill leader" href="'+esc(safeUrl(memberHref(leader)))+'"><span class="member-name">'+esc(leader.name||'대표')+'</span> <span class="member-role">대표</span></a>' +
+      rest.slice(0,3).map(function (m) { return '<a class="member-pill" href="'+esc(safeUrl(memberHref(m)))+'"><span class="member-name">'+esc(m.name||'팀원')+'</span> <span class="member-role">'+esc(m.role||'')+'</span></a>'; }).join('');
   }
 
   function renderComments(comments) {
@@ -64,7 +77,7 @@
       return;
     }
     commentsEl.innerHTML = comments.map(function (c) {
-      return '<div class="comment-item"><strong>' + (c.author || '익명') + '</strong><p>' + (c.text || '') + '</p></div>';
+      return '<div class="comment-item"><strong>' + esc(c.author || '익명') + '</strong><p>' + esc(c.text || '') + '</p></div>';
     }).join('');
   }
 
@@ -114,7 +127,7 @@
     if (categoryBadgeEl) categoryBadgeEl.textContent = data.category || '';
     rolesEl.textContent = data.roles || '';
     durationEl.textContent = data.duration || '';
-    imageEl.src = data.image || 'https://picsum.photos/seed/wethus-default/1200/700';
+    imageEl.src = safeUrl(data.image, 'https://picsum.photos/seed/wethus-default/1200/700');
     imageEl.alt = (data.title || '프로젝트') + ' 이미지';
     currentProjectId = data.id || null;
     if (currentProjectId) WETHUS.setAuthReturnState?.({ modalProjectId: currentProjectId });

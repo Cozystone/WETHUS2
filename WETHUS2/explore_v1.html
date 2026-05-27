@@ -170,6 +170,19 @@
     const resetFilter = document.getElementById('resetFilter');
     const categoryChips = document.getElementById('categoryChips');
     const loadMoreBtn = document.getElementById('loadMoreBtn');
+    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[ch]));
+    const safeUrl = (value, fallback = '') => {
+      const raw = String(value || '').trim();
+      if (!raw) return fallback;
+      if (/^(https?:|\.\/|\/|[a-z0-9_.-]+\.html(?:[?#].*)?$)/i.test(raw)) return raw;
+      return fallback;
+    };
 
     let allProjects = [];
     let currentItems = [];
@@ -212,9 +225,9 @@
       const hidden = others.slice(2);
       return `
         <div class="team-row">
-          <a class="member-pill leader" href="${memberHref(leader)}"><span class="member-name">${leader?.name || '대표'}</span> <span class="member-role">대표</span></a>
-          ${visible.map(m => `<a class="member-pill" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('')}
-          ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length+1}명</button><div class="team-list">${hidden.map(m=>`<a class="member-pill block" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('')}</div>` : ''}
+          <a class="member-pill leader" href="${esc(safeUrl(memberHref(leader)))}"><span class="member-name">${esc(leader?.name || '대표')}</span> <span class="member-role">대표</span></a>
+          ${visible.map(m => `<a class="member-pill" href="${esc(safeUrl(memberHref(m)))}"><span class="member-name">${esc(m.name)}</span> <span class="member-role">${esc(m.role||'')}</span></a>`).join('')}
+          ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length+1}명</button><div class="team-list">${hidden.map(m=>`<a class="member-pill block" href="${esc(safeUrl(memberHref(m)))}"><span class="member-name">${esc(m.name)}</span> <span class="member-role">${esc(m.role||'')}</span></a>`).join('')}</div>` : ''}
         </div>`;
     }
 
@@ -242,15 +255,15 @@ function renderList(items) {
         const stage = normalizeStage(p.status);
         const item = { ...p, image: imageFor(p, i), status: stage };
         return `
-          <article class="list-item" data-project-id="${item.id}">
+          <article class="list-item" data-project-id="${esc(item.id)}">
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
               <div style="flex:1;min-width:0;">
-                <span class="card-chip">${p.category}</span>
-                <h3 style="margin:4px 0 4px;">${p.title}</h3>
-                <p style="margin:0 0 6px;">${p.summary}</p>
-                <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}${p.neededRoles ? ` · 필요:${p.neededRoles}` : ''}${p.neededAgeGroup ? ` · ${p.neededAgeGroup}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
+                <span class="card-chip">${esc(p.category)}</span>
+                <h3 style="margin:4px 0 4px;">${esc(p.title)}</h3>
+                <p style="margin:0 0 6px;">${esc(p.summary)}</p>
+                <div class="meta"><span class="card-status">${esc(stage)}</span> · ${esc(p.teamSize || '')} · ${esc(p.roles)}${p.neededRoles ? ` · 필요:${esc(p.neededRoles)}` : ''}${p.neededAgeGroup ? ` · ${esc(p.neededAgeGroup)}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
               </div>
-              <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>
+              <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${esc(p.id)}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>
             </div>
           </article>
         `;
@@ -265,18 +278,18 @@ function renderList(items) {
         const stage = normalizeStage(p.status);
         const item = { ...p, image: imageFor(p, i), status: stage };
         return `
-          <article class="card" data-project-id="${item.id}">
+          <article class="card" data-project-id="${esc(item.id)}">
             <div class="card-media ${fallbackClass[p.category] || 'card-media--film'}">
-              <img src="${item.image}" alt="${p.title}" class="card-img" />
+              <img src="${esc(safeUrl(item.image))}" alt="${esc(p.title)}" class="card-img" />
             </div>
-            <span class="card-chip">${p.category}</span>
-            <h3 class="card-title">${p.title}</h3>
-            <p class="card-summary">${p.summary}</p>
+            <span class="card-chip">${esc(p.category)}</span>
+            <h3 class="card-title">${esc(p.title)}</h3>
+            <p class="card-summary">${esc(p.summary)}</p>
             ${renderTeam(p.teamMembers)}
-            <div class="meta"><span class="card-status">${stage}</span> · ${p.teamSize || ''} · ${p.roles}${p.neededRoles ? ` · 필요:${p.neededRoles}` : ''}${p.neededAgeGroup ? ` · ${p.neededAgeGroup}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
+            <div class="meta"><span class="card-status">${esc(stage)}</span> · ${esc(p.teamSize || '')} · ${esc(p.roles)}${p.neededRoles ? ` · 필요:${esc(p.neededRoles)}` : ''}${p.neededAgeGroup ? ` · ${esc(p.neededAgeGroup)}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
             <div class="card-bottom-row">
               <div class="card-social"><span>${likedSymbol(p)} ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
-              <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${p.id}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>
+              <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${esc(p.id)}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>
             </div>
           </article>
         `;
@@ -296,7 +309,7 @@ function renderList(items) {
 
     function buildCategoryChips(items) {
       const cats = Array.from(new Set(items.map(p => p.category).filter(Boolean)));
-      categoryChips.innerHTML = cats.map(cat => `<button class="chip chip-btn ${selectedCategory===cat?'active':''}" data-cat="${cat}">${cat}</button>`).join('');
+      categoryChips.innerHTML = cats.map(cat => `<button class="chip chip-btn ${selectedCategory===cat?'active':''}" data-cat="${esc(cat)}">${esc(cat)}</button>`).join('');
       categoryChips.querySelectorAll('.chip-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const cat = btn.dataset.cat;
@@ -340,7 +353,7 @@ function renderList(items) {
           items.map((p, i) => `${i + 1}. [${p.category}] ${p.title} - ${p.summary} / ${p.roles}`).join('\n') +
           `\n반환 형식: 1) 프로젝트명 - 추천 이유(한 줄)`;
         const text = await WETHUS.askGemini(prompt);
-        aiResultEl.innerHTML = `<h3>추천 정리</h3><p style="white-space:pre-wrap;">${text}</p>`;
+        aiResultEl.innerHTML = `<h3>추천 정리</h3><p style="white-space:pre-wrap;">${esc(text)}</p>`;
       } catch (e) {
         aiResultEl.style.display = 'none';
       }
@@ -417,8 +430,8 @@ function renderList(items) {
       if (!team.length) { modalTeam.innerHTML = ''; return; }
       const leader = team.find(m => m.isLeader) || team[0];
       const rest = team.filter(m => m !== leader).slice(0, 3);
-      modalTeam.innerHTML = `<a class="member-pill leader" href="${memberHref(leader)}"><span class="member-name">${leader?.name || '대표'}</span> <span class="member-role">대표</span></a>` +
-        rest.map(m => `<a class="member-pill" href="${memberHref(m)}"><span class="member-name">${m.name}</span> <span class="member-role">${m.role||''}</span></a>`).join('');
+      modalTeam.innerHTML = `<a class="member-pill leader" href="${esc(safeUrl(memberHref(leader)))}"><span class="member-name">${esc(leader?.name || '대표')}</span> <span class="member-role">대표</span></a>` +
+        rest.map(m => `<a class="member-pill" href="${esc(safeUrl(memberHref(m)))}"><span class="member-name">${esc(m.name)}</span> <span class="member-role">${esc(m.role||'')}</span></a>`).join('');
     }
 
     function renderComments(comments) {
@@ -426,7 +439,7 @@ function renderList(items) {
         modalComments.innerHTML = '<p class="meta">아직 댓글이 없습니다.</p>';
         return;
       }
-      modalComments.innerHTML = comments.map(c => `<div class="comment-item"><strong>${c.author || '익명'}</strong><p>${c.text || ''}</p></div>`).join('');
+      modalComments.innerHTML = comments.map(c => `<div class="comment-item"><strong>${esc(c.author || '익명')}</strong><p>${esc(c.text || '')}</p></div>`).join('');
     }
 
     function formatDateDot(v) {
