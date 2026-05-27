@@ -12,6 +12,7 @@
 - Evidence now: production `/health` returns only `{ "ok": true }`; current repo `/health` should return `service`, `build`, and `security`.
 - Tasks:
   - Confirm Render service source repo, branch, root directory, build command, and start command.
+  - Use or compare against root `render.yaml`: service `wethus-api`, root `WETHUS2/backend`, build `npm ci`, start `npm start`.
   - Redeploy backend from `main`, root `WETHUS2/backend`, start `npm start`.
   - Confirm `https://wethus-api.onrender.com/health` exposes `service: "wethus-backend"`.
   - Re-run `node scripts/smoke-production.js`.

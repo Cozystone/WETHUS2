@@ -15,6 +15,7 @@
 - `/cloud/state` now has optional `CLOUD_STATE_REQUIRE_SESSION` protection.
 - Integration/activity/status/external identity APIs now have optional `INTEGRATIONS_REQUIRE_ACTOR` and `INTEGRATIONS_REQUIRE_SESSION` protection.
 - `/health` now exposes non-secret service/build/security-flag metadata in the repository baseline.
+- Root `render.yaml` now defines the intended Render backend service settings for `wethus-api`.
 - GitHub Actions now run static validation, backend syntax check, backend security smoke, and production smoke.
 
 ## Operational Switches

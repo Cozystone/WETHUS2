@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: wethus-api
+    runtime: node
+    plan: free
+    rootDir: WETHUS2/backend
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: ADMIN_EMAIL
+        value: admin@wethus.ai
+      - key: ADMIN_BOOTSTRAP_PASSWORD
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://wethus.co.kr,https://www.wethus.co.kr
+      - key: AI_PROVIDER
+        value: openai
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: CLOUD_STATE_REQUIRE_SESSION
+        value: "false"
+      - key: INTEGRATIONS_REQUIRE_ACTOR
+        value: "false"
+      - key: INTEGRATIONS_REQUIRE_SESSION
+        value: "false"
