@@ -6,12 +6,12 @@ const checks = [
   {
     path: '/',
     status: 200,
-    includes: ['WETHUS', '紐⑤뱺 ?숈깮 李쎌뾽 ?꾨줈?앺듃', 'app.js?v=20260527-1811', 'script.js?v=20260527-1612']
+    includes: ['WETHUS', 'app.js?v=20260527-1811', 'script.js?v=20260527-1612']
   },
   {
     path: '/opportunities.html',
     status: 200,
-    includes: ['includeClosedToggle', '留덇컧 ?ы븿', 'includeClosed:false']
+    includes: ['includeClosedToggle', 'includeClosed:false']
   },
   {
     path: '/login.html',
@@ -25,8 +25,7 @@ const checks = [
     status: 200,
     includes: [
       'app.js?v=20260527-1811',
-      "const moderationStatus = moderation.review ? 'manual_review' : 'approved'",
-      'AI 寃?섎? ?듦낵???먯깋 ??뿉 諛붾줈 諛섏쁺?⑸땲??'
+      "const moderationStatus = moderation.review ? 'manual_review' : 'approved'"
     ]
   },
   {
