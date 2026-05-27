@@ -39,6 +39,11 @@ function walk(dir) {
 if (!fs.existsSync(appRoot)) {
   fail(`Missing app root: ${path.relative(repoRoot, appRoot)}`);
 } else {
+  const exposedBackups = path.join(appRoot, 'backups');
+  if (fs.existsSync(exposedBackups)) {
+    fail('WETHUS2/backups must not exist under the deploy root');
+  }
+
   for (const name of fs.readdirSync(appRoot)) {
     if (/\.bak_|\.bak$/.test(name)) {
       fail(`Backup artifact is exposed from deploy root: WETHUS2/${name}`);
@@ -47,7 +52,11 @@ if (!fs.existsSync(appRoot)) {
 
   for (const file of walk(appRoot)) {
     const rel = path.relative(repoRoot, file).replace(/\\/g, '/');
-    if (rel.includes('/backups/') || rel.includes('/docs/change-log/')) continue;
+    if (rel.includes('/docs/change-log/')) continue;
+    if (/\.bak_|\.bak$/.test(path.basename(file))) {
+      fail(`Backup artifact is exposed from deploy root: ${rel}`);
+      continue;
+    }
 
     if (file.endsWith('.json')) {
       try {

@@ -2,3 +2,6 @@
 .openclaw/
 WETHUS2/local-config.js
 .vercel
+WETHUS2/backups/
+WETHUS2/**/*.bak
+WETHUS2/**/*.bak_*
