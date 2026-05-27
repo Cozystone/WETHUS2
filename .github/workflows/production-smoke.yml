@@ -1,0 +1,21 @@
+name: Production smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 0,9 * * *'
+
+jobs:
+  smoke-production:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Smoke test production site
+        run: node scripts/smoke-production.js
