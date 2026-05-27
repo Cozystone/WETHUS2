@@ -11,6 +11,8 @@ cp .env.example .env
 - `GOOGLE_CLIENT_ID`: Google Cloud OAuth Web Client ID
 - `JWT_SECRET`: long random secret
 - `ALLOWED_ORIGINS`: comma-separated origins (local + vercel)
+- `ADMIN_EMAIL`: initial admin email. Default is `admin@wethus.ai`.
+- `ADMIN_BOOTSTRAP_PASSWORD`: one-time admin bootstrap password. Must be at least 8 characters and include letters and numbers; weak values such as `0904` are intentionally rejected.
 - AI 선택:
   - `AI_PROVIDER=openai` (권장)
   - `OPENAI_API_KEY=...`
@@ -34,3 +36,5 @@ window.WETHUS_GOOGLE_AUTH_ENDPOINT = 'http://localhost:8787/auth/google';
 ## Notes
 - This verifies Google ID tokens on the server (safer than client-only).
 - Frontend currently stores app profile state in localStorage (MVP). Later migrate to DB sessions.
+- Admin bootstrap only works when no matching admin user exists yet. Set a strong `ADMIN_BOOTSTRAP_PASSWORD`, log in once with `ADMIN_EMAIL`, then rotate/remove the bootstrap password after the admin user has been created.
+- If `/admin.html` shows "권한 없음" and `/auth/login` for `admin@wethus.ai` returns "가입된 계정이 없습니다.", the production environment probably has no admin user and no valid bootstrap password configured.
