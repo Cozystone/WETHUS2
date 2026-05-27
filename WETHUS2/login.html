@@ -149,7 +149,7 @@
         <p id="googleHint" class="note" style="margin:0;text-align:center;"></p>
       </div>
 
-      <div class="dev-row">
+      <div class="dev-row" id="devModeRow" hidden>
         <button id="devModeBtn" class="btn btn--secondary" type="button">개발자모드</button>
       </div>
       <p id="authMsg" class="form-message"></p>
@@ -227,6 +227,7 @@
     const GOOGLE_LINK_PASSWORD_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/google/link-password`);
     const LOGIN_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/login`);
     const REGISTER_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/register`);
+    const allowDevMode = isLocalHost || window.WETHUS_ENABLE_DEV_MODE === true;
     const tabSignup = document.getElementById('tabSignup');
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
@@ -261,6 +262,10 @@
     const pwModalMsg = document.getElementById('pwModalMsg');
     const pwModalSkip = document.getElementById('pwModalSkip');
     const pwModalSubmit = document.getElementById('pwModalSubmit');
+    const devModeRow = document.getElementById('devModeRow');
+    const devModeBtn = document.getElementById('devModeBtn');
+
+    if (devModeRow && allowDevMode) devModeRow.hidden = false;
 
     if (!window.WETHUS) {
       msg.textContent = '앱 로딩 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.';
@@ -727,7 +732,8 @@
       }
     });
 
-    document.getElementById('devModeBtn').addEventListener('click', () => {
+    devModeBtn?.addEventListener('click', () => {
+      if (!allowDevMode) return;
       if (!window.WETHUS) return;
       const p = prompt('개발자모드 비밀번호를 입력하세요');
       if (p === '0904') {
