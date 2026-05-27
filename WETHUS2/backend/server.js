@@ -27,6 +27,8 @@ const AI_PROVIDER = (process.env.AI_PROVIDER || 'openai').toLowerCase();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const ADMIN_EMAIL = normEmail(process.env.ADMIN_EMAIL || 'admin@wethus.ai');
+const ADMIN_BOOTSTRAP_PASSWORD = process.env.ADMIN_BOOTSTRAP_PASSWORD || process.env.ADMIN_PASSWORD || '';
 const PASS_ENABLED = String(process.env.PASS_ENABLED || 'false').toLowerCase() === 'true';
 const NICE_SITE_CODE = process.env.NICE_SITE_CODE || '';
 const NICE_SITE_PASSWORD = process.env.NICE_SITE_PASSWORD || '';
@@ -1539,8 +1541,20 @@ async function callOpenAI(prompt, retries = 2, opts = {}) {
 }
 
 async function callAi(prompt, opts = {}) {
-  if (AI_PROVIDER === 'openai') return callOpenAI(prompt, 2, opts);
-  return callGemini(prompt, 2);
+  if (AI_PROVIDER === 'openai') {
+    try {
+      return await callOpenAI(prompt, 2, opts);
+    } catch (e) {
+      if (!GEMINI_API_KEY) throw e;
+      return callGemini(prompt, 2);
+    }
+  }
+  try {
+    return await callGemini(prompt, 2);
+  } catch (e) {
+    if (!OPENAI_API_KEY) throw e;
+    return callOpenAI(prompt, 2, opts);
+  }
 }
 
 app.post('/ai/career-summary', async (req, res) => {
@@ -1564,29 +1578,11 @@ app.post('/ai/moderate-project', async (req, res) => {
     const text = String(req.body?.text || '').trim();
     if (!text) return res.status(400).json({ ok: false, error: 'text is required' });
     const prompt = `You are a strict but low-false-positive safety reviewer for a teen project platform. Return JSON only: {"decision":"allow|review|block","reason":"..."}. Block only if clearly harmful/sexual abuse/hate/violent extremism. Review if ambiguous. Text:\n${text.slice(0, 2400)}`;
-
-    let out = '';
-    if (AI_PROVIDER === 'openai') {
-      if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not configured');
-      const r = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: OPENAI_MODEL,
-          temperature: 0.2,
-          max_tokens: 300,
-          messages: [{ role: 'user', content: prompt }]
-        })
-      });
-      if (!r.ok) throw new Error(await r.text());
-      const data = await r.json();
-      out = data?.choices?.[0]?.message?.content?.trim() || '';
-    } else {
-      out = await callGemini(prompt, 2);
-    }
+    const out = await callAi(prompt, {
+      systemPrompt: 'Return valid JSON only. Do not include markdown.',
+      temperature: 0.2,
+      maxTokens: 300
+    });
 
     const parsed = JSON.parse(String(out).match(/\{[\s\S]*\}/)?.[0] || '{}');
     const decision = ['allow','review','block'].includes(parsed.decision) ? parsed.decision : 'review';
@@ -1713,7 +1709,35 @@ app.post('/auth/login', (req, res) => {
     const password = String(req.body?.password || '');
     if (!email || !password) return res.status(400).json({ ok: false, error: 'email/password required' });
     const users = readUsers();
-    const user = users.find(u => normEmail(u.email) === email);
+    let user = users.find(u => normEmail(u.email) === email);
+    if (!user && ADMIN_BOOTSTRAP_PASSWORD && email === ADMIN_EMAIL && password === ADMIN_BOOTSTRAP_PASSWORD) {
+      const now = new Date().toISOString();
+      user = {
+        id: crypto.randomUUID(),
+        name: 'WETHUS Admin',
+        nickname: 'admin',
+        email,
+        passwordHash: hashPw(password),
+        role: 'admin',
+        plan: 'pro',
+        founderVerified: true,
+        profileImage: '',
+        bio: 'WETHUS 운영 관리자',
+        onboardingComplete: true,
+        age: null,
+        ageVerifiedAt: null,
+        youthTag: false,
+        userTrack: 'Open',
+        school: '',
+        careerRaw: '',
+        careerSummary: '',
+        interestTags: [],
+        createdAt: now,
+        updatedAt: now
+      };
+      users.push(user);
+      writeUsers(users);
+    }
     if (!user) return res.status(404).json({ ok: false, error: '가입된 계정이 없습니다.' });
     if (!user.passwordHash) return res.status(400).json({ ok: false, error: '구글 가입 계정입니다. Google 로그인 후 앱 비밀번호를 먼저 설정해주세요.' });
     if (user.passwordHash !== hashPw(password)) return res.status(401).json({ ok: false, error: '비밀번호가 일치하지 않습니다.' });
