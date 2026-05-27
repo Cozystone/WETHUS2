@@ -686,10 +686,10 @@
         const matchedCount = matches.filter(m => String(m?.snippet || '').trim().length > 0).length;
         const errorCount = matches.filter(m => m?.error).length;
         return `<article class="list-item">
-          <h3>${i.provider} · ${i.integration_type}</h3>
-          <p style="margin:6px 0 4px;">${i.external_resource_name || i.external_resource_id || '-'}</p>
-          <p class="meta" style="margin:0 0 6px;">최근 동기화: ${i.last_synced_at ? new Date(i.last_synced_at).toLocaleString('ko-KR') : '기록 없음'}</p>
-          <p class="meta" style="margin:0;">${firstSnippet || '요약 데이터 없음 (권한/포맷/동기화 상태 확인 필요)'}</p>
+          <h3>${esc(i.provider)} · ${esc(i.integration_type)}</h3>
+          <p style="margin:6px 0 4px;">${esc(i.external_resource_name || i.external_resource_id || '-')}</p>
+          <p class="meta" style="margin:0 0 6px;">최근 동기화: ${esc(i.last_synced_at ? new Date(i.last_synced_at).toLocaleString('ko-KR') : '기록 없음')}</p>
+          <p class="meta" style="margin:0;">${esc(firstSnippet || '요약 데이터 없음 (권한/포맷/동기화 상태 확인 필요)')}</p>
           <p class="meta" style="margin:6px 0 0;">반영 문서: ${matchedCount}건${errorCount ? ` · 오류 ${errorCount}건` : ''}</p>
         </article>`;
       }).join('');
@@ -744,11 +744,11 @@
         const active = r.id === pendingResourceSelectedId;
         const canSelectFolder = isFolder && !!pendingResourceTool?.allowFolderSelect;
         return `<div style="padding:10px;border:1px solid ${active ? '#ff8a1f' : '#2a2a2a'};border-radius:8px;background:${active ? 'rgba(255,138,31,.12)' : '#171717'};color:#f5f5f5;display:flex;justify-content:space-between;align-items:center;gap:8px;">
-          <span><strong style="display:block;">${isFolder ? '📁 ' : '📄 '}${r.name || r.id}</strong><span class="meta">${r.modifiedAt ? new Date(r.modifiedAt).toLocaleString('ko-KR') : ''}</span></span>
+          <span><strong style="display:block;">${isFolder ? '📁 ' : '📄 '}${esc(r.name || r.id)}</strong><span class="meta">${esc(r.modifiedAt ? new Date(r.modifiedAt).toLocaleString('ko-KR') : '')}</span></span>
           <div style="display:flex;gap:6px;align-items:center;">
-            ${isFolder ? '<button type="button" class="btn btn--secondary" data-r-open="' + r.id + '" style="padding:4px 8px;min-height:auto;">열기</button>' : ''}
-            ${canSelectFolder ? '<button type="button" class="btn btn--primary" data-r-select="' + r.id + '" style="padding:4px 8px;min-height:auto;">폴더 연결</button>' : ''}
-            ${!isFolder ? '<button type="button" class="btn btn--secondary" data-r-select="' + r.id + '" style="padding:4px 8px;min-height:auto;">선택</button>' : ''}
+            ${isFolder ? '<button type="button" class="btn btn--secondary" data-r-open="' + esc(r.id) + '" style="padding:4px 8px;min-height:auto;">열기</button>' : ''}
+            ${canSelectFolder ? '<button type="button" class="btn btn--primary" data-r-select="' + esc(r.id) + '" style="padding:4px 8px;min-height:auto;">폴더 연결</button>' : ''}
+            ${!isFolder ? '<button type="button" class="btn btn--secondary" data-r-select="' + esc(r.id) + '" style="padding:4px 8px;min-height:auto;">선택</button>' : ''}
           </div>
         </div>`;
       }).join('') || '<p class="meta" style="margin:6px;">검색 결과가 없습니다.</p>';
@@ -814,7 +814,7 @@
             <div>
               <strong style="font-size:1.15rem;">${esc(t.logo)} ${esc(t.name)}</strong>
               <p class="meta" style="margin:4px 0 0;">${esc(t.desc)}</p>
-              <p class="meta" style="margin:4px 0 0;">${statusLabel} ${st?.lastSynced ? '· 마지막 반영 ' + new Date(st.lastSynced).toLocaleString('ko-KR') : ''}</p>
+              <p class="meta" style="margin:4px 0 0;">${esc(statusLabel)} ${st?.lastSynced ? '· 마지막 반영 ' + esc(new Date(st.lastSynced).toLocaleString('ko-KR')) : ''}</p>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
@@ -1017,7 +1017,7 @@
       const v = String(text || '').trim();
       if (!v.startsWith('/')) { slashListEl.style.display = 'none'; return; }
       const filtered = slashCommands.filter(x => x.cmd.startsWith(v.split(' ')[0] || '/'));
-      slashListEl.innerHTML = filtered.map(x => `<div class="slash-item" data-cmd="${x.cmd}"><strong>${x.cmd}</strong> <span class="meta">${x.desc}</span></div>`).join('');
+      slashListEl.innerHTML = filtered.map(x => `<div class="slash-item" data-cmd="${esc(x.cmd)}"><strong>${esc(x.cmd)}</strong> <span class="meta">${esc(x.desc)}</span></div>`).join('');
       if (!filtered.length) { slashListEl.style.display = 'none'; return; }
       slashListEl.style.display = 'block';
       slashListEl.querySelectorAll('[data-cmd]').forEach(el => {
