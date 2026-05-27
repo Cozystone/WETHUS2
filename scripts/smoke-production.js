@@ -5,7 +5,7 @@ const checks = [
   {
     path: '/',
     status: 200,
-    includes: ['WETHUS', '모든 학생 창업 프로젝트']
+    includes: ['WETHUS', '모든 학생 창업 프로젝트', 'app.js?v=20260527-1612', 'script.js?v=20260527-1612']
   },
   {
     path: '/opportunities.html',
@@ -15,9 +15,18 @@ const checks = [
   {
     path: '/login.html',
     status: 200,
-    includes: ['id="devModeRow" style="display:none;"', 'const allowDevMode = isLocalHost || window.WETHUS_ENABLE_DEV_MODE === true;'],
+    includes: ['app.js?v=20260527-1612', 'id="devModeRow" style="display:none;"', 'const allowDevMode = isLocalHost || window.WETHUS_ENABLE_DEV_MODE === true;'],
     excludes: ['\n</html>\ntGoogleSignIn'],
     excludesRegex: [/^\s*tGoogleSignIn\(\);/m, /^\s*nce: true\}\);/m]
+  },
+  {
+    path: '/founder.html',
+    status: 200,
+    includes: [
+      'app.js?v=20260527-1612',
+      "const moderationStatus = moderation.review ? 'manual_review' : 'approved'",
+      'AI 검수를 통과해 탐색 탭에 바로 반영됩니다.'
+    ]
   },
   {
     path: '/data/opportunity-published.json',
