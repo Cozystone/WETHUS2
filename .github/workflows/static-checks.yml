@@ -20,3 +20,13 @@ jobs:
 
       - name: Validate static site files
         run: node scripts/validate-static.js
+
+      - name: Install backend dependencies
+        working-directory: WETHUS2/backend
+        run: npm ci
+
+      - name: Backend syntax check
+        run: node --check WETHUS2/backend/server.js
+
+      - name: Backend security smoke
+        run: node scripts/smoke-backend-security.js

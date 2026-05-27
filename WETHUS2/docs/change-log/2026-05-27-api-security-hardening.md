@@ -4,6 +4,7 @@
 - Added baseline API security headers to the Express backend.
 - Added in-memory rate limits for auth, AI, webhook, and metadata fetch endpoints.
 - Hardened `/tools/fetch-meta` against SSRF by rejecting localhost/private IP targets and rechecking redirect targets.
+- Added `scripts/smoke-backend-security.js` and wired it into Static checks so the hardening is verified on pushes and pull requests.
 
 ## Reason
 - The production API handled sensitive login, AI moderation, webhook, and external fetch flows without a basic request abuse boundary.
@@ -13,6 +14,7 @@
 - Repeated login/AI/tool calls from the same client are throttled with `429`.
 - API responses include conservative browser security headers.
 - Metadata fetch continues to support public HTTP(S) pages while rejecting local/private destinations.
+- CI now fails if the security headers, SSRF guard, or auth rate limit regress.
 
 ## Risks
 - In-memory rate limits reset on server restart and do not coordinate across multiple instances.
