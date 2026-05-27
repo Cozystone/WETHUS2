@@ -39,6 +39,7 @@ window.WETHUS_GOOGLE_AUTH_ENDPOINT = 'http://localhost:8787/auth/google';
 ## Security notes
 - Google ID tokens are verified on the server.
 - Password and Google login responses set an HTTP-only `wethus_session` cookie.
+- `/health` exposes non-secret build and security-flag status so production drift can be diagnosed quickly.
 - API responses include baseline security headers.
 - Auth, AI, webhook, and metadata fetch endpoints use in-memory rate limits.
 - `/tools/fetch-meta` rejects localhost/private IP targets and rechecks redirect targets to reduce SSRF risk.

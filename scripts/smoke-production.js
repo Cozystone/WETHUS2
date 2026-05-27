@@ -50,7 +50,8 @@ const checks = [
     requireObject: {
       ok: true
     },
-    securityHeaders: true
+    securityHeaders: true,
+    backendHealth: true
   },
   {
     path: '/app.js.bak_20260520_1152',
@@ -113,6 +114,11 @@ async function runCheck(check) {
       for (const [key, expected] of Object.entries(check.requireObject || {})) {
         if (expected === true && parsed[key] !== true) errors.push(`${url} JSON field ${key} must be true`);
         if (expected === 'string' && !String(parsed[key] || '').trim()) errors.push(`${url} JSON field ${key} must be a non-empty string`);
+      }
+      if (check.backendHealth) {
+        if (parsed.service !== 'wethus-backend') warnings.push(`${url} does not expose backend service identity; production may be running an older backend`);
+        if (!parsed.security || typeof parsed.security !== 'object') warnings.push(`${url} does not expose backend security flags; production may be running an older backend`);
+        if (!parsed.build || typeof parsed.build !== 'object') warnings.push(`${url} does not expose backend build metadata; production deploy drift is harder to diagnose`);
       }
     } catch (err) {
       errors.push(`${url} returned invalid JSON: ${err.message}`);

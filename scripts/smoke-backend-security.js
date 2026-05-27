@@ -43,10 +43,16 @@ async function waitForServer(child, logs) {
 
 async function expectSecurityHeaders() {
   const response = await fetch(`${baseUrl}/health`);
+  const body = await response.json().catch(() => ({}));
   const csp = response.headers.get('content-security-policy') || '';
   const nosniff = response.headers.get('x-content-type-options') || '';
   const frame = response.headers.get('x-frame-options') || '';
   const referrer = response.headers.get('referrer-policy') || '';
+  if (body.service !== 'wethus-backend') fail('/health should expose service identity');
+  if (!body.security?.rateLimit) fail('/health should expose enabled rate limiting');
+  if (body.security?.cloudStateRequireSession !== true) fail('/health should expose cloud state guard status');
+  if (body.security?.integrationsRequireActor !== true) fail('/health should expose integration actor guard status');
+  if (body.security?.integrationsRequireSession !== true) fail('/health should expose integration session guard status');
   if (!csp.includes("default-src 'none'")) fail('missing strict Content-Security-Policy on /health');
   if (nosniff !== 'nosniff') fail('missing X-Content-Type-Options: nosniff');
   if (frame !== 'DENY') fail('missing X-Frame-Options: DENY');

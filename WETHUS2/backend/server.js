@@ -78,6 +78,8 @@ const RATE_LIMIT_DISABLED = String(process.env.RATE_LIMIT_DISABLED || 'false').t
 const CLOUD_STATE_REQUIRE_SESSION = String(process.env.CLOUD_STATE_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
 const INTEGRATIONS_REQUIRE_ACTOR = String(process.env.INTEGRATIONS_REQUIRE_ACTOR || 'false').toLowerCase() === 'true';
 const INTEGRATIONS_REQUIRE_SESSION = String(process.env.INTEGRATIONS_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
+const BUILD_COMMIT = String(process.env.RENDER_GIT_COMMIT || process.env.VERCEL_GIT_COMMIT_SHA || process.env.GIT_COMMIT || process.env.SOURCE_VERSION || '').trim();
+const BUILD_REF = String(process.env.RENDER_GIT_BRANCH || process.env.VERCEL_GIT_COMMIT_REF || process.env.GIT_BRANCH || '').trim();
 const RATE_LIMIT_SWEEP_MS = 5 * 60 * 1000;
 const rateLimitBuckets = new Map();
 let lastRateLimitSweep = 0;
@@ -464,6 +466,25 @@ const authRateLimit = createRateLimit({ windowMs: 15 * 60 * 1000, max: 30, name:
 const aiRateLimit = createRateLimit({ windowMs: 60 * 1000, max: 40, name: 'ai' });
 const webhookRateLimit = createRateLimit({ windowMs: 60 * 1000, max: 120, name: 'webhook' });
 const toolRateLimit = createRateLimit({ windowMs: 60 * 1000, max: 20, name: 'tool' });
+const startedAt = new Date().toISOString();
+
+function healthPayload() {
+  return {
+    ok: true,
+    service: 'wethus-backend',
+    startedAt,
+    build: {
+      commit: BUILD_COMMIT ? BUILD_COMMIT.slice(0, 12) : '',
+      ref: BUILD_REF
+    },
+    security: {
+      rateLimit: !RATE_LIMIT_DISABLED,
+      cloudStateRequireSession: CLOUD_STATE_REQUIRE_SESSION,
+      integrationsRequireActor: INTEGRATIONS_REQUIRE_ACTOR,
+      integrationsRequireSession: INTEGRATIONS_REQUIRE_SESSION
+    }
+  };
+}
 
 app.use(securityHeaders);
 app.use(cors({
@@ -481,7 +502,7 @@ app.use('/ai', aiRateLimit);
 app.use('/webhooks', webhookRateLimit);
 app.use('/tools/fetch-meta', toolRateLimit);
 
-app.get('/health', (_, res) => res.json({ ok: true }));
+app.get('/health', (_, res) => res.json(healthPayload()));
 
 app.get('/integrations', (req, res) => {
   const actorId = requireIntegrationActor(req, res);
