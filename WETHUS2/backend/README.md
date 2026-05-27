@@ -22,6 +22,7 @@ cp .env.example .env
   - `AI_PROVIDER=openai` is recommended.
   - `OPENAI_API_KEY=...`
   - `OPENAI_MODEL=gpt-4o-mini`
+  - Local moderation option: `AI_PROVIDER=ollama`, `OLLAMA_BASE_URL=http://127.0.0.1:11434`, `OLLAMA_MODEL=llama3.2:3b`
   - Fallback: `AI_PROVIDER=gemini` with `GEMINI_API_KEY=...`
 
 ## 3) Run

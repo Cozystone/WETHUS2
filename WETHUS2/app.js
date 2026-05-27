@@ -1439,8 +1439,9 @@
     const s = load();
     const actor = currentActorId();
     if (!actor) return [];
+    const includeAdminInbox = isAdminActor();
     return (s.notifications || [])
-      .filter(n => n.userId === actor || n.userId == null)
+      .filter(n => n.userId === actor || n.userId == null || (includeAdminInbox && n.userId === ADMIN_MODE_USER_ID))
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, limit);
   }
@@ -1480,8 +1481,9 @@
   function markAllNotificationsRead() {
     const s = load();
     const actor = currentActorId();
+    const includeAdminInbox = isAdminActor();
     (s.notifications || []).forEach(n => {
-      if (!n.userId || n.userId === actor) n.unread = false;
+      if (!n.userId || n.userId === actor || (includeAdminInbox && n.userId === ADMIN_MODE_USER_ID)) n.unread = false;
     });
     save(s);
   }
@@ -2229,7 +2231,7 @@
           <div class="side-drawer-group-title side-drawer-settings-title"><span class="nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.33 1V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-.33-1 1.65 1.65 0 0 0-1-.6 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1-.33H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1-.33 1.65 1.65 0 0 0 .6-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6c.3-.21.5-.55.6-1V3a2 2 0 1 1 4 0v.09c.1.45.3.79.6 1a1.65 1.65 0 0 0 1 .6 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.21.3.55.5 1 .6H21a2 2 0 1 1 0 4h-.09c-.45.1-.79.3-1 .6z"/></svg></span><span>설정</span></div>
           <button type="button" class="side-drawer-item side-drawer-item--row" data-lang-switch><span>언어 설정 (KR/EN)</span></button>
           <a href="profile.html" class="side-drawer-item side-drawer-item--row"><span>계정 설정</span></a>
-          ${state.devMode ? `<a href="admin.html" class="side-drawer-item side-drawer-item--row"><span>프로젝트 검토</span></a>` : ''}
+          ${(state.devMode || isAdminActor()) ? `<a href="admin.html" class="side-drawer-item side-drawer-item--row"><span>프로젝트 검토</span></a>` : ''}
         </aside>
       `;
 

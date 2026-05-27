@@ -35,6 +35,8 @@ const AI_PROVIDER = (process.env.AI_PROVIDER || 'openai').toLowerCase();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const OLLAMA_BASE_URL = String(process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/\/$/, '');
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.2:3b';
 const ADMIN_EMAIL_RAW = process.env.ADMIN_EMAIL || 'admin@wethus.ai';
 const ADMIN_BOOTSTRAP_PASSWORD = process.env.ADMIN_BOOTSTRAP_PASSWORD || process.env.ADMIN_PASSWORD || '';
 const PASS_ENABLED = String(process.env.PASS_ENABLED || 'false').toLowerCase() === 'true';
@@ -1812,7 +1814,55 @@ async function callOpenAI(prompt, retries = 2, opts = {}) {
   throw lastErr || new Error('openai failed');
 }
 
+async function callOllama(prompt, retries = 1, opts = {}) {
+  const url = `${OLLAMA_BASE_URL}/api/chat`;
+  const systemPrompt = String(opts.systemPrompt || 'You are a helpful assistant. Respond clearly and naturally in Korean.');
+  const temperature = Number.isFinite(opts.temperature) ? Number(opts.temperature) : 0.35;
+  const maxTokens = Number.isFinite(opts.maxTokens) ? Number(opts.maxTokens) : 320;
+
+  let lastErr;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000 + i * 5000);
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: OLLAMA_MODEL,
+          stream: false,
+          options: { temperature, num_predict: maxTokens },
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ]
+        })
+      });
+      clearTimeout(timeout);
+      if (!r.ok) throw new Error(await r.text());
+      const data = await r.json();
+      const text = data?.message?.content?.trim() || data?.response?.trim();
+      if (!text) throw new Error('empty ollama response');
+      return text;
+    } catch (e) {
+      lastErr = e;
+      if (i < retries) await new Promise(rs => setTimeout(rs, 500 * (i + 1)));
+    }
+  }
+  throw lastErr || new Error('ollama failed');
+}
+
 async function callAi(prompt, opts = {}) {
+  if (AI_PROVIDER === 'ollama' || AI_PROVIDER === 'local' || AI_PROVIDER === 'local-llm') {
+    try {
+      return await callOllama(prompt, 1, opts);
+    } catch (e) {
+      if (OPENAI_API_KEY) return callOpenAI(prompt, 1, opts);
+      if (GEMINI_API_KEY) return callGemini(prompt, 1);
+      throw e;
+    }
+  }
   if (AI_PROVIDER === 'openai') {
     try {
       return await callOpenAI(prompt, 2, opts);
