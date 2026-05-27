@@ -5,6 +5,15 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      require_hardened_api:
+        description: Fail if the live API lacks hardened headers or health metadata
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
   schedule:
     - cron: '15 0,9 * * *'
 
@@ -21,4 +30,7 @@ jobs:
           node-version: '22'
 
       - name: Smoke test production site
+        env:
+          REQUIRE_WETHUS_API_SECURITY_HEADERS: ${{ github.event.inputs.require_hardened_api || 'false' }}
+          REQUIRE_WETHUS_API_HEALTH_METADATA: ${{ github.event.inputs.require_hardened_api || 'false' }}
         run: node scripts/smoke-production.js

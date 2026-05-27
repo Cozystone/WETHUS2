@@ -1,6 +1,7 @@
 ﻿const BASE_URL = (process.env.WETHUS_BASE_URL || 'https://www.wethus.co.kr').replace(/\/$/, '');
 const API_BASE_URL = (process.env.WETHUS_API_BASE_URL || 'https://wethus-api.onrender.com').replace(/\/$/, '');
 const REQUIRE_API_SECURITY_HEADERS = String(process.env.REQUIRE_WETHUS_API_SECURITY_HEADERS || 'false').toLowerCase() === 'true';
+const REQUIRE_API_HEALTH_METADATA = String(process.env.REQUIRE_WETHUS_API_HEALTH_METADATA || process.env.REQUIRE_WETHUS_API_SECURITY_HEADERS || 'false').toLowerCase() === 'true';
 
 const checks = [
   {
@@ -116,9 +117,13 @@ async function runCheck(check) {
         if (expected === 'string' && !String(parsed[key] || '').trim()) errors.push(`${url} JSON field ${key} must be a non-empty string`);
       }
       if (check.backendHealth) {
-        if (parsed.service !== 'wethus-backend') warnings.push(`${url} does not expose backend service identity; production may be running an older backend`);
-        if (!parsed.security || typeof parsed.security !== 'object') warnings.push(`${url} does not expose backend security flags; production may be running an older backend`);
-        if (!parsed.build || typeof parsed.build !== 'object') warnings.push(`${url} does not expose backend build metadata; production deploy drift is harder to diagnose`);
+        const reportHealthDrift = (message) => {
+          if (REQUIRE_API_HEALTH_METADATA) errors.push(message);
+          else warnings.push(message);
+        };
+        if (parsed.service !== 'wethus-backend') reportHealthDrift(`${url} does not expose backend service identity; production may be running an older backend`);
+        if (!parsed.security || typeof parsed.security !== 'object') reportHealthDrift(`${url} does not expose backend security flags; production may be running an older backend`);
+        if (!parsed.build || typeof parsed.build !== 'object') reportHealthDrift(`${url} does not expose backend build metadata; production deploy drift is harder to diagnose`);
       }
     } catch (err) {
       errors.push(`${url} returned invalid JSON: ${err.message}`);

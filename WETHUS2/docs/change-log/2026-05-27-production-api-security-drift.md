@@ -15,7 +15,8 @@
 
 ## Action taken
 - Added a production smoke check for API security headers in warning mode.
-- Set `REQUIRE_WETHUS_API_SECURITY_HEADERS=true` in CI or a manual run after Render is confirmed to deploy the hardened backend, then the same smoke will fail on drift.
+- Set `REQUIRE_WETHUS_API_SECURITY_HEADERS=true` and `REQUIRE_WETHUS_API_HEALTH_METADATA=true` in CI or a manual run after Render is confirmed to deploy the hardened backend, then the same smoke will fail on drift.
+- Added a `Production smoke` workflow dispatch input named `require_hardened_api`; run it with `true` after a Render redeploy to prove the live API matches the hardened repository baseline.
 
 ## Risk
 - Until production is redeployed, live API responses do not include the new browser-facing security headers.
@@ -23,5 +24,5 @@
 
 ## Next action
 - Confirm Render deploy source/root and trigger a backend redeploy from `main`.
-- Re-run `node scripts/smoke-production.js` with `REQUIRE_WETHUS_API_SECURITY_HEADERS=true`.
-- Once it passes, enable the env flag in the production smoke workflow.
+- Re-run `node scripts/smoke-production.js` with `REQUIRE_WETHUS_API_SECURITY_HEADERS=true` and `REQUIRE_WETHUS_API_HEALTH_METADATA=true`, or manually dispatch `Production smoke` with `require_hardened_api=true`.
+- Once it passes, make the hardened API requirement the default for the production smoke workflow.
