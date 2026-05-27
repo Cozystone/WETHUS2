@@ -250,6 +250,7 @@
         try {
           const r = await fetch(`${String(b).replace(/\/$/, '')}${path}`, {
             ...options,
+            credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
               'x-user-id': actor,

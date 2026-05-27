@@ -79,6 +79,56 @@ async function expectCloudStateGuard() {
   if (writeResponse.status !== 401) fail(`/cloud/state POST should require a session when guard is enabled, got ${writeResponse.status}`);
 }
 
+async function expectIntegrationActorGuard() {
+  const guardedChecks = [
+    ['/integrations?projectId=smoke-project', 'GET'],
+    ['/activity-events?projectId=smoke-project', 'GET'],
+    ['/integrations/insights?projectId=smoke-project', 'GET'],
+    ['/integrations/resources?provider=notion&projectId=smoke-project', 'GET'],
+    ['/integrations/resources2?provider=google&projectId=smoke-project&resourceProvider=google_docs', 'GET'],
+    ['/status-snapshot?projectId=smoke-project', 'GET'],
+    ['/external-identities?userId=smoke-user', 'GET']
+  ];
+
+  for (const [path, method] of guardedChecks) {
+    const response = await fetch(`${baseUrl}${path}`, { method });
+    if (response.status !== 401) fail(`${method} ${path} should require an actor when guard is enabled, got ${response.status}`);
+  }
+
+  const createResponse = await fetch(`${baseUrl}/integrations`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      project_id: 'smoke-project',
+      integration_type: 'document',
+      provider: 'notion',
+      external_resource_id: 'smoke-doc'
+    })
+  });
+  if (createResponse.status !== 401) fail(`POST /integrations should require an actor when guard is enabled, got ${createResponse.status}`);
+
+  const actorCreate = await fetch(`${baseUrl}/integrations`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-user-id': 'actor-a' },
+    body: JSON.stringify({
+      project_id: 'smoke-project',
+      integration_type: 'document',
+      provider: 'notion',
+      external_resource_id: `smoke-doc-${Date.now()}`
+    })
+  });
+  const created = await actorCreate.json().catch(() => ({}));
+  if (!actorCreate.ok || !created?.integration?.id) fail(`POST /integrations with actor should succeed, got ${actorCreate.status}`);
+
+  if (created?.integration?.id) {
+    const forbiddenDelete = await fetch(`${baseUrl}/integrations/${created.integration.id}`, {
+      method: 'DELETE',
+      headers: { 'x-user-id': 'actor-b' }
+    });
+    if (forbiddenDelete.status !== 403) fail(`DELETE /integrations/:id by another actor should be forbidden, got ${forbiddenDelete.status}`);
+  }
+}
+
 (async () => {
   const logs = { text: '' };
   const child = spawn(process.execPath, ['server.js'], {
@@ -88,6 +138,7 @@ async function expectCloudStateGuard() {
       PORT: String(port),
       RATE_LIMIT_DISABLED: 'false',
       CLOUD_STATE_REQUIRE_SESSION: 'true',
+      INTEGRATIONS_REQUIRE_ACTOR: 'true',
       JWT_SECRET: process.env.JWT_SECRET || 'backend-security-smoke-secret-1234567890'
     },
     stdio: ['ignore', 'pipe', 'pipe']
@@ -102,6 +153,7 @@ async function expectCloudStateGuard() {
     await expectSsrfGuard();
     await expectRateLimit();
     await expectCloudStateGuard();
+    await expectIntegrationActorGuard();
   } finally {
     child.kill();
   }

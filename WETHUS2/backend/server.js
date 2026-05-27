@@ -76,6 +76,7 @@ const ALLOWED_ORIGINS = Array.from(new Set([
 ]));
 const RATE_LIMIT_DISABLED = String(process.env.RATE_LIMIT_DISABLED || 'false').toLowerCase() === 'true';
 const CLOUD_STATE_REQUIRE_SESSION = String(process.env.CLOUD_STATE_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
+const INTEGRATIONS_REQUIRE_ACTOR = String(process.env.INTEGRATIONS_REQUIRE_ACTOR || 'false').toLowerCase() === 'true';
 const RATE_LIMIT_SWEEP_MS = 5 * 60 * 1000;
 const rateLimitBuckets = new Map();
 let lastRateLimitSweep = 0;
@@ -353,6 +354,18 @@ function requireActor(req, res) {
   return actorId;
 }
 
+function requireIntegrationActor(req, res) {
+  if (!INTEGRATIONS_REQUIRE_ACTOR) return getActorId(req) || '';
+  return requireActor(req, res);
+}
+
+function actorOwnsIntegration(actorId, integration) {
+  if (!INTEGRATIONS_REQUIRE_ACTOR) return true;
+  if (!integration) return false;
+  const owner = String(integration.connected_by_user_id || '').trim();
+  return !!actorId && (!owner || owner === actorId);
+}
+
 function getUserNameById(userId) {
   const users = readUsers();
   const user = users.find(u => String(u.id) === String(userId));
@@ -458,14 +471,19 @@ app.use('/tools/fetch-meta', toolRateLimit);
 app.get('/health', (_, res) => res.json({ ok: true }));
 
 app.get('/integrations', (req, res) => {
+  const actorId = requireIntegrationActor(req, res);
+  if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const projectId = String(req.query?.projectId || '').trim();
   const rows = readIntegrations();
-  const list = projectId ? rows.filter(r => r.project_id === projectId) : rows;
+  const scopedRows = INTEGRATIONS_REQUIRE_ACTOR ? rows.filter(r => actorOwnsIntegration(actorId, r)) : rows;
+  const list = projectId ? scopedRows.filter(r => r.project_id === projectId) : scopedRows;
   return res.json({ ok: true, integrations: list });
 });
 
 app.post('/integrations', (req, res) => {
-  const actorId = getActorId(req) || String(req.body?.connected_by_user_id || '').trim() || 'unknown';
+  const actorId = requireIntegrationActor(req, res);
+  if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
+  const connectedBy = actorId || String(req.body?.connected_by_user_id || '').trim() || 'unknown';
   const projectId = String(req.body?.project_id || '').trim();
   const integrationType = String(req.body?.integration_type || '').trim();
   const provider = String(req.body?.provider || '').trim().toLowerCase();
@@ -488,7 +506,7 @@ app.post('/integrations', (req, res) => {
     external_resource_url: String(req.body?.external_resource_url || rows[idx]?.external_resource_url || ''),
     status: 'connected',
     access_token_reference: String(req.body?.access_token_reference || ''),
-    connected_by_user_id: actorId,
+    connected_by_user_id: connectedBy,
     last_synced_at: String(req.body?.last_synced_at || ''),
     created_at: idx >= 0 ? rows[idx].created_at : now,
     updated_at: now
@@ -500,11 +518,14 @@ app.post('/integrations', (req, res) => {
 });
 
 app.delete('/integrations/:id', (req, res) => {
+  const actorId = requireIntegrationActor(req, res);
+  if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const id = String(req.params.id || '').trim();
   const hard = String(req.query?.hard || '').trim() === '1';
   const rows = readIntegrations();
   const idx = rows.findIndex(r => r.id === id);
   if (idx < 0) return res.json({ ok: true, removed: 0 });
+  if (!actorOwnsIntegration(actorId, rows[idx])) return res.status(403).json({ ok: false, error: 'forbidden' });
 
   if (hard) {
     const next = rows.filter(r => r.id !== id);
@@ -522,12 +543,15 @@ app.delete('/integrations/:id', (req, res) => {
 });
 
 app.post('/integrations/:id/sync', async (req, res) => {
+  const actorId = requireIntegrationActor(req, res);
+  if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const id = String(req.params.id || '').trim();
   const rows = readIntegrations();
   const idx = rows.findIndex(r => r.id === id);
   if (idx < 0) return res.status(404).json({ ok: false, error: 'integration not found' });
 
   const integration = rows[idx];
+  if (!actorOwnsIntegration(actorId, integration)) return res.status(403).json({ ok: false, error: 'forbidden' });
   if (integration.status !== 'connected') return res.status(400).json({ ok: false, error: 'integration disconnected' });
 
   const now = new Date().toISOString();
@@ -591,16 +615,18 @@ app.get('/integrations/providers', (_req, res) => {
 });
 
 app.get('/integrations/resources', async (req, res) => {
+  const actorId = requireIntegrationActor(req, res);
+  if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const provider = String(req.query?.provider || '').trim().toLowerCase();
   const projectId = String(req.query?.projectId || '').trim();
   if (!provider || !projectId) return res.status(400).json({ ok: false, error: 'provider/projectId required' });
 
-  const integrations = readIntegrations().filter(i => i.project_id === projectId && i.status === 'connected');
+  const integrations = readIntegrations().filter(i => i.project_id === projectId && i.status === 'connected' && actorOwnsIntegration(actorId, i));
   const match = integrations.find(i => i.provider === (provider === 'google_docs' || provider === 'google_sheets' ? 'google' : provider));
 
   if (provider === 'google_docs' || provider === 'google_sheets') {
     const account = integrations.find(i => i.provider === 'google' && i.integration_type === 'account')
-      || readIntegrations().filter(i => i.provider === 'google' && i.integration_type === 'account' && i.status === 'connected').sort((a,b)=>new Date(b.updated_at||0)-new Date(a.updated_at||0))[0];
+      || readIntegrations().filter(i => i.provider === 'google' && i.integration_type === 'account' && i.status === 'connected' && actorOwnsIntegration(actorId, i)).sort((a,b)=>new Date(b.updated_at||0)-new Date(a.updated_at||0))[0];
     const token = String(account?._token_demo_only || '').trim();
     if (!token) {
       return res.json({ ok: true, provider, resources: [], placeholder: true, setupRequired: true, message: 'Google 계정 연결이 필요합니다.' });
@@ -679,10 +705,13 @@ app.get('/integrations/resources', async (req, res) => {
 });
 
 app.post('/integrations/:id/webhook-config', (req, res) => {
+  const actorId = requireIntegrationActor(req, res);
+  if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const id = String(req.params.id || '').trim();
   const rows = readIntegrations();
   const idx = rows.findIndex(r => r.id === id);
   if (idx < 0) return res.status(404).json({ ok: false, error: 'integration not found' });
+  if (!actorOwnsIntegration(actorId, rows[idx])) return res.status(403).json({ ok: false, error: 'forbidden' });
 
   const secret = crypto.randomBytes(24).toString('hex');
   const now = new Date().toISOString();
@@ -747,6 +776,8 @@ app.post('/webhooks/:provider/:integrationId', (req, res) => {
 });
 
 app.get('/activity-events', (req, res) => {
+  const actorId = requireIntegrationActor(req, res);
+  if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const projectId = String(req.query?.projectId || '').trim();
   const limit = Math.min(200, Math.max(1, Number(req.query?.limit || 50)));
   const rows = readActivityEvents();
@@ -757,11 +788,13 @@ app.get('/activity-events', (req, res) => {
 });
 
 app.get('/integrations/insights', async (req, res) => {
+  const actorId = requireIntegrationActor(req, res);
+  if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const projectId = String(req.query?.projectId || '').trim();
   if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
 
   try {
-    const rows = readIntegrations().filter(r => r.project_id === projectId && r.status === 'connected');
+    const rows = readIntegrations().filter(r => r.project_id === projectId && r.status === 'connected' && actorOwnsIntegration(actorId, r));
     const out = [];
 
     const googleAccount = rows.find(r => r.provider === 'google' && r.integration_type === 'account');
@@ -960,6 +993,8 @@ app.get('/integrations/insights', async (req, res) => {
 });
 
 app.post('/activity-events', (req, res) => {
+  const actorId = requireIntegrationActor(req, res);
+  if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const projectId = String(req.body?.project_id || '').trim();
   const integrationId = String(req.body?.integration_id || '').trim();
   const sourceType = String(req.body?.source_type || '').trim();
@@ -989,6 +1024,8 @@ app.post('/activity-events', (req, res) => {
 });
 
 app.get('/status-snapshot', (req, res) => {
+  const actorId = requireIntegrationActor(req, res);
+  if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const projectId = String(req.query?.projectId || '').trim();
   if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
   const rows = readStatusSnapshots();
@@ -997,6 +1034,8 @@ app.get('/status-snapshot', (req, res) => {
 });
 
 app.post('/status-snapshot', (req, res) => {
+  const actorId = requireIntegrationActor(req, res);
+  if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const projectId = String(req.body?.project_id || '').trim();
   if (!projectId) return res.status(400).json({ ok: false, error: 'project_id required' });
   const rows = readStatusSnapshots();
@@ -1020,16 +1059,23 @@ app.post('/status-snapshot', (req, res) => {
 });
 
 app.get('/external-identities', (req, res) => {
+  const actorId = requireIntegrationActor(req, res);
+  if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const userId = String(req.query?.userId || '').trim();
+  if (INTEGRATIONS_REQUIRE_ACTOR && userId && userId !== actorId) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const effectiveUserId = INTEGRATIONS_REQUIRE_ACTOR ? actorId : userId;
   const rows = readExternalIdentityMaps();
-  return res.json({ ok: true, maps: userId ? rows.filter(r => r.user_id === userId) : rows });
+  return res.json({ ok: true, maps: effectiveUserId ? rows.filter(r => r.user_id === effectiveUserId) : rows });
 });
 
 app.post('/external-identities', (req, res) => {
+  const actorId = requireIntegrationActor(req, res);
+  if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const userId = String(req.body?.user_id || '').trim();
   const provider = String(req.body?.provider || '').trim();
   const externalUserId = String(req.body?.external_user_id || '').trim();
   if (!userId || !provider || !externalUserId) return res.status(400).json({ ok: false, error: 'user_id/provider/external_user_id required' });
+  if (INTEGRATIONS_REQUIRE_ACTOR && userId !== actorId) return res.status(403).json({ ok: false, error: 'forbidden' });
   const rows = readExternalIdentityMaps();
   const now = new Date().toISOString();
   const idx = rows.findIndex(r => r.user_id === userId && r.provider === provider && r.external_user_id === externalUserId);
@@ -2133,6 +2179,8 @@ app.post('/cloud/state', (req, res) => {
 
 app.get('/integrations/resources2', async (req, res) => {
   try {
+    const actorId = requireIntegrationActor(req, res);
+    if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
     const projectId = String(req.query?.projectId || '').trim();
     const provider = String(req.query?.provider || '').trim();
     const resourceProvider = String(req.query?.resourceProvider || '').trim();
@@ -2142,7 +2190,7 @@ app.get('/integrations/resources2', async (req, res) => {
 
     if (provider !== 'google') return res.json({ ok: true, rows: [] });
 
-    const rows = readIntegrations().filter(r => r.project_id === projectId && r.provider === 'google' && r.status === 'connected');
+    const rows = readIntegrations().filter(r => r.project_id === projectId && r.provider === 'google' && r.status === 'connected' && actorOwnsIntegration(actorId, r));
     const account = rows.find(r => r.integration_type === 'account');
     const token = String(account?._token_demo_only || '').trim();
     if (!token) return res.status(400).json({ ok: false, error: 'google account token missing' });

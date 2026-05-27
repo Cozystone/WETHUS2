@@ -15,6 +15,7 @@ cp .env.example .env
 - `ADMIN_BOOTSTRAP_PASSWORD`: one-time admin bootstrap password. Must be at least 8 characters and include letters and numbers; weak values such as `0904` are intentionally rejected.
 - `RATE_LIMIT_DISABLED`: set to `true` only for local debugging. Keep disabled in production.
 - `CLOUD_STATE_REQUIRE_SESSION`: set to `true` after production login/session cookies are verified. This blocks `/cloud/state` reads and writes unless the session email matches the requested email.
+- `INTEGRATIONS_REQUIRE_ACTOR`: set to `true` after project hub requests are verified to send `x-user-id`. This blocks integration, activity, snapshot, and external identity APIs unless an actor is present.
 - AI provider:
   - `AI_PROVIDER=openai` is recommended.
   - `OPENAI_API_KEY=...`
@@ -41,5 +42,6 @@ window.WETHUS_GOOGLE_AUTH_ENDPOINT = 'http://localhost:8787/auth/google';
 - Auth, AI, webhook, and metadata fetch endpoints use in-memory rate limits.
 - `/tools/fetch-meta` rejects localhost/private IP targets and rechecks redirect targets to reduce SSRF risk.
 - Frontend currently stores app profile state in `localStorage` for the MVP. `/cloud/state` can be protected with `CLOUD_STATE_REQUIRE_SESSION=true`, but the long-term target is DB-backed sessions and project/review state.
+- Project hub integration APIs can be protected with `INTEGRATIONS_REQUIRE_ACTOR=true`; this is an interim boundary until project membership authorization moves to the database.
 - Admin bootstrap only works when no matching admin user exists yet. Set a strong `ADMIN_BOOTSTRAP_PASSWORD`, log in once with `ADMIN_EMAIL`, then rotate or remove the bootstrap password.
 - If `/admin.html` shows "권한 없음" and `/auth/login` for `admin@wethus.ai` returns "가입된 계정이 없습니다.", production probably has no admin user and no valid bootstrap password configured.
