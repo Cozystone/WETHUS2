@@ -1,4 +1,5 @@
 const BASE_URL = (process.env.WETHUS_BASE_URL || 'https://www.wethus.co.kr').replace(/\/$/, '');
+const API_BASE_URL = (process.env.WETHUS_API_BASE_URL || 'https://wethus-api.onrender.com').replace(/\/$/, '');
 
 const checks = [
   {
@@ -24,6 +25,15 @@ const checks = [
     json: true
   },
   {
+    url: `${API_BASE_URL}/auth/google/config`,
+    status: 200,
+    json: true,
+    requireObject: {
+      ok: true,
+      clientId: 'string'
+    }
+  },
+  {
     path: '/app.js.bak_20260520_1152',
     status: 404
   }
@@ -32,7 +42,7 @@ const checks = [
 const errors = [];
 
 async function runCheck(check) {
-  const url = `${BASE_URL}${check.path}`;
+  const url = check.url || `${BASE_URL}${check.path}`;
   const response = await fetch(url, { redirect: 'follow' });
   const body = await response.text();
 
@@ -61,7 +71,13 @@ async function runCheck(check) {
   if (check.json) {
     try {
       const parsed = JSON.parse(body);
-      if (!Array.isArray(parsed.items)) errors.push(`${url} JSON must contain an items array`);
+      if (check.path === '/data/opportunity-published.json' && !Array.isArray(parsed.items)) {
+        errors.push(`${url} JSON must contain an items array`);
+      }
+      for (const [key, expected] of Object.entries(check.requireObject || {})) {
+        if (expected === true && parsed[key] !== true) errors.push(`${url} JSON field ${key} must be true`);
+        if (expected === 'string' && !String(parsed[key] || '').trim()) errors.push(`${url} JSON field ${key} must be a non-empty string`);
+      }
     } catch (err) {
       errors.push(`${url} returned invalid JSON: ${err.message}`);
     }
