@@ -77,6 +77,7 @@ const ALLOWED_ORIGINS = Array.from(new Set([
 const RATE_LIMIT_DISABLED = String(process.env.RATE_LIMIT_DISABLED || 'false').toLowerCase() === 'true';
 const CLOUD_STATE_REQUIRE_SESSION = String(process.env.CLOUD_STATE_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
 const INTEGRATIONS_REQUIRE_ACTOR = String(process.env.INTEGRATIONS_REQUIRE_ACTOR || 'false').toLowerCase() === 'true';
+const INTEGRATIONS_REQUIRE_SESSION = String(process.env.INTEGRATIONS_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
 const RATE_LIMIT_SWEEP_MS = 5 * 60 * 1000;
 const rateLimitBuckets = new Map();
 let lastRateLimitSweep = 0;
@@ -355,8 +356,20 @@ function requireActor(req, res) {
 }
 
 function requireIntegrationActor(req, res) {
-  if (!INTEGRATIONS_REQUIRE_ACTOR) return getActorId(req) || '';
-  return requireActor(req, res);
+  const actorId = INTEGRATIONS_REQUIRE_ACTOR ? requireActor(req, res) : (getActorId(req) || '');
+  if (!actorId) return actorId;
+  if (INTEGRATIONS_REQUIRE_SESSION) {
+    const session = getSession(req);
+    if (!session?.sub) {
+      res.status(401).json({ ok: false, error: 'session required' });
+      return null;
+    }
+    if (String(session.sub) !== String(actorId)) {
+      res.status(403).json({ ok: false, error: 'session actor mismatch' });
+      return null;
+    }
+  }
+  return actorId;
 }
 
 function actorOwnsIntegration(actorId, integration) {

@@ -1,10 +1,12 @@
 const { spawn } = require('child_process');
 const path = require('path');
+const crypto = require('crypto');
 
 const repoRoot = path.resolve(__dirname, '..');
 const backendRoot = path.join(repoRoot, 'WETHUS2', 'backend');
 const port = Number(process.env.WETHUS_BACKEND_SMOKE_PORT || 8899);
 const baseUrl = `http://127.0.0.1:${port}`;
+const TEST_JWT_SECRET = process.env.JWT_SECRET || 'backend-security-smoke-secret-1234567890';
 const errors = [];
 
 function fail(message) {
@@ -13,6 +15,18 @@ function fail(message) {
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function base64url(value) {
+  return Buffer.from(value).toString('base64url');
+}
+
+function makeTestJwt(payload) {
+  const header = base64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const now = Math.floor(Date.now() / 1000);
+  const body = base64url(JSON.stringify({ iat: now, exp: now + 3600, ...payload }));
+  const signature = crypto.createHmac('sha256', TEST_JWT_SECRET).update(`${header}.${body}`).digest('base64url');
+  return `${header}.${body}.${signature}`;
 }
 
 async function waitForServer(child, logs) {
@@ -109,7 +123,11 @@ async function expectIntegrationActorGuard() {
 
   const actorCreate = await fetch(`${baseUrl}/integrations`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-user-id': 'actor-a' },
+    headers: {
+      'content-type': 'application/json',
+      'x-user-id': 'actor-a',
+      authorization: `Bearer ${makeTestJwt({ sub: 'actor-a', email: 'actor-a@example.com', name: 'Actor A' })}`
+    },
     body: JSON.stringify({
       project_id: 'smoke-project',
       integration_type: 'document',
@@ -123,9 +141,21 @@ async function expectIntegrationActorGuard() {
   if (created?.integration?.id) {
     const forbiddenDelete = await fetch(`${baseUrl}/integrations/${created.integration.id}`, {
       method: 'DELETE',
-      headers: { 'x-user-id': 'actor-b' }
+      headers: {
+        'x-user-id': 'actor-b',
+        authorization: `Bearer ${makeTestJwt({ sub: 'actor-b', email: 'actor-b@example.com', name: 'Actor B' })}`
+      }
     });
     if (forbiddenDelete.status !== 403) fail(`DELETE /integrations/:id by another actor should be forbidden, got ${forbiddenDelete.status}`);
+
+    const mismatchDelete = await fetch(`${baseUrl}/integrations/${created.integration.id}`, {
+      method: 'DELETE',
+      headers: {
+        'x-user-id': 'actor-a',
+        authorization: `Bearer ${makeTestJwt({ sub: 'actor-b', email: 'actor-b@example.com', name: 'Actor B' })}`
+      }
+    });
+    if (mismatchDelete.status !== 403) fail(`DELETE /integrations/:id with mismatched session should be forbidden, got ${mismatchDelete.status}`);
   }
 }
 
@@ -139,7 +169,8 @@ async function expectIntegrationActorGuard() {
       RATE_LIMIT_DISABLED: 'false',
       CLOUD_STATE_REQUIRE_SESSION: 'true',
       INTEGRATIONS_REQUIRE_ACTOR: 'true',
-      JWT_SECRET: process.env.JWT_SECRET || 'backend-security-smoke-secret-1234567890'
+      INTEGRATIONS_REQUIRE_SESSION: 'true',
+      JWT_SECRET: TEST_JWT_SECRET
     },
     stdio: ['ignore', 'pipe', 'pipe']
   });
