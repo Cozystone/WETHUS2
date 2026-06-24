@@ -1004,6 +1004,7 @@
       if (e.target && e.target.getAttribute('data-close-preview') === 'true') closePreview();
     });
 
+    /* legacy moderation path disabled
     async function moderateFounderApplication(fd) {
       const text = [fd.get('title'), fd.get('description'), fd.get('motivation'), fd.get('output'), fd.get('plan')].join('\n');
       const hardBlock = /(성적|음란|19금|노출|강간|자살|폭탄|테러|혐오|죽여|미성년\s*성)/i;
@@ -1019,6 +1020,57 @@
       }
       return { blocked: false, review: false };
     }
+    */
+
+    /* legacy moderation path disabled
+    async function reviewFounderApplicationBackend(fd) {
+      const text = [fd.get('title'), fd.get('description'), fd.get('motivation'), fd.get('output'), fd.get('plan')].join('\n');
+      const hardBlock = /(?깆쟻|?뚮?|19湲??몄텧|媛뺢컙|?먯궡|??깂|?뚮윭|?먯삤|二쎌뿬|誘몄꽦??s*??/i;
+      if (hardBlock.test(text)) {
+        return { blocked: true, review: false, reason: '?덉쟾 ?뺤콉 ?꾨컲 媛?μ꽦???믪? ?댁슜??媛먯??섏뿀?듬땲??' };
+      }
+      const review = await WETHUS.reviewFounderSubmission({
+        title: fd.get('title'),
+        category: resolvedCategory(),
+        description: fd.get('description'),
+        motivation: fd.get('motivation'),
+        output: fd.get('output'),
+        plan: fd.get('plan')
+      });
+      return {
+        blocked: review.decision === 'block',
+        review: review.decision === 'review',
+        reason: review.reason || '',
+        category: review.category || resolvedCategory(),
+        normalizedCategory: review.normalizedCategory || '',
+        moderationReviewedAt: review.reviewedAt || new Date().toISOString()
+      };
+    }
+    */
+
+    async function reviewFounderApplicationFinal(fd) {
+      const text = [fd.get('title'), fd.get('description'), fd.get('motivation'), fd.get('output'), fd.get('plan')].join('\n');
+      const hardBlock = /(sexual|nude|porn|rape|suicide|kill|murder|terror|extremis|self-harm|minor sexual)/i;
+      if (hardBlock.test(text)) {
+        return { blocked: true, review: false, reason: 'Blocked by founder pre-check.' };
+      }
+      const review = await WETHUS.reviewFounderSubmission({
+        title: fd.get('title'),
+        category: resolvedCategory(),
+        description: fd.get('description'),
+        motivation: fd.get('motivation'),
+        output: fd.get('output'),
+        plan: fd.get('plan')
+      });
+      return {
+        blocked: review.decision === 'block',
+        review: review.decision === 'review',
+        reason: review.reason || '',
+        category: review.category || resolvedCategory(),
+        normalizedCategory: review.normalizedCategory || '',
+        moderationReviewedAt: review.reviewedAt || new Date().toISOString()
+      };
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1030,7 +1082,7 @@
         if (!validateStrict(true)) return;
 
         const fd = new FormData(form);
-        const moderation = await moderateFounderApplication(fd);
+        const moderation = await reviewFounderApplicationFinal(fd);
         if (moderation.blocked) {
           msg.textContent = moderation.reason || '신청서가 안전 정책에 따라 반려되었습니다.';
           return;
@@ -1063,7 +1115,8 @@
 
         const createdProject = WETHUS.addProject({
           title: fd.get('title'),
-          category: resolvedCategory(),
+          category: moderation.category || resolvedCategory(),
+          normalizedCategory: moderation.normalizedCategory || undefined,
           summary,
           miniSummary: summary,
           fullDescription: fd.get('description'),
@@ -1082,7 +1135,8 @@
           likes: 0,
           comments: [],
           moderationStatus,
-          moderationReason
+          moderationReason,
+          moderationReviewedAt: moderation.moderationReviewedAt || new Date().toISOString()
         });
 
         try {

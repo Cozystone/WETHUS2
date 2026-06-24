@@ -1879,6 +1879,52 @@ async function callAi(prompt, opts = {}) {
   }
 }
 
+function canonicalFounderCategory(category, text = '') {
+  const raw = String(category || '').trim();
+  const haystack = `${raw} ${String(text || '')}`.toLowerCase();
+
+  if (/^(startup|business)$/i.test(raw)) return 'Startup';
+  if (/^(app|ai|mvp|product)$/i.test(raw)) return 'App';
+  if (/^(film|movie|video)$/i.test(raw)) return 'Film';
+  if (/^(creative|art|culture)$/i.test(raw)) return 'Creative';
+  if (/^(policy|law|society)$/i.test(raw)) return 'Policy';
+  if (/^(campaign)$/i.test(raw)) return 'Campaign';
+  if (/^(science|research|math|sci|data)$/i.test(raw)) return 'Science';
+
+  if (/(science|research|math|sci|data)/.test(haystack)) return 'Science';
+  if (/(film|movie|video)/.test(haystack)) return 'Film';
+  if (/(creative|art|culture|design|brand|exhibit|publish)/.test(haystack)) return 'Creative';
+  if (/(policy|law|society|civic|public)/.test(haystack)) return 'Policy';
+  if (/(campaign|advocacy)/.test(haystack)) return 'Campaign';
+  if (/(app|ai|mvp|product|service|platform|saas)/.test(haystack)) return 'App';
+  if (/(startup|business|commerce|market|team build)/.test(haystack)) return 'Startup';
+  return 'Startup';
+}
+
+function founderThemeCategory(category, text = '') {
+  const normalized = canonicalFounderCategory(category, text);
+  if (normalized === 'Science') return 'MathSci';
+  if (normalized === 'Film' || normalized === 'Creative') return 'ArtCulture';
+  if (normalized === 'Policy' || normalized === 'Campaign') return 'SocietyLaw';
+  return 'StartupBusiness';
+}
+
+function founderReviewFallback(body = {}, reason = '') {
+  const sourceText = [body.title, body.description, body.motivation, body.output, body.plan].filter(Boolean).join(' ');
+  const category = canonicalFounderCategory(body.category, sourceText);
+  const decision = sourceText.trim().length >= 120 ? 'allow' : 'review';
+  return {
+    ok: true,
+    decision,
+    reason: reason || (decision === 'allow'
+      ? 'AI moderation fallback: approved by local safe rule.'
+      : 'AI moderation fallback: manual review required.'),
+    category,
+    normalizedCategory: founderThemeCategory(category, sourceText),
+    reviewedAt: new Date().toISOString()
+  };
+}
+
 app.post('/ai/career-summary', async (req, res) => {
   try {
     const raw = String(req.body?.raw || '').trim();
@@ -1911,6 +1957,79 @@ app.post('/ai/moderate-project', async (req, res) => {
     return res.json({ ok: true, decision, reason: parsed.reason || '' });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'moderation failed' });
+  }
+});
+
+app.post('/ai/review-founder', async (req, res) => {
+  try {
+    const body = {
+      title: String(req.body?.title || '').trim(),
+      category: String(req.body?.category || '').trim(),
+      description: String(req.body?.description || '').trim(),
+      motivation: String(req.body?.motivation || '').trim(),
+      output: String(req.body?.output || '').trim(),
+      plan: String(req.body?.plan || '').trim()
+    };
+    if (!body.title || !body.description) {
+      return res.status(400).json({ ok: false, error: 'title/description required' });
+    }
+
+    const sourceText = [body.title, body.category, body.description, body.motivation, body.output, body.plan].filter(Boolean).join('\n');
+    const reviewedAt = new Date().toISOString();
+    const hardBlock = /(sexual|nude|porn|rape|suicide|kill|murder|terror|extremis|self-harm|minor sexual)/i;
+    if (hardBlock.test(sourceText)) {
+      const category = canonicalFounderCategory(body.category, sourceText);
+      return res.json({
+        ok: true,
+        decision: 'block',
+        reason: 'Blocked by server safety rules.',
+        category,
+        normalizedCategory: founderThemeCategory(category, sourceText),
+        reviewedAt
+      });
+    }
+
+    const fallbackCategory = canonicalFounderCategory(body.category, sourceText);
+    const prompt = `You review a student startup project submission for a public explore feed.
+Return JSON only with this exact shape:
+{"decision":"allow|review|block","reason":"short reason","category":"Startup|App|Film|Creative|Policy|Campaign|Science"}
+
+Rules:
+- block only for clearly harmful, sexual, exploitative, hateful, or violent content
+- review if ambiguous, missing critical clarity, or safety-relevant
+- allow for normal student project ideas
+- choose the single best category from the allowed list
+
+Submission:
+Title: ${body.title}
+Founder category: ${body.category || 'Unspecified'}
+Description: ${body.description.slice(0, 1600)}
+Motivation: ${body.motivation.slice(0, 800)}
+Output: ${body.output.slice(0, 800)}
+Plan: ${body.plan.slice(0, 800)}`;
+
+    try {
+      const out = await callAi(prompt, {
+        systemPrompt: 'Return valid JSON only. No markdown. Use one of the allowed categories exactly.',
+        temperature: 0.2,
+        maxTokens: 320
+      });
+      const parsed = JSON.parse(String(out).match(/\{[\s\S]*\}/)?.[0] || '{}');
+      const decision = ['allow', 'review', 'block'].includes(parsed.decision) ? parsed.decision : 'review';
+      const category = canonicalFounderCategory(parsed.category || fallbackCategory, sourceText);
+      return res.json({
+        ok: true,
+        decision,
+        reason: String(parsed.reason || '').trim(),
+        category,
+        normalizedCategory: founderThemeCategory(category, sourceText),
+        reviewedAt
+      });
+    } catch (e) {
+      return res.json(founderReviewFallback(body, e?.message || 'AI moderation failed'));
+    }
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'review founder failed' });
   }
 });
 

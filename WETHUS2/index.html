@@ -216,12 +216,13 @@
         const base = (WETHUS.getRecommendedProjects ? WETHUS.getRecommendedProjects(12) : WETHUS.listProjects().slice(0, 12));
         const notApplied = base.filter(p => !WETHUS.hasApplied(p.id));
         const applied = base.filter(p => WETHUS.hasApplied(p.id));
+        const approvedCount = (WETHUS.listProjects ? WETHUS.listProjects() : []).filter(p => String(p?.moderationStatus || 'approved') === 'approved').length;
 
         // 우선 미지원 프로젝트를 보여주되, 부족하면 지원완료 항목으로 채워 최대한 채움
         let filled = notApplied.concat(applied).slice(0, 6);
 
         // 여전히 부족하면 홈 노출 전용 기본 카드로 6개 보장
-        if (filled.length < 6) {
+        if (filled.length < 6 && approvedCount < 6) {
           const fallbackProjects = [
             { id: 'home-fallback-1', title: '학생 로컬 F&B 브랜드 검증팀', category: 'Startup', summary: '메뉴/가격/채널을 빠르게 검증하는 소비자 실험형 창업 프로젝트', status: '모집 중', roles: '브랜딩 1 · 운영 1 · 콘텐츠 1', teamMembers: [{name:'WETHUS Team', role:'운영', isLeader:true}], likes: 0, comments: [] },
             { id: 'home-fallback-2', title: '청소년 AI 스터디 도구 MVP 팀', category: 'App', summary: '학습 루틴 문제를 해결하는 AI 보조도구 MVP 제작', status: '기획 중', roles: '기획 1 · 프론트 1 · 디자인 1', teamMembers: [{name:'WETHUS Team', role:'운영', isLeader:true}], likes: 0, comments: [] },

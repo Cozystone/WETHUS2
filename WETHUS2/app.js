@@ -392,6 +392,46 @@
     return d.toISOString().slice(0, 10);
   }
 
+  function canonicalProjectCategory(category, title = '', summary = '') {
+    const raw = String(category || '').trim();
+    const c = raw.toLowerCase();
+    const blob = `${String(title || '').toLowerCase()} ${String(summary || '').toLowerCase()}`;
+
+    if (/^(startup|business)$/i.test(raw) || /^(startup|business)$/.test(c)) return 'Startup';
+    if (/^(app|ai|mvp|product)$/i.test(raw) || /^(app|ai|mvp|product)$/.test(c)) return 'App';
+    if (/^(film|movie|video)$/i.test(raw) || /^(film|movie|video)$/.test(c)) return 'Film';
+    if (/^(creative|art|culture)$/i.test(raw) || /^(creative|art|culture)$/.test(c)) return 'Creative';
+    if (/^(policy|law|society)$/i.test(raw) || /^(policy|law|society)$/.test(c)) return 'Policy';
+    if (/^(campaign)$/i.test(raw) || /^(campaign)$/.test(c)) return 'Campaign';
+    if (/^(science|research|math|sci|data)$/i.test(raw) || /^(science|research|math|sci|data)$/.test(c)) return 'Science';
+
+    if (/(app|ai|mvp|product)/.test(c)) return 'App';
+    if (/(startup|business)/.test(c)) return 'Startup';
+    if (/(film|movie|video)/.test(c)) return 'Film';
+    if (/(creative|art|culture|design|brand|exhibit|publish)/.test(c)) return 'Creative';
+    if (/(policy|law|society)/.test(c)) return 'Policy';
+    if (/(campaign)/.test(c)) return 'Campaign';
+    if (/(science|research|math|sci|data)/.test(c)) return 'Science';
+
+    if (/(app|ai|mvp|product)/.test(blob)) return 'App';
+    if (/(startup|business)/.test(blob)) return 'Startup';
+    if (/(film|movie|video)/.test(blob)) return 'Film';
+    if (/(creative|art|culture|design|brand|exhibit|publish)/.test(blob)) return 'Creative';
+    if (/(policy|law|society)/.test(blob)) return 'Policy';
+    if (/(campaign)/.test(blob)) return 'Campaign';
+    if (/(science|research|math|sci|data)/.test(blob)) return 'Science';
+
+    return normalizeCategory(category, title, summary);
+  }
+
+  function normalizeThemeCategory(category, title = '', summary = '') {
+    const normalized = canonicalProjectCategory(category, title, summary);
+    if (normalized === 'Science') return 'MathSci';
+    if (normalized === 'Film' || normalized === 'Creative') return 'ArtCulture';
+    if (normalized === 'Policy' || normalized === 'Campaign') return 'SocietyLaw';
+    return 'StartupBusiness';
+  }
+
   function defaultTeamForProject(title, founderName) {
     const leader = { id: uid(), name: founderName || '대표', role: '대표', bio: '프로젝트 리딩 및 의사결정', isLeader: true };
     const presets = {
@@ -527,9 +567,14 @@
         next.status = normalized;
         changed = true;
       }
-      const normalizedCategory = normalizeCategory(next.category);
+      const normalizedCategory = canonicalProjectCategory(next.category, next.title, next.summary || next.fullDescription || '');
       if (normalizedCategory !== next.category) {
         next.category = normalizedCategory;
+        changed = true;
+      }
+      const normalizedThemeCategory = normalizeThemeCategory(next.category, next.title, next.summary || next.fullDescription || '');
+      if (normalizedThemeCategory !== next.normalizedCategory) {
+        next.normalizedCategory = normalizedThemeCategory;
         changed = true;
       }
       if (!next.status) {
@@ -808,12 +853,48 @@
     return next;
   }
 
+  function mergeRecordsByKey(remoteItems, localItems, keyFn) {
+    const map = new Map();
+    (Array.isArray(remoteItems) ? remoteItems : []).forEach(item => {
+      const key = keyFn(item);
+      if (key) map.set(key, item);
+    });
+    (Array.isArray(localItems) ? localItems : []).forEach(item => {
+      const key = keyFn(item);
+      if (!key) return;
+      const prev = map.get(key);
+      map.set(key, prev ? { ...prev, ...item } : item);
+    });
+    return Array.from(map.values());
+  }
+
+  function mergeAccountState(localState, remoteState) {
+    const local = localState && typeof localState === 'object' ? localState : {};
+    const remote = remoteState && typeof remoteState === 'object' ? remoteState : {};
+    return {
+      ...remote,
+      ...local,
+      users: mergeRecordsByKey(remote.users, local.users, (user) => String(user?.email || user?.id || '').toLowerCase()),
+      projects: mergeRecordsByKey(remote.projects, local.projects, (project) => String(project?.id || '')),
+      applications: mergeRecordsByKey(remote.applications, local.applications, (application) => String(application?.id || '')),
+      bookmarks: mergeRecordsByKey(remote.bookmarks, local.bookmarks, (bookmark) => String(bookmark?.id || `${bookmark?.userId || ''}:${bookmark?.projectId || ''}`)),
+      notifications: mergeRecordsByKey(remote.notifications, local.notifications, (notification) => String(notification?.id || '')),
+      dmThreads: mergeRecordsByKey(remote.dmThreads, local.dmThreads, (thread) => String(thread?.id || '')),
+      agents: mergeRecordsByKey(remote.agents, local.agents, (agent) => String(agent?.id || '')),
+      agentActivityLogs: mergeRecordsByKey(remote.agentActivityLogs, local.agentActivityLogs, (log) => String(log?.id || '')),
+      projectViews: mergeRecordsByKey(remote.projectViews, local.projectViews, (view) => String(view?.id || '')),
+      currentUserId: local.currentUserId || remote.currentUserId || null
+    };
+  }
+
   function addProject(payload) {
     const s = load();
     if (!s.currentUserId && !s.devMode) throw new Error('로그인이 필요합니다.');
     const actor = s.currentUserId || 'dev-temp';
     const me = s.users.find(u => u.id === s.currentUserId);
     const moderationStatus = payload?.moderationStatus || 'approved';
+    const category = canonicalProjectCategory(payload?.category || '', payload?.title || '', payload?.summary || payload?.fullDescription || '');
+    const normalizedCategory = payload?.normalizedCategory || normalizeThemeCategory(category, payload?.title || '', payload?.summary || payload?.fullDescription || '');
     const founderYouth = !!(me && normalizeYouthTag(me));
     const project = {
       id: uid(),
@@ -823,12 +904,13 @@
       createdAt: new Date().toISOString(),
       moderationStatus,
       moderationReason: payload?.moderationReason || '',
-      moderationReviewedAt: payload?.moderationReviewedAt || null,
+      moderationReviewedAt: payload?.moderationReviewedAt || new Date().toISOString(),
       youthProjectTag: founderYouth,
       projectTrack: founderYouth ? 'Youth' : 'Open',
       ...payload
     };
-    project.category = normalizeCategory(payload?.category || project.category || 'Startup');
+    project.category = category;
+    project.normalizedCategory = normalizedCategory;
     s.projects.unshift(project);
     s.notifications = s.notifications || [];
     s.notifications.unshift({
@@ -860,6 +942,7 @@
     }
 
     save(s);
+    scheduleCloudSync('save');
     return project;
   }
 
@@ -1034,8 +1117,20 @@
     const s = load();
     const actor = currentActorId();
     const max = Math.max(1, Number(limit || 6));
-    const all = Array.isArray(s.projects) ? s.projects.slice() : [];
-    if (!actor) return all.sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0, max);
+    const all = listProjects().filter(p => String(p?.moderationStatus || 'approved') === 'approved');
+    if (!actor) {
+      return all
+        .map(p => {
+          const likes = Number(p.likes || 0);
+          const comments = Array.isArray(p.comments) ? p.comments.length : 0;
+          const approvedAt = new Date(p.moderationReviewedAt || p.createdAt || Date.now()).getTime() || Date.now();
+          const approvalAgeDays = Math.max(0, (Date.now() - approvedAt) / 86400000);
+          const approvalFreshness = Math.max(0, 1 - approvalAgeDays / 14);
+          return { ...p, _recScore: approvalFreshness * 0.56 + Math.min(1, (likes * 0.6 + comments * 1.1) / 42) * 0.44 };
+        })
+        .sort((a, b) => b._recScore - a._recScore)
+        .slice(0, max);
+    }
 
     const likesSet = new Set((all.filter(p => Array.isArray(p.likedBy) && p.likedBy.includes(actor)).map(p => p.id)));
     const bmSet = new Set((s.bookmarks || []).filter(b => b.userId === actor).map(b => b.projectId));
@@ -1063,10 +1158,13 @@
         const comments = Array.isArray(p.comments) ? p.comments.length : 0;
         const ageDays = Math.max(1, (now - new Date(p.createdAt || now).getTime()) / 86400000);
         const freshness = Math.max(0, 1 - ageDays / 21);
+        const approvedAt = new Date(p.moderationReviewedAt || p.createdAt || now).getTime() || now;
+        const approvalAgeDays = Math.max(0, (now - approvedAt) / 86400000);
+        const approvalFreshness = Math.max(0, 1 - approvalAgeDays / 14);
         const popularity = Math.min(1, (likes * 0.6 + comments * 1.1) / 42);
         const affinity = Math.min(1, Number(catScore[p.category] || 0) / 8);
         const interactionBoost = likesSet.has(p.id) || bmSet.has(p.id) ? 0.2 : 0;
-        const score = affinity * 0.46 + popularity * 0.28 + freshness * 0.22 + interactionBoost + Math.random() * 0.02;
+        const score = affinity * 0.34 + popularity * 0.22 + freshness * 0.16 + approvalFreshness * 0.28 + interactionBoost + Math.random() * 0.02;
         return { ...p, _recScore: score };
       })
       .sort((a,b) => b._recScore - a._recScore)
@@ -1371,7 +1469,8 @@
     // (전역 탐색 프로젝트는 별도 캐시에 저장)
     if (remoteState && typeof remoteState === 'object') {
       const sanitizedRemote = sanitizeAccountProjects(remoteState, email);
-      try { localStorage.setItem(KEY, JSON.stringify(sanitizedRemote)); } catch (_) {}
+      const mergedState = mergeAccountState(local, sanitizedRemote);
+      try { localStorage.setItem(KEY, JSON.stringify(mergedState)); } catch (_) {}
     } else {
       try { localStorage.setItem(KEY, JSON.stringify(local)); } catch (_) {}
     }
@@ -1516,6 +1615,59 @@
       ? [preferredBase, ...localBases, remoteBase]
       : [preferredBase || remoteBase];
     return Array.from(new Set(ordered.filter(Boolean).map(b => String(b).replace(/\/$/, ''))));
+  }
+
+  function founderReviewFallback(payload = {}, reason = '') {
+    const title = String(payload.title || '').trim();
+    const description = String(payload.description || '').trim();
+    const category = canonicalProjectCategory(payload.category || '', title, description);
+    const detailText = [title, description, payload.motivation, payload.output, payload.plan].filter(Boolean).join(' ').trim();
+    const decision = detailText.length >= 120 ? 'allow' : 'review';
+    return {
+      ok: true,
+      decision,
+      reason: reason || '백엔드 AI 검수에 실패해 수동 검토로 전환했습니다.',
+      category,
+      normalizedCategory: normalizeThemeCategory(category, title, description),
+      reviewedAt: new Date().toISOString()
+    };
+  }
+
+  async function reviewFounderSubmission(payload = {}) {
+    const body = {
+      title: String(payload.title || '').trim(),
+      category: String(payload.category || '').trim(),
+      description: String(payload.description || '').trim(),
+      motivation: String(payload.motivation || '').trim(),
+      output: String(payload.output || '').trim(),
+      plan: String(payload.plan || '').trim()
+    };
+    let lastErr = null;
+
+    for (const base of aiApiBases()) {
+      try {
+        const res = await fetch(`${base}/ai/review-founder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data?.ok) throw new Error(data?.error || `review-founder failed (${res.status})`);
+        const category = canonicalProjectCategory(data.category || body.category, body.title, body.description);
+        return {
+          ok: true,
+          decision: ['allow', 'review', 'block'].includes(data.decision) ? data.decision : 'review',
+          reason: String(data.reason || '').trim(),
+          category,
+          normalizedCategory: data.normalizedCategory || normalizeThemeCategory(category, body.title, body.description),
+          reviewedAt: data.reviewedAt || new Date().toISOString()
+        };
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+
+    return founderReviewFallback(body, lastErr?.message ? `백엔드 AI 검수 실패: ${lastErr.message}` : '');
   }
 
   async function dmFetch(path, options = {}) {
@@ -2517,6 +2669,7 @@
     getGeminiApiKey,
     setOpenAIApiKey,
     getOpenAIApiKey,
+    reviewFounderSubmission,
     askChatGPT,
     askGemini
   };

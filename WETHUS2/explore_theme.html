@@ -580,6 +580,10 @@
     }
 
     function projectThemeKey(project) {
+      const normalized = String(project.normalizedCategory || '').trim();
+      if (normalized === 'MathSci' || normalized === 'ArtCulture' || normalized === 'StartupBusiness' || normalized === 'SocietyLaw') {
+        return normalized;
+      }
       const raw = String(project.category || '').trim();
       const c = raw.toLowerCase();
       const blob = `${String(project.title || '').toLowerCase()} ${String(project.summary || '').toLowerCase()}`;
