@@ -136,10 +136,10 @@
 
     .stack-topbar {
       position: absolute;
-      top: 52px;
-      right: -1%;
+      top: 12px;
+      left: 68%;
       width: 31%;
-      z-index: 30;
+      z-index: 11;
       display: flex;
       justify-content: flex-start;
     }
@@ -163,6 +163,7 @@
     @media (max-width: 900px) {
       .stack-topbar {
         position: static;
+        width: auto;
         margin-bottom: 12px;
       }
 
@@ -206,11 +207,11 @@
       <h1 class="gateway-title">카테고리 탐색</h1>
       <p class="gateway-sub">관심 분야를 선택하면 해당 테마의 프로젝트 탐색으로 이동합니다.</p>
 
-      <div class="stack-topbar">
-        <a class="stack-total-btn" href="explore_v1.html">전체보기 -&gt;</a>
-      </div>
-
       <div class="stack-wrap" aria-label="카테고리 선택">
+        <div class="stack-topbar">
+          <a class="stack-total-btn" href="explore_v1.html">전체보기 -&gt;</a>
+        </div>
+
         <a class="stack-card stack-1" href="explore_theme.html?cat=MathSci">
           <em>DISCOVER</em>
           <h3>Math & Sci</h3>
