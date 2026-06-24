@@ -56,6 +56,13 @@ const INTEGRATION_APP_URL = process.env.INTEGRATION_APP_URL || 'https://wethus-a
 const GOOGLE_OAUTH_CLIENT_ID = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || '';
 const GOOGLE_OAUTH_REDIRECT_URI = process.env.GOOGLE_OAUTH_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/google/callback`;
+const GOOGLE_OAUTH_REDIRECT_URIS = Array.from(new Set([
+  GOOGLE_OAUTH_REDIRECT_URI,
+  ...(process.env.GOOGLE_OAUTH_REDIRECT_URIS || process.env.GOOGLE_REDIRECT_URIS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+]));
 const NOTION_CLIENT_ID = process.env.NOTION_CLIENT_ID || process.env.NOTION_OAUTH_CLIENT_ID || '';
 const NOTION_CLIENT_SECRET = process.env.NOTION_CLIENT_SECRET || process.env.NOTION_OAUTH_CLIENT_SECRET || '';
 const NOTION_REDIRECT_URI = process.env.NOTION_REDIRECT_URI || process.env.NOTION_OAUTH_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/notion/callback`;
@@ -86,6 +93,46 @@ const RATE_LIMIT_SWEEP_MS = 5 * 60 * 1000;
 const rateLimitBuckets = new Map();
 let lastRateLimitSweep = 0;
 
+function safeUrl(raw) {
+  try { return new URL(String(raw || '').trim()); } catch { return null; }
+}
+
+function requestHostHint(req) {
+  const origin = safeUrl(req.get('origin'));
+  if (origin?.hostname) return origin.hostname;
+  const referer = safeUrl(req.get('referer'));
+  if (referer?.hostname) return referer.hostname;
+  return String(req.hostname || '').trim();
+}
+
+function resolveGoogleOAuthRedirectUri(req, fallback = GOOGLE_OAUTH_REDIRECT_URI) {
+  const candidates = GOOGLE_OAUTH_REDIRECT_URIS
+    .map(uri => ({ uri, parsed: safeUrl(uri) }))
+    .filter(entry => !!entry.parsed);
+  if (!candidates.length) return String(fallback || '').trim();
+
+  const hostHint = requestHostHint(req);
+  const localHosts = new Set(['localhost', '127.0.0.1']);
+  const exact = candidates.find(entry => entry.parsed.hostname === hostHint);
+  if (exact) return exact.uri;
+
+  if (localHosts.has(hostHint)) {
+    const local = candidates.find(entry => localHosts.has(entry.parsed.hostname));
+    if (local) return local.uri;
+  }
+
+  const render = candidates.find(entry => entry.parsed.hostname === 'wethus-api.onrender.com');
+  if (render && !localHosts.has(hostHint)) return render.uri;
+
+  return candidates[0]?.uri || String(fallback || '').trim();
+}
+
+function requestedGoogleOAuthRedirectUri(req) {
+  const raw = String(req.query?.redirect_uri || '').trim();
+  if (!raw) return '';
+  return GOOGLE_OAUTH_REDIRECT_URIS.includes(raw) ? raw : '';
+}
+
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 const DATA_DIR = process.env.WETHUS_DATA_DIR
   ? path.resolve(process.env.WETHUS_DATA_DIR)
@@ -97,6 +144,7 @@ const ACTIVITY_EVENTS_DB = path.join(DATA_DIR, 'activity-events.json');
 const STATUS_SNAPSHOTS_DB = path.join(DATA_DIR, 'status-snapshots.json');
 const EXTERNAL_IDENTITIES_DB = path.join(DATA_DIR, 'external-identities.json');
 const CLOUD_STATE_DB = path.join(DATA_DIR, 'cloud-state.json');
+const PROJECT_APPLICATIONS_DB = path.join(DATA_DIR, 'project-applications.json');
 
 function ensureDb() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -107,6 +155,7 @@ function ensureDb() {
   if (!fs.existsSync(STATUS_SNAPSHOTS_DB)) fs.writeFileSync(STATUS_SNAPSHOTS_DB, JSON.stringify({ snapshots: [] }, null, 2));
   if (!fs.existsSync(EXTERNAL_IDENTITIES_DB)) fs.writeFileSync(EXTERNAL_IDENTITIES_DB, JSON.stringify({ maps: [] }, null, 2));
   if (!fs.existsSync(CLOUD_STATE_DB)) fs.writeFileSync(CLOUD_STATE_DB, JSON.stringify({ states: [] }, null, 2));
+  if (!fs.existsSync(PROJECT_APPLICATIONS_DB)) fs.writeFileSync(PROJECT_APPLICATIONS_DB, JSON.stringify({ applications: [] }, null, 2));
   const cp = cloudProjectsDbPath();
   if (!fs.existsSync(cp)) fs.writeFileSync(cp, JSON.stringify({ projects: [] }, null, 2));
 }
@@ -266,6 +315,8 @@ function readCloudProjects() {
 function writeCloudProjects(rows) {
   writeCollection(cloudProjectsDbPath(), 'projects', rows);
 }
+function readProjectApplications() { return readCollection(PROJECT_APPLICATIONS_DB, 'applications'); }
+function writeProjectApplications(rows) { writeCollection(PROJECT_APPLICATIONS_DB, 'applications', rows); }
 function normEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
@@ -391,6 +442,26 @@ function getUserNameById(userId) {
   return user?.nickname || user?.name || user?.email || '사용자';
 }
 
+function getUserById(userId) {
+  return readUsers().find(u => String(u.id) === String(userId)) || null;
+}
+
+function getGlobalProjectById(projectId) {
+  return readCloudProjects().find(p => String(p?.id) === String(projectId)) || null;
+}
+
+function upsertGlobalProject(projectId, updater) {
+  const rows = readCloudProjects();
+  const idx = rows.findIndex(p => String(p?.id) === String(projectId));
+  if (idx === -1) return null;
+  const current = rows[idx];
+  const next = updater ? updater({ ...current }) : current;
+  if (!next) return null;
+  rows[idx] = { ...current, ...next, _updatedAt: new Date().toISOString() };
+  writeCloudProjects(rows);
+  return rows[idx];
+}
+
 const AGENT_SYSTEM_PROMPTS = {
   project_management_ai: 'You are a senior project management mentor for youth teams. Respond in Korean. Give practical, step-by-step execution guidance with priorities and clear next action.',
   branding_ai: 'You are a branding mentor. Respond in Korean with clear brand positioning, messaging, and identity guidance.',
@@ -455,6 +526,79 @@ async function generateAgentReply(agentCode, userText = '') {
   } catch {
     return buildAgentFallbackReply(agentCode, userText);
   }
+}
+
+function detectProjectMentorMode(project = {}, hub = {}, userPrompt = '') {
+  const haystack = [
+    project?.category,
+    project?.title,
+    project?.summary,
+    project?.desc,
+    hub?.goal,
+    ...(hub?.weeklyTodos || []),
+    userPrompt || ''
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  if (/(startup|business|mvp|customer|validation|market|service|app|saas|product)/.test(haystack)) return 'startup_ai';
+  if (/(brand|branding|identity|message|logo)/.test(haystack)) return 'branding_ai';
+  if (/(develop|code|api|backend|frontend|bug|db|deploy|앱|개발|서버|기능|버그|배포)/.test(haystack)) return 'developer_ai';
+  if (/(marketing|sns|growth|channel|campaign|마케팅|홍보)/.test(haystack)) return 'marketing_ai';
+  if (/(science|research|hypothesis|experiment|논문|연구|실험|과학)/.test(haystack)) return 'student_research_ai';
+  if (/(film|video|editing|storyboard|영화|영상|편집)/.test(haystack)) return 'film_production_ai';
+  if (/(policy|society|law|campaign|정책|사회|법|캠페인)/.test(haystack)) return 'policy_proposal_ai';
+  return 'project_management_ai';
+}
+
+function buildProjectMentorFallback(payload = {}, errorMessage = '') {
+  const project = payload?.project || {};
+  const hub = payload?.hub || {};
+  const firstTodo = String((hub?.weeklyTodos || [])[0] || '').trim();
+  const firstMaterial = String((hub?.materials || [])[0]?.name || '').trim();
+  const recentActivity = String((hub?.recentActivities || []).find((item) => !/AI 멘토 점검/i.test(String(item?.text || '')))?.text || '').trim();
+  const recentChat = String((hub?.teamChat || []).slice(-1)[0]?.text || '').trim();
+  const connectedTool = String((hub?.tools || []).find((item) => item?.connected)?.name || '').trim();
+  const userPrompt = String(payload?.userPrompt || '').trim();
+  const mode = detectProjectMentorMode(project, hub, payload?.userPrompt || '');
+  const summaryParts = [
+    `${project?.title || '프로젝트'}의 현재 단계는 ${project?.status || '정리 필요'}입니다.`,
+    hub?.goal ? `지금 목표는 ${String(hub.goal).slice(0, 80)} 쪽으로 읽힙니다.` : '목표 문장이 아직 약해서 팀이 같은 방향을 보기 어렵습니다.',
+    firstTodo ? `가장 먼저 보이는 실행 단위는 ${firstTodo}입니다.` : '이번 주 할 일이 아직 선명하게 쪼개지지 않았습니다.'
+  ];
+  if (recentActivity) summaryParts.push(`최근 활동상 ${recentActivity}까지는 진행됐습니다.`);
+  const summary = summaryParts.join(' ');
+  const priority = firstTodo || (hub?.goal ? `${hub.goal}에 바로 연결되는 검증 행동 1개를 오늘 안에 확정하세요.` : '이번 주 검증할 핵심 가설 1개를 먼저 고정하세요.');
+  const secondAction = connectedTool
+    ? `${connectedTool}에 최신 결정 사항과 다음 일정이 실제로 반영됐는지 확인하세요.`
+    : (firstMaterial ? `${firstMaterial} 문서에 현재 가설과 성공 기준을 5줄로 정리하세요.` : '핵심 문서 1개에 가설, 사용자, 검증 방식을 한 번에 보이게 정리하세요.');
+  const questionA = userPrompt || '지금 가장 빨리 검증해야 하는 가설은 무엇인가요?';
+  const questionB = recentChat
+    ? `방금 팀 대화에서 나온 "${recentChat.slice(0, 40)}"를 실행으로 옮기려면 누가 언제까지 무엇을 끝내야 하나요?`
+    : '이번 주 안에 반드시 끝나야 하는 결과물은 무엇인가요?';
+  return {
+    ok: true,
+    mentorMode: mode,
+    summary,
+    priority,
+    nextActions: [
+      firstTodo ? `${firstTodo}의 완료 기준과 담당자를 한 줄로 확정하세요.` : '이번 주 가장 중요한 실행 1개를 일정과 담당자까지 포함해 확정하세요.',
+      secondAction,
+      '다음 점검 때 확인할 숫자 또는 관찰 지표를 1개 정하세요.'
+    ],
+    questions: [
+      questionA,
+      questionB
+    ],
+    toolActions: [
+      connectedTool ? `${connectedTool}에서 최신 문서 또는 리소스를 다시 동기화해 변화 로그를 남기세요.` : '외부 툴을 연결했다면 핵심 문서 1개만 먼저 연결해 변화 로그가 쌓이게 하세요.'
+    ],
+    grounding: [
+      hub?.goal ? `목표 근거: ${String(hub.goal).slice(0, 90)}` : '목표 근거가 부족해 목표 입력값을 우선 보강해야 합니다.',
+      firstTodo ? `할 일 근거: ${firstTodo}` : '이번 주 할 일 근거가 부족합니다.',
+      recentActivity ? `최근 활동 근거: ${recentActivity}` : '최근 활동 근거가 적습니다.',
+      errorMessage ? `AI fallback 사용: ${String(errorMessage).slice(0, 120)}` : '규칙 기반 fallback으로 생성되었습니다.'
+    ],
+    changeLog: '프로젝트 문맥을 기준으로 다음 실행 우선순위를 다시 정렬했습니다.'
+  };
 }
 
 function threadPeer(thread, actorId) {
@@ -639,17 +783,59 @@ app.post('/integrations/:id/sync', async (req, res) => {
   }
 });
 
-app.get('/integrations/providers', (_req, res) => {
-  return res.json({
-    ok: true,
-    providers: [
-      { key: 'notion', label: 'Notion', description: '문서와 체크리스트 연결', status: 'ready' },
-      { key: 'google_docs', label: 'Google Docs', description: '프로젝트 문서 연결', status: 'ready' },
-      { key: 'google_sheets', label: 'Google Sheets', description: '일정/지표 시트 연결', status: 'ready' },
-      { key: 'slack', label: 'Slack', description: '프로젝트 채널 활동 연결', status: 'ready' },
-      { key: 'figma', label: 'Figma', description: '디자인 파일 상태 연결', status: 'ready' }
-    ]
-  });
+app.get('/integrations/providers', (req, res) => {
+  const googleReady = !!(GOOGLE_OAUTH_CLIENT_ID && GOOGLE_OAUTH_CLIENT_SECRET && resolveGoogleOAuthRedirectUri(req));
+  const notionReady = !!(NOTION_CLIENT_ID && NOTION_CLIENT_SECRET && NOTION_REDIRECT_URI);
+  const slackReady = !!(SLACK_CLIENT_ID && SLACK_CLIENT_SECRET && SLACK_REDIRECT_URI);
+  const figmaReady = !!(FIGMA_CLIENT_ID && FIGMA_CLIENT_SECRET && FIGMA_REDIRECT_URI);
+  const providers = [
+    {
+      key: 'notion',
+      label: 'Notion',
+      description: '문서와 체크리스트 연결',
+      status: notionReady ? 'ready' : 'setup_required',
+      oauthConfigured: notionReady,
+      setupRequired: !notionReady,
+      message: notionReady ? '바로 연결할 수 있습니다.' : '관리자 OAuth 설정이 아직 완료되지 않았습니다.'
+    },
+    {
+      key: 'google_docs',
+      label: 'Google Docs',
+      description: '프로젝트 문서 연결',
+      status: googleReady ? 'ready' : 'setup_required',
+      oauthConfigured: googleReady,
+      setupRequired: !googleReady,
+      message: googleReady ? 'Google 계정 연결 후 문서나 폴더를 선택할 수 있습니다.' : 'Google OAuth 설정이 아직 완료되지 않았습니다.'
+    },
+    {
+      key: 'google_sheets',
+      label: 'Google Sheets',
+      description: '일정/지표 시트 연결',
+      status: googleReady ? 'ready' : 'setup_required',
+      oauthConfigured: googleReady,
+      setupRequired: !googleReady,
+      message: googleReady ? 'Google 계정 연결 후 시트를 선택할 수 있습니다.' : 'Google OAuth 설정이 아직 완료되지 않았습니다.'
+    },
+    {
+      key: 'slack',
+      label: 'Slack',
+      description: '프로젝트 채널 활동 연결',
+      status: slackReady ? 'ready' : 'setup_required',
+      oauthConfigured: slackReady,
+      setupRequired: !slackReady,
+      message: slackReady ? '워크스페이스 연결 후 채널을 선택할 수 있습니다.' : 'Slack OAuth 설정이 아직 완료되지 않았습니다.'
+    },
+    {
+      key: 'figma',
+      label: 'Figma',
+      description: '디자인 파일 상태 연결',
+      status: figmaReady ? 'ready' : 'setup_required',
+      oauthConfigured: figmaReady,
+      setupRequired: !figmaReady,
+      message: figmaReady ? '계정 연결 후 파일 상태를 가져올 수 있습니다.' : 'Figma OAuth 설정이 아직 완료되지 않았습니다.'
+    }
+  ];
+  return res.json({ ok: true, providers });
 });
 
 app.get('/integrations/resources', async (req, res) => {
@@ -1147,10 +1333,18 @@ app.get('/oauth/:provider/start', (req, res) => {
 
   const projectId = String(req.query?.project_id || '').trim();
   const actorId = getActorId(req) || String(req.query?.user_id || '').trim();
-  const state = encodeState({ provider, project_id: projectId, user_id: actorId, ts: Date.now() });
+  const explicitGoogleRedirectUri = requestedGoogleOAuthRedirectUri(req);
+  const googleRedirectUri = explicitGoogleRedirectUri || resolveGoogleOAuthRedirectUri(req);
+  const state = encodeState({
+    provider,
+    project_id: projectId,
+    user_id: actorId,
+    redirect_uri: provider === 'google' ? googleRedirectUri : '',
+    ts: Date.now()
+  });
 
   const conf = {
-    google: { clientId: GOOGLE_OAUTH_CLIENT_ID, redirectUri: GOOGLE_OAUTH_REDIRECT_URI },
+    google: { clientId: GOOGLE_OAUTH_CLIENT_ID, redirectUri: googleRedirectUri },
     notion: { clientId: NOTION_CLIENT_ID, redirectUri: NOTION_REDIRECT_URI },
     slack: { clientId: SLACK_CLIENT_ID, redirectUri: SLACK_REDIRECT_URI },
     figma: { clientId: FIGMA_CLIENT_ID, redirectUri: FIGMA_REDIRECT_URI }
@@ -1176,7 +1370,7 @@ app.get('/oauth/:provider/start', (req, res) => {
   if (provider === 'google') {
     const u = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     u.searchParams.set('client_id', GOOGLE_OAUTH_CLIENT_ID);
-    u.searchParams.set('redirect_uri', GOOGLE_OAUTH_REDIRECT_URI);
+    u.searchParams.set('redirect_uri', conf.redirectUri);
     u.searchParams.set('response_type', 'code');
     u.searchParams.set('scope', 'https://www.googleapis.com/auth/drive.readonly');
     u.searchParams.set('access_type', 'offline');
@@ -1211,12 +1405,13 @@ app.get('/oauth/:provider/callback', async (req, res) => {
   const state = decodeState(req.query?.state);
   const projectId = String(state?.project_id || req.query?.project_id || '').trim();
   const userId = String(state?.user_id || req.query?.user_id || 'unknown').trim();
+  const googleRedirectUri = String(state?.redirect_uri || resolveGoogleOAuthRedirectUri(req)).trim();
 
   if (!code) return res.status(400).json({ ok: false, error: 'code missing' });
 
   try {
     if (provider === 'google') {
-      if (!GOOGLE_OAUTH_CLIENT_ID || !GOOGLE_OAUTH_CLIENT_SECRET || !GOOGLE_OAUTH_REDIRECT_URI) {
+      if (!GOOGLE_OAUTH_CLIENT_ID || !GOOGLE_OAUTH_CLIENT_SECRET || !googleRedirectUri) {
         return res.status(400).json({ ok: false, error: 'GOOGLE oauth env missing', setupRequired: true });
       }
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -1226,7 +1421,7 @@ app.get('/oauth/:provider/callback', async (req, res) => {
           code,
           client_id: GOOGLE_OAUTH_CLIENT_ID,
           client_secret: GOOGLE_OAUTH_CLIENT_SECRET,
-          redirect_uri: GOOGLE_OAUTH_REDIRECT_URI,
+          redirect_uri: googleRedirectUri,
           grant_type: 'authorization_code'
         })
       });
@@ -2059,6 +2254,93 @@ app.post('/ai/chat', async (req, res) => {
   }
 });
 
+app.post('/ai/project-mentor', async (req, res) => {
+  try {
+    const payload = {
+      project: req.body?.project || {},
+      hub: req.body?.hub || {},
+      insights: Array.isArray(req.body?.insights) ? req.body.insights : [],
+      events: Array.isArray(req.body?.events) ? req.body.events : [],
+      statusSnapshot: req.body?.statusSnapshot || {},
+      trigger: String(req.body?.trigger || 'manual').trim(),
+      userPrompt: String(req.body?.userPrompt || '').trim()
+    };
+
+    if (!payload.project?.title) {
+      return res.status(400).json({ ok: false, error: 'project title required' });
+    }
+
+    const mentorMode = detectProjectMentorMode(payload.project, payload.hub, payload.userPrompt);
+    const systemPrompt = AGENT_SYSTEM_PROMPTS[mentorMode] || AGENT_SYSTEM_PROMPTS.project_management_ai;
+    const insightLines = payload.insights.slice(0, 8).map((item) => {
+      const name = item?.resourceName || item?.sourceFolderName || item?.name || 'resource';
+      const snippet = String(item?.snippet || '').replace(/\s+/g, ' ').trim().slice(0, 260);
+      return `- ${name}: ${snippet || 'snippet 없음'}`;
+    }).join('\n');
+    const eventLines = payload.events.slice(0, 10).map((event) => {
+      return `- ${event?.event_type || 'event'} | ${event?.source_item_name || event?.source_type || '-'} | ${event?.occurred_at || event?.created_at || ''}`;
+    }).join('\n');
+
+    const prompt = `You are the in-product AI mentor for a student startup project hub.
+Respond in Korean and return JSON only.
+
+Return exactly this shape:
+{"summary":"...","priority":"...","nextActions":["..."],"questions":["..."],"toolActions":["..."],"grounding":["..."],"changeLog":"...","mentorMode":"${mentorMode}"}
+
+Rules:
+- Be concrete, practical, and execution-first.
+- Use evidence from the provided project context whenever possible.
+- If evidence is weak or missing, say so explicitly in grounding instead of inventing facts.
+- nextActions should be 3 items max.
+- questions should be 2 items max.
+- toolActions should be 2 items max.
+- grounding should mention specific evidence snippets, events, or clearly say evidence is insufficient.
+
+Trigger: ${payload.trigger}
+User ask: ${payload.userPrompt || '없음'}
+Project title: ${payload.project?.title || ''}
+Category: ${payload.project?.category || ''}
+Status: ${payload.project?.status || ''}
+Summary: ${String(payload.project?.summary || '').slice(0, 400)}
+Goal: ${String(payload.hub?.goal || '').slice(0, 500)}
+Weekly todos: ${(payload.hub?.weeklyTodos || []).slice(0, 6).join(' | ')}
+Recent activities: ${(payload.hub?.recentActivities || []).slice(0, 8).map((item) => item?.text || '').join(' | ')}
+Recent team chat: ${(payload.hub?.teamChat || []).slice(-8).map((item) => `${item?.from || 'unknown'}: ${item?.text || ''}`).join(' | ')}
+Materials: ${(payload.hub?.materials || []).slice(0, 8).map((item) => item?.name || '').join(' | ')}
+Connected tools: ${(payload.hub?.tools || []).filter((item) => item?.connected).slice(0, 8).map((item) => `${item?.name || ''}:${item?.desc || ''}`).join(' | ')}
+Status snapshot: ${JSON.stringify(payload.statusSnapshot || {}).slice(0, 800)}
+Integration insights:
+${insightLines || '- 없음'}
+Recent integration/activity events:
+${eventLines || '- 없음'}`;
+
+    try {
+      const out = await callAi(prompt, {
+        systemPrompt: `${systemPrompt} Return valid JSON only. No markdown.`,
+        temperature: 0.35,
+        maxTokens: 700
+      });
+      const parsed = JSON.parse(String(out).match(/\{[\s\S]*\}/)?.[0] || '{}');
+      return res.json({
+        ok: true,
+        mentorMode,
+        summary: String(parsed.summary || '').trim(),
+        priority: String(parsed.priority || '').trim(),
+        nextActions: Array.isArray(parsed.nextActions) ? parsed.nextActions.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 3) : [],
+        questions: Array.isArray(parsed.questions) ? parsed.questions.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 2) : [],
+        toolActions: Array.isArray(parsed.toolActions) ? parsed.toolActions.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 2) : [],
+        grounding: Array.isArray(parsed.grounding) ? parsed.grounding.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 4) : [],
+        changeLog: String(parsed.changeLog || '').trim(),
+        reviewedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      return res.json(buildProjectMentorFallback(payload, e?.message || 'project mentor failed'));
+    }
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'project mentor failed' });
+  }
+});
+
 app.post('/tools/fetch-meta', async (req, res) => {
   try {
     const rawUrl = String(req.body?.url || '').trim();
@@ -2309,6 +2591,163 @@ app.get('/auth/session', (req, res) => {
 app.post('/auth/logout', (req, res) => {
   res.clearCookie('wethus_session');
   res.json({ ok: true });
+});
+
+app.post('/projects/:projectId/likes/toggle', (req, res) => {
+  try {
+    const actorId = requireActor(req, res);
+    if (!actorId) return;
+    const projectId = String(req.params.projectId || '').trim();
+    if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
+    const updated = upsertGlobalProject(projectId, (project) => {
+      const likedBy = Array.isArray(project.likedBy) ? [...project.likedBy] : [];
+      const idx = likedBy.indexOf(actorId);
+      if (idx === -1) likedBy.push(actorId);
+      else likedBy.splice(idx, 1);
+      return { likedBy, likes: likedBy.length };
+    });
+    if (!updated) return res.status(404).json({ ok: false, error: 'project not found' });
+    return res.json({ ok: true, project: updated, likes: Number(updated.likes || 0), liked: Array.isArray(updated.likedBy) && updated.likedBy.includes(actorId) });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'toggle like failed' });
+  }
+});
+
+app.post('/projects/:projectId/comments', (req, res) => {
+  try {
+    const actorId = requireActor(req, res);
+    if (!actorId) return;
+    const projectId = String(req.params.projectId || '').trim();
+    const text = String(req.body?.text || '').trim();
+    if (!projectId || !text) return res.status(400).json({ ok: false, error: 'projectId/text required' });
+    const actor = getUserById(actorId);
+    const comment = {
+      id: crypto.randomUUID(),
+      userId: actorId,
+      author: actor?.nickname || actor?.name || actor?.email || 'User',
+      text,
+      createdAt: new Date().toISOString()
+    };
+    const updated = upsertGlobalProject(projectId, (project) => {
+      const comments = Array.isArray(project.comments) ? [...project.comments] : [];
+      comments.push(comment);
+      return { comments };
+    });
+    if (!updated) return res.status(404).json({ ok: false, error: 'project not found' });
+    return res.json({ ok: true, comment, comments: updated.comments || [], project: updated });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'comment failed' });
+  }
+});
+
+app.get('/projects/:projectId/applications', (req, res) => {
+  try {
+    const actorId = requireActor(req, res);
+    if (!actorId) return;
+    const projectId = String(req.params.projectId || '').trim();
+    if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
+    const project = getGlobalProjectById(projectId);
+    if (!project) return res.status(404).json({ ok: false, error: 'project not found' });
+    const actor = getUserById(actorId);
+    const isFounder = String(project.founderId || '') === actorId || normEmail(project.founderEmail) === normEmail(actor?.email);
+    const rows = readProjectApplications().filter(item => String(item.projectId) === projectId);
+    const applications = isFounder ? rows : rows.filter(item => String(item.userId) === actorId);
+    return res.json({ ok: true, applications, isFounder });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'applications failed' });
+  }
+});
+
+app.post('/projects/:projectId/applications', (req, res) => {
+  try {
+    const actorId = requireActor(req, res);
+    if (!actorId) return;
+    const projectId = String(req.params.projectId || '').trim();
+    const motivation = String(req.body?.motivation || '').trim();
+    if (!projectId || !motivation) return res.status(400).json({ ok: false, error: 'projectId/motivation required' });
+    const project = getGlobalProjectById(projectId);
+    if (!project) return res.status(404).json({ ok: false, error: 'project not found' });
+    if (String(project.founderId || '') === actorId) return res.status(400).json({ ok: false, error: 'founder cannot apply own project' });
+    const actor = getUserById(actorId);
+    const rows = readProjectApplications();
+    const existingIdx = rows.findIndex(item => String(item.projectId) === projectId && String(item.userId) === actorId && item.status === 'applied');
+    if (existingIdx >= 0) return res.json({ ok: true, application: rows[existingIdx], duplicate: true });
+    const now = new Date().toISOString();
+    const application = {
+      id: crypto.randomUUID(),
+      projectId,
+      projectTitle: project.title || '',
+      founderId: project.founderId || '',
+      founderEmail: normEmail(project.founderEmail || ''),
+      userId: actorId,
+      applicantName: actor?.nickname || actor?.name || actor?.email || 'User',
+      applicantEmail: normEmail(actor?.email || ''),
+      motivation,
+      status: 'applied',
+      createdAt: now,
+      updatedAt: now
+    };
+    rows.push(application);
+    writeProjectApplications(rows);
+    return res.json({ ok: true, application });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'apply failed' });
+  }
+});
+
+app.post('/projects/:projectId/applications/:applicationId/status', (req, res) => {
+  try {
+    const actorId = requireActor(req, res);
+    if (!actorId) return;
+    const projectId = String(req.params.projectId || '').trim();
+    const applicationId = String(req.params.applicationId || '').trim();
+    const status = String(req.body?.status || '').trim();
+    if (!['accepted', 'rejected'].includes(status)) return res.status(400).json({ ok: false, error: 'accepted or rejected required' });
+    const project = getGlobalProjectById(projectId);
+    if (!project) return res.status(404).json({ ok: false, error: 'project not found' });
+    const actor = getUserById(actorId);
+    const isFounder = String(project.founderId || '') === actorId || normEmail(project.founderEmail) === normEmail(actor?.email);
+    if (!isFounder) return res.status(403).json({ ok: false, error: 'founder only' });
+    const rows = readProjectApplications();
+    const idx = rows.findIndex(item => String(item.id) === applicationId && String(item.projectId) === projectId);
+    if (idx === -1) return res.status(404).json({ ok: false, error: 'application not found' });
+    rows[idx] = { ...rows[idx], status, reviewedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    writeProjectApplications(rows);
+    if (status === 'accepted') {
+      upsertGlobalProject(projectId, (current) => {
+        const teamMembers = Array.isArray(current.teamMembers) ? [...current.teamMembers] : [];
+        if (!teamMembers.some(member => String(member?.id || '') === String(rows[idx].userId))) {
+          teamMembers.push({
+            id: rows[idx].userId,
+            name: rows[idx].applicantName,
+            role: '팀원',
+            bio: '프로젝트 지원 수락으로 합류',
+            isLeader: false
+          });
+        }
+        return { teamMembers };
+      });
+    }
+    return res.json({ ok: true, application: rows[idx] });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'application update failed' });
+  }
+});
+
+app.delete('/projects/:projectId/applications/me', (req, res) => {
+  try {
+    const actorId = requireActor(req, res);
+    if (!actorId) return;
+    const projectId = String(req.params.projectId || '').trim();
+    const rows = readProjectApplications();
+    const idx = rows.findIndex(item => String(item.projectId) === projectId && String(item.userId) === actorId && item.status === 'applied');
+    if (idx === -1) return res.json({ ok: true, cancelled: false });
+    rows[idx] = { ...rows[idx], status: 'cancelled', cancelledAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    writeProjectApplications(rows);
+    return res.json({ ok: true, cancelled: true, application: rows[idx] });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'cancel failed' });
+  }
 });
 
 app.get('/cloud/state', (req, res) => {

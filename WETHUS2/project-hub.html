@@ -180,6 +180,11 @@
               <p class="meta" style="margin:0 0 10px;">팀채팅/활동 로그를 기반으로 AI가 팀원별 업무기록을 요약합니다.</p>
               <div id="tmWorkLog" class="list-grid"></div>
             </article>
+            <article class="hub-card" style="margin-top:10px;">
+              <h3 style="margin:0 0 8px;">지원서 관리</h3>
+              <p class="meta" style="margin:0 0 10px;">대표는 지원서를 검토하고 수락 또는 반려 처리할 수 있습니다.</p>
+              <div id="tmApplications" class="list-grid"></div>
+            </article>
           </div>
         </div>
 
@@ -203,7 +208,7 @@
 
   <footer class="footer"><div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p></div></div></footer>
 
-  <script src="app.js?v=20260527-1811"></script>
+  <script src="app.js?v=20260624-integrations-2"></script>
   <script>
     WETHUS.requireAuth();
     const authLink = document.querySelector('.js-auth-link');
@@ -241,10 +246,18 @@
       try { return localStorage.getItem(hubPersistKey()) || ''; } catch { return ''; }
     }
 
+    function googleOauthRedirectUri() {
+      if (location.hostname === '127.0.0.1' || location.hostname === 'localhost') {
+        return `${location.protocol}//${location.hostname}:8787/oauth/google/callback`;
+      }
+      const base = String(window.WETHUS_API_BASE || 'https://wethus-api.onrender.com').replace(/\/$/, '');
+      return `${base}/oauth/google/callback`;
+    }
+
     async function hubApi(path, options = {}) {
       const st = WETHUS.getState();
       const actor = st.currentUserId || (st.devMode ? 'dev-temp' : '');
-      const bases = [window.WETHUS_API_BASE || 'https://wethus-api.onrender.com', `${location.protocol}//${location.hostname}:8787`, 'http://127.0.0.1:8787'];
+      const bases = [`${location.protocol}//${location.hostname}:8787`, 'http://127.0.0.1:8787', window.WETHUS_API_BASE || 'https://wethus-api.onrender.com'];
       let lastErr;
       for (const b of bases) {
         try {
@@ -379,6 +392,8 @@
       document.getElementById('ovBlocker').textContent=hub.blocker;
       document.getElementById('ovTools').innerHTML=(hub.tools||[]).map(t=>`<article class="tool-card"><strong>${esc(t.name)}</strong><p class="meta" style="margin:4px 0 0;">${esc(t.desc||'')}</p></article>`).join('');
       await loadIntegrationsForCurrentProject();
+      await loadTeamApplicationsForCurrentProject();
+      await loadProviderCatalog();
       renderToolCards();
       renderIntegrationsTab();
       document.getElementById('pgLogs').innerHTML=(hub.progress||[]).map(x=>`<li>${esc(x.text)} · ${esc(new Date(x.createdAt||Date.now()).toLocaleString('ko-KR'))}</li>`).join('')||'<li>진행 로그 없음</li>';
@@ -388,6 +403,7 @@
         return `<li>${esc(label)}</li>`;
       }).join('')||'<li>자료 없음</li>';
       renderWorkLogs(p.teamMembers||[], hub).catch(() => {});
+      renderTeamApplications();
       document.getElementById('sdStatus').innerHTML=`<li>현재 단계: ${esc(p.status||'기획 중')}</li><li>최근 업데이트: ${(hub.updatedAt?new Date(hub.updatedAt).toLocaleString('ko-KR'):'방금')}</li><li>팀원 수: ${(p.teamMembers||[]).length}명</li>`;
       document.getElementById('sdAdvice').innerHTML='<li>목표를 이번 주 단위로 쪼개세요.</li><li>막힌 점을 카드에 명시하세요.</li><li>멘토링 요청은 구체적으로 작성하세요.</li>';
       renderTab(activeTab);
@@ -618,7 +634,7 @@
     ];
 
     async function fetchToolMeta(url) {
-      const bases = [window.WETHUS_API_BASE || 'https://wethus-api.onrender.com', `${location.protocol}//${location.hostname}:8787`, 'http://127.0.0.1:8787'];
+      const bases = [`${location.protocol}//${location.hostname}:8787`, 'http://127.0.0.1:8787', window.WETHUS_API_BASE || 'https://wethus-api.onrender.com'];
       let lastErr;
       for (const base of bases) {
         try {
@@ -639,6 +655,8 @@
 
     let remoteIntegrations = [];
     let cachedIntegrationInsights = [];
+    let teamApplicationsCache = [];
+    let providerCatalog = {};
 
     async function loadIntegrationsForCurrentProject() {
       if (!currentProject) return [];
@@ -649,6 +667,31 @@
         remoteIntegrations = [];
       }
       return remoteIntegrations;
+    }
+
+    async function loadTeamApplicationsForCurrentProject() {
+      if (!currentProject) return [];
+      try {
+        const data = await hubApi(`/projects/${encodeURIComponent(currentProject.id)}/applications`);
+        teamApplicationsCache = Array.isArray(data?.applications) ? data.applications : [];
+      } catch (_) {
+        teamApplicationsCache = [];
+      }
+      return teamApplicationsCache;
+    }
+
+    async function loadProviderCatalog() {
+      try {
+        const data = await hubApi('/integrations/providers');
+        const rows = Array.isArray(data?.providers) ? data.providers : [];
+        providerCatalog = rows.reduce((acc, row) => {
+          if (row?.key) acc[String(row.key)] = row;
+          return acc;
+        }, {});
+      } catch (_) {
+        providerCatalog = {};
+      }
+      return providerCatalog;
     }
 
     function renderIntegrationsTab() {
@@ -721,6 +764,86 @@
       return local ? { ...local, everConnected: !!local.integrationId } : null;
     }
 
+    function currentToolProviderMeta(tool) {
+      const primaryKey = String(tool.resourceProvider || tool.provider || '').trim();
+      return providerCatalog[primaryKey] || providerCatalog[tool.provider] || null;
+    }
+
+    function isCurrentLeader() {
+      if (!currentProject) return false;
+      const me = WETHUS.getCurrentUser?.();
+      const actorId = me?.id || WETHUS.getState?.().currentUserId || '';
+      if (!actorId) return false;
+      if (currentProject.founderId === actorId) return true;
+      return Array.isArray(currentProject.teamMembers) && currentProject.teamMembers.some(member => member?.id === actorId && member?.isLeader);
+    }
+
+    function renderTeamApplications() {
+      const el = document.getElementById('tmApplications');
+      if (!el) return;
+      if (!currentProject) {
+        el.innerHTML = '';
+        return;
+      }
+
+      const me = WETHUS.getCurrentUser?.();
+      const actorId = me?.id || WETHUS.getState?.().currentUserId || '';
+      const isLeader = isCurrentLeader();
+      const mine = (teamApplicationsCache || []).filter(app => app?.applicantId === actorId);
+
+      if (isLeader) {
+        if (!(teamApplicationsCache || []).length) {
+          el.innerHTML = '<article class="list-item"><h3>들어온 지원서가 없습니다</h3><p class="meta">새 지원이 들어오면 여기에서 바로 검토할 수 있습니다.</p></article>';
+          return;
+        }
+
+        el.innerHTML = teamApplicationsCache.map(app => {
+          const statusLabel = app.status === 'accepted' ? '수락됨' : app.status === 'rejected' ? '반려됨' : '검토중';
+          const canReview = app.status === 'pending';
+          return `<article class="list-item" data-application-id="${esc(app.id)}">
+            <h3>${esc(app.applicantName || '지원자')}</h3>
+            <p class="meta" style="margin:6px 0 8px;">상태: ${esc(statusLabel)} · ${esc(app.createdAt ? new Date(app.createdAt).toLocaleString('ko-KR') : '')}</p>
+            <p style="margin:0 0 10px;white-space:pre-wrap;">${esc(app.motivation || '지원 동기 없음')}</p>
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+              <button class="btn btn--secondary" data-app-status="rejected" ${canReview ? '' : 'disabled'} type="button">반려</button>
+              <button class="btn btn--primary" data-app-status="accepted" ${canReview ? '' : 'disabled'} type="button">수락</button>
+            </div>
+          </article>`;
+        }).join('');
+
+        el.querySelectorAll('[data-app-status]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const card = btn.closest('[data-application-id]');
+            const applicationId = card?.getAttribute('data-application-id');
+            const status = btn.getAttribute('data-app-status');
+            if (!applicationId || !status || !currentProject) return;
+            try {
+              await hubApi(`/projects/${encodeURIComponent(currentProject.id)}/applications/${encodeURIComponent(applicationId)}/status`, {
+                method: 'POST',
+                body: JSON.stringify({ status })
+              });
+              await loadTeamApplicationsForCurrentProject();
+              currentProject = WETHUS.getProjectById?.(currentProject.id, { preferCloud: true }) || currentProject;
+              await renderHub();
+            } catch (e) {
+              alert(e?.message || '지원서 처리에 실패했습니다.');
+            }
+          });
+        });
+        return;
+      }
+
+      if (mine.length) {
+        el.innerHTML = mine.map(app => {
+          const statusLabel = app.status === 'accepted' ? '합류 완료' : app.status === 'rejected' ? '반려됨' : '검토중';
+          return `<article class="list-item"><h3>내 지원서</h3><p class="meta" style="margin:6px 0 8px;">상태: ${esc(statusLabel)}</p><p style="margin:0;white-space:pre-wrap;">${esc(app.motivation || '')}</p></article>`;
+        }).join('');
+        return;
+      }
+
+      el.innerHTML = '<article class="list-item"><h3>지원 현황 없음</h3><p class="meta">이 프로젝트에 제출한 지원서가 아직 없습니다.</p></article>';
+    }
+
     let pendingResourceTool = null;
     let pendingResourceRows = [];
     let pendingResourceSelectedId = '';
@@ -789,6 +912,48 @@
     }
 
     let pendingOauthToolName = '';
+    const oauthPause = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    function currentToolIntegration(tool) {
+      if (!tool) return null;
+      if (tool.name === 'Google Docs') {
+        return (remoteIntegrations || []).find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder')) || null;
+      }
+      if (tool.name === 'Google Sheets') {
+        return (remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'spreadsheet') || null;
+      }
+      return (remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
+        || (remoteIntegrations || []).find(x => x.provider === tool.provider)
+        || null;
+    }
+
+    function currentGoogleAccountIntegration() {
+      return (remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'account' && x.status === 'connected') || null;
+    }
+
+    async function watchOauthCompletion(tool, popup) {
+      const startedAt = Date.now();
+      while (Date.now() - startedAt < 90000) {
+        await oauthPause(1200);
+        await loadIntegrationsForCurrentProject();
+        await loadProviderCatalog();
+        renderToolCards();
+        const integ = currentToolIntegration(tool);
+        const googleAccount = currentGoogleAccountIntegration();
+        if (tool?.provider === 'google' && googleAccount?.status === 'connected') {
+          pendingOauthToolName = '';
+          await openResourceSelector(tool);
+          return true;
+        }
+        if (integ?.status === 'connected') {
+          pendingOauthToolName = '';
+          return true;
+        }
+        if (popup && popup.closed) break;
+      }
+      pendingOauthToolName = '';
+      return false;
+    }
     window.addEventListener('message', async (ev) => {
       const msg = ev?.data || {};
       if (msg?.type !== 'wethus-oauth-connected') return;
@@ -799,6 +964,7 @@
       pendingOauthToolName = '';
       if (!tool) return;
       await loadIntegrationsForCurrentProject();
+      await loadProviderCatalog();
       renderToolCards();
       await openResourceSelector(tool);
     });
@@ -807,20 +973,24 @@
       const toolLogoGrid = document.getElementById('toolLogoGrid');
       toolLogoGrid.innerHTML = toolTargets.map(t => {
         const st = currentToolState(t);
+        const meta = currentToolProviderMeta(t);
+        const setupRequired = meta?.setupRequired === true;
         const connectLabel = st?.connected ? '재연결' : (st?.everConnected ? '재연결' : '연결');
-        const statusLabel = t.ready ? (st?.connected ? '연결됨' : (st?.everConnected ? '연결해제됨' : '미연결')) : '준비중';
+        const statusLabel = setupRequired ? '설정 필요' : (t.ready ? (st?.connected ? '연결됨' : (st?.everConnected ? '연결해제됨' : '미연결')) : '준비중');
         const actionLabel = st?.connected ? '동기화' : connectLabel;
+        const hint = meta?.message || '';
         return `<article class="tool-card" data-tool="${esc(t.name)}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
             <div>
               <strong style="font-size:1.15rem;">${esc(t.logo)} ${esc(t.name)}</strong>
               <p class="meta" style="margin:4px 0 0;">${esc(t.desc)}</p>
               <p class="meta" style="margin:4px 0 0;">${esc(statusLabel)} ${st?.lastSynced ? '· 마지막 반영 ' + esc(new Date(st.lastSynced).toLocaleString('ko-KR')) : ''}</p>
+              ${hint ? `<p class="meta" style="margin:4px 0 0;color:${setupRequired ? '#ffb36b' : '#9ca3af'};">${esc(hint)}</p>` : ''}
             </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
-            <button class="btn btn--primary" data-tool-connect="${esc(t.name)}" type="button" ${t.ready ? '' : 'disabled'}>${esc(actionLabel)}</button>
-            <button class="btn btn--secondary" data-tool-disconnect="${esc(t.name)}" type="button" ${t.ready ? '' : 'disabled'}>해제</button>
+            <button class="btn btn--primary" data-tool-connect="${esc(t.name)}" type="button" ${(t.ready && !setupRequired) ? '' : 'disabled'}>${esc(actionLabel)}</button>
+            <button class="btn btn--secondary" data-tool-disconnect="${esc(t.name)}" type="button" ${(t.ready && !setupRequired) ? '' : 'disabled'}>해제</button>
           </div>
         </article>`;
       }).join('');
@@ -835,16 +1005,16 @@
           const name = btn.getAttribute('data-tool-connect');
           const tool = toolTargets.find(x => x.name === name);
           if (!tool) return;
+          const providerMeta = currentToolProviderMeta(tool);
 
-          const integ = tool.name === 'Google Docs'
-            ? ((remoteIntegrations || []).find(x => x.provider === 'google' && (x.integration_type === 'document' || x.integration_type === 'folder')))
-            : tool.name === 'Google Sheets'
-              ? ((remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'spreadsheet'))
-              : ((remoteIntegrations || []).find(x => x.provider === tool.provider && x.integration_type === tool.type)
-                || (remoteIntegrations || []).find(x => x.provider === tool.provider));
-          const googleAccount = (remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'account' && x.status === 'connected');
+          const integ = currentToolIntegration(tool);
+          const googleAccount = currentGoogleAccountIntegration();
 
           try {
+            if (providerMeta?.setupRequired) {
+              alert(`${name} 연결은 아직 사용할 수 없습니다.\n\n${providerMeta.message || 'OAuth 설정이 필요합니다.'}`);
+              return;
+            }
             if (!tool.ready) {
               alert('해당 제공자는 곧 지원 예정입니다.');
               return;
@@ -883,8 +1053,9 @@
                   popup.document.close();
                 } catch (_) {}
               }
-
-              const oauth = await hubApi(`/oauth/${encodeURIComponent(tool.provider)}/start?project_id=${encodeURIComponent(currentProject.id)}`);
+              const oauthQuery = new URLSearchParams({ project_id: String(currentProject.id || '') });
+              if (tool.provider === 'google') oauthQuery.set('redirect_uri', googleOauthRedirectUri());
+              const oauth = await hubApi(`/oauth/${encodeURIComponent(tool.provider)}/start?${oauthQuery.toString()}`);
               if (oauth?.setupRequired) {
                 pendingOauthToolName = '';
                 if (popup && !popup.closed) popup.close();
@@ -896,6 +1067,7 @@
                 if (popup && !popup.closed) popup.location.href = oauth.authUrl;
                 else window.location.href = oauth.authUrl;
                 WETHUS.addHubActivity(currentProject.id, `${name} OAuth 연결 시작`);
+                if (popup) watchOauthCompletion(tool, popup).catch(() => {});
               } else {
                 pendingOauthToolName = '';
                 if (popup && !popup.closed) popup.close();
@@ -944,7 +1116,7 @@
       renderIntegrationsTab();
     }
 
-    renderToolCards();
+    loadProviderCatalog().then(() => renderToolCards()).catch(() => renderToolCards());
 
     document.getElementById('hubToolBtn').addEventListener('click',()=>openModal('hubToolModal'));
     document.getElementById('hubToolClose').addEventListener('click',()=>closeModal('hubToolModal'));

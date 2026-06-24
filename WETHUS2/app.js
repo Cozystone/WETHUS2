@@ -5,11 +5,12 @@
   const DEFAULT_GEMINI_KEY = '';
   const DEFAULT_OPENAI_KEY = '';
   const ADMIN_MODE_USER_ID = 'admin-mode';
+  const IS_LOCAL_WETHUS = typeof location !== 'undefined' && ['localhost', '127.0.0.1'].includes(location.hostname);
   const CLOUD_BASE_CANDIDATES = [
+    IS_LOCAL_WETHUS ? `${location.protocol}//${location.hostname}:8787` : '',
     (typeof window !== 'undefined' && window.WETHUS_API_BASE) ? window.WETHUS_API_BASE : '',
     'https://wethus-api.onrender.com/api',
-    'https://wethus-api.onrender.com',
-    (typeof location !== 'undefined' && ['localhost', '127.0.0.1'].includes(location.hostname)) ? `${location.protocol}//${location.hostname}:8787` : ''
+    'https://wethus-api.onrender.com'
   ].filter(Boolean).map(x => String(x).replace(/\/$/, '').replace(/\/api$/, ''));
   let cloudSyncTimer = null;
   let cloudAutoPullTimer = null;
@@ -972,6 +973,13 @@
     });
   }
 
+  function getProjectById(projectId, options = {}) {
+    if (!projectId) return null;
+    const includePending = options.includePending !== false;
+    const includeRejected = options.includeRejected !== false;
+    return listProjects({ includePending, includeRejected }).find((project) => String(project?.id || '') === String(projectId)) || null;
+  }
+
   function ensureHubState(s) {
     if (!s.projectHubs || typeof s.projectHubs !== 'object') s.projectHubs = {};
     return s.projectHubs;
@@ -993,6 +1001,16 @@
       aiMentors: Array.isArray(base.aiMentors) ? base.aiMentors : [],
       workLogs: Array.isArray(base.workLogs) ? base.workLogs : [],
       workLogsSig: base.workLogsSig || '',
+      mentorSummary: base.mentorSummary || '',
+      mentorPriority: base.mentorPriority || '',
+      mentorMode: base.mentorMode || '',
+      mentorInput: base.mentorInput || '',
+      mentorChangeLog: base.mentorChangeLog || '',
+      mentorNextActions: Array.isArray(base.mentorNextActions) ? base.mentorNextActions : [],
+      mentorQuestions: Array.isArray(base.mentorQuestions) ? base.mentorQuestions : [],
+      mentorToolActions: Array.isArray(base.mentorToolActions) ? base.mentorToolActions : [],
+      mentorGrounding: Array.isArray(base.mentorGrounding) ? base.mentorGrounding : [],
+      mentorRuns: Array.isArray(base.mentorRuns) ? base.mentorRuns : [],
       updatedAt: base.updatedAt || ''
     };
   }
@@ -1033,9 +1051,9 @@
   }
 
   function toggleLike(projectId) {
-    const s = load();
-    const target = s.projects.find(p => p.id === projectId);
+    const target = getProjectById(projectId);
     if (!target) return null;
+    const s = load();
 
     const actorId = s.currentUserId || (s.devMode ? 'dev-temp' : null);
     if (!actorId) {
@@ -1043,21 +1061,25 @@
       return { likes: target.likes || 0, liked: false };
     }
 
-    if (!Array.isArray(target.likedBy)) target.likedBy = [];
-    const idx = target.likedBy.indexOf(actorId);
+    const likedBy = Array.isArray(target.likedBy) ? [...target.likedBy] : [];
+    const idx = likedBy.indexOf(actorId);
     const liked = idx === -1;
 
     if (liked) {
-      target.likedBy.push(actorId);
-      target.likes = (target.likes || 0) + 1;
+      likedBy.push(actorId);
     } else {
-      target.likedBy.splice(idx, 1);
-      target.likes = Math.max(0, (target.likes || 0) - 1);
+      likedBy.splice(idx, 1);
     }
 
-    target._liked = liked;
-    save(s);
-    return { likes: target.likes, liked };
+    const result = mutateProjectCaches(projectId, (project) => ({
+      ...project,
+      likedBy,
+      likes: likedBy.length,
+      _liked: liked
+    }));
+    postProjectInteraction(`/projects/${encodeURIComponent(projectId)}/likes/toggle`);
+    scheduleCloudSync('save');
+    return { likes: result.project?.likes || likedBy.length, liked };
   }
 
   function isBookmarked(projectId) {
@@ -1085,6 +1107,7 @@
       bookmarked = false;
     }
     save(s);
+    scheduleCloudSync('save');
     return { bookmarked };
   }
 
@@ -1093,13 +1116,66 @@
     const actor = currentActorId();
     if (!actor) return [];
     const ids = new Set((s.bookmarks || []).filter(b => b.userId === actor).map(b => b.projectId));
-    return s.projects.filter(p => ids.has(p.id));
+    return listProjects({ includePending: true, includeRejected: true }).filter(p => ids.has(p.id));
   }
 
   function myLikedProjects() {
     const actor = currentActorId();
     if (!actor) return [];
-    return load().projects.filter(p => Array.isArray(p.likedBy) && p.likedBy.includes(actor));
+    return listProjects({ includePending: true, includeRejected: true }).filter(p => Array.isArray(p.likedBy) && p.likedBy.includes(actor));
+  }
+
+  function mutateProjectCaches(projectId, updater) {
+    const s = load();
+    let changed = false;
+    const applyUpdate = (project) => {
+      if (!project) return project;
+      const next = updater ? updater({ ...project }) : project;
+      changed = true;
+      return next || project;
+    };
+
+    const localIdx = (s.projects || []).findIndex(p => p && p.id === projectId);
+    if (localIdx >= 0) {
+      s.projects[localIdx] = applyUpdate(s.projects[localIdx]);
+    }
+
+    let globals = [];
+    try {
+      globals = JSON.parse(localStorage.getItem(GLOBAL_PROJECTS_KEY) || '[]');
+      if (!Array.isArray(globals)) globals = [];
+    } catch (_) { globals = []; }
+    const globalIdx = globals.findIndex(p => p && p.id === projectId);
+    if (globalIdx >= 0) {
+      globals[globalIdx] = applyUpdate(globals[globalIdx]);
+      try { localStorage.setItem(GLOBAL_PROJECTS_KEY, JSON.stringify(globals)); } catch (_) {}
+    }
+
+    if (changed) save(s);
+    return {
+      state: s,
+      project: localIdx >= 0 ? s.projects[localIdx] : (globalIdx >= 0 ? globals[globalIdx] : null)
+    };
+  }
+
+  function currentCloudApiBase() {
+    return Array.from(new Set(CLOUD_BASE_CANDIDATES))[0] || '';
+  }
+
+  function postProjectInteraction(path, options = {}) {
+    const actorId = currentActorId();
+    if (!actorId) return;
+    const base = currentCloudApiBase();
+    if (!base) return;
+    fetch(`${String(base).replace(/\/$/, '')}${path}`, {
+      method: options.method || 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': actorId
+      },
+      credentials: 'include',
+      body: options.body ? JSON.stringify(options.body) : undefined
+    }).catch(() => {});
   }
 
   function recordProjectView(projectId) {
@@ -1272,15 +1348,16 @@
   }
 
   function addComment(projectId, text) {
-    const s = load();
-    const target = s.projects.find(p => p.id === projectId);
+    const target = getProjectById(projectId);
     if (!target) return null;
     if (goLoginIfGuest()) throw new Error('로그인이 필요합니다.');
     const author = currentUser()?.nickname || currentUser()?.name || '익명';
-    if (!Array.isArray(target.comments)) target.comments = [];
-    target.comments.push({ id: uid(), author, text, createdAt: new Date().toISOString() });
-    save(s);
-    return target.comments;
+    const comments = Array.isArray(target.comments) ? [...target.comments] : [];
+    comments.push({ id: uid(), author, userId: currentActorId(), text, createdAt: new Date().toISOString() });
+    mutateProjectCaches(projectId, (project) => ({ ...project, comments }));
+    postProjectInteraction(`/projects/${encodeURIComponent(projectId)}/comments`, { body: { text } });
+    scheduleCloudSync('save');
+    return comments;
   }
 
   function isAdminActor() {
@@ -1975,11 +2052,17 @@
     return s.currentUserId || (s.devMode ? 'dev-temp' : null);
   }
 
+  function isProjectTeamMember(project, actorId) {
+    if (!project || !actorId) return false;
+    return Array.isArray(project.teamMembers) && project.teamMembers.some(member => String(member?.id || '') === String(actorId));
+  }
+
   function hasApplied(projectId) {
     const s = load();
     const actor = currentActorId();
     if (!actor) return false;
-    return s.applications.some(a => a.projectId === projectId && a.userId === actor && a.status === 'applied');
+    if (s.applications.some(a => a.projectId === projectId && a.userId === actor && (a.status === 'applied' || a.status === 'accepted'))) return true;
+    return isProjectTeamMember(getProjectById(projectId), actor);
   }
 
   function applyToProject(projectId, motivation) {
@@ -2009,8 +2092,10 @@
         userId: project.founderId || null
       });
     }
-    target.updatedAt = new Date().toISOString();
+    if (project) project.updatedAt = new Date().toISOString();
     save(s);
+    postProjectInteraction(`/projects/${encodeURIComponent(projectId)}/applications`, { body: { motivation: motivation || '' } });
+    scheduleCloudSync('save');
     return app;
   }
 
@@ -2022,6 +2107,8 @@
     target.status = 'cancelled';
     target.cancelledAt = new Date().toISOString();
     save(s);
+    postProjectInteraction(`/projects/${encodeURIComponent(projectId)}/applications/me`, { method: 'DELETE' });
+    scheduleCloudSync('save');
     return true;
   }
 
@@ -2029,8 +2116,13 @@
     const s = load();
     const actor = currentActorId();
     if (!actor) return [];
-    const ids = new Set(s.applications.filter(a => a.userId===actor && a.status==='applied').map(a => a.projectId));
-    return s.projects.filter(p => ids.has(p.id));
+    const ids = new Set(
+      (s.applications || [])
+        .filter(a => a.userId === actor && (a.status === 'applied' || a.status === 'accepted'))
+        .map(a => a.projectId)
+    );
+    return listProjects({ includePending: true, includeRejected: true })
+      .filter(p => ids.has(p.id) || isProjectTeamMember(p, actor));
   }
 
   function projectsByMemberName(name) {

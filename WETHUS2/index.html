@@ -191,7 +191,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260527-1811"></script>
+  <script src="app.js?v=20260624-integrations-2"></script>
   <script>
     (function(){
       if (!window.WETHUS) return;
@@ -288,9 +288,16 @@
           <div class="meta"><span class="card-status">${esc(p.status || '기획 중')}</span> · ${esc(p.roles || '')}${p.neededRoles ? ` · 필요:${esc(p.neededRoles)}` : ''}${p.neededAgeGroup ? ` · ${esc(p.neededAgeGroup)}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
           <div class="card-bottom-row">
             <div class="card-social"><span>♡ ${(p.likes||0)}</span><span>💬 ${Array.isArray(p.comments)?p.comments.length:0}</span></div>
-            ${isFallback
-              ? '<button class="apply-btn" type="button" disabled style="opacity:.55;cursor:not-allowed;">준비중</button>'
-              : `<button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${esc(p.id)}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>`}
+            ${(() => {
+              if (isFallback) return '<button class="apply-btn" type="button" disabled style="opacity:.55;cursor:not-allowed;">준비중</button>';
+              const me = WETHUS.getCurrentUser?.();
+              const actorId = me?.id || WETHUS.getState?.().currentUserId || '';
+              const isFounder = !!actorId && p.founderId === actorId;
+              const isJoinedMember = !!actorId && Array.isArray(p.teamMembers) && p.teamMembers.some(member => member?.id === actorId && !member?.isLeader);
+              if (isFounder) return `<button class="apply-btn applied" data-open-hub="${esc(p.id)}">프로젝트 허브</button>`;
+              if (isJoinedMember) return '<button class="apply-btn applied" type="button" disabled>합류 완료</button>';
+              return `<button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${esc(p.id)}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>`;
+            })()}
           </div>
         </article>
       `;
@@ -309,6 +316,13 @@
             bmBtn.classList.toggle('active', !!res?.bookmarked);
             WETHUS.recordProjectView && WETHUS.recordProjectView(bmBtn.dataset.bm);
           } catch (_) {}
+          return;
+        }
+
+        const openHubBtn = e.target.closest('[data-open-hub]');
+        if (openHubBtn) {
+          e.stopPropagation();
+          location.href = `project-hub.html?projectId=${encodeURIComponent(openHubBtn.dataset.openHub)}`;
           return;
         }
 

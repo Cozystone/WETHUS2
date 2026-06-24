@@ -196,13 +196,13 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260527-1811"></script>
+  <script src="app.js?v=20260624-integrations-2"></script>
   <script>
     const typeFilters = ['전체', '공모전', '창업대회', '지원사업', '해커톤', '프로그램/행사'];
     const eligibilityFilters = ['중학생 가능', '고등학생 가능', '대학생 가능', '개인 가능', '팀 필수', '마감임박'];
     const categoryFilters = ['AI/IT', '콘텐츠', '교육', '바이오/헬스케어', 'F&B', '사회혁신', '과학기술', '브랜드/커머스'];
     const regionFilters = ['전국', '서울', '경기', '인천', '부산', '대구', '광주', '대전', '울산', '세종', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];
-    const state = { q: '', types: new Set(['전체']), elig: new Set(), cats: new Set(), regions: new Set(), sort: 'recommended', includeClosed: false, current: null };
+    const state = { q: '', types: new Set(['전체']), elig: new Set(), cats: new Set(), regions: new Set(), sort: 'recommended', includeClosed:false, current: null };
     const INTEREST_KEY = 'wethus_opportunity_interest_v1';
     let opportunities = [];
 
@@ -416,37 +416,37 @@
 
     function filteredOpportunities() {
       return opportunities
-        .filter((item) => {
+        .filter((o) => {
           const blob = [
-            item.title,
-            item.organizer,
-            item.summary,
-            (item.tags || []).join(' '),
-            item.type,
-            (item.regions || []).join(' ')
+            o.title,
+            o.organizer,
+            o.summary,
+            (o.tags || []).join(' '),
+            o.type,
+            (o.regions || []).join(' ')
           ].join(' ').toLowerCase();
 
-          if (!state.includeClosed && isClosed(item)) return false;
+          if (!state.includeClosed&&isClosed(o)) return false;
           if (state.q && !blob.includes(state.q.toLowerCase())) return false;
-          if (!state.types.has('전체') && !state.types.has(item.type)) return false;
+          if (!state.types.has('전체') && !state.types.has(o.type)) return false;
 
           if (state.elig.size) {
             const selectedEligibility = [...state.elig].filter((value) => value !== '마감임박');
             const wantsUrgent = state.elig.has('마감임박');
             if (wantsUrgent) {
-              const dday = daysUntil(item.deadline);
+              const dday = daysUntil(o.deadline);
               if (dday === null || dday > 7 || dday < 0) return false;
             }
             if (selectedEligibility.length) {
-              const hit = selectedEligibility.some((value) => item.eligibility.includes(value));
+              const hit = selectedEligibility.some((value) => o.eligibility.includes(value));
               if (!hit) return false;
             }
           }
 
-          if (state.cats.size && !(item.tags || []).some((tag) => state.cats.has(tag))) return false;
+          if (state.cats.size && !(o.tags || []).some((tag) => state.cats.has(tag))) return false;
 
           if (state.regions.size) {
-            const regions = item.regions || [];
+            const regions = o.regions || [];
             const matched = regions.some((region) => state.regions.has(region));
             const nationwide = regions.includes('전국');
             if (!matched && !nationwide) return false;

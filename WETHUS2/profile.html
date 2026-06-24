@@ -178,7 +178,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260527-1811"></script>
+  <script src="app.js?v=20260624-integrations-2"></script>
   <script>
     const authLink = document.querySelector('.js-auth-link');
 
@@ -826,7 +826,21 @@
               <div class="meta">${esc(p.status || '')} · ${esc(p.teamSize || '')}</div>
               <div class="card-bottom-row">
                 <div class="card-social"><span>♡ ${p.likes || 0}</span><span>💬 ${(p.comments||[]).length}</span></div>
-                <button class="apply-btn applied cancel-apply" data-project="${esc(p.id)}">지원취소</button>
+                ${(() => {
+                const me = WETHUS.getCurrentUser?.();
+                const actorId = me?.id || WETHUS.getState?.().currentUserId || '';
+                const isJoinedMember = !!actorId && Array.isArray(p.teamMembers) && p.teamMembers.some(member => member?.id === actorId && !member?.isLeader);
+                return isJoinedMember
+                  ? '<button class="apply-btn applied" type="button" disabled>합류 완료</button>'
+                  : `${(() => {
+                const me = WETHUS.getCurrentUser?.();
+                const actorId = me?.id || WETHUS.getState?.().currentUserId || '';
+                const isJoinedMember = !!actorId && Array.isArray(p.teamMembers) && p.teamMembers.some(member => member?.id === actorId && !member?.isLeader);
+                return isJoinedMember
+                  ? '<button class="apply-btn applied" type="button" disabled>합류 완료</button>'
+                  : `<button class="apply-btn applied cancel-apply" data-project="${esc(p.id)}">지원취소</button>`;
+              })()}`;
+              })()}
               </div>
             </article>
           `).join('') : '<article class="list-item"><p class="page-sub">참여중인 프로젝트가 없습니다.</p></article>';
