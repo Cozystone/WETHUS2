@@ -126,8 +126,6 @@
         </div>
       </div>
 
-      <div id="debugCountInfo" style="margin:8px 2px 0;color:#8f8f8f;font-size:.82rem;"></div>
-
       <div id="filterPanel" class="filter-panel" style="display:none;">
         <label>인원
           <select id="teamSizeFilter">
@@ -634,13 +632,6 @@
       const mineApproved = pool.filter(p => isMine(p) && p.moderationStatus === 'approved')
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       const others = pool.filter(p => !mineApproved.includes(p));
-
-      const hiddenManual = all.filter(p => p.moderationStatus === 'manual_review' && !isMine(p)).length;
-      const hiddenRejected = all.filter(p => p.moderationStatus === 'rejected' && !isMine(p)).length;
-      const dbg = document.getElementById('debugCountInfo');
-      if (dbg) {
-        dbg.textContent = `전체 ${all.length} · 표시 ${pool.length} · 숨김(검수중:${hiddenManual}, 반려:${hiddenRejected})`;
-      }
 
       return mineApproved.concat(others);
     }
