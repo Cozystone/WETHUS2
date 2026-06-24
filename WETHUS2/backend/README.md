@@ -24,6 +24,32 @@ cp .env.example .env
   - `OPENAI_MODEL=gpt-4o-mini`
   - Local moderation option: `AI_PROVIDER=ollama`, `OLLAMA_BASE_URL=http://127.0.0.1:11434`, `OLLAMA_MODEL=llama3.2:3b`
   - Fallback: `AI_PROVIDER=gemini` with `GEMINI_API_KEY=...`
+  - Local WETHUS AI chat also uses the same backend `/ai/chat` route, so when the frontend is opened on `localhost` it can use the Ollama-backed runtime without browser API keys.
+
+## Local LLM quick start
+```bash
+cd WETHUS2/backend
+cp .env.example .env
+```
+
+Set:
+```env
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=llama3.2:3b
+```
+
+If your local Ollama has a different installed model, replace `OLLAMA_MODEL` with that exact name from:
+```bash
+ollama list
+```
+
+Then run:
+```bash
+npm start
+```
+
+For local frontend testing, open the site from `localhost` or `127.0.0.1`. In that mode, WETHUS AI now prefers the local backend at `:8787` before the hosted API.
 
 ## 3) Run
 ```bash

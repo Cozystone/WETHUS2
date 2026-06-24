@@ -1507,6 +1507,17 @@
       : [remoteBase]).filter(Boolean).map(b => b.replace(/\/$/, ''));
   }
 
+  function aiApiBases() {
+    const localBases = [`${location.protocol}//${location.hostname}:8787`, 'http://127.0.0.1:8787', 'http://localhost:8787'];
+    const remoteBase = window.WETHUS_API_BASE || 'https://wethus-api.onrender.com';
+    const preferredBase = window.WETHUS_AI_ENDPOINT || '';
+    const isLocalHost = ['localhost', '127.0.0.1'].includes(location.hostname);
+    const ordered = isLocalHost
+      ? [preferredBase, ...localBases, remoteBase]
+      : [preferredBase || remoteBase];
+    return Array.from(new Set(ordered.filter(Boolean).map(b => String(b).replace(/\/$/, ''))));
+  }
+
   async function dmFetch(path, options = {}) {
     const actorId = currentActorId();
     const bases = dmApiBases();
@@ -1927,14 +1938,7 @@
   }
 
   async function askChatGPT(prompt) {
-    const localBases = ['http://127.0.0.1:8787', 'http://localhost:8787'];
-    const remoteBase = window.WETHUS_AI_ENDPOINT || window.WETHUS_API_BASE || 'https://wethus-api.onrender.com';
-    const isLocalHost = ['localhost', '127.0.0.1'].includes(location.hostname);
-    const apiBases = (isLocalHost
-      ? [remoteBase, `${location.protocol}//${location.hostname}:8787`, ...localBases]
-      : [remoteBase])
-      .filter(Boolean)
-      .map(b => b.replace(/\/$/, ''));
+    const apiBases = aiApiBases();
 
     let lastErr;
     for (const base of apiBases) {
@@ -1984,7 +1988,7 @@
     if (!p) throw new Error('프롬프트가 비어 있습니다.');
 
     // 1) backend proxy 우선 (브라우저 API 키 403 회피)
-    const baseCandidates = dmApiBases();
+    const baseCandidates = aiApiBases();
     let backendErr = null;
     for (const base of baseCandidates) {
       try {

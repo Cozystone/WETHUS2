@@ -386,18 +386,30 @@
     const ideaTitle = String(oppParams.get('idea') || '').trim();
     const ideaCategory = String(oppParams.get('category') || '').trim();
 
+    function normalizeFounderCategoryFromOpportunity(type) {
+      const raw = String(type || '').toLowerCase();
+      if (raw.includes('해커톤') || raw.includes('app') || raw.includes('ai')) return 'App';
+      if (raw.includes('공모전') || raw.includes('창업대회') || raw.includes('지원사업') || raw.includes('startup')) return 'Startup';
+      if (raw.includes('film') || raw.includes('media')) return 'Film';
+      if (raw.includes('creative') || raw.includes('design') || raw.includes('brand')) return 'Creative';
+      if (raw.includes('policy')) return 'Policy';
+      if (raw.includes('campaign')) return 'Campaign';
+      if (raw.includes('science') || raw.includes('research')) return 'Science';
+      return 'Startup';
+    }
+
     if (oppId) {
       const oppField = document.getElementById('opportunityId');
       if (oppField) oppField.value = oppId;
-      const titleInput = form?.elements?.title;
+      const titleInput = form?.querySelector('[name="title"]');
       if (titleInput && !String(titleInput.value || '').trim()) {
         titleInput.value = `${oppTitle || '기회 기반'} 실행 프로젝트`;
       }
       if (oppType && categorySelect) {
-        const normalized = oppType === '해커톤' ? 'App' : 'Startup';
+        const normalized = normalizeFounderCategoryFromOpportunity(oppType);
         categorySelect.value = normalized;
       }
-      const descInput = form?.elements?.description;
+      const descInput = form?.querySelector('[name="description"]');
       if (descInput && !String(descInput.value || '').trim()) {
         descInput.value = `선택한 기회: ${oppTitle || '-'}\n주최: ${oppOrg || '-'}\n마감: ${oppDeadline || '-'}\n\n이 기회를 기반으로 학생 창업 프로젝트를 실행합니다.\n문제정의, MVP 범위, 팀 구성, 검증지표를 4주 안에 구체화합니다.\n\n기회 요약:\n${oppSummary || '상세 내용을 확인하고 실행 계획으로 전환합니다.'}`;
       }
@@ -405,18 +417,53 @@
     }
 
     if (ideaTitle && !oppId) {
-      const titleInput = form?.elements?.title;
+      const titleInput = form?.querySelector('[name="title"]');
       if (titleInput && !String(titleInput.value || '').trim()) titleInput.value = ideaTitle;
       if (ideaCategory && categorySelect) categorySelect.value = ideaCategory;
-      const descInput = form?.elements?.description;
+      const descInput = form?.querySelector('[name="description"]');
       if (descInput && !String(descInput.value || '').trim()) {
         descInput.value = `${ideaTitle}를 학생창업 초기 프로젝트로 검증합니다.\n\n대상 고객은 주변 학생 또는 학교 커뮤니티로 좁히고, 첫 2주 동안 인터뷰 5명과 작은 MVP 1개를 실행합니다. 문제 가설, 예상 사용자, 검증 지표를 명확히 잡아 실제 팀 모집과 산출물 제작으로 이어지게 합니다.`;
       }
-      const planInput = form?.elements?.plan;
+      const planInput = form?.querySelector('[name="plan"]');
       if (planInput && !String(planInput.value || '').trim()) {
         planInput.value = '1주차에는 문제 가설을 정리하고 잠재 사용자 5명을 인터뷰합니다. 2주차에는 가장 자주 나온 불편 하나를 골라 랜딩 페이지, 설문, 노션 프로토타입, 간단한 앱 화면 중 하나로 검증합니다. 마지막에는 사용 의향, 피드백, 팀 모집에 필요한 역할을 정리합니다.';
       }
       msg.textContent = '추천 아이디어 기반 초안을 불러왔습니다. 동기와 산출물을 본인 프로젝트에 맞게 채워주세요.';
+    }
+
+    function applyEntryPrefill() {
+      if (oppId) {
+        const oppField = document.getElementById('opportunityId');
+        if (oppField) oppField.value = oppId;
+        const titleInput = form?.querySelector('[name="title"]');
+        if (titleInput && !String(titleInput.value || '').trim()) {
+          titleInput.value = `${oppTitle || '湲고쉶 湲곕컲'} ?ㅽ뻾 ?꾨줈?앺듃`;
+        }
+        if (oppType && categorySelect && !String(categorySelect.value || '').trim()) {
+          categorySelect.value = normalizeFounderCategoryFromOpportunity(oppType);
+        }
+        const descInput = form?.querySelector('[name="description"]');
+        if (descInput && !String(descInput.value || '').trim()) {
+          descInput.value = `?좏깮??湲고쉶: ${oppTitle || '-'}\n二쇱턀: ${oppOrg || '-'}\n留덇컧: ${oppDeadline || '-'}\n\n??湲고쉶瑜?湲곕컲?쇰줈 ?숈깮 李쎌뾽 ?꾨줈?앺듃瑜??ㅽ뻾?⑸땲??\n臾몄젣?뺤쓽, MVP 踰붿쐞, ? 援ъ꽦, 寃利앹??쒕? 4二??덉뿉 援ъ껜?뷀빀?덈떎.\n\n湲고쉶 ?붿빟:\n${oppSummary || '?곸꽭 ?댁슜???뺤씤?섍퀬 ?ㅽ뻾 怨꾪쉷?쇰줈 ?꾪솚?⑸땲??'}`;
+        }
+        msg.textContent = '湲고쉶 湲곕컲 ?꾨줈?앺듃 ?앹꽦 紐⑤뱶?낅땲?? 珥덉븞???먮룞 ?낅젰?섏뿀?듬땲??';
+        return;
+      }
+
+      if (ideaTitle) {
+        const titleInput = form?.querySelector('[name="title"]');
+        if (titleInput && !String(titleInput.value || '').trim()) titleInput.value = ideaTitle;
+        if (ideaCategory && categorySelect && !String(categorySelect.value || '').trim()) categorySelect.value = ideaCategory;
+        const descInput = form?.querySelector('[name="description"]');
+        if (descInput && !String(descInput.value || '').trim()) {
+          descInput.value = `${ideaTitle}瑜??숈깮李쎌뾽 珥덇린 ?꾨줈?앺듃濡?寃利앺빀?덈떎.\n\n???怨좉컼? 二쇰? ?숈깮 ?먮뒗 ?숆탳 而ㅻ??덊떚濡?醫곹엳怨? 泥?2二??숈븞 ?명꽣酉?5紐낃낵 ?묒? MVP 1媛쒕? ?ㅽ뻾?⑸땲?? 臾몄젣 媛?? ?덉긽 ?ъ슜?? 寃利?吏?쒕? 紐낇솗???≪븘 ?ㅼ젣 ? 紐⑥쭛怨??곗텧臾??쒖옉?쇰줈 ?댁뼱吏寃??⑸땲??`;
+        }
+        const planInput = form?.querySelector('[name="plan"]');
+        if (planInput && !String(planInput.value || '').trim()) {
+          planInput.value = '1二쇱감?먮뒗 臾몄젣 媛?ㅼ쓣 ?뺣━?섍퀬 ?좎옱 ?ъ슜??5紐낆쓣 ?명꽣酉고빀?덈떎. 2二쇱감?먮뒗 媛???먯＜ ?섏삩 遺덊렪 ?섎굹瑜?怨⑤씪 ?쒕뵫 ?섏씠吏, ?ㅻЦ, ?몄뀡 ?꾨줈?좏??? 媛꾨떒?????붾㈃ 以??섎굹濡?寃利앺빀?덈떎. 留덉?留됱뿉???ъ슜 ?섑뼢, ?쇰뱶諛? ? 紐⑥쭛???꾩슂????븷???뺣━?⑸땲??';
+        }
+        msg.textContent = '異붿쿇 ?꾩씠?붿뼱 湲곕컲 珥덉븞??遺덈윭?붿뒿?덈떎. ?숆린? ?곗텧臾쇱쓣 蹂몄씤 ?꾨줈?앺듃??留욊쾶 梨꾩썙二쇱꽭??';
+      }
     }
 
     let imageData = '';
@@ -908,10 +955,14 @@
       entryLoader?.setAttribute('aria-hidden', 'true');
       try {
         const raw = localStorage.getItem(DRAFT_KEY);
-        if (!raw) return;
+        if (!raw) {
+          applyEntryPrefill();
+          return;
+        }
         const d = JSON.parse(raw);
         const ok = await WETHUS.uiConfirm('마지막 임시저장 버전을 불러오시겠습니까?', { title: '임시저장 불러오기' });
         if (ok) applyDraft(d);
+        else applyEntryPrefill();
       } catch (_) {}
     }
     initFounderEntry();
