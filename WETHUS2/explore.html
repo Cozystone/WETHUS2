@@ -30,6 +30,11 @@
       color: #b8b8b8;
     }
 
+    .stack-shell {
+      position: relative;
+      padding-top: 42px;
+    }
+
     .stack-wrap {
       position: relative;
       height: 480px;
@@ -136,7 +141,7 @@
 
     .stack-topbar {
       position: absolute;
-      top: 18px;
+      top: 0;
       left: 72.8%;
       z-index: 11;
       display: flex;
@@ -206,31 +211,33 @@
       <h1 class="gateway-title">카테고리 탐색</h1>
       <p class="gateway-sub">관심 분야를 선택하면 해당 테마의 프로젝트 탐색으로 이동합니다.</p>
 
-      <div class="stack-wrap" aria-label="카테고리 선택">
+      <div class="stack-shell">
         <div class="stack-topbar">
           <a class="stack-total-btn" href="explore_v1.html">전체보기 -&gt;</a>
         </div>
 
-        <a class="stack-card stack-1" href="explore_theme.html?cat=MathSci">
-          <em>DISCOVER</em>
-          <h3>Math & Sci</h3>
-          <p>수학, 과학, 연구 기반 프로젝트</p>
-        </a>
-        <a class="stack-card stack-2" href="explore_theme.html?cat=ArtCulture">
-          <em>DISCOVER</em>
-          <h3>Art & Culture</h3>
-          <p>영화, 전시, 출판, 크리에이티브</p>
-        </a>
-        <a class="stack-card stack-3" href="explore_theme.html?cat=StartupBusiness">
-          <em>DISCOVER</em>
-          <h3>Startup & Business</h3>
-          <p>서비스 실험, 팀 빌드, 비즈니스 검증</p>
-        </a>
-        <a class="stack-card stack-4" href="explore_theme.html?cat=SocietyLaw">
-          <em>DISCOVER</em>
-          <h3>Society & Law</h3>
-          <p>정책, 캠페인, 사회문제 해결 프로젝트</p>
-        </a>
+        <div class="stack-wrap" aria-label="카테고리 선택">
+          <a class="stack-card stack-1" href="explore_theme.html?cat=MathSci">
+            <em>DISCOVER</em>
+            <h3>Math & Sci</h3>
+            <p>수학, 과학, 연구 기반 프로젝트</p>
+          </a>
+          <a class="stack-card stack-2" href="explore_theme.html?cat=ArtCulture">
+            <em>DISCOVER</em>
+            <h3>Art & Culture</h3>
+            <p>영화, 전시, 출판, 크리에이티브</p>
+          </a>
+          <a class="stack-card stack-3" href="explore_theme.html?cat=StartupBusiness">
+            <em>DISCOVER</em>
+            <h3>Startup & Business</h3>
+            <p>서비스 실험, 팀 빌드, 비즈니스 검증</p>
+          </a>
+          <a class="stack-card stack-4" href="explore_theme.html?cat=SocietyLaw">
+            <em>DISCOVER</em>
+            <h3>Society & Law</h3>
+            <p>정책, 캠페인, 사회문제 해결 프로젝트</p>
+          </a>
+        </div>
       </div>
     </section>
   </main>
