@@ -199,7 +199,7 @@
   </main>
 
   <div id="hubEditModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-edit="true"></div><article class="modal-panel" style="max-width:760px;"><button class="modal-close" id="hubEditClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">프로젝트 수정</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><input id="hubEditTitle" placeholder="제목" /><input id="hubEditSummary" placeholder="요약" /></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><select id="hubEditStatus"><option>모집 중</option><option>기획 중</option><option>진행 중</option><option>피보팅</option><option>완료</option></select><select id="hubEditTeamSize"><option>1인</option><option>2인</option><option>3인</option><option>4인이상</option></select></div><input id="hubEditRoles" placeholder="역할" style="margin-bottom:8px;" /><textarea id="hubEditDesc" style="width:100%;min-height:110px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;" placeholder="프로젝트 설명"></textarea><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="hubEditSave" class="btn btn--primary" type="button">저장</button></div></div></article></div>
-  <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 툴 연결</h3><p class="meta" style="margin:0 0 10px;">OAuth로 계정을 연결한 뒤, 프로젝트에 연결할 문서/시트/채널/파일을 선택하세요.</p><article class="hub-card" style="padding:10px;margin:0 0 10px;"><strong style="display:block;margin-bottom:4px;">연동 구조</strong><p class="meta" style="margin:0;">1) 제공자 선택 → 2) OAuth 인증 → 3) 리소스 선택 → 4) 프로젝트 허브에 연결 반영</p></article><div id="toolLogoGrid" class="tool-grid"></div></div></article></div>
+  <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 툴 연결</h3><p id="hubToolModalDesc" class="meta" style="margin:0 0 10px;">OAuth로 계정을 연결한 뒤, 프로젝트에 연결할 문서/시트/채널/파일을 선택하세요.</p><article id="hubToolModalScope" class="hub-card" style="padding:10px;margin:0 0 10px;"><strong style="display:block;margin-bottom:4px;">연동 구조</strong><p class="meta" style="margin:0;">1) 제공자 선택 → 2) OAuth 인증 → 3) 리소스 선택 → 4) 프로젝트 허브에 연결 반영</p></article><div id="toolLogoGrid" class="tool-grid"></div></div></article></div>
   <div id="hubChatModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-chat="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubChatClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">팀채팅</h3><p class="meta" style="margin:0 0 8px;">프로젝트 지원 AI는 프로젝트 정보/최근 활동/팀 채팅 문맥을 함께 참고합니다.</p><div id="chatList" style="max-height:320px;overflow:auto;display:grid;gap:8px;"></div><div class="slash-suggest" style="display:flex;gap:8px;margin-top:10px;"><input id="chatInput" style="flex:1;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px;" placeholder="메시지를 입력하세요 (/ai 질문 형태 지원)"/><button id="chatSend" class="btn btn--primary">보내기</button><div id="slashList" class="slash-list"></div></div></div></article></div>
   <div id="worklogModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-worklog="true"></div><article class="modal-panel" style="max-width:620px;"><button class="modal-close" id="worklogClose">×</button><div class="modal-content"><h3 id="worklogTitle" style="margin:0 0 8px;">업무기록</h3><ul id="worklogList" class="meta-bullet"></ul></div></article></div>
   <div id="recentModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-recent="true"></div><article class="modal-panel" style="max-width:680px;"><button class="modal-close" id="recentClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">최근 활동 전체</h3><ul id="recentList" class="meta-bullet"></ul></div></article></div>
@@ -800,6 +800,7 @@
       await loadTeamApplicationsForCurrentProject();
       await loadProviderCatalog();
 
+      syncToolManagementUi();
       renderToolCards();
       renderIntegrationsTab();
 
@@ -961,6 +962,26 @@
       if (!actorId) return false;
       if (currentProject.founderId === actorId) return true;
       return Array.isArray(currentProject.teamMembers) && currentProject.teamMembers.some(member => member?.id === actorId && member?.isLeader);
+    }
+
+    function syncToolManagementUi() {
+      const canManage = isCurrentLeader();
+      const hubToolBtn = document.getElementById('hubToolBtn');
+      const modalDesc = document.getElementById('hubToolModalDesc');
+      const scopeCard = document.getElementById('hubToolModalScope');
+      if (hubToolBtn) {
+        hubToolBtn.textContent = canManage ? '외부 툴 연결' : '외부 툴 보기';
+      }
+      if (modalDesc) {
+        modalDesc.textContent = canManage
+          ? 'OAuth로 계정을 연결한 뒤, 프로젝트에 연결할 문서/시트/채널/파일을 선택하세요.'
+          : '현재 연결된 외부 연동 현황을 확인할 수 있습니다. 연결 변경은 대표/리더만 가능합니다.';
+      }
+      if (scopeCard) {
+        scopeCard.innerHTML = canManage
+          ? '<strong style="display:block;margin-bottom:4px;">연동 구조</strong><p class="meta" style="margin:0;">1) 제공자 선택 → 2) OAuth 인증 → 3) 리소스 선택 → 4) 프로젝트 허브에 연결 반영</p>'
+          : '<strong style="display:block;margin-bottom:4px;">읽기 전용 모드</strong><p class="meta" style="margin:0;">대표/리더가 연결한 외부 문서와 최근 반영 상태를 확인할 수 있습니다. 변경 권한은 프로젝트 운영 리더에게만 열립니다.</p>';
+      }
     }
 
     function renderTeamApplicationsLegacyUnused() {
@@ -1302,7 +1323,11 @@
 
     function renderToolCards() {
       const toolLogoGrid = document.getElementById('toolLogoGrid');
-      toolLogoGrid.innerHTML = toolTargets.map(t => {
+      if (!toolLogoGrid) return;
+      const canManage = isCurrentLeader();
+      const launchTools = toolTargets.filter(t => !isDeferredTool(t));
+      const roadmapTools = toolTargets.filter(t => isDeferredTool(t));
+      const renderToolCard = (t) => {
         const st = currentToolState(t);
         const meta = currentToolProviderMeta(t);
         const setupRequired = meta?.setupRequired === true;
@@ -1312,28 +1337,39 @@
           ? '로드맵'
           : (setupRequired ? '설정 필요' : (t.ready ? (st?.connected ? '연결됨' : (st?.everConnected ? '연결해제됨' : '미연결')) : '준비중'));
         const actionLabel = st?.connected ? '동기화' : connectLabel;
-        const hint = deferred ? currentToolLaunchNote(t) : (meta?.message || currentToolLaunchNote(t) || '');
+        const hint = !canManage
+          ? '대표/리더만 연결을 변경할 수 있습니다.'
+          : (deferred ? currentToolLaunchNote(t) : (meta?.message || currentToolLaunchNote(t) || ''));
+        const actionDisabled = !canManage || !t.ready || setupRequired || deferred;
         return `<article class="tool-card" data-tool="${esc(t.name)}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
             <div>
               <strong style="font-size:1.15rem;">${esc(t.logo)} ${esc(t.name)}</strong>
               <p class="meta" style="margin:4px 0 0;">${esc(t.desc)}</p>
               <p class="meta" style="margin:4px 0 0;">${esc(statusLabel)} ${st?.lastSynced ? '· 마지막 반영 ' + esc(new Date(st.lastSynced).toLocaleString('ko-KR')) : ''}</p>
-              ${hint ? `<p class="meta" style="margin:4px 0 0;color:${(setupRequired || deferred) ? '#ffb36b' : '#9ca3af'};">${esc(hint)}</p>` : ''}
+              ${hint ? `<p class="meta" style="margin:4px 0 0;color:${(setupRequired || deferred || !canManage) ? '#ffb36b' : '#9ca3af'};">${esc(hint)}</p>` : ''}
             </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
-            <button class="btn btn--primary" data-tool-connect="${esc(t.name)}" type="button" ${(t.ready && !setupRequired && !deferred) ? '' : 'disabled'}>${esc(actionLabel)}</button>
-            <button class="btn btn--secondary" data-tool-disconnect="${esc(t.name)}" type="button" ${(t.ready && !setupRequired && !deferred) ? '' : 'disabled'}>해제</button>
+            <button class="btn btn--primary" data-tool-connect="${esc(t.name)}" type="button" ${actionDisabled ? 'disabled' : ''}>${esc(actionLabel)}</button>
+            <button class="btn btn--secondary" data-tool-disconnect="${esc(t.name)}" type="button" ${actionDisabled ? 'disabled' : ''}>해제</button>
           </div>
         </article>`;
-      }).join('');
-
+      };
+      const launchHeader = `<article class="hub-card" style="grid-column:1 / -1;padding:10px;"><strong style="display:block;margin-bottom:4px;">지금 연결 가능</strong><p class="meta" style="margin:0;">현재 상용 런칭 범위에 포함된 연동만 바로 연결할 수 있습니다.</p></article>`;
+      const roadmapHeader = roadmapTools.length
+        ? `<article class="hub-card" style="grid-column:1 / -1;padding:10px;"><strong style="display:block;margin-bottom:4px;">로드맵 연동</strong><p class="meta" style="margin:0;">Notion, Slack, Figma는 운영 설정이 완료되면 순차적으로 열립니다.</p></article>`
+        : '';
+      toolLogoGrid.innerHTML = `${launchHeader}${launchTools.map(renderToolCard).join('')}${roadmapHeader}${roadmapTools.map(renderToolCard).join('')}`;
 
       toolLogoGrid.querySelectorAll('[data-tool-connect]').forEach(btn => {
         btn.addEventListener('click', async () => {
           if (!currentProject) {
             alert('먼저 프로젝트를 선택해주세요.');
+            return;
+          }
+          if (!isCurrentLeader()) {
+            alert('외부 연동 변경은 대표/리더만 가능합니다.');
             return;
           }
           const name = btn.getAttribute('data-tool-connect');
@@ -1358,7 +1394,6 @@
               return;
             }
 
-            // 이미 연결된 경우: 버튼을 동기화로 동작시킨다.
             if (integ?.status === 'connected') {
               setLlmStatus(`WETHUS AI · 업데이트중… (${name} 동기화)`);
               if (tool.provider === 'notion') {
@@ -1374,13 +1409,11 @@
               return;
             }
 
-            // Google 계정은 이미 연결되어 있고, 아직 시트/문서 리소스만 미연결이면 바로 리소스 선택으로 이동
             if (tool.provider === 'google' && googleAccount?.status === 'connected') {
               await openResourceSelector(tool);
               return;
             }
 
-            // 연결 필요 시: 기존 OAuth 연결 동작 유지
             pendingOauthToolName = tool.name;
             let popup = null;
             try {
@@ -1423,10 +1456,13 @@
         });
       });
 
-
       toolLogoGrid.querySelectorAll('[data-tool-disconnect]').forEach(btn => {
         btn.addEventListener('click', async () => {
           if (!currentProject) return;
+          if (!isCurrentLeader()) {
+            alert('외부 연동 변경은 대표/리더만 가능합니다.');
+            return;
+          }
           const name = btn.getAttribute('data-tool-disconnect');
           const tool = toolTargets.find(x => x.name === name);
           if (!tool) return;
