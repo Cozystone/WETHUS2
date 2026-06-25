@@ -291,6 +291,21 @@ function validateInteractionConsumers() {
       if (!text.includes(snippet)) fail(`profile.html must include onboarding return contract: ${snippet}`);
     }
   }
+
+  const adminFile = path.join(appRoot, 'admin.html');
+  if (fs.existsSync(adminFile)) {
+    const text = read(adminFile);
+    const requiredSnippets = [
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
+      '관리자 운영 검토',
+      'class="js-review-note"',
+      'readReviewNote(card,',
+      '이 메모는 승인/반려 사유로 바로 반영됩니다.'
+    ];
+    for (const snippet of requiredSnippets) {
+      if (!text.includes(snippet)) fail(`admin.html must include admin review contract: ${snippet}`);
+    }
+  }
 }
 
 validateProjectHubContracts();
