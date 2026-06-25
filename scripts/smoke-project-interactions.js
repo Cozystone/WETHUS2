@@ -177,6 +177,9 @@ async function expectCommentLifecycle() {
     fail(`comment add should succeed, got ${commentResponse.status}`);
     return;
   }
+  if (String(commentPayload?.project?.id || '') !== 'interaction-project') {
+    fail(`comment add should return updated project context, got ${commentPayload?.project?.id || 'missing'}`);
+  }
   if (String(commentPayload?.comment?.author || '') !== 'MemberB') {
     fail(`comment author should resolve from the user profile, got ${commentPayload?.comment?.author || 'missing'}`);
   }

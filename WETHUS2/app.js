@@ -1609,7 +1609,13 @@
     const comments = Array.isArray(target.comments) ? [...target.comments] : [];
     comments.push({ id: uid(), author, userId: currentActorId(), text, createdAt: new Date().toISOString() });
     mutateProjectCaches(projectId, (project) => ({ ...project, comments }));
-    postProjectInteraction(`/projects/${encodeURIComponent(projectId)}/comments`, { body: { text } });
+    postProjectInteraction(`/projects/${encodeURIComponent(projectId)}/comments`, { body: { text } })
+      .then((payload) => {
+        if (payload?.project) {
+          mergeRemoteProject(payload.project);
+        }
+      })
+      .catch(() => {});
     scheduleCloudSync('save');
     return comments;
   }
