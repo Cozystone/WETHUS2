@@ -21,6 +21,9 @@ jobs:
       - name: Validate static site files
         run: node scripts/validate-static.js
 
+      - name: Check deploy config parity
+        run: node scripts/check-deploy-config-parity.js
+
       - name: Install backend dependencies
         working-directory: WETHUS2/backend
         run: npm ci
@@ -30,3 +33,27 @@ jobs:
 
       - name: Backend security smoke
         run: node scripts/smoke-backend-security.js
+
+      - name: Founder moderation smoke
+        run: node scripts/smoke-founder-moderation.js
+
+      - name: Admin review queue smoke
+        run: node scripts/smoke-admin-review-queue.js
+
+      - name: Project interactions smoke
+        run: node scripts/smoke-project-interactions.js
+
+      - name: Discovery visibility smoke
+        run: node scripts/smoke-discovery-visibility.js
+
+      - name: Project application smoke
+        run: node scripts/smoke-project-applications.js
+
+      - name: Provider launch-scope smoke
+        run: node scripts/smoke-provider-launch-scope.js
+
+      - name: Provider launch-scope env override smoke
+        run: node scripts/smoke-provider-launch-scope-env-override.js
+
+      - name: Provider launch-scope enforcement smoke
+        run: node scripts/smoke-provider-launch-scope-enforcement.js

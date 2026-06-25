@@ -1,13 +1,26 @@
-﻿const BASE_URL = (process.env.WETHUS_BASE_URL || 'https://www.wethus.co.kr').replace(/\/$/, '');
+const { getLaunchScope } = require('./lib/launch-scope');
+
+const BASE_URL = (process.env.WETHUS_BASE_URL || 'https://www.wethus.co.kr').replace(/\/$/, '');
 const API_BASE_URL = (process.env.WETHUS_API_BASE_URL || 'https://wethus-api.onrender.com').replace(/\/$/, '');
 const REQUIRE_API_SECURITY_HEADERS = String(process.env.REQUIRE_WETHUS_API_SECURITY_HEADERS || 'false').toLowerCase() === 'true';
 const REQUIRE_API_HEALTH_METADATA = String(process.env.REQUIRE_WETHUS_API_HEALTH_METADATA || process.env.REQUIRE_WETHUS_API_SECURITY_HEADERS || 'false').toLowerCase() === 'true';
+const REQUIRE_API_SECURITY_FLAGS = String(process.env.REQUIRE_WETHUS_API_SECURITY_FLAGS || 'false').toLowerCase() === 'true';
+const REQUIRE_PROVIDER_READINESS = String(process.env.REQUIRE_WETHUS_PROVIDER_READINESS || 'false').toLowerCase() === 'true';
+const REQUIRE_BACKEND_CONTRACTS = String(process.env.REQUIRE_WETHUS_BACKEND_CONTRACTS || 'false').toLowerCase() === 'true';
+const REQUIRE_FRONTEND_HUB_CONTRACTS = String(process.env.REQUIRE_WETHUS_FRONTEND_HUB_CONTRACTS || 'false').toLowerCase() === 'true';
+const LAUNCH_SCOPE = getLaunchScope();
 
 const checks = [
   {
     path: '/',
     status: 200,
-    includes: ['WETHUS'],
+    includes: [
+      'WETHUS',
+      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'id="homeFeatured"',
+      'WETHUS MANIFESTO'
+    ],
+    excludes: ['id="loginForm"', 'class="auth-card"'],
     includesRegex: [/app\.js\?v=/, /script\.js\?v=/]
   },
   {
@@ -18,7 +31,13 @@ const checks = [
   {
     path: '/login.html',
     status: 200,
-    includes: ['id="devModeRow" style="display:none;"', 'const allowDevMode = isLocalHost || window.WETHUS_ENABLE_DEV_MODE === true;'],
+    includes: [
+      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'id="devModeRow" style="display:none;"',
+      'const allowDevMode = isLocalHost || window.WETHUS_ENABLE_DEV_MODE === true;',
+      'function redirectAfterAuth(user, options = {})',
+      'onboardingReturnTo'
+    ],
     includesRegex: [/app\.js\?v=/],
     excludes: ['\n</html>\ntGoogleSignIn'],
     excludesRegex: [/^\s*tGoogleSignIn\(\);/m, /^\s*nce: true\}\);/m]
@@ -28,6 +47,48 @@ const checks = [
     status: 200,
     includes: [
       "const moderationStatus = moderation.review ? 'manual_review' : 'approved'"
+    ],
+    includesRegex: [/app\.js\?v=/]
+  },
+  {
+    path: '/project-hub.html',
+    status: 200,
+    frontendContract: true,
+    includes: [
+      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'renderHub = async function renderHubStable()',
+      'loadRemoteActivityEventsForCurrentProject()',
+      'loadRemoteStatusSnapshotForCurrentProject()',
+      'mergedProjectTimeline(80)'
+    ],
+    includesRegex: [/app\.js\?v=/]
+  },
+  {
+    path: '/profile.html',
+    status: 200,
+    frontendContract: true,
+    includes: [
+      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'WETHUS.myBookmarkedProjects()',
+      'WETHUS.myLikedProjects()',
+      'data-open-project',
+      'const onboardingReturnTarget = (() => {',
+      'location.href = onboardingReturnTarget || \'index.html\''
+    ],
+    includesRegex: [/app\.js\?v=/]
+  },
+  {
+    path: '/explore_theme.html',
+    status: 200,
+    frontendContract: true,
+    includes: [
+      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'WETHUS.isBookmarked(',
+      'class="bookmark-btn',
+      'data-bm="',
+      'reopenCommentPanel',
+      'reopenApplyModal',
+      'pendingApplyMotivation'
     ],
     includesRegex: [/app\.js\?v=/]
   },
@@ -57,6 +118,15 @@ const checks = [
     backendHealth: true
   },
   {
+    url: `${API_BASE_URL}/integrations/providers`,
+    status: 200,
+    json: true,
+    requireObject: {
+      ok: true
+    },
+    providerCatalog: true
+  },
+  {
     path: '/app.js.bak_20260520_1152',
     status: 404
   }
@@ -64,6 +134,12 @@ const checks = [
 
 const errors = [];
 const warnings = [];
+
+function expectedProviderPhase(key) {
+  if (LAUNCH_SCOPE.launchProviders.includes(key)) return 'launch';
+  if (LAUNCH_SCOPE.deferredProviders.includes(key)) return 'deferred';
+  return 'unknown';
+}
 
 function activeOpportunityCount(items) {
   const now = Date.now();
@@ -78,6 +154,14 @@ async function runCheck(check) {
   const url = check.url || `${BASE_URL}${check.path}`;
   const response = await fetch(url, { redirect: 'follow' });
   const body = await response.text();
+  const reportFrontendContract = (message) => {
+    if (REQUIRE_FRONTEND_HUB_CONTRACTS) errors.push(message);
+    else warnings.push(message);
+  };
+  const reportBackendContract = (message) => {
+    if (REQUIRE_BACKEND_CONTRACTS) errors.push(message);
+    else warnings.push(message);
+  };
 
   if (response.status !== check.status) {
     errors.push(`${url} expected HTTP ${check.status}, got ${response.status}`);
@@ -85,13 +169,15 @@ async function runCheck(check) {
 
   for (const snippet of check.includes || []) {
     if (!body.includes(snippet)) {
-      errors.push(`${url} is missing expected snippet: ${snippet}`);
+      if (check.frontendContract) reportFrontendContract(`${url} is missing expected snippet: ${snippet}`);
+      else errors.push(`${url} is missing expected snippet: ${snippet}`);
     }
   }
 
   for (const pattern of check.includesRegex || []) {
     if (!pattern.test(body)) {
-      errors.push(`${url} is missing expected pattern: ${pattern}`);
+      if (check.frontendContract) reportFrontendContract(`${url} is missing expected pattern: ${pattern}`);
+      else errors.push(`${url} is missing expected pattern: ${pattern}`);
     }
   }
 
@@ -132,6 +218,80 @@ async function runCheck(check) {
         if (parsed.service !== 'wethus-backend') reportHealthDrift(`${url} does not expose backend service identity; production may be running an older backend`);
         if (!parsed.security || typeof parsed.security !== 'object') reportHealthDrift(`${url} does not expose backend security flags; production may be running an older backend`);
         if (!parsed.build || typeof parsed.build !== 'object') reportHealthDrift(`${url} does not expose backend build metadata; production deploy drift is harder to diagnose`);
+        if (parsed.security && typeof parsed.security === 'object') {
+          const requiredSecurityKeys = [
+            'cloudStateRequireSession',
+            'integrationsRequireActor',
+            'integrationsRequireSession',
+            'integrationsEnforceLaunchScope',
+            'projectInteractionsRequireSession',
+            'projectAccessRequireMembership'
+          ];
+          for (const key of requiredSecurityKeys) {
+            if (!Object.prototype.hasOwnProperty.call(parsed.security, key)) {
+              reportBackendContract(`${url} is missing backend security contract key ${key}`);
+            }
+          }
+          const requiredFlags = [
+            ['cloudStateRequireSession', 'cloud/state session guard'],
+            ['integrationsRequireActor', 'integration actor guard'],
+            ['integrationsRequireSession', 'integration session guard'],
+            ['integrationsEnforceLaunchScope', 'integration launch-scope enforcement'],
+            ['projectInteractionsRequireSession', 'project interaction session guard'],
+            ['projectAccessRequireMembership', 'project membership access guard']
+          ];
+          for (const [key, label] of requiredFlags) {
+            if (parsed.security[key] !== true) {
+              const message = `${url} has not enabled ${label}`;
+              if (REQUIRE_API_SECURITY_FLAGS) errors.push(message);
+              else warnings.push(message);
+            }
+          }
+        }
+      }
+      if (check.providerCatalog) {
+        const rows = Array.isArray(parsed.providers) ? parsed.providers : [];
+        const byKey = Object.fromEntries(rows.map((row) => [String(row?.key || ''), row]));
+        for (const key of LAUNCH_SCOPE.launchProviders) {
+          const provider = byKey[key];
+          if (!provider || provider.status !== 'ready') {
+            const message = `${url} provider ${key} is not ready`;
+            if (REQUIRE_PROVIDER_READINESS) errors.push(message);
+            else warnings.push(message);
+          }
+          if (!provider) {
+            reportBackendContract(`${url} provider ${key} is missing launch contract metadata`);
+            continue;
+          }
+          if (provider.launchPhase !== expectedProviderPhase(key)) {
+            reportBackendContract(`${url} provider ${key} launchPhase should be ${expectedProviderPhase(key)}, got ${provider.launchPhase || 'missing'}`);
+          }
+          if (provider.launchIncluded !== true) {
+            reportBackendContract(`${url} provider ${key} should expose launchIncluded=true`);
+          }
+          if (!String(provider.launchNote || '').trim()) {
+            reportBackendContract(`${url} provider ${key} should expose a non-empty launchNote`);
+          }
+        }
+        for (const key of LAUNCH_SCOPE.deferredProviders) {
+          const provider = byKey[key];
+          if (!provider) {
+            reportBackendContract(`${url} provider ${key} is missing launch contract metadata`);
+            continue;
+          }
+          if (provider.status !== 'ready') {
+            warnings.push(`${url} deferred provider ${key} is still ${provider.status}`);
+          }
+          if (provider.launchPhase !== expectedProviderPhase(key)) {
+            reportBackendContract(`${url} provider ${key} launchPhase should be ${expectedProviderPhase(key)}, got ${provider.launchPhase || 'missing'}`);
+          }
+          if (provider.launchIncluded !== false) {
+            reportBackendContract(`${url} provider ${key} should expose launchIncluded=false`);
+          }
+          if (!String(provider.launchNote || '').trim()) {
+            reportBackendContract(`${url} provider ${key} should expose a non-empty launchNote`);
+          }
+        }
       }
     } catch (err) {
       errors.push(`${url} returned invalid JSON: ${err.message}`);

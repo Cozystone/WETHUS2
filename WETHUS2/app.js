@@ -14,6 +14,7 @@
   ].filter(Boolean).map(x => String(x).replace(/\/$/, '').replace(/\/api$/, ''));
   let cloudSyncTimer = null;
   let cloudAutoPullTimer = null;
+  let restoredServerSessionActorId = '';
 
   function sanitizeCategoryName(raw) {
     const cleaned = String(raw || '')
@@ -980,6 +981,23 @@
     });
   }
 
+  function listExploreProjects() {
+    const s = load();
+    const actor = currentActorId();
+    const me = (s.users || []).find((user) => user.id === actor) || null;
+    const myEmail = String(me?.email || '').toLowerCase();
+    const isMine = (project) => !!(actor && (
+      String(project?.founderId || '') === String(actor) ||
+      (myEmail && String(project?.founderEmail || '').toLowerCase() === myEmail)
+    ));
+
+    return listProjects({ includePending: true, includeRejected: true }).filter((project) => {
+      const status = String(project?.moderationStatus || 'approved');
+      if (status === 'approved') return true;
+      return isMine(project);
+    });
+  }
+
   function getProjectById(projectId, options = {}) {
     if (!projectId) return null;
     const includePending = options.includePending !== false;
@@ -1047,11 +1065,11 @@
     return s.projects.filter(p => p.founderId === s.currentUserId || (s.devMode && p.founderId === 'dev-temp'));
   }
 
-  function goLoginIfGuest() {
+  function goLoginIfGuest(extra = {}) {
     const actor = currentActorId();
     if (actor) return false;
     if (typeof location !== 'undefined') {
-      setAuthReturnState();
+      setAuthReturnState(extra);
       location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
     }
     return true;
@@ -1064,7 +1082,7 @@
 
     const actorId = s.currentUserId || (s.devMode ? 'dev-temp' : null);
     if (!actorId) {
-      goLoginIfGuest();
+      goLoginIfGuest({ modalProjectId: projectId });
       return { likes: target.likes || 0, liked: false };
     }
 
@@ -1096,11 +1114,59 @@
     return (s.bookmarks || []).some(b => b.projectId === projectId && b.userId === actor);
   }
 
+  function mergeServerBookmarks(rows, options = {}) {
+    const actor = currentActorId();
+    if (!actor) return [];
+    const s = load();
+    const incoming = (Array.isArray(rows) ? rows : [])
+      .map((row) => {
+        if (!row || typeof row !== 'object') return null;
+        const projectId = String(row.projectId || '').trim();
+        const userId = String(row.userId || actor).trim();
+        const id = String(row.id || `${userId}:${projectId}`).trim();
+        if (!projectId || !userId) return null;
+        return {
+          ...row,
+          id,
+          projectId,
+          userId,
+          createdAt: row.createdAt || new Date().toISOString()
+        };
+      })
+      .filter(Boolean);
+    const replaceCurrentUser = options.replaceCurrentUser !== false;
+    const retained = replaceCurrentUser
+      ? (s.bookmarks || []).filter((bookmark) => String(bookmark?.userId || '') !== actor)
+      : [...(s.bookmarks || [])];
+    const byId = new Map(retained.map((bookmark) => [String(bookmark?.id || ''), bookmark]));
+    incoming.forEach((bookmark) => {
+      byId.set(String(bookmark.id), { ...(byId.get(String(bookmark.id)) || {}), ...bookmark });
+    });
+    s.bookmarks = Array.from(byId.values());
+    save(s);
+    return s.bookmarks;
+  }
+
+  async function refreshServerBookmarks() {
+    const actor = currentActorId();
+    if (!actor) return [];
+    const base = currentCloudApiBase();
+    if (!base) return load().bookmarks || [];
+    const response = await fetch(`${String(base).replace(/\/$/, '')}/me/bookmarks`, {
+      headers: actorRequestHeaders(),
+      credentials: 'include'
+    });
+    if (!response.ok) throw new Error(`bookmark sync failed (${response.status})`);
+    const payload = await response.json().catch(() => ({}));
+    if (!payload?.ok) throw new Error(payload?.error || 'bookmark sync failed');
+    return mergeServerBookmarks(payload.bookmarks || []);
+  }
+
   function toggleBookmark(projectId) {
     const s = load();
     const actor = currentActorId();
     if (!actor) {
-      goLoginIfGuest();
+      goLoginIfGuest({ modalProjectId: projectId });
       throw new Error('로그인이 필요합니다.');
     }
     s.bookmarks = s.bookmarks || [];
@@ -1114,6 +1180,17 @@
       bookmarked = false;
     }
     save(s);
+    postProjectInteraction(`/projects/${encodeURIComponent(projectId)}/bookmarks/toggle`)
+      .then((payload) => {
+        if (payload?.bookmark) {
+          mergeServerBookmarks(payload.bookmarked ? [payload.bookmark] : [], { replaceCurrentUser: false });
+        } else {
+          refreshServerBookmarks().catch(() => {});
+        }
+      })
+      .catch(() => {
+        refreshServerBookmarks().catch(() => {});
+      });
     scheduleCloudSync('save');
     return { bookmarked };
   }
@@ -1169,20 +1246,33 @@
     return Array.from(new Set(CLOUD_BASE_CANDIDATES))[0] || '';
   }
 
+  function actorRequestHeaders(extraHeaders = {}) {
+    const headers = { ...extraHeaders };
+    const actorId = currentActorId();
+    const shouldSendExplicitActor = window.WETHUS_SEND_EXPLICIT_ACTOR === true;
+    if (actorId && shouldSendExplicitActor) headers['x-user-id'] = actorId;
+    return headers;
+  }
+
   function postProjectInteraction(path, options = {}) {
     const actorId = currentActorId();
     if (!actorId) return;
     const base = currentCloudApiBase();
     if (!base) return;
-    fetch(`${String(base).replace(/\/$/, '')}${path}`, {
+    return fetch(`${String(base).replace(/\/$/, '')}${path}`, {
       method: options.method || 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-user-id': actorId
-      },
+      headers: actorRequestHeaders({
+        'Content-Type': 'application/json'
+      }),
       credentials: 'include',
       body: options.body ? JSON.stringify(options.body) : undefined
-    }).catch(() => {});
+    }).then(async (response) => {
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload?.ok === false) {
+        throw new Error(payload?.error || `request failed (${response.status})`);
+      }
+      return payload;
+    });
   }
 
   function recordProjectView(projectId) {
@@ -1217,7 +1307,7 @@
 
     const likesSet = new Set((all.filter(p => Array.isArray(p.likedBy) && p.likedBy.includes(actor)).map(p => p.id)));
     const bmSet = new Set((s.bookmarks || []).filter(b => b.userId === actor).map(b => b.projectId));
-    const appliedSet = new Set((s.applications || []).filter(a => a.userId === actor && a.status === 'applied').map(a => a.projectId));
+    const appliedSet = new Set((s.applications || []).filter(a => a.userId === actor && isActiveApplicationStatus(a.status)).map(a => a.projectId));
     const views = (s.projectViews || []).filter(v => v.userId === actor);
 
     const projectById = new Map(all.map(p => [String(p.id), p]));
@@ -1357,7 +1447,11 @@
   function addComment(projectId, text) {
     const target = getProjectById(projectId);
     if (!target) return null;
-    if (goLoginIfGuest()) throw new Error('로그인이 필요합니다.');
+    if (goLoginIfGuest({
+      modalProjectId: projectId,
+      reopenCommentPanel: true,
+      pendingCommentText: String(text || '').trim()
+    })) throw new Error('로그인이 필요합니다.');
     const author = currentUser()?.nickname || currentUser()?.name || '익명';
     const comments = Array.isArray(target.comments) ? [...target.comments] : [];
     comments.push({ id: uid(), author, userId: currentActorId(), text, createdAt: new Date().toISOString() });
@@ -1532,11 +1626,14 @@
         if (!response.ok) continue;
         const payload = await response.json().catch(() => ({}));
         if (!payload?.ok || !payload?.user) continue;
+        restoredServerSessionActorId = String(payload?.session?.sub || payload?.user?.id || payload?.user?.googleSub || '').trim();
         const user = upsertCloudUser(payload.user);
         if (user?.email) syncCloudState(user.email).catch(() => {});
+        refreshServerBookmarks().catch(() => {});
         return { ok: true, user, session: payload.session || null };
       } catch (_) {}
     }
+    restoredServerSessionActorId = '';
     return { ok: false };
   }
 
@@ -1576,6 +1673,8 @@
     } else {
       try { localStorage.setItem(KEY, JSON.stringify(local)); } catch (_) {}
     }
+
+    refreshServerBookmarks().catch(() => {});
 
     const toPush = sanitizeAccountProjects(load(), email);
     const chosenCount = Array.isArray(toPush.projects) ? toPush.projects.length : 0;
@@ -1719,6 +1818,16 @@
     return Array.from(new Set(ordered.filter(Boolean).map(b => String(b).replace(/\/$/, ''))));
   }
 
+  function reviewApiBases() {
+    const localBases = [`${location.protocol}//${location.hostname}:8787`, 'http://127.0.0.1:8787', 'http://localhost:8787'];
+    const remoteBase = window.WETHUS_API_BASE || 'https://wethus-api.onrender.com';
+    const isLocalHost = ['localhost', '127.0.0.1'].includes(location.hostname);
+    const ordered = isLocalHost
+      ? [remoteBase, ...localBases]
+      : [remoteBase];
+    return Array.from(new Set(ordered.filter(Boolean).map(b => String(b).replace(/\/$/, ''))));
+  }
+
   function founderReviewFallback(payload = {}, reason = '') {
     const title = String(payload.title || '').trim();
     const description = String(payload.description || '').trim();
@@ -1773,18 +1882,17 @@
   }
 
   async function dmFetch(path, options = {}) {
-    const actorId = currentActorId();
     const bases = dmApiBases();
     let lastErr;
     for (const base of bases) {
       try {
         const res = await fetch(`${base}${path}`, {
           ...options,
-          headers: {
+          credentials: 'include',
+          headers: actorRequestHeaders({
             'Content-Type': 'application/json',
-            'x-user-id': actorId || '',
             ...(options.headers || {})
-          }
+          })
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || data?.ok === false) throw new Error(data?.error || `dm request failed (${res.status})`);
@@ -1794,6 +1902,42 @@
       }
     }
     throw lastErr || new Error('dm api unavailable');
+  }
+
+  async function reviewFetch(path, options = {}) {
+    const bases = reviewApiBases();
+    let lastErr;
+    for (const base of bases) {
+      try {
+        const res = await fetch(`${base}${path}`, {
+          ...options,
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(options.headers || {})
+          }
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data?.ok === false) throw new Error(data?.error || `review request failed (${res.status})`);
+        return data;
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error('review api unavailable');
+  }
+
+  async function listRemoteReviewProjects() {
+    const data = await reviewFetch('/admin/review-projects', { method: 'GET' });
+    return Array.isArray(data?.rows) ? data.rows : [];
+  }
+
+  async function reviewProjectRemote(projectId, decision, note) {
+    const data = await reviewFetch(`/admin/review-projects/${encodeURIComponent(projectId)}/decision`, {
+      method: 'POST',
+      body: JSON.stringify({ decision, note: note || '' })
+    });
+    return data?.project || null;
   }
 
   function listDmThreadsLocal() {
@@ -2074,7 +2218,7 @@
 
   function currentActorId() {
     const s = load();
-    return s.currentUserId || (s.devMode ? 'dev-temp' : null);
+    return s.currentUserId || (s.devMode ? 'dev-temp' : null) || restoredServerSessionActorId || null;
   }
 
   function isProjectTeamMember(project, actorId) {
@@ -2082,22 +2226,70 @@
     return Array.isArray(project.teamMembers) && project.teamMembers.some(member => String(member?.id || '') === String(actorId));
   }
 
+  function normalizeApplicationStatus(status) {
+    const value = String(status || '').trim().toLowerCase();
+    if (value === 'pending') return 'applied';
+    return value || 'applied';
+  }
+
+  function isActiveApplicationStatus(status) {
+    const value = normalizeApplicationStatus(status);
+    return value === 'applied' || value === 'accepted';
+  }
+
   function hasApplied(projectId) {
     const s = load();
     const actor = currentActorId();
     if (!actor) return false;
-    if (s.applications.some(a => a.projectId === projectId && a.userId === actor && (a.status === 'applied' || a.status === 'accepted'))) return true;
+    if (s.applications.some(a => a.projectId === projectId && a.userId === actor && isActiveApplicationStatus(a.status))) return true;
     return isProjectTeamMember(getProjectById(projectId), actor);
+  }
+
+  function mergeProjectApplications(rows, options = {}) {
+    const s = load();
+    const items = Array.isArray(rows) ? rows : [];
+    const projectId = String(options.projectId || '').trim();
+    const incoming = items
+      .map((row) => {
+        if (!row || typeof row !== 'object') return null;
+        const normalizedProjectId = String(row.projectId || projectId || '').trim();
+        const normalizedUserId = String(row.userId || row.applicantId || '').trim();
+        const normalizedId = String(row.id || '').trim();
+        if (!normalizedProjectId || !normalizedUserId || !normalizedId) return null;
+        return {
+          ...row,
+          id: normalizedId,
+          projectId: normalizedProjectId,
+          userId: normalizedUserId
+        };
+      })
+      .filter(Boolean);
+
+    if (!s.applications) s.applications = [];
+    const retained = projectId
+      ? s.applications.filter((app) => String(app?.projectId || '') !== projectId)
+      : [...s.applications];
+    const byId = new Map(retained.map((app) => [String(app?.id || ''), app]));
+    incoming.forEach((app) => {
+      byId.set(String(app.id), { ...(byId.get(String(app.id)) || {}), ...app });
+    });
+    s.applications = Array.from(byId.values());
+    save(s);
+    return s.applications;
   }
 
   function applyToProject(projectId, motivation) {
     const s = load();
     const actor = currentActorId();
     if (!actor) {
-      goLoginIfGuest();
+      goLoginIfGuest({
+        modalProjectId: projectId,
+        reopenApplyModal: true,
+        pendingApplyMotivation: String(motivation || '').trim()
+      });
       throw new Error('로그인이 필요합니다.');
     }
-    const exists = s.applications.find(a => a.projectId === projectId && a.userId === actor && a.status === 'applied');
+    const exists = s.applications.find(a => a.projectId === projectId && a.userId === actor && isActiveApplicationStatus(a.status));
     if (exists) return exists;
     const app = { id: uid(), projectId, userId: actor, motivation: motivation || '', status: 'applied', createdAt: new Date().toISOString() };
     s.applications.push(app);
@@ -2127,7 +2319,7 @@
   function cancelApplication(projectId) {
     const s = load();
     const actor = currentActorId();
-    const target = s.applications.find(a => a.projectId === projectId && a.userId === actor && a.status === 'applied');
+    const target = s.applications.find(a => a.projectId === projectId && a.userId === actor && normalizeApplicationStatus(a.status) === 'applied');
     if (!target) return false;
     target.status = 'cancelled';
     target.cancelledAt = new Date().toISOString();
@@ -2143,7 +2335,7 @@
     if (!actor) return [];
     const ids = new Set(
       (s.applications || [])
-        .filter(a => a.userId === actor && (a.status === 'applied' || a.status === 'accepted'))
+        .filter(a => a.userId === actor && isActiveApplicationStatus(a.status))
         .map(a => a.projectId)
     );
     return listProjects({ includePending: true, includeRejected: true })
@@ -2604,6 +2796,9 @@
       if (!btn) return;
       e.preventDefault();
       e.stopImmediatePropagation();
+      const modalProjectId = String(btn?.dataset?.apply || btn?.dataset?.openHub || '').trim();
+      if (modalProjectId) setAuthReturnState({ modalProjectId });
+      else setAuthReturnState();
       const next = location.pathname + location.search;
       location.href = 'login.html?next=' + encodeURIComponent(next);
     }, true);
@@ -2727,6 +2922,7 @@
     logout,
     addProject,
     listProjects,
+    listExploreProjects,
     myProjects,
     getProjectHub,
     upsertProjectHub,
@@ -2746,6 +2942,7 @@
     deleteProject,
     reviewProject,
     listReviewProjects,
+    listRemoteReviewProjects,
     isAdminActor,
     updateCurrentUserProfile,
     upsertCloudUser,
@@ -2772,9 +2969,12 @@
     ensureAgentProfile,
     runAgentTick,
     listAgentActivityLogs,
+    currentActorId,
     uiConfirm,
     uiAlert,
     hasApplied,
+    mergeProjectApplications,
+    reviewProjectRemote,
     applyToProject,
     cancelApplication,
     myParticipatingProjects,

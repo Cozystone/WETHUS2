@@ -13,6 +13,7 @@
   
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1" />
   <title>WETHUS | 로그인</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260419-25" />
@@ -298,6 +299,47 @@
 
     let ageVerifiedAt = '';
 
+    function readStoredReturnState() {
+      try {
+        return JSON.parse(sessionStorage.getItem('wethus_auth_return_state') || 'null');
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function resolvePendingReturnTarget() {
+      const next = String(new URLSearchParams(location.search).get('next') || '').trim();
+      if (next && !/^https?:/i.test(next)) return next;
+      const state = readStoredReturnState();
+      if (state?.path) return String(state.path || '') + String(state.search || '');
+      return '';
+    }
+
+    function preserveReturnTargetForOnboarding(target) {
+      const clean = String(target || '').trim();
+      if (!clean || /^https?:/i.test(clean)) return;
+      try {
+        const state = readStoredReturnState() || {};
+        sessionStorage.setItem('wethus_auth_return_state', JSON.stringify({
+          ...state,
+          onboardingReturnTo: clean
+        }));
+      } catch (_) {}
+    }
+
+    function redirectAfterAuth(user, options = {}) {
+      const fallback = options.fallback || 'index.html';
+      const target = resolvePendingReturnTarget();
+      if (user?.onboardingComplete) {
+        location.href = target || fallback;
+        return;
+      }
+      preserveReturnTargetForOnboarding(target);
+      location.href = target
+        ? `profile.html?onboarding=1&next=${encodeURIComponent(target)}`
+        : 'profile.html?onboarding=1';
+    }
+
     function setTab(mode) {
       const isLogin = mode === 'login';
       tabLogin.classList.toggle('active', isLogin);
@@ -478,7 +520,7 @@
 
         const user = cloudUser || localUser;
         try { if (WETHUS.syncCloudState && user?.email) await WETHUS.syncCloudState(user.email); } catch (_) {}
-        location.href = user?.onboardingComplete ? 'index.html' : 'profile.html?onboarding=1';
+        redirectAfterAuth(user);
       } catch (err) {
         const m = String(err?.message || '');
         msg.textContent = m || 'Google 로그인 중 오류가 발생했습니다.';
@@ -647,6 +689,7 @@
         return;
       }
       if (history.length > 1) history.back();
+      else location.href = 'index.html';
     });
 
     [signupEmail, signupPw, signupPwConfirm, signupBirthYear].forEach(el => {
@@ -693,7 +736,7 @@
         if (rememberEmail.checked) localStorage.setItem('wethus_saved_email', email);
         else localStorage.removeItem('wethus_saved_email');
         try { if (WETHUS.syncCloudState) await WETHUS.syncCloudState(email); } catch (_) {}
-        location.href = 'index.html';
+        redirectAfterAuth(WETHUS.currentUser ? WETHUS.currentUser() : null);
       } catch (err) {
         const m = String(err?.message || '로그인에 실패했습니다.');
         const localUser = (WETHUS.getState().users || []).find(u => String(u.email || '').toLowerCase() === email);
@@ -705,7 +748,7 @@
             else localStorage.removeItem('wethus_saved_email');
             try { if (WETHUS.syncCloudState) await WETHUS.syncCloudState(email); } catch (_) {}
             const me = WETHUS.currentUser ? WETHUS.currentUser() : null;
-            location.href = me?.onboardingComplete ? 'index.html' : 'profile.html?onboarding=1';
+            redirectAfterAuth(me);
             return;
           } catch (_) {}
         }
@@ -755,7 +798,7 @@
             throw err;
           }
         }
-        location.href = 'profile.html?onboarding=1';
+        redirectAfterAuth(WETHUS.currentUser ? WETHUS.currentUser() : null);
       } catch (err) {
         msg.textContent = String(err?.message || '회원가입에 실패했습니다.');
       }
@@ -768,7 +811,9 @@
       if (p === '0904') {
         WETHUS.setCurrentUser('dev-temp', true);
         msg.textContent = '개발자모드로 진입합니다...';
-        setTimeout(() => { location.href = 'index.html'; }, 250);
+        setTimeout(() => {
+          redirectAfterAuth(WETHUS.currentUser ? WETHUS.currentUser() : { onboardingComplete: true }, { fallback: 'index.html' });
+        }, 250);
       } else {
         msg.textContent = '비밀번호가 올바르지 않습니다.';
       }

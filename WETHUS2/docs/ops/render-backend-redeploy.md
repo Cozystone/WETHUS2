@@ -4,24 +4,33 @@ Date: 2026-05-27
 
 ## Current Symptom
 
-The frontend deploy can be current while the live backend is stale. The known stale signal is:
+The frontend deploy can be current while the live backend is not yet running the intended commercialization-safe guard settings. The old stale signal was:
 
 ```bash
 node -e "fetch('https://wethus-api.onrender.com/health').then(async r => console.log(r.status, await r.text()))"
 ```
 
-Stale output:
+Old stale output:
 
 ```text
 200 {"ok":true}
 ```
 
-Expected hardened output includes:
+Current expected hardened output includes:
 
 - `service: "wethus-backend"`
 - `security` flags
 - `build` metadata
 - API response headers including `content-security-policy`, `x-content-type-options`, `x-frame-options`, and `referrer-policy`
+
+As of the current repo state, production already exposes health metadata. The active rollout gap is whether these flags are set to `true`:
+
+- `cloudStateRequireSession`
+- `integrationsRequireActor`
+- `integrationsRequireSession`
+- `integrationsEnforceLaunchScope`
+- `projectInteractionsRequireSession`
+- `projectAccessRequireMembership`
 
 ## Render Service Settings To Confirm
 
@@ -63,10 +72,16 @@ Assumption: a hosted Render service cannot reach a developer laptop's `127.0.0.1
 
 ## Post-Deploy Verification
 
-Run the strict production smoke locally:
+Run the post-deploy helper first:
+
+```powershell
+node scripts\print-post-deploy-verification.js
+```
+
+Then run the strict production smoke locally:
 
 ```bash
-REQUIRE_WETHUS_API_SECURITY_HEADERS=true REQUIRE_WETHUS_API_HEALTH_METADATA=true node scripts/smoke-production.js
+REQUIRE_WETHUS_API_SECURITY_HEADERS=true REQUIRE_WETHUS_API_HEALTH_METADATA=true REQUIRE_WETHUS_API_SECURITY_FLAGS=true REQUIRE_WETHUS_BACKEND_CONTRACTS=true REQUIRE_WETHUS_FRONTEND_HUB_CONTRACTS=true node scripts/smoke-production.js
 ```
 
 On Windows PowerShell:
@@ -74,20 +89,35 @@ On Windows PowerShell:
 ```powershell
 $env:REQUIRE_WETHUS_API_SECURITY_HEADERS='true'
 $env:REQUIRE_WETHUS_API_HEALTH_METADATA='true'
+$env:REQUIRE_WETHUS_API_SECURITY_FLAGS='true'
+$env:REQUIRE_WETHUS_BACKEND_CONTRACTS='true'
+$env:REQUIRE_WETHUS_FRONTEND_HUB_CONTRACTS='true'
 node scripts\smoke-production.js
+```
+
+Run the commercialization audit too:
+
+```powershell
+node scripts\audit-commercial-readiness.js
 ```
 
 Or manually dispatch the GitHub Actions workflow:
 
 - Workflow: `Production smoke`
-- Input: `require_hardened_api=true`
+- Inputs:
+  - `require_hardened_api=true`
+  - `require_security_flags=true`
+  - `require_frontend_hub_contracts=true`
+  - `run_commercial_gate=true`
 
-The strict run must pass before treating the backend as deployed.
+The strict run and commercialization audit must pass before treating the backend as commercialization-ready. This now includes the live `project-hub.html`, `profile.html`, and `explore_theme.html` matching the local interaction contracts.
+It also includes live `/health` and `/integrations/providers` matching the local backend contract.
 
 ## If Strict Smoke Still Fails
 
 - If `/health` still returns only `{ "ok": true }`, Render is not running the current `WETHUS2/backend/server.js`.
 - If security headers are missing but `service` is present, inspect backend middleware order and verify the deployed commit.
+- If strict smoke fails on frontend contract snippets, redeploy the static frontend or verify the production domain is serving the latest `WETHUS2/*.html`.
 - If the service fails to boot in production, check `JWT_SECRET`; production intentionally refuses weak or missing values.
 - If admin bootstrap fails with password `0904`, that is expected. Use a strong `ADMIN_BOOTSTRAP_PASSWORD`, create the admin account once, then rotate or remove the bootstrap secret.
 

@@ -68,7 +68,9 @@ async function expectSecurityHeaders() {
   if (body.security?.cloudStateRequireSession !== true) fail('/health should expose cloud state guard status');
   if (body.security?.integrationsRequireActor !== true) fail('/health should expose integration actor guard status');
   if (body.security?.integrationsRequireSession !== true) fail('/health should expose integration session guard status');
+  if (body.security?.integrationsEnforceLaunchScope !== true) fail('/health should expose integration launch-scope enforcement status');
   if (body.security?.projectInteractionsRequireSession !== true) fail('/health should expose project interaction guard status');
+  if (body.security?.projectAccessRequireMembership !== true) fail('/health should expose project membership guard status');
   if (!csp.includes("default-src 'none'")) fail('missing strict Content-Security-Policy on /health');
   if (nosniff !== 'nosniff') fail('missing X-Content-Type-Options: nosniff');
   if (frame !== 'DENY') fail('missing X-Frame-Options: DENY');
@@ -116,6 +118,7 @@ async function expectCloudStateGuard() {
 }
 
 async function expectIntegrationActorGuard() {
+  seedProjectAccessFixture();
   const guardedChecks = [
     ['/integrations?projectId=smoke-project', 'GET'],
     ['/activity-events?projectId=smoke-project', 'GET'],
@@ -160,6 +163,13 @@ async function expectIntegrationActorGuard() {
   const created = await actorCreate.json().catch(() => ({}));
   if (!actorCreate.ok || !created?.integration?.id) fail(`POST /integrations with actor should succeed, got ${actorCreate.status}`);
 
+  const sessionOnlyList = await fetch(`${baseUrl}/integrations?projectId=smoke-project`, {
+    headers: {
+      authorization: `Bearer ${makeTestJwt({ sub: 'actor-a', email: 'actor-a@example.com', name: 'Actor A' })}`
+    }
+  });
+  if (!sessionOnlyList.ok) fail(`GET /integrations?projectId with session-only actor fallback should succeed, got ${sessionOnlyList.status}`);
+
   if (created?.integration?.id) {
     const forbiddenDelete = await fetch(`${baseUrl}/integrations/${created.integration.id}`, {
       method: 'DELETE',
@@ -181,7 +191,7 @@ async function expectIntegrationActorGuard() {
   }
 }
 
-async function expectProjectInteractionSessionGuard() {
+function seedProjectAccessFixture() {
   const usersPath = path.join(smokeDataDirGlobal, 'users.json');
   const projectsPath = path.join(smokeDataDirGlobal, 'cloud-projects.json');
   fs.writeFileSync(usersPath, JSON.stringify({
@@ -203,6 +213,24 @@ async function expectProjectInteractionSessionGuard() {
         passwordHash: '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'actor-c',
+        email: 'actor-c@example.com',
+        name: 'Actor C',
+        nickname: 'Actor C',
+        passwordHash: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'actor-d',
+        email: 'actor-d@example.com',
+        name: 'Actor D',
+        nickname: 'Actor D',
+        passwordHash: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }
     ]
   }, null, 2));
@@ -211,22 +239,36 @@ async function expectProjectInteractionSessionGuard() {
       {
         id: 'smoke-project',
         title: 'Smoke Project',
-        founderId: 'actor-b',
-        founderEmail: 'actor-b@example.com',
+        founderId: 'actor-a',
+        founderEmail: 'actor-a@example.com',
         moderationStatus: 'approved',
         comments: [],
         likedBy: [],
         likes: 0,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        teamMembers: [
+          { id: 'actor-a', name: 'Actor A', isLeader: true, role: 'Founder' },
+          { id: 'actor-b', name: 'Actor B', isLeader: false, role: 'Member' }
+        ]
       }
     ]
   }, null, 2));
+}
+
+async function expectProjectInteractionSessionGuard() {
+  seedProjectAccessFixture();
 
   const noSessionLike = await fetch(`${baseUrl}/projects/smoke-project/likes/toggle`, {
     method: 'POST',
     headers: { 'x-user-id': 'actor-a' }
   });
   if (noSessionLike.status !== 401) fail(`POST /projects/:id/likes/toggle should require a session when guard is enabled, got ${noSessionLike.status}`);
+
+  const noSessionBookmark = await fetch(`${baseUrl}/projects/smoke-project/bookmarks/toggle`, {
+    method: 'POST',
+    headers: { 'x-user-id': 'actor-a' }
+  });
+  if (noSessionBookmark.status !== 401) fail(`POST /projects/:id/bookmarks/toggle should require a session when guard is enabled, got ${noSessionBookmark.status}`);
 
   const mismatchComment = await fetch(`${baseUrl}/projects/smoke-project/comments`, {
     method: 'POST',
@@ -243,12 +285,105 @@ async function expectProjectInteractionSessionGuard() {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      'x-user-id': 'actor-a',
-      authorization: `Bearer ${makeTestJwt({ sub: 'actor-a', email: 'actor-a@example.com', name: 'Actor A' })}`
+      'x-user-id': 'actor-c',
+      authorization: `Bearer ${makeTestJwt({ sub: 'actor-c', email: 'actor-c@example.com', name: 'Actor C' })}`
     },
     body: JSON.stringify({ motivation: 'I want to join.' })
   });
   if (!okApply.ok) fail(`POST /projects/:id/applications with matching session should succeed, got ${okApply.status}`);
+
+  const sessionOnlyApply = await fetch(`${baseUrl}/projects/smoke-project/applications`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${makeTestJwt({ sub: 'actor-d', email: 'actor-d@example.com', name: 'Actor D' })}`
+    },
+    body: JSON.stringify({ motivation: 'Session fallback apply.' })
+  });
+  if (!sessionOnlyApply.ok) fail(`POST /projects/:id/applications with session-only actor fallback should succeed, got ${sessionOnlyApply.status}`);
+
+  const okBookmark = await fetch(`${baseUrl}/projects/smoke-project/bookmarks/toggle`, {
+    method: 'POST',
+    headers: {
+      'x-user-id': 'actor-c',
+      authorization: `Bearer ${makeTestJwt({ sub: 'actor-c', email: 'actor-c@example.com', name: 'Actor C' })}`
+    }
+  });
+  if (!okBookmark.ok) fail(`POST /projects/:id/bookmarks/toggle with matching session should succeed, got ${okBookmark.status}`);
+
+  const myBookmarks = await fetch(`${baseUrl}/me/bookmarks`, {
+    headers: {
+      authorization: `Bearer ${makeTestJwt({ sub: 'actor-c', email: 'actor-c@example.com', name: 'Actor C' })}`
+    }
+  });
+  const bookmarkPayload = await myBookmarks.json().catch(() => ({}));
+  if (!myBookmarks.ok || !Array.isArray(bookmarkPayload?.bookmarks) || bookmarkPayload.bookmarks.length !== 1) {
+    fail(`GET /me/bookmarks should return the actor bookmarks, got ${myBookmarks.status}`);
+  }
+}
+
+async function expectProjectMembershipGuard() {
+  seedProjectAccessFixture();
+
+  const founderList = await fetch(`${baseUrl}/integrations?projectId=smoke-project`, {
+    headers: {
+      'x-user-id': 'actor-a',
+      authorization: `Bearer ${makeTestJwt({ sub: 'actor-a', email: 'actor-a@example.com', name: 'Actor A' })}`
+    }
+  });
+  if (!founderList.ok) fail(`GET /integrations?projectId by founder should succeed, got ${founderList.status}`);
+
+  const outsiderList = await fetch(`${baseUrl}/integrations?projectId=smoke-project`, {
+    headers: {
+      'x-user-id': 'actor-c',
+      authorization: `Bearer ${makeTestJwt({ sub: 'actor-c', email: 'actor-c@example.com', name: 'Actor C' })}`
+    }
+  });
+  if (outsiderList.status !== 403) fail(`GET /integrations?projectId by outsider should be forbidden, got ${outsiderList.status}`);
+
+  const memberCreate = await fetch(`${baseUrl}/integrations`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-user-id': 'actor-b',
+      authorization: `Bearer ${makeTestJwt({ sub: 'actor-b', email: 'actor-b@example.com', name: 'Actor B' })}`
+    },
+    body: JSON.stringify({
+      project_id: 'smoke-project',
+      integration_type: 'document',
+      provider: 'notion',
+      external_resource_id: `member-doc-${Date.now()}`
+    })
+  });
+  if (memberCreate.status !== 403) fail(`POST /integrations by non-manager member should be forbidden, got ${memberCreate.status}`);
+
+  const founderCreate = await fetch(`${baseUrl}/integrations`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-user-id': 'actor-a',
+      authorization: `Bearer ${makeTestJwt({ sub: 'actor-a', email: 'actor-a@example.com', name: 'Actor A' })}`
+    },
+    body: JSON.stringify({
+      project_id: 'smoke-project',
+      integration_type: 'document',
+      provider: 'notion',
+      external_resource_id: `founder-doc-${Date.now()}`
+    })
+  });
+  if (!founderCreate.ok) fail(`POST /integrations by founder should succeed, got ${founderCreate.status}`);
+
+  const founderEvents = await fetch(`${baseUrl}/activity-events?projectId=smoke-project&limit=20`, {
+    headers: {
+      'x-user-id': 'actor-a',
+      authorization: `Bearer ${makeTestJwt({ sub: 'actor-a', email: 'actor-a@example.com', name: 'Actor A' })}`
+    }
+  });
+  const eventsPayload = await founderEvents.json().catch(() => ({}));
+  const eventTypes = Array.isArray(eventsPayload?.events) ? eventsPayload.events.map((event) => String(event?.event_type || '')) : [];
+  if (!founderEvents.ok || !eventTypes.includes('project_bookmark_added') || !eventTypes.includes('project_application_created')) {
+    fail(`GET /activity-events should expose project audit events to a founder, got ${founderEvents.status}`);
+  }
 }
 
 (async () => {
@@ -268,7 +403,9 @@ async function expectProjectInteractionSessionGuard() {
         CLOUD_STATE_REQUIRE_SESSION: 'true',
         INTEGRATIONS_REQUIRE_ACTOR: 'true',
         INTEGRATIONS_REQUIRE_SESSION: 'true',
+        INTEGRATIONS_ENFORCE_LAUNCH_SCOPE: 'true',
         PROJECT_INTERACTIONS_REQUIRE_SESSION: 'true',
+        PROJECT_ACCESS_REQUIRE_MEMBERSHIP: 'true',
         JWT_SECRET: TEST_JWT_SECRET
       },
       stdio: ['ignore', 'pipe', 'pipe']
@@ -284,6 +421,7 @@ async function expectProjectInteractionSessionGuard() {
     await expectCloudStateGuard();
     await expectIntegrationActorGuard();
     await expectProjectInteractionSessionGuard();
+    await expectProjectMembershipGuard();
   } finally {
     await stopChild(child);
     fs.rmSync(smokeDataDir, { recursive: true, force: true });

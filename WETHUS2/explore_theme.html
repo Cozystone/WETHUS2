@@ -13,6 +13,7 @@
 
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1" />
   <title>WETHUS | 카테고리 탐색</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260419-25" />
@@ -624,7 +625,7 @@
       const me = (st.users || []).find(u => u.id === actor) || null;
       const myEmail = String(me?.email || '').toLowerCase();
       const isMine = (p) => !!(actor && (p.founderId === actor || (myEmail && String(p.founderEmail || '').toLowerCase() === myEmail)));
-      const all = WETHUS.listProjects().slice();
+      const all = (WETHUS.listExploreProjects ? WETHUS.listExploreProjects() : WETHUS.listProjects({ includePending: true, includeRejected: true })).slice();
       const baseVisible = all.filter(p => {
         const approved = p.moderationStatus !== 'manual_review' && p.moderationStatus !== 'rejected';
         if (approved) return true;
@@ -925,7 +926,7 @@
         e.stopPropagation();
         const st = WETHUS.getState();
         if (!(st.currentUserId || st.devMode)) {
-          WETHUS.setAuthReturnState?.({ modalProjectId: applyBtn.dataset.apply });
+          WETHUS.setAuthReturnState?.({ modalProjectId: applyBtn.dataset.apply, reopenApplyModal: true });
           location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
           return;
         }
@@ -946,6 +947,7 @@
         }
         applyModal.classList.add('open');
         applyModal.setAttribute('aria-hidden', 'false');
+        setTimeout(() => { try { applyMotivation?.focus(); } catch (_) {} }, 0);
         return;
       }
 
@@ -1028,6 +1030,7 @@
       applyProjectId = currentProjectId;
       applyModal.classList.add('open');
       applyModal.setAttribute('aria-hidden', 'false');
+      setTimeout(() => { try { applyMotivation?.focus(); } catch (_) {} }, 0);
     });
 
     mentorTabHuman?.addEventListener('click', () => renderMentors(mentorProjectRef, 'human'));
@@ -1069,7 +1072,12 @@
       if (!currentProjectId) return;
       const text = (modalCommentInput.value || '').trim();
       if (!text) return;
-      const comments = WETHUS.addComment(currentProjectId, text) || [];
+      let comments;
+      try {
+        comments = WETHUS.addComment(currentProjectId, text) || [];
+      } catch (_) {
+        return;
+      }
       modalCommentInput.value = '';
       modalCommentCount.textContent = comments.length;
       renderComments(comments);
@@ -1126,7 +1134,11 @@
       if (!applyProjectId) return;
       const st = WETHUS.getState();
       if (!(st.currentUserId || st.devMode)) {
-        WETHUS.setAuthReturnState?.({ modalProjectId: applyProjectId });
+        WETHUS.setAuthReturnState?.({
+          modalProjectId: applyProjectId,
+          reopenApplyModal: true,
+          pendingApplyMotivation: String(applyMotivation.value || '').trim()
+        });
         location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
         return;
       }
@@ -1156,7 +1168,21 @@
           if (typeof rs.scrollY === 'number') setTimeout(() => window.scrollTo(0, rs.scrollY), 0);
           if (rs.modalProjectId) {
             const p = (currentItems || []).find(x => x.id === rs.modalProjectId);
-            if (p) openModal(p);
+            if (p) {
+              openModal(p);
+              if (rs.reopenCommentPanel && modalCommentPanel) {
+                modalCommentPanel.style.display = 'block';
+                if (modalCommentInput && rs.pendingCommentText) modalCommentInput.value = String(rs.pendingCommentText || '');
+                if (modalCommentInput) setTimeout(() => { try { modalCommentInput.focus(); } catch (_) {} }, 0);
+              }
+              if (rs.reopenApplyModal && applyModal) {
+                applyProjectId = rs.modalProjectId;
+                if (applyMotivation && rs.pendingApplyMotivation) applyMotivation.value = String(rs.pendingApplyMotivation || '');
+                applyModal.classList.add('open');
+                applyModal.setAttribute('aria-hidden', 'false');
+                if (applyMotivation) setTimeout(() => { try { applyMotivation.focus(); } catch (_) {} }, 0);
+              }
+            }
           }
           sessionStorage.removeItem('wethus_auth_return_state');
         }

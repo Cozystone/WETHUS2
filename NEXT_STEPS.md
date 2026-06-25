@@ -6,21 +6,41 @@
 - [ ] Create a backup branch before edits: `backup/pre-<task>-YYYYMMDD-HHMMSS`.
 - [ ] Do not modify `WETHUS_backup_project_platform_*`.
 - [ ] After changes, run the relevant checks: `node scripts/validate-static.js`, `node scripts/smoke-backend-security.js`, and/or `node scripts/smoke-production.js`.
+- [ ] Before expecting production to match local, run `node scripts/check-deploy-source-readiness.js` to confirm `HEAD`, `origin/main`, and worktree state are aligned.
+- [ ] Use `node scripts/describe-commercialization-bundle.js` to see the current dirty worktree grouped by release area before deciding the commit/deploy bundle.
+- [ ] Use `node scripts/plan-commercialization-release.js` to print the recommended commit → deploy → verify → rollout order for the current commercialization bundle.
+- [ ] Use `node scripts/suggest-commercialization-commits.js` to see a pragmatic 1차/2차/3차 commit split before staging files.
+- [ ] Use `node scripts/print-commercialization-staging-plan.js` to print exact `git add ...` commands for each recommended commit group.
+- [ ] Use `node scripts/print-production-rollout-status.js` to print the current live backend flags and the next Render env changes before rollout.
+- [ ] Before deploy, run `node scripts/run-commercial-gate.js`. For launch-grade verification, use `WETHUS_GATE_STRICT_PRODUCTION=true`, which now also requires deploy-source cleanliness plus live frontend and backend contract parity.
 
-## P1. Render Backend Deployment Drift
-- Goal: make production API run the current hardened backend.
-- Evidence now: production `/health` returns only `{ "ok": true }`; current repo `/health` should return `service`, `build`, and `security`.
+## P1. Production Security Flag Rollout
+- Goal: turn the current hardened backend into actual production behavior.
+- Evidence now: production `/health` already exposes `service`, `build`, and `security`, but the optional security flags are still disabled and some hardened contract keys are still missing from the live backend.
 - Tasks:
-  - Confirm Render service source repo, branch, root directory, build command, and start command.
-  - Use or compare against root `render.yaml`: service `wethus-api`, root `WETHUS2/backend`, build `npm ci`, start `npm start`.
-  - Redeploy backend from `main`, root `WETHUS2/backend`, start `npm start`.
-  - Confirm `https://wethus-api.onrender.com/health` exposes `service: "wethus-backend"`.
-  - Re-run `node scripts/smoke-production.js`.
-  - Then run with `REQUIRE_WETHUS_API_SECURITY_HEADERS=true`.
+  - Confirm Render service settings still match root `render.yaml`.
+  - Redeploy backend from the latest `main` once the current local hardening bundle is committed.
+  - Enable flags in this order:
+    - `CLOUD_STATE_REQUIRE_SESSION=true`
+    - `INTEGRATIONS_REQUIRE_ACTOR=true`
+    - `INTEGRATIONS_REQUIRE_SESSION=true`
+    - `INTEGRATIONS_ENFORCE_LAUNCH_SCOPE=true`
+    - `PROJECT_INTERACTIONS_REQUIRE_SESSION=true`
+    - `PROJECT_ACCESS_REQUIRE_MEMBERSHIP=true`
+  - After each flag, run browser E2E on login, cloud sync, explore interactions, project hub integrations, and application review.
+  - Run `node scripts/audit-commercial-readiness.js`.
+  - Run `node scripts/print-production-rollout-status.js`.
+  - Run strict production smoke with:
+  - `REQUIRE_WETHUS_API_SECURITY_HEADERS=true`
+  - `REQUIRE_WETHUS_API_HEALTH_METADATA=true`
+  - `REQUIRE_WETHUS_API_SECURITY_FLAGS=true`
+  - `REQUIRE_WETHUS_BACKEND_CONTRACTS=true`
+  - `REQUIRE_WETHUS_FRONTEND_HUB_CONTRACTS=true`
 - DoD:
-  - Production API exposes health metadata and security headers.
-  - Production smoke strict mode passes.
-  - Drift note is updated in `docs/change-log/`.
+  - Production audit has no blockers.
+  - Strict production smoke passes with security flags required and the live `index.html`, `login.html`, `project-hub.html`, `profile.html`, and `explore_theme.html` contracts aligned.
+  - `node scripts/check-live-backend-contract-drift.js` passes after backend redeploy.
+  - Browser E2E still works for founder, leader, member, and outside applicant flows.
 
 ## P2. Admin Bootstrap And Manual Review E2E
 - Goal: verify founder submission review flow end to end with real production admin.
@@ -40,7 +60,10 @@
   - `CLOUD_STATE_REQUIRE_SESSION=true`
   - `INTEGRATIONS_REQUIRE_ACTOR=true`
   - `INTEGRATIONS_REQUIRE_SESSION=true`
-  - `REQUIRE_WETHUS_API_SECURITY_HEADERS=true` in production smoke
+  - `INTEGRATIONS_ENFORCE_LAUNCH_SCOPE=true`
+  - `PROJECT_INTERACTIONS_REQUIRE_SESSION=true`
+  - `PROJECT_ACCESS_REQUIRE_MEMBERSHIP=true`
+  - `REQUIRE_WETHUS_API_SECURITY_HEADERS=true`, `REQUIRE_WETHUS_API_SECURITY_FLAGS=true`, and `REQUIRE_WETHUS_FRONTEND_HUB_CONTRACTS=true` in production smoke
 - DoD:
   - Login, cloud sync, project hub integrations, and manual review still work in browser.
   - GitHub Actions remain green after each switch.
@@ -64,7 +87,17 @@
   - `node scripts/validate-static.js`
   - `node scripts/smoke-backend-security.js`
   - `node scripts/smoke-production.js`
+  - `node scripts/audit-commercial-readiness.js`
+  - `node scripts/check-live-frontend-drift.js`
+  - `node scripts/print-production-rollout-status.js`
+  - `node scripts/check-deploy-source-readiness.js`
+  - `node scripts/describe-commercialization-bundle.js`
+  - `node scripts/plan-commercialization-release.js`
+  - `node scripts/suggest-commercialization-commits.js`
+  - `node scripts/print-commercialization-staging-plan.js`
+  - `node scripts/run-commercial-gate.js`
 - Key docs:
   - `WETHUS2/docs/change-log/2026-05-27-backend-health-build-info.md`
   - `WETHUS2/docs/change-log/2026-05-27-integration-api-actor-guard.md`
   - `WETHUS2/docs/change-log/2026-05-27-cloud-state-access-guard.md`
+  - `WETHUS2/docs/ops/vercel-frontend-redeploy.md`

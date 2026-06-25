@@ -87,12 +87,90 @@ const RATE_LIMIT_DISABLED = String(process.env.RATE_LIMIT_DISABLED || 'false').t
 const CLOUD_STATE_REQUIRE_SESSION = String(process.env.CLOUD_STATE_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
 const INTEGRATIONS_REQUIRE_ACTOR = String(process.env.INTEGRATIONS_REQUIRE_ACTOR || 'false').toLowerCase() === 'true';
 const INTEGRATIONS_REQUIRE_SESSION = String(process.env.INTEGRATIONS_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
+const INTEGRATIONS_ENFORCE_LAUNCH_SCOPE = String(process.env.INTEGRATIONS_ENFORCE_LAUNCH_SCOPE || 'false').toLowerCase() === 'true';
 const PROJECT_INTERACTIONS_REQUIRE_SESSION = String(process.env.PROJECT_INTERACTIONS_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
+const PROJECT_ACCESS_REQUIRE_MEMBERSHIP = String(process.env.PROJECT_ACCESS_REQUIRE_MEMBERSHIP || 'false').toLowerCase() === 'true';
 const BUILD_COMMIT = String(process.env.RENDER_GIT_COMMIT || process.env.VERCEL_GIT_COMMIT_SHA || process.env.GIT_COMMIT || process.env.SOURCE_VERSION || '').trim();
 const BUILD_REF = String(process.env.RENDER_GIT_BRANCH || process.env.VERCEL_GIT_COMMIT_REF || process.env.GIT_BRANCH || '').trim();
 const RATE_LIMIT_SWEEP_MS = 5 * 60 * 1000;
 const rateLimitBuckets = new Map();
 let lastRateLimitSweep = 0;
+const LAUNCH_SCOPE_CONFIG = path.resolve(__dirname, '..', 'config', 'launch-scope.json');
+
+function normalizeStringList(value) {
+  if (Array.isArray(value)) {
+    return Array.from(new Set(value.map((item) => String(item || '').trim()).filter(Boolean)));
+  }
+  if (typeof value === 'string') {
+    return Array.from(new Set(value.split(',').map((item) => String(item || '').trim()).filter(Boolean)));
+  }
+  return [];
+}
+
+function readLaunchScopeConfig() {
+  try {
+    return JSON.parse(fs.readFileSync(LAUNCH_SCOPE_CONFIG, 'utf8'));
+  } catch (_) {
+    return {};
+  }
+}
+
+function currentLaunchScope() {
+  const config = readLaunchScopeConfig();
+  const launchProviders = normalizeStringList(process.env.WETHUS_LAUNCH_PROVIDERS || '').length
+    ? normalizeStringList(process.env.WETHUS_LAUNCH_PROVIDERS || '')
+    : normalizeStringList(config.launchProviders);
+  const deferredProviders = normalizeStringList(process.env.WETHUS_DEFERRED_PROVIDERS || '').length
+    ? normalizeStringList(process.env.WETHUS_DEFERRED_PROVIDERS || '')
+    : normalizeStringList(config.deferredProviders);
+  const notes = normalizeStringList(config.notes);
+  return { launchProviders, deferredProviders, notes };
+}
+
+function providerLaunchScopeState(provider) {
+  const scope = currentLaunchScope();
+  const launchSet = new Set(scope.launchProviders);
+  const deferredSet = new Set(scope.deferredProviders);
+  const keys = provider === 'google' ? ['google_docs', 'google_sheets'] : [String(provider || '').trim()];
+  const hasLaunch = keys.some((key) => launchSet.has(key));
+  const hasDeferred = keys.some((key) => deferredSet.has(key));
+  if (hasLaunch) {
+    return {
+      launchPhase: 'launch',
+      launchIncluded: true,
+      launchNote: '현재 상용 런칭 범위에 포함된 연동입니다.'
+    };
+  }
+  if (hasDeferred) {
+    return {
+      launchPhase: 'deferred',
+      launchIncluded: false,
+      launchNote: '로드맵 연동으로 보류 중입니다. 상용 런칭 범위에는 아직 포함되지 않습니다.'
+    };
+  }
+  return {
+    launchPhase: 'unknown',
+    launchIncluded: false,
+    launchNote: '런칭 범위가 아직 확정되지 않았습니다.'
+  };
+}
+
+function ensureLaunchScopeAllowed(req, res, provider) {
+  const state = providerLaunchScopeState(provider);
+  if (!INTEGRATIONS_ENFORCE_LAUNCH_SCOPE) return state;
+  if (state.launchPhase === 'deferred') {
+    res.status(409).json({
+      ok: false,
+      error: 'provider deferred until launch scope update',
+      provider,
+      launchPhase: state.launchPhase,
+      launchIncluded: state.launchIncluded,
+      launchNote: state.launchNote
+    });
+    return null;
+  }
+  return state;
+}
 
 function safeUrl(raw) {
   try { return new URL(String(raw || '').trim()); } catch { return null; }
@@ -146,6 +224,7 @@ const STATUS_SNAPSHOTS_DB = path.join(DATA_DIR, 'status-snapshots.json');
 const EXTERNAL_IDENTITIES_DB = path.join(DATA_DIR, 'external-identities.json');
 const CLOUD_STATE_DB = path.join(DATA_DIR, 'cloud-state.json');
 const PROJECT_APPLICATIONS_DB = path.join(DATA_DIR, 'project-applications.json');
+const PROJECT_BOOKMARKS_DB = path.join(DATA_DIR, 'project-bookmarks.json');
 
 function ensureDb() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -157,6 +236,7 @@ function ensureDb() {
   if (!fs.existsSync(EXTERNAL_IDENTITIES_DB)) fs.writeFileSync(EXTERNAL_IDENTITIES_DB, JSON.stringify({ maps: [] }, null, 2));
   if (!fs.existsSync(CLOUD_STATE_DB)) fs.writeFileSync(CLOUD_STATE_DB, JSON.stringify({ states: [] }, null, 2));
   if (!fs.existsSync(PROJECT_APPLICATIONS_DB)) fs.writeFileSync(PROJECT_APPLICATIONS_DB, JSON.stringify({ applications: [] }, null, 2));
+  if (!fs.existsSync(PROJECT_BOOKMARKS_DB)) fs.writeFileSync(PROJECT_BOOKMARKS_DB, JSON.stringify({ bookmarks: [] }, null, 2));
   const cp = cloudProjectsDbPath();
   if (!fs.existsSync(cp)) fs.writeFileSync(cp, JSON.stringify({ projects: [] }, null, 2));
 }
@@ -318,6 +398,8 @@ function writeCloudProjects(rows) {
 }
 function readProjectApplications() { return readCollection(PROJECT_APPLICATIONS_DB, 'applications'); }
 function writeProjectApplications(rows) { writeCollection(PROJECT_APPLICATIONS_DB, 'applications', rows); }
+function readProjectBookmarks() { return readCollection(PROJECT_BOOKMARKS_DB, 'bookmarks'); }
+function writeProjectBookmarks(rows) { writeCollection(PROJECT_BOOKMARKS_DB, 'bookmarks', rows); }
 function normEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
@@ -400,12 +482,24 @@ function requireEmailSession(req, res, email) {
   return true;
 }
 
-function getActorId(req) {
+function explicitActorId(req) {
   return String(req.headers['x-user-id'] || req.body?.actorId || req.query?.actorId || '').trim();
 }
 
-function requireActor(req, res) {
-  const actorId = getActorId(req);
+function sessionActorId(req) {
+  const session = getSession(req);
+  return String(session?.sub || '').trim();
+}
+
+function getActorId(req, options = {}) {
+  const { allowSessionFallback = true } = options;
+  const explicit = explicitActorId(req);
+  if (explicit) return explicit;
+  return allowSessionFallback ? sessionActorId(req) : '';
+}
+
+function requireActor(req, res, options = {}) {
+  const actorId = getActorId(req, options);
   if (!actorId) {
     res.status(401).json({ ok: false, error: 'actor required' });
     return null;
@@ -422,7 +516,8 @@ function requireIntegrationActor(req, res) {
       res.status(401).json({ ok: false, error: 'session required' });
       return null;
     }
-    if (String(session.sub) !== String(actorId)) {
+    const explicit = explicitActorId(req);
+    if (explicit && String(session.sub) !== String(actorId)) {
       res.status(403).json({ ok: false, error: 'session actor mismatch' });
       return null;
     }
@@ -439,6 +534,26 @@ function findUserForSession(session) {
     const userId = String(user?.id || user?.googleSub || '').trim();
     return (sessionSub && userId === sessionSub) || (sessionEmail && normEmail(user?.email) === sessionEmail);
   }) || null;
+}
+
+function isAdminUser(user) {
+  if (!user) return false;
+  if (String(user?.role || '').toLowerCase() === 'admin') return true;
+  return normEmail(user?.email) === normEmail(ADMIN_EMAIL_RAW);
+}
+
+function requireAdminUser(req, res) {
+  const session = getSession(req);
+  if (!session) {
+    res.status(401).json({ ok: false, error: 'session required' });
+    return null;
+  }
+  const user = findUserForSession(session);
+  if (!isAdminUser(user)) {
+    res.status(403).json({ ok: false, error: 'admin required' });
+    return null;
+  }
+  return user;
 }
 
 function sanitizeUserForClient(user) {
@@ -458,7 +573,8 @@ function requireProjectActor(req, res) {
     res.status(401).json({ ok: false, error: 'session required' });
     return null;
   }
-  if (String(session.sub) !== String(actorId)) {
+  const explicit = explicitActorId(req);
+  if (explicit && String(session.sub) !== String(actorId)) {
     res.status(403).json({ ok: false, error: 'session actor mismatch' });
     return null;
   }
@@ -470,6 +586,45 @@ function actorOwnsIntegration(actorId, integration) {
   if (!integration) return false;
   const owner = String(integration.connected_by_user_id || '').trim();
   return !!actorId && (!owner || owner === actorId);
+}
+
+function actorProjectRole(actorId, project) {
+  if (!actorId || !project) return '';
+  if (String(project?.founderId || '') === String(actorId)) return 'founder';
+  const actor = getUserById(actorId);
+  if (actor?.email && normEmail(project?.founderEmail) === normEmail(actor.email)) return 'founder';
+  const members = Array.isArray(project?.teamMembers) ? project.teamMembers : [];
+  const member = members.find(item => String(item?.id || '') === String(actorId));
+  if (!member) return '';
+  return member?.isLeader ? 'leader' : 'member';
+}
+
+function canManageProjectRole(role) {
+  return role === 'founder' || role === 'leader';
+}
+
+function requireProjectAccess(req, res, actorId, projectId, options = {}) {
+  const { manage = false } = options;
+  const project = getGlobalProjectById(projectId);
+  if (!project) {
+    res.status(404).json({ ok: false, error: 'project not found' });
+    return null;
+  }
+  if (!PROJECT_ACCESS_REQUIRE_MEMBERSHIP) return { project, role: 'bypass' };
+  if (!actorId) {
+    res.status(401).json({ ok: false, error: 'actor required' });
+    return null;
+  }
+  const role = actorProjectRole(actorId, project);
+  if (!role) {
+    res.status(403).json({ ok: false, error: 'project membership required' });
+    return null;
+  }
+  if (manage && !canManageProjectRole(role)) {
+    res.status(403).json({ ok: false, error: 'project manager required' });
+    return null;
+  }
+  return { project, role };
 }
 
 function getUserNameById(userId) {
@@ -496,6 +651,58 @@ function upsertGlobalProject(projectId, updater) {
   rows[idx] = { ...current, ...next, _updatedAt: new Date().toISOString() };
   writeCloudProjects(rows);
   return rows[idx];
+}
+
+function recordProjectAuditEvent({
+  projectId,
+  actorId = '',
+  eventType = '',
+  payload = {},
+  sourceItemId = '',
+  sourceItemName = ''
+} = {}) {
+  const normalizedProjectId = String(projectId || '').trim();
+  const normalizedEventType = String(eventType || '').trim();
+  if (!normalizedProjectId || !normalizedEventType) return null;
+  const now = new Date().toISOString();
+  const events = readActivityEvents();
+  const event = {
+    id: crypto.randomUUID(),
+    project_id: normalizedProjectId,
+    integration_id: '',
+    source_type: 'wethus_core',
+    source_item_id: String(sourceItemId || '').trim(),
+    source_item_name: String(sourceItemName || '').trim(),
+    actor_external_id: String(actorId || '').trim(),
+    actor_name: actorId ? getUserNameById(actorId) : 'System',
+    event_type: normalizedEventType,
+    raw_payload: payload && typeof payload === 'object' ? payload : {},
+    occurred_at: now,
+    created_at: now
+  };
+  events.push(event);
+  writeActivityEvents(events.slice(-4000));
+  return event;
+}
+
+function normalizeProjectApplicationStatus(status) {
+  const value = String(status || '').trim().toLowerCase();
+  if (value === 'pending') return 'applied';
+  if (['applied', 'accepted', 'rejected', 'cancelled'].includes(value)) return value;
+  return value || 'applied';
+}
+
+function isActiveProjectApplicationStatus(status) {
+  const value = normalizeProjectApplicationStatus(status);
+  return value === 'applied' || value === 'accepted';
+}
+
+function normalizeProjectApplicationRow(row) {
+  if (!row || typeof row !== 'object') return row;
+  return {
+    ...row,
+    status: normalizeProjectApplicationStatus(row.status)
+  };
 }
 
 const AGENT_SYSTEM_PROMPTS = {
@@ -666,7 +873,9 @@ function healthPayload() {
       cloudStateRequireSession: CLOUD_STATE_REQUIRE_SESSION,
       integrationsRequireActor: INTEGRATIONS_REQUIRE_ACTOR,
       integrationsRequireSession: INTEGRATIONS_REQUIRE_SESSION,
-      projectInteractionsRequireSession: PROJECT_INTERACTIONS_REQUIRE_SESSION
+      integrationsEnforceLaunchScope: INTEGRATIONS_ENFORCE_LAUNCH_SCOPE,
+      projectInteractionsRequireSession: PROJECT_INTERACTIONS_REQUIRE_SESSION,
+      projectAccessRequireMembership: PROJECT_ACCESS_REQUIRE_MEMBERSHIP
     }
   };
 }
@@ -694,8 +903,13 @@ app.get('/integrations', (req, res) => {
   if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const projectId = String(req.query?.projectId || '').trim();
   const rows = readIntegrations();
+  if (projectId) {
+    const access = requireProjectAccess(req, res, actorId, projectId);
+    if (!access) return;
+    return res.json({ ok: true, integrations: rows.filter(r => r.project_id === projectId) });
+  }
   const scopedRows = INTEGRATIONS_REQUIRE_ACTOR ? rows.filter(r => actorOwnsIntegration(actorId, r)) : rows;
-  const list = projectId ? scopedRows.filter(r => r.project_id === projectId) : scopedRows;
+  const list = scopedRows;
   return res.json({ ok: true, integrations: list });
 });
 
@@ -711,6 +925,8 @@ app.post('/integrations', (req, res) => {
   if (!projectId || !integrationType || !provider || !resourceId) {
     return res.status(400).json({ ok: false, error: 'project_id/integration_type/provider/external_resource_id required' });
   }
+  const access = requireProjectAccess(req, res, actorId, projectId, { manage: true });
+  if (!access) return;
 
   const rows = readIntegrations();
   const now = new Date().toISOString();
@@ -745,6 +961,8 @@ app.delete('/integrations/:id', (req, res) => {
   const idx = rows.findIndex(r => r.id === id);
   if (idx < 0) return res.json({ ok: true, removed: 0 });
   if (!actorOwnsIntegration(actorId, rows[idx])) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const access = requireProjectAccess(req, res, actorId, String(rows[idx].project_id || ''), { manage: true });
+  if (!access) return;
 
   if (hard) {
     const next = rows.filter(r => r.id !== id);
@@ -771,6 +989,8 @@ app.post('/integrations/:id/sync', async (req, res) => {
 
   const integration = rows[idx];
   if (!actorOwnsIntegration(actorId, integration)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const access = requireProjectAccess(req, res, actorId, String(integration.project_id || ''), { manage: true });
+  if (!access) return;
   if (integration.status !== 'connected') return res.status(400).json({ ok: false, error: 'integration disconnected' });
 
   const now = new Date().toISOString();
@@ -825,6 +1045,30 @@ app.get('/integrations/providers', (req, res) => {
   const notionReady = !!(NOTION_CLIENT_ID && NOTION_CLIENT_SECRET && NOTION_REDIRECT_URI);
   const slackReady = !!(SLACK_CLIENT_ID && SLACK_CLIENT_SECRET && SLACK_REDIRECT_URI);
   const figmaReady = !!(FIGMA_CLIENT_ID && FIGMA_CLIENT_SECRET && FIGMA_REDIRECT_URI);
+  const launchScope = currentLaunchScope();
+  const launchSet = new Set(launchScope.launchProviders);
+  const deferredSet = new Set(launchScope.deferredProviders);
+  const providerLaunchMeta = (key) => {
+    if (launchSet.has(key)) {
+      return {
+        launchPhase: 'launch',
+        launchIncluded: true,
+        launchNote: '현재 상용 런칭 범위에 포함된 연동입니다.'
+      };
+    }
+    if (deferredSet.has(key)) {
+      return {
+        launchPhase: 'deferred',
+        launchIncluded: false,
+        launchNote: '로드맵 연동으로 보류 중입니다. 상용 런칭 범위에는 아직 포함되지 않습니다.'
+      };
+    }
+    return {
+      launchPhase: 'unknown',
+      launchIncluded: false,
+      launchNote: '런칭 범위가 아직 확정되지 않았습니다.'
+    };
+  };
   const providers = [
     {
       key: 'notion',
@@ -833,6 +1077,7 @@ app.get('/integrations/providers', (req, res) => {
       status: notionReady ? 'ready' : 'setup_required',
       oauthConfigured: notionReady,
       setupRequired: !notionReady,
+      ...providerLaunchMeta('notion'),
       message: notionReady ? '바로 연결할 수 있습니다.' : '관리자 OAuth 설정이 아직 완료되지 않았습니다.'
     },
     {
@@ -842,6 +1087,7 @@ app.get('/integrations/providers', (req, res) => {
       status: googleReady ? 'ready' : 'setup_required',
       oauthConfigured: googleReady,
       setupRequired: !googleReady,
+      ...providerLaunchMeta('google_docs'),
       message: googleReady ? 'Google 계정 연결 후 문서나 폴더를 선택할 수 있습니다.' : 'Google OAuth 설정이 아직 완료되지 않았습니다.'
     },
     {
@@ -851,6 +1097,7 @@ app.get('/integrations/providers', (req, res) => {
       status: googleReady ? 'ready' : 'setup_required',
       oauthConfigured: googleReady,
       setupRequired: !googleReady,
+      ...providerLaunchMeta('google_sheets'),
       message: googleReady ? 'Google 계정 연결 후 시트를 선택할 수 있습니다.' : 'Google OAuth 설정이 아직 완료되지 않았습니다.'
     },
     {
@@ -860,6 +1107,7 @@ app.get('/integrations/providers', (req, res) => {
       status: slackReady ? 'ready' : 'setup_required',
       oauthConfigured: slackReady,
       setupRequired: !slackReady,
+      ...providerLaunchMeta('slack'),
       message: slackReady ? '워크스페이스 연결 후 채널을 선택할 수 있습니다.' : 'Slack OAuth 설정이 아직 완료되지 않았습니다.'
     },
     {
@@ -869,10 +1117,11 @@ app.get('/integrations/providers', (req, res) => {
       status: figmaReady ? 'ready' : 'setup_required',
       oauthConfigured: figmaReady,
       setupRequired: !figmaReady,
+      ...providerLaunchMeta('figma'),
       message: figmaReady ? '계정 연결 후 파일 상태를 가져올 수 있습니다.' : 'Figma OAuth 설정이 아직 완료되지 않았습니다.'
     }
   ];
-  return res.json({ ok: true, providers });
+  return res.json({ ok: true, providers, launchScope });
 });
 
 app.get('/integrations/resources', async (req, res) => {
@@ -881,6 +1130,10 @@ app.get('/integrations/resources', async (req, res) => {
   const provider = String(req.query?.provider || '').trim().toLowerCase();
   const projectId = String(req.query?.projectId || '').trim();
   if (!provider || !projectId) return res.status(400).json({ ok: false, error: 'provider/projectId required' });
+  const launchState = ensureLaunchScopeAllowed(req, res, provider);
+  if (!launchState) return;
+  const access = requireProjectAccess(req, res, actorId, projectId);
+  if (!access) return;
 
   const integrations = readIntegrations().filter(i => i.project_id === projectId && i.status === 'connected' && actorOwnsIntegration(actorId, i));
   const match = integrations.find(i => i.provider === (provider === 'google_docs' || provider === 'google_sheets' ? 'google' : provider));
@@ -973,6 +1226,8 @@ app.post('/integrations/:id/webhook-config', (req, res) => {
   const idx = rows.findIndex(r => r.id === id);
   if (idx < 0) return res.status(404).json({ ok: false, error: 'integration not found' });
   if (!actorOwnsIntegration(actorId, rows[idx])) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const access = requireProjectAccess(req, res, actorId, String(rows[idx].project_id || ''), { manage: true });
+  if (!access) return;
 
   const secret = crypto.randomBytes(24).toString('hex');
   const now = new Date().toISOString();
@@ -1042,6 +1297,10 @@ app.get('/activity-events', (req, res) => {
   const projectId = String(req.query?.projectId || '').trim();
   const limit = Math.min(200, Math.max(1, Number(req.query?.limit || 50)));
   const rows = readActivityEvents();
+  if (projectId) {
+    const access = requireProjectAccess(req, res, actorId, projectId);
+    if (!access) return;
+  }
   const list = (projectId ? rows.filter(r => r.project_id === projectId) : rows)
     .sort((a, b) => new Date(b.occurred_at || b.created_at || 0) - new Date(a.occurred_at || a.created_at || 0))
     .slice(0, limit);
@@ -1053,6 +1312,8 @@ app.get('/integrations/insights', async (req, res) => {
   if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const projectId = String(req.query?.projectId || '').trim();
   if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
+  const access = requireProjectAccess(req, res, actorId, projectId);
+  if (!access) return;
 
   try {
     const rows = readIntegrations().filter(r => r.project_id === projectId && r.status === 'connected' && actorOwnsIntegration(actorId, r));
@@ -1263,6 +1524,8 @@ app.post('/activity-events', (req, res) => {
   if (!projectId || !sourceType || !eventType) {
     return res.status(400).json({ ok: false, error: 'project_id/source_type/event_type required' });
   }
+  const access = requireProjectAccess(req, res, actorId, projectId, { manage: true });
+  if (!access) return;
   const now = new Date().toISOString();
   const row = {
     id: crypto.randomUUID(),
@@ -1289,6 +1552,8 @@ app.get('/status-snapshot', (req, res) => {
   if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const projectId = String(req.query?.projectId || '').trim();
   if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
+  const access = requireProjectAccess(req, res, actorId, projectId);
+  if (!access) return;
   const rows = readStatusSnapshots();
   const snap = rows.find(r => r.project_id === projectId) || null;
   return res.json({ ok: true, snapshot: snap });
@@ -1299,6 +1564,8 @@ app.post('/status-snapshot', (req, res) => {
   if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
   const projectId = String(req.body?.project_id || '').trim();
   if (!projectId) return res.status(400).json({ ok: false, error: 'project_id required' });
+  const access = requireProjectAccess(req, res, actorId, projectId, { manage: true });
+  if (!access) return;
   const rows = readStatusSnapshots();
   const now = new Date().toISOString();
   const idx = rows.findIndex(r => r.project_id === projectId);
@@ -1367,6 +1634,8 @@ app.get('/oauth/:provider/start', (req, res) => {
   const provider = String(req.params.provider || '').toLowerCase();
   const supported = ['google', 'notion', 'slack', 'figma'];
   if (!supported.includes(provider)) return res.status(404).json({ ok: false, error: 'provider not supported' });
+  const launchState = ensureLaunchScopeAllowed(req, res, provider);
+  if (!launchState) return;
 
   const projectId = String(req.query?.project_id || '').trim();
   const actorId = getActorId(req) || String(req.query?.user_id || '').trim();
@@ -1391,7 +1660,7 @@ app.get('/oauth/:provider/start', (req, res) => {
     const errKey = provider === 'google'
       ? 'GOOGLE_OAUTH_CLIENT_ID (or GOOGLE_CLIENT_ID)'
       : (provider === 'notion' ? 'NOTION_CLIENT_ID (or NOTION_OAUTH_CLIENT_ID)' : `${provider.toUpperCase()}_CLIENT_ID`);
-    return res.json({ ok: true, provider, oauthReady: false, setupRequired: true, error: `${errKey} missing` });
+    return res.json({ ok: true, provider, oauthReady: false, setupRequired: true, error: `${errKey} missing`, ...launchState });
   }
 
   let authUrl = '';
@@ -1433,7 +1702,7 @@ app.get('/oauth/:provider/start', (req, res) => {
     authUrl = u.toString();
   }
 
-  return res.json({ ok: true, provider, oauthReady: true, redirectUri: conf.redirectUri, authUrl, state, note: provider === 'notion' || provider === 'google' || provider === 'slack' || provider === 'figma' ? 'Use authUrl to complete OAuth.' : 'Phase 1 placeholder for this provider.' });
+  return res.json({ ok: true, provider, oauthReady: true, redirectUri: conf.redirectUri, authUrl, state, note: provider === 'notion' || provider === 'google' || provider === 'slack' || provider === 'figma' ? 'Use authUrl to complete OAuth.' : 'Phase 1 placeholder for this provider.', ...launchState });
 });
 
 app.get('/oauth/:provider/callback', async (req, res) => {
@@ -1802,9 +2071,13 @@ app.get('/sync/notion/health', (req, res) => {
 
 app.post('/sync/notion', async (req, res) => {
   try {
+    const actorId = requireIntegrationActor(req, res);
+    if (INTEGRATIONS_REQUIRE_ACTOR && !actorId) return;
     const projectId = String(req.body?.project_id || '').trim();
     const integrationId = String(req.body?.integration_id || '').trim();
     if (!projectId) return res.status(400).json({ ok: false, error: 'project_id required' });
+    const access = requireProjectAccess(req, res, actorId, projectId, { manage: true });
+    if (!access) return;
 
     const integration = readIntegrations().find(i => i.id === integrationId || (i.project_id === projectId && i.provider === 'notion')) || null;
     if (!integration) return res.status(404).json({ ok: false, error: 'notion integration not found' });
@@ -2631,6 +2904,65 @@ app.post('/auth/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+app.get('/admin/review-projects', (req, res) => {
+  try {
+    const adminUser = requireAdminUser(req, res);
+    if (!adminUser) return;
+    const rows = readCloudProjects()
+      .filter(project => String(project?.moderationStatus || 'approved') === 'manual_review')
+      .sort((a, b) => {
+        const left = new Date(b?.createdAt || b?.updatedAt || 0).getTime() || 0;
+        const right = new Date(a?.createdAt || a?.updatedAt || 0).getTime() || 0;
+        return left - right;
+      });
+    return res.json({ ok: true, actor: sanitizeUserForClient(adminUser), rows });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'review projects failed' });
+  }
+});
+
+app.post('/admin/review-projects/:projectId/decision', (req, res) => {
+  try {
+    const adminUser = requireAdminUser(req, res);
+    if (!adminUser) return;
+    const projectId = String(req.params.projectId || '').trim();
+    const decision = String(req.body?.decision || '').trim().toLowerCase();
+    const note = String(req.body?.note || '').trim();
+    if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
+    if (!['approve', 'reject'].includes(decision)) {
+      return res.status(400).json({ ok: false, error: 'approve or reject required' });
+    }
+
+    const reviewedAt = new Date().toISOString();
+    const updated = upsertGlobalProject(projectId, (project) => {
+      if (!project) return null;
+      return {
+        moderationStatus: decision === 'approve' ? 'approved' : 'rejected',
+        moderationReason: note || (decision === 'approve' ? '운영자 승인' : '운영자 검토 결과 반려'),
+        moderationReviewedAt: reviewedAt,
+        updatedAt: reviewedAt
+      };
+    });
+    if (!updated) return res.status(404).json({ ok: false, error: 'project not found' });
+
+    recordProjectAuditEvent({
+      projectId,
+      actorId: String(adminUser?.id || '').trim(),
+      eventType: decision === 'approve' ? 'project_manual_review_approved' : 'project_manual_review_rejected',
+      payload: {
+        moderationStatus: updated.moderationStatus,
+        moderationReason: updated.moderationReason
+      },
+      sourceItemId: projectId,
+      sourceItemName: updated.title || ''
+    });
+
+    return res.json({ ok: true, project: updated });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'review decision failed' });
+  }
+});
+
 app.post('/projects/:projectId/likes/toggle', (req, res) => {
   try {
     const actorId = requireProjectActor(req, res);
@@ -2645,9 +2977,72 @@ app.post('/projects/:projectId/likes/toggle', (req, res) => {
       return { likedBy, likes: likedBy.length };
     });
     if (!updated) return res.status(404).json({ ok: false, error: 'project not found' });
-    return res.json({ ok: true, project: updated, likes: Number(updated.likes || 0), liked: Array.isArray(updated.likedBy) && updated.likedBy.includes(actorId) });
+    const liked = Array.isArray(updated.likedBy) && updated.likedBy.includes(actorId);
+    recordProjectAuditEvent({
+      projectId,
+      actorId,
+      eventType: liked ? 'project_like_added' : 'project_like_removed',
+      payload: { likes: Number(updated.likes || 0) },
+      sourceItemId: projectId,
+      sourceItemName: updated.title || ''
+    });
+    return res.json({ ok: true, project: updated, likes: Number(updated.likes || 0), liked });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'toggle like failed' });
+  }
+});
+
+app.get('/me/bookmarks', (req, res) => {
+  try {
+    const actorId = requireProjectActor(req, res);
+    if (!actorId) return;
+    const rows = readProjectBookmarks().filter(item => String(item.userId || '') === actorId);
+    const projectIds = new Set(rows.map(item => String(item.projectId || '')));
+    const projects = readCloudProjects().filter(project => projectIds.has(String(project?.id || '')));
+    return res.json({ ok: true, bookmarks: rows, projects });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'bookmarks failed' });
+  }
+});
+
+app.post('/projects/:projectId/bookmarks/toggle', (req, res) => {
+  try {
+    const actorId = requireProjectActor(req, res);
+    if (!actorId) return;
+    const projectId = String(req.params.projectId || '').trim();
+    if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
+    const project = getGlobalProjectById(projectId);
+    if (!project) return res.status(404).json({ ok: false, error: 'project not found' });
+    const rows = readProjectBookmarks();
+    const idx = rows.findIndex(item => String(item.projectId || '') === projectId && String(item.userId || '') === actorId);
+    let bookmarked = false;
+    let bookmark = null;
+    if (idx >= 0) {
+      bookmark = rows[idx];
+      rows.splice(idx, 1);
+    } else {
+      bookmark = {
+        id: crypto.randomUUID(),
+        projectId,
+        userId: actorId,
+        createdAt: new Date().toISOString()
+      };
+      rows.push(bookmark);
+      bookmarked = true;
+    }
+    writeProjectBookmarks(rows);
+    const bookmarkCount = rows.filter(item => String(item.projectId || '') === projectId).length;
+    recordProjectAuditEvent({
+      projectId,
+      actorId,
+      eventType: bookmarked ? 'project_bookmark_added' : 'project_bookmark_removed',
+      payload: { bookmarkCount },
+      sourceItemId: projectId,
+      sourceItemName: project.title || ''
+    });
+    return res.json({ ok: true, bookmarked, bookmark: bookmarked ? bookmark : null, bookmarkCount });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'bookmark toggle failed' });
   }
 });
 
@@ -2672,6 +3067,14 @@ app.post('/projects/:projectId/comments', (req, res) => {
       return { comments };
     });
     if (!updated) return res.status(404).json({ ok: false, error: 'project not found' });
+    recordProjectAuditEvent({
+      projectId,
+      actorId,
+      eventType: 'project_comment_added',
+      payload: { commentId: comment.id, commentLength: text.length },
+      sourceItemId: comment.id,
+      sourceItemName: updated.title || ''
+    });
     return res.json({ ok: true, comment, comments: updated.comments || [], project: updated });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'comment failed' });
@@ -2686,11 +3089,13 @@ app.get('/projects/:projectId/applications', (req, res) => {
     if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
     const project = getGlobalProjectById(projectId);
     if (!project) return res.status(404).json({ ok: false, error: 'project not found' });
-    const actor = getUserById(actorId);
-    const isFounder = String(project.founderId || '') === actorId || normEmail(project.founderEmail) === normEmail(actor?.email);
-    const rows = readProjectApplications().filter(item => String(item.projectId) === projectId);
-    const applications = isFounder ? rows : rows.filter(item => String(item.userId) === actorId);
-    return res.json({ ok: true, applications, isFounder });
+    const role = actorProjectRole(actorId, project);
+    const isManager = canManageProjectRole(role);
+    const rows = readProjectApplications()
+      .filter(item => String(item.projectId) === projectId)
+      .map(normalizeProjectApplicationRow);
+    const applications = isManager ? rows : rows.filter(item => String(item.userId) === actorId);
+    return res.json({ ok: true, applications, isManager, role: role || 'applicant' });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'applications failed' });
   }
@@ -2705,11 +3110,17 @@ app.post('/projects/:projectId/applications', (req, res) => {
     if (!projectId || !motivation) return res.status(400).json({ ok: false, error: 'projectId/motivation required' });
     const project = getGlobalProjectById(projectId);
     if (!project) return res.status(404).json({ ok: false, error: 'project not found' });
-    if (String(project.founderId || '') === actorId) return res.status(400).json({ ok: false, error: 'founder cannot apply own project' });
+    const role = actorProjectRole(actorId, project);
+    if (role === 'founder') return res.status(400).json({ ok: false, error: 'founder cannot apply own project' });
+    if (role === 'leader' || role === 'member') return res.status(400).json({ ok: false, error: 'existing team member cannot apply' });
     const actor = getUserById(actorId);
     const rows = readProjectApplications();
-    const existingIdx = rows.findIndex(item => String(item.projectId) === projectId && String(item.userId) === actorId && item.status === 'applied');
-    if (existingIdx >= 0) return res.json({ ok: true, application: rows[existingIdx], duplicate: true });
+    const existingIdx = rows.findIndex(item =>
+      String(item.projectId) === projectId &&
+      String(item.userId) === actorId &&
+      normalizeProjectApplicationStatus(item.status) === 'applied'
+    );
+    if (existingIdx >= 0) return res.json({ ok: true, application: normalizeProjectApplicationRow(rows[existingIdx]), duplicate: true });
     const now = new Date().toISOString();
     const application = {
       id: crypto.randomUUID(),
@@ -2727,7 +3138,15 @@ app.post('/projects/:projectId/applications', (req, res) => {
     };
     rows.push(application);
     writeProjectApplications(rows);
-    return res.json({ ok: true, application });
+    recordProjectAuditEvent({
+      projectId,
+      actorId,
+      eventType: 'project_application_created',
+      payload: { applicationId: application.id },
+      sourceItemId: application.id,
+      sourceItemName: project.title || ''
+    });
+    return res.json({ ok: true, application: normalizeProjectApplicationRow(application) });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'apply failed' });
   }
@@ -2743,14 +3162,21 @@ app.post('/projects/:projectId/applications/:applicationId/status', (req, res) =
     if (!['accepted', 'rejected'].includes(status)) return res.status(400).json({ ok: false, error: 'accepted or rejected required' });
     const project = getGlobalProjectById(projectId);
     if (!project) return res.status(404).json({ ok: false, error: 'project not found' });
-    const actor = getUserById(actorId);
-    const isFounder = String(project.founderId || '') === actorId || normEmail(project.founderEmail) === normEmail(actor?.email);
-    if (!isFounder) return res.status(403).json({ ok: false, error: 'founder only' });
+    const role = actorProjectRole(actorId, project);
+    if (!canManageProjectRole(role)) return res.status(403).json({ ok: false, error: 'project manager required' });
     const rows = readProjectApplications();
     const idx = rows.findIndex(item => String(item.id) === applicationId && String(item.projectId) === projectId);
     if (idx === -1) return res.status(404).json({ ok: false, error: 'application not found' });
     rows[idx] = { ...rows[idx], status, reviewedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     writeProjectApplications(rows);
+    recordProjectAuditEvent({
+      projectId,
+      actorId,
+      eventType: status === 'accepted' ? 'project_application_accepted' : 'project_application_rejected',
+      payload: { applicationId, applicantUserId: rows[idx].userId },
+      sourceItemId: applicationId,
+      sourceItemName: project.title || ''
+    });
     if (status === 'accepted') {
       upsertGlobalProject(projectId, (current) => {
         const teamMembers = Array.isArray(current.teamMembers) ? [...current.teamMembers] : [];
@@ -2766,7 +3192,7 @@ app.post('/projects/:projectId/applications/:applicationId/status', (req, res) =
         return { teamMembers };
       });
     }
-    return res.json({ ok: true, application: rows[idx] });
+    return res.json({ ok: true, application: normalizeProjectApplicationRow(rows[idx]) });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'application update failed' });
   }
@@ -2778,11 +3204,23 @@ app.delete('/projects/:projectId/applications/me', (req, res) => {
     if (!actorId) return;
     const projectId = String(req.params.projectId || '').trim();
     const rows = readProjectApplications();
-    const idx = rows.findIndex(item => String(item.projectId) === projectId && String(item.userId) === actorId && item.status === 'applied');
+    const idx = rows.findIndex(item =>
+      String(item.projectId) === projectId &&
+      String(item.userId) === actorId &&
+      normalizeProjectApplicationStatus(item.status) === 'applied'
+    );
     if (idx === -1) return res.json({ ok: true, cancelled: false });
     rows[idx] = { ...rows[idx], status: 'cancelled', cancelledAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     writeProjectApplications(rows);
-    return res.json({ ok: true, cancelled: true, application: rows[idx] });
+    recordProjectAuditEvent({
+      projectId,
+      actorId,
+      eventType: 'project_application_cancelled',
+      payload: { applicationId: rows[idx].id },
+      sourceItemId: rows[idx].id,
+      sourceItemName: rows[idx].projectTitle || ''
+    });
+    return res.json({ ok: true, cancelled: true, application: normalizeProjectApplicationRow(rows[idx]) });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'cancel failed' });
   }
@@ -2869,6 +3307,8 @@ app.get('/integrations/resources2', async (req, res) => {
     const folderId = String(req.query?.folderId || 'root').trim() || 'root';
     const q = String(req.query?.q || '').trim().toLowerCase();
     if (!projectId || !provider) return res.status(400).json({ ok: false, error: 'projectId/provider required' });
+    const access = requireProjectAccess(req, res, actorId, projectId);
+    if (!access) return;
 
     if (provider !== 'google') return res.json({ ok: true, rows: [] });
 

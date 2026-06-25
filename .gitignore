@@ -5,3 +5,6 @@ WETHUS2/local-config.js
 WETHUS2/backups/
 WETHUS2/**/*.bak
 WETHUS2/**/*.bak_*
+.tmp-backend-*.log
+.tmp-wethus-backend*.pid
+WETHUS2/backend/.tmp-wethus-backend*.pid

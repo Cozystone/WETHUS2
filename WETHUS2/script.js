@@ -225,6 +225,7 @@
       if (!currentProjectId || !window.WETHUS) return;
       var st = WETHUS.getState();
       if (!(st.currentUserId || st.devMode)) {
+        WETHUS.setAuthReturnState?.({ modalProjectId: currentProjectId });
         location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
         return;
       }
@@ -258,7 +259,12 @@
       if (!currentProjectId || !window.WETHUS) return;
       var text = (commentInput.value || '').trim();
       if (!text) return;
-      var comments = WETHUS.addComment(currentProjectId, text) || [];
+      var comments;
+      try {
+        comments = WETHUS.addComment(currentProjectId, text) || [];
+      } catch (_) {
+        return;
+      }
       commentInput.value = '';
       commentCountEl.textContent = comments.length;
       renderComments(comments);
@@ -323,6 +329,11 @@
           var data = JSON.parse(cards[i].getAttribute('data-project') || '{}');
           if (data.id === state.modalProjectId) {
             openModal(data);
+            if (state.reopenCommentPanel && commentPanel) {
+              commentPanel.style.display = 'block';
+              if (commentInput && state.pendingCommentText) commentInput.value = String(state.pendingCommentText || '');
+              if (commentInput) setTimeout(function () { try { commentInput.focus(); } catch (_) {} }, 0);
+            }
             break;
           }
         }

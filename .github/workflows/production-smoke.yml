@@ -14,6 +14,46 @@ on:
         options:
           - 'false'
           - 'true'
+      require_security_flags:
+        description: Fail if production security flags are not enabled
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+      require_provider_readiness:
+        description: Fail if required production providers are not ready
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+      require_frontend_hub_contracts:
+        description: Fail if live index/login/project-hub/profile/explore frontend contracts are missing
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+      require_backend_contracts:
+        description: Fail if live Render backend contracts are missing from /health or /integrations/providers
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+      run_commercial_gate:
+        description: Also run the full commercialization gate runner
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
   schedule:
     - cron: '15 0,9 * * *'
 
@@ -29,8 +69,37 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Install backend dependencies
+        working-directory: WETHUS2/backend
+        run: npm ci
+
       - name: Smoke test production site
         env:
           REQUIRE_WETHUS_API_SECURITY_HEADERS: ${{ github.event.inputs.require_hardened_api || 'false' }}
           REQUIRE_WETHUS_API_HEALTH_METADATA: ${{ github.event.inputs.require_hardened_api || 'false' }}
+          REQUIRE_WETHUS_API_SECURITY_FLAGS: ${{ github.event.inputs.require_security_flags || 'false' }}
+          REQUIRE_WETHUS_PROVIDER_READINESS: ${{ github.event.inputs.require_provider_readiness || 'false' }}
+          REQUIRE_WETHUS_BACKEND_CONTRACTS: ${{ github.event.inputs.require_backend_contracts || 'false' }}
+          REQUIRE_WETHUS_FRONTEND_HUB_CONTRACTS: ${{ github.event.inputs.require_frontend_hub_contracts || 'false' }}
         run: node scripts/smoke-production.js
+
+      - name: Commercial readiness audit
+        if: ${{ github.event.inputs.run_commercial_gate != 'false' }}
+        env:
+          WETHUS_AUDIT_STRICT: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.require_security_flags == 'true' || github.event.inputs.require_provider_readiness == 'true' || github.event.inputs.require_frontend_hub_contracts == 'true' || github.event.inputs.require_backend_contracts == 'true') && 'true' || 'false' }}
+          REQUIRE_WETHUS_PROVIDER_READINESS: ${{ github.event.inputs.require_provider_readiness || 'false' }}
+          REQUIRE_WETHUS_BACKEND_CONTRACTS: ${{ github.event.inputs.require_backend_contracts || 'false' }}
+          REQUIRE_WETHUS_FRONTEND_HUB_CONTRACTS: ${{ github.event.inputs.require_frontend_hub_contracts || 'false' }}
+        run: node scripts/audit-commercial-readiness.js
+
+      - name: Commercialization gate runner
+        if: ${{ github.event.inputs.run_commercial_gate != 'false' }}
+        env:
+          WETHUS_GATE_STRICT_PRODUCTION: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.require_hardened_api == 'true' || github.event.inputs.require_security_flags == 'true' || github.event.inputs.require_provider_readiness == 'true' || github.event.inputs.require_frontend_hub_contracts == 'true' || github.event.inputs.require_backend_contracts == 'true') && 'true' || 'false' }}
+          REQUIRE_WETHUS_API_SECURITY_HEADERS: ${{ github.event.inputs.require_hardened_api || 'false' }}
+          REQUIRE_WETHUS_API_HEALTH_METADATA: ${{ github.event.inputs.require_hardened_api || 'false' }}
+          REQUIRE_WETHUS_API_SECURITY_FLAGS: ${{ github.event.inputs.require_security_flags || 'false' }}
+          REQUIRE_WETHUS_PROVIDER_READINESS: ${{ github.event.inputs.require_provider_readiness || 'false' }}
+          REQUIRE_WETHUS_BACKEND_CONTRACTS: ${{ github.event.inputs.require_backend_contracts || 'false' }}
+          REQUIRE_WETHUS_FRONTEND_HUB_CONTRACTS: ${{ github.event.inputs.require_frontend_hub_contracts || 'false' }}
+        run: node scripts/run-commercial-gate.js

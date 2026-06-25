@@ -8,6 +8,7 @@
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1" />
   <title>WETHUS | 프로젝트 허브</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260419-25" />
@@ -212,8 +213,10 @@
   <script>
     WETHUS.requireAuth();
     const authLink = document.querySelector('.js-auth-link');
-    const st = WETHUS.getState();
-    if (authLink && (st.currentUserId || st.devMode)) { authLink.textContent='로그아웃'; authLink.href='#'; authLink.addEventListener('click', (e)=>{e.preventDefault();WETHUS.logout();location.href='login.html';}); }
+    function currentHubActorId() {
+      return WETHUS.currentActorId?.() || WETHUS.getCurrentUser?.()?.id || WETHUS.getState?.().currentUserId || (WETHUS.getState?.().devMode ? 'dev-temp' : '');
+    }
+    if (authLink && currentHubActorId()) { authLink.textContent='로그아웃'; authLink.href='#'; authLink.addEventListener('click', (e)=>{e.preventDefault();WETHUS.logout();location.href='login.html';}); }
 
     const hubListView = document.getElementById('hubListView');
     const hubDetailView = document.getElementById('hubDetailView');
@@ -235,8 +238,7 @@
     };
 
     function hubPersistKey() {
-      const st = WETHUS.getState();
-      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : 'guest');
+      const actor = currentHubActorId() || 'guest';
       return `wethus.hub.selected.${actor}`;
     }
     function setPersistedProject(id) {
@@ -254,9 +256,14 @@
       return `${base}/oauth/google/callback`;
     }
 
+    function hubActorHeaders(extraHeaders = {}) {
+      const headers = { ...extraHeaders };
+      const actor = currentHubActorId();
+      if (actor && window.WETHUS_SEND_EXPLICIT_ACTOR === true) headers['x-user-id'] = actor;
+      return headers;
+    }
+
     async function hubApi(path, options = {}) {
-      const st = WETHUS.getState();
-      const actor = st.currentUserId || (st.devMode ? 'dev-temp' : '');
       const bases = [`${location.protocol}//${location.hostname}:8787`, 'http://127.0.0.1:8787', window.WETHUS_API_BASE || 'https://wethus-api.onrender.com'];
       let lastErr;
       for (const b of bases) {
@@ -264,11 +271,10 @@
           const r = await fetch(`${String(b).replace(/\/$/, '')}${path}`, {
             ...options,
             credentials: 'include',
-            headers: {
+            headers: hubActorHeaders({
               'Content-Type': 'application/json',
-              'x-user-id': actor,
               ...(options.headers || {})
-            }
+            })
           });
           const data = await r.json().catch(() => ({}));
           if (!r.ok || data?.ok === false) throw new Error(data?.error || `hub api failed (${r.status})`);
@@ -358,7 +364,9 @@
       });
     }
 
-    async function renderHub(){
+    async function renderHubLegacyUnused() {
+      // The stable override below is the only supported hub renderer.
+      return null;
       const p=currentProject; if(!p) return;
       const hub = Object.assign(fallbackHub(p), WETHUS.getProjectHub(p.id));
       document.getElementById('hubThumb').src=safeUrl(p.image||'https://picsum.photos/seed/hub-main/240/240');
@@ -392,6 +400,8 @@
       document.getElementById('ovBlocker').textContent=hub.blocker;
       document.getElementById('ovTools').innerHTML=(hub.tools||[]).map(t=>`<article class="tool-card"><strong>${esc(t.name)}</strong><p class="meta" style="margin:4px 0 0;">${esc(t.desc||'')}</p></article>`).join('');
       await loadIntegrationsForCurrentProject();
+      await loadRemoteActivityEventsForCurrentProject();
+      await loadRemoteStatusSnapshotForCurrentProject();
       await loadTeamApplicationsForCurrentProject();
       await loadProviderCatalog();
       renderToolCards();
@@ -406,6 +416,23 @@
       renderTeamApplications();
       document.getElementById('sdStatus').innerHTML=`<li>현재 단계: ${esc(p.status||'기획 중')}</li><li>최근 업데이트: ${(hub.updatedAt?new Date(hub.updatedAt).toLocaleString('ko-KR'):'방금')}</li><li>팀원 수: ${(p.teamMembers||[]).length}명</li>`;
       document.getElementById('sdAdvice').innerHTML='<li>목표를 이번 주 단위로 쪼개세요.</li><li>막힌 점을 카드에 명시하세요.</li><li>멘토링 요청은 구체적으로 작성하세요.</li>';
+      const mergedTimeline = mergedProjectTimeline(80);
+      const mergedRecentTop = mergedTimeline.slice(0, 5);
+      document.getElementById('ovRecent').innerHTML = mergedRecentTop.map((item) => `<li>${esc(item.text)} 쨌 ${esc(new Date(item.createdAt).toLocaleString('ko-KR'))}${item.source === 'server' ? ' 쨌 ?쒕쾭湲곕줉' : ''}</li>`).join('') || '<li>理쒓렐 ?쒕룞???놁뒿?덈떎.</li>';
+      moreBtn.style.display = mergedTimeline.length > 10 ? 'inline-flex' : 'none';
+      moreBtn.onclick = () => {
+        document.getElementById('recentList').innerHTML = mergedTimeline.map((item) => `<li>${esc(item.text)} 쨌 ${esc(new Date(item.createdAt).toLocaleString('ko-KR'))}${item.source === 'server' ? ' 쨌 ?쒕쾭湲곕줉' : ''}</li>`).join('') || '<li>理쒓렐 ?쒕룞???놁뒿?덈떎.</li>';
+        openModal('recentModal');
+      };
+      document.getElementById('pgLogs').innerHTML = mergedTimeline.map((item) => `<li>${esc(item.text)} 쨌 ${esc(new Date(item.createdAt || Date.now()).toLocaleString('ko-KR'))}${item.source === 'server' ? ' 쨌 ?쒕쾭湲곕줉' : ''}</li>`).join('') || '<li>吏꾪뻾 濡쒓렇 ?놁쓬</li>';
+      const snapshot = remoteStatusSnapshot;
+      const snapshotUpdatedAt = snapshot?.updated_at ? new Date(snapshot.updated_at).toLocaleString('ko-KR') : '';
+      const statusRows = [];
+      statusRows.push(`?꾩옱 ?④퀎: ${snapshot?.current_stage || p.status || '湲고쉷 以?'}`);
+      statusRows.push(snapshot?.recent_activity_summary ? `理쒓렐 ?곹깭: ${snapshot.recent_activity_summary}` : `理쒓렐 ?낅뜲?댄듃: ${hub.updatedAt ? new Date(hub.updatedAt).toLocaleString('ko-KR') : '諛⑷툑'}`);
+      statusRows.push(snapshot?.suggested_next_action ? `?ㅼ쓬 ?≪뀡: ${snapshot.suggested_next_action}` : `????? ${(p.teamMembers||[]).length}紐?`);
+      if (snapshotUpdatedAt) statusRows.push(`?쒕쾭 ?ㅻ꺽?? ${snapshotUpdatedAt}`);
+      document.getElementById('sdStatus').innerHTML = statusRows.map((row) => `<li>${esc(row)}</li>`).join('');
       renderTab(activeTab);
     }
 
@@ -626,11 +653,11 @@
     });
 
     const toolTargets = [
-      { name:'Notion', provider:'notion', resourceProvider:'notion', type:'workspace', logo:'🧩', home:'https://www.notion.so', desc:'문서와 체크리스트 연결', ready:true },
-      { name:'Google Docs', provider:'google', resourceProvider:'google_docs', type:'document', allowFolderSelect:true, logo:'📝', home:'https://docs.google.com', desc:'프로젝트 문서/폴더 연결', ready:true },
-      { name:'Google Sheets', provider:'google', resourceProvider:'google_sheets', type:'spreadsheet', logo:'📊', home:'https://sheets.google.com', desc:'일정/지표 시트 연결', ready:true },
-      { name:'Slack', provider:'slack', resourceProvider:'slack', type:'channel', logo:'💬', home:'https://slack.com', desc:'프로젝트 채널 활동 연결', ready:true },
-      { name:'Figma', provider:'figma', resourceProvider:'figma', type:'file', logo:'🎨', home:'https://www.figma.com', desc:'디자인 파일 상태 연결', ready:true }
+      { name:'Notion', provider:'notion', resourceProvider:'notion', type:'workspace', logo:'🧩', home:'https://www.notion.so', desc:'문서와 체크리스트 연결', ready:false, launchPhase:'deferred', launchNote:'로드맵 연동으로 보류 중입니다. 상용 런칭 범위에는 아직 포함되지 않습니다.' },
+      { name:'Google Docs', provider:'google', resourceProvider:'google_docs', type:'document', allowFolderSelect:true, logo:'📝', home:'https://docs.google.com', desc:'프로젝트 문서/폴더 연결', ready:true, launchPhase:'launch', launchNote:'현재 상용 런칭 범위에 포함된 문서 연동입니다.' },
+      { name:'Google Sheets', provider:'google', resourceProvider:'google_sheets', type:'spreadsheet', logo:'📊', home:'https://sheets.google.com', desc:'일정/지표 시트 연결', ready:true, launchPhase:'launch', launchNote:'현재 상용 런칭 범위에 포함된 시트 연동입니다.' },
+      { name:'Slack', provider:'slack', resourceProvider:'slack', type:'channel', logo:'💬', home:'https://slack.com', desc:'프로젝트 채널 활동 연결', ready:false, launchPhase:'deferred', launchNote:'로드맵 연동으로 보류 중입니다. 상용 런칭 범위에는 아직 포함되지 않습니다.' },
+      { name:'Figma', provider:'figma', resourceProvider:'figma', type:'file', logo:'🎨', home:'https://www.figma.com', desc:'디자인 파일 상태 연결', ready:false, launchPhase:'deferred', launchNote:'로드맵 연동으로 보류 중입니다. 상용 런칭 범위에는 아직 포함되지 않습니다.' }
     ];
 
     async function fetchToolMeta(url) {
@@ -656,7 +683,159 @@
     let remoteIntegrations = [];
     let cachedIntegrationInsights = [];
     let teamApplicationsCache = [];
+    let teamApplicationsMeta = { isManager: false, role: 'applicant' };
     let providerCatalog = {};
+    let remoteActivityEvents = [];
+    let remoteStatusSnapshot = null;
+
+    function formatProjectAuditEvent(event) {
+      const type = String(event?.event_type || '').trim();
+      const actorName = String(event?.actor_name || '').trim() || '사용자';
+      const sourceName = String(event?.source_item_name || '').trim();
+      const payload = event?.raw_payload && typeof event.raw_payload === 'object' ? event.raw_payload : {};
+      if (type === 'project_like_added') return `${actorName}님이 프로젝트에 좋아요를 남겼습니다.`;
+      if (type === 'project_like_removed') return `${actorName}님이 프로젝트 좋아요를 취소했습니다.`;
+      if (type === 'project_bookmark_added') return `${actorName}님이 프로젝트를 북마크했습니다.`;
+      if (type === 'project_bookmark_removed') return `${actorName}님이 프로젝트 북마크를 해제했습니다.`;
+      if (type === 'project_comment_added') return `${actorName}님이 댓글을 남겼습니다.`;
+      if (type === 'project_application_created') return `${actorName}님이 프로젝트에 지원했습니다.`;
+      if (type === 'project_application_cancelled') return `${actorName}님이 지원을 취소했습니다.`;
+      if (type === 'project_application_accepted') return `${actorName}님이 지원서를 수락했습니다.`;
+      if (type === 'project_application_rejected') return `${actorName}님이 지원서를 반려했습니다.`;
+      if (type === 'webhook_event') return `${sourceName || '외부 툴'}에서 새 활동이 감지되었습니다.`;
+      return sourceName ? `${sourceName}: ${type || 'activity'}` : (type || 'activity');
+    }
+
+    function normalizedRemoteActivityEvents(limit = 50) {
+      return (remoteActivityEvents || [])
+        .map((event) => ({
+          id: String(event?.id || ''),
+          source: 'server',
+          createdAt: event?.occurred_at || event?.created_at || new Date().toISOString(),
+          kind: String(event?.event_type || 'activity'),
+          text: formatProjectAuditEvent(event),
+          meta: event
+        }))
+        .filter((item) => item.id && item.text)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, Math.max(1, Number(limit || 50)));
+    }
+
+    function mergedProjectTimeline(limit = 50) {
+      const hub = currentProject ? WETHUS.getProjectHub(currentProject.id) : null;
+      const localRows = (hub?.recentActivities || []).map((item, index) => ({
+        id: `local:${String(item?.id || `${index}:${item?.createdAt || ''}`)}`,
+        source: 'local',
+        createdAt: item?.createdAt || new Date().toISOString(),
+        kind: 'hub_activity',
+        text: String(item?.text || '').trim(),
+        meta: item
+      })).filter((item) => item.text);
+      return [...normalizedRemoteActivityEvents(limit), ...localRows]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, Math.max(1, Number(limit || 50)));
+    }
+
+    async function loadRemoteActivityEventsForCurrentProject() {
+      if (!currentProject) return [];
+      try {
+        const data = await hubApi(`/activity-events?projectId=${encodeURIComponent(currentProject.id)}&limit=60`);
+        remoteActivityEvents = Array.isArray(data?.events) ? data.events : [];
+      } catch (_) {
+        remoteActivityEvents = [];
+      }
+      return remoteActivityEvents;
+    }
+
+    async function loadRemoteStatusSnapshotForCurrentProject() {
+      if (!currentProject) return null;
+      try {
+        const data = await hubApi(`/status-snapshot?projectId=${encodeURIComponent(currentProject.id)}`);
+        remoteStatusSnapshot = data?.snapshot || null;
+      } catch (_) {
+        remoteStatusSnapshot = null;
+      }
+      return remoteStatusSnapshot;
+    }
+
+    renderHub = async function renderHubStable() {
+      const p = currentProject;
+      if (!p) return;
+
+      const hub = Object.assign(fallbackHub(p), WETHUS.getProjectHub(p.id));
+      document.getElementById('hubThumb').src = safeUrl(p.image || 'https://picsum.photos/seed/hub-main/240/240');
+      document.getElementById('hubTitle').textContent = p.title || '';
+      document.getElementById('hubCategory').textContent = p.category || 'Uncategorized';
+      document.getElementById('hubStage').textContent = p.status || '기획 중';
+      document.getElementById('hubState').textContent = '팀 운영 중';
+      document.getElementById('hubSummary').textContent = p.summary || '';
+
+      const teamPills = [
+        ...(p.teamMembers || []).map((member) => `<span class='hub-team-pill'><strong>${esc(member.name)}</strong><span class='meta'>${esc(member.role || '')}</span></span>`),
+        ...(hub.aiMentors || []).map((mentor) => `<span class='hub-team-pill'><strong>${esc(mentor.name)}</strong><span class='meta'>AI</span><button class='hub-team-pill-remove' data-remove-ai='${esc(mentor.id)}' title='AI 제거' type='button'>×</button></span>`)
+      ].join('');
+      document.getElementById('hubTopTeam').innerHTML = teamPills || '<span class="meta">팀 정보 없음</span>';
+      document.querySelectorAll('[data-remove-ai]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          pendingRemoveAiId = btn.getAttribute('data-remove-ai') || '';
+          const ai = (WETHUS.getProjectHub(currentProject.id).aiMentors || []).find((item) => item.id === pendingRemoveAiId);
+          document.getElementById('hubAiRemoveDesc').textContent = `${ai?.name || '선택한 AI 멘토'}를 팀 구성에서 제거합니다.`;
+          openModal('hubAiRemoveModal');
+        });
+      });
+
+      document.getElementById('ovGoal').textContent = hub.goal || '';
+      document.getElementById('ovTodos').innerHTML = (hub.weeklyTodos || []).map((todo) => `<li>${esc(todo)}</li>`).join('') || '<li>이번 주 할일을 등록하세요.</li>';
+      document.getElementById('ovBlocker').textContent = hub.blocker || '';
+      document.getElementById('ovTools').innerHTML = (hub.tools || []).map((tool) => `<article class="tool-card"><strong>${esc(tool.name)}</strong><p class="meta" style="margin:4px 0 0;">${esc(tool.desc || '')}</p></article>`).join('');
+
+      await loadIntegrationsForCurrentProject();
+      await loadRemoteActivityEventsForCurrentProject();
+      await loadRemoteStatusSnapshotForCurrentProject();
+      await loadTeamApplicationsForCurrentProject();
+      await loadProviderCatalog();
+
+      renderToolCards();
+      renderIntegrationsTab();
+
+      document.getElementById('mtList').innerHTML = (hub.materials || []).map((item) => {
+        const label = `${item.name} (${item.type || '자료'})`;
+        if (item.url) return `<li><a href="${esc(safeUrl(item.url))}" target="_blank" rel="noopener noreferrer">${esc(label)}</a></li>`;
+        return `<li>${esc(label)}</li>`;
+      }).join('') || '<li>자료 없음</li>';
+
+      renderWorkLogs(p.teamMembers || [], hub).catch(() => {});
+      renderTeamApplications();
+
+      const mergedTimeline = mergedProjectTimeline(80);
+      const recentTop = mergedTimeline.slice(0, 5);
+      document.getElementById('ovRecent').innerHTML = recentTop.map((item) => `<li>${esc(item.text)} · ${esc(new Date(item.createdAt).toLocaleString('ko-KR'))}${item.source === 'server' ? ' · 서버기록' : ''}</li>`).join('') || '<li>최근 활동이 없습니다.</li>';
+      const moreBtn = document.getElementById('ovRecentMoreBtn');
+      moreBtn.style.display = mergedTimeline.length > 10 ? 'inline-flex' : 'none';
+      moreBtn.onclick = () => {
+        document.getElementById('recentList').innerHTML = mergedTimeline.map((item) => `<li>${esc(item.text)} · ${esc(new Date(item.createdAt).toLocaleString('ko-KR'))}${item.source === 'server' ? ' · 서버기록' : ''}</li>`).join('') || '<li>최근 활동이 없습니다.</li>';
+        openModal('recentModal');
+      };
+      document.getElementById('pgLogs').innerHTML = mergedTimeline.map((item) => `<li>${esc(item.text)} · ${esc(new Date(item.createdAt || Date.now()).toLocaleString('ko-KR'))}${item.source === 'server' ? ' · 서버기록' : ''}</li>`).join('') || '<li>진행 로그 없음</li>';
+
+      const snapshot = remoteStatusSnapshot;
+      const statusRows = [
+        `현재 단계: ${snapshot?.current_stage || p.status || '기획 중'}`,
+        snapshot?.recent_activity_summary
+          ? `최근 상태: ${snapshot.recent_activity_summary}`
+          : `최근 업데이트: ${hub.updatedAt ? new Date(hub.updatedAt).toLocaleString('ko-KR') : '방금'}`,
+        snapshot?.suggested_next_action
+          ? `다음 액션: ${snapshot.suggested_next_action}`
+          : `팀원 수: ${(p.teamMembers || []).length}명`
+      ];
+      if (snapshot?.updated_at) {
+        statusRows.push(`서버 스냅샷: ${new Date(snapshot.updated_at).toLocaleString('ko-KR')}`);
+      }
+      document.getElementById('sdStatus').innerHTML = statusRows.map((row) => `<li>${esc(row)}</li>`).join('');
+      document.getElementById('sdAdvice').innerHTML = '<li>목표를 이번 주 단위로 쪼개세요.</li><li>막힘 요소를 카드에 명시하세요.</li><li>멘토링 요청을 구체적으로 작성하세요.</li>';
+      renderTab(activeTab);
+    };
 
     async function loadIntegrationsForCurrentProject() {
       if (!currentProject) return [];
@@ -667,17 +846,6 @@
         remoteIntegrations = [];
       }
       return remoteIntegrations;
-    }
-
-    async function loadTeamApplicationsForCurrentProject() {
-      if (!currentProject) return [];
-      try {
-        const data = await hubApi(`/projects/${encodeURIComponent(currentProject.id)}/applications`);
-        teamApplicationsCache = Array.isArray(data?.applications) ? data.applications : [];
-      } catch (_) {
-        teamApplicationsCache = [];
-      }
-      return teamApplicationsCache;
     }
 
     async function loadProviderCatalog() {
@@ -769,16 +937,30 @@
       return providerCatalog[primaryKey] || providerCatalog[tool.provider] || null;
     }
 
+    function currentToolLaunchPhase(tool) {
+      const meta = currentToolProviderMeta(tool);
+      return String(meta?.launchPhase || tool?.launchPhase || '').trim();
+    }
+
+    function currentToolLaunchNote(tool) {
+      const meta = currentToolProviderMeta(tool);
+      return String(meta?.launchNote || tool?.launchNote || '').trim();
+    }
+
+    function isDeferredTool(tool) {
+      return currentToolLaunchPhase(tool) === 'deferred';
+    }
+
     function isCurrentLeader() {
       if (!currentProject) return false;
-      const me = WETHUS.getCurrentUser?.();
-      const actorId = me?.id || WETHUS.getState?.().currentUserId || '';
+      const actorId = currentHubActorId();
       if (!actorId) return false;
       if (currentProject.founderId === actorId) return true;
       return Array.isArray(currentProject.teamMembers) && currentProject.teamMembers.some(member => member?.id === actorId && member?.isLeader);
     }
 
-    function renderTeamApplications() {
+    function renderTeamApplicationsLegacyUnused() {
+      return null;
       const el = document.getElementById('tmApplications');
       if (!el) return;
       if (!currentProject) {
@@ -786,8 +968,7 @@
         return;
       }
 
-      const me = WETHUS.getCurrentUser?.();
-      const actorId = me?.id || WETHUS.getState?.().currentUserId || '';
+      const actorId = currentHubActorId();
       const isLeader = isCurrentLeader();
       const mine = (teamApplicationsCache || []).filter(app => app?.applicantId === actorId);
 
@@ -838,6 +1019,152 @@
           const statusLabel = app.status === 'accepted' ? '합류 완료' : app.status === 'rejected' ? '반려됨' : '검토중';
           return `<article class="list-item"><h3>내 지원서</h3><p class="meta" style="margin:6px 0 8px;">상태: ${esc(statusLabel)}</p><p style="margin:0;white-space:pre-wrap;">${esc(app.motivation || '')}</p></article>`;
         }).join('');
+        return;
+      }
+
+      el.innerHTML = '<article class="list-item"><h3>지원 현황 없음</h3><p class="meta">이 프로젝트에 제출한 지원서가 아직 없습니다.</p></article>';
+    }
+
+    async function loadTeamApplicationsForCurrentProject() {
+      if (!currentProject) return [];
+      try {
+        const data = await hubApi(`/projects/${encodeURIComponent(currentProject.id)}/applications`);
+        teamApplicationsCache = Array.isArray(data?.applications) ? data.applications : [];
+        if (WETHUS.mergeProjectApplications) {
+          WETHUS.mergeProjectApplications(teamApplicationsCache, { projectId: currentProject.id });
+        }
+        teamApplicationsMeta = {
+          isManager: !!(data?.isManager || data?.isFounder),
+          role: String(data?.role || (data?.isFounder ? 'founder' : 'applicant') || 'applicant')
+        };
+      } catch (_) {
+        teamApplicationsCache = [];
+        teamApplicationsMeta = { isManager: false, role: 'applicant' };
+      }
+      return teamApplicationsCache;
+    }
+
+    function isCurrentProjectMember() {
+      if (!currentProject) return false;
+      const actorId = currentHubActorId();
+      if (!actorId) return false;
+      if (currentProject.founderId === actorId) return true;
+      return Array.isArray(currentProject.teamMembers) && currentProject.teamMembers.some(member => member?.id === actorId);
+    }
+
+    function normalizeApplicationStatus(status) {
+      const value = String(status || '').trim().toLowerCase();
+      if (value === 'pending') return 'applied';
+      return value || 'applied';
+    }
+
+    function applicationStatusLabel(status) {
+      const value = normalizeApplicationStatus(status);
+      if (value === 'accepted') return '수락됨';
+      if (value === 'rejected') return '반려됨';
+      if (value === 'cancelled') return '지원 취소';
+      return '검토중';
+    }
+
+    function renderTeamApplications() {
+      const el = document.getElementById('tmApplications');
+      if (!el) return;
+      if (!currentProject) {
+        el.innerHTML = '';
+        return;
+      }
+
+      const actorId = currentHubActorId();
+      const isManager = !!teamApplicationsMeta.isManager || isCurrentLeader();
+      const mine = (teamApplicationsCache || []).filter(app => String(app?.userId || app?.applicantId || '') === actorId);
+
+      if (isManager) {
+        if (!(teamApplicationsCache || []).length) {
+          el.innerHTML = '<article class="list-item"><h3>들어온 지원서가 없습니다</h3><p class="meta">새 지원이 들어오면 여기에서 바로 검토할 수 있습니다.</p></article>';
+          return;
+        }
+
+        const counts = (teamApplicationsCache || []).reduce((acc, app) => {
+          const key = normalizeApplicationStatus(app?.status);
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {});
+
+        el.innerHTML = `
+          <article class="list-item">
+            <h3 style="margin:0 0 8px;">지원서 현황</h3>
+            <p class="meta" style="margin:0;">검토중 ${counts.applied || 0} · 수락 ${counts.accepted || 0} · 반려 ${counts.rejected || 0} · 취소 ${counts.cancelled || 0}</p>
+          </article>
+          ${teamApplicationsCache.map(app => {
+            const normalized = normalizeApplicationStatus(app?.status);
+            const statusLabel = applicationStatusLabel(normalized);
+            const canReview = normalized === 'applied';
+            return `<article class="list-item" data-application-id="${esc(app.id)}">
+              <h3>${esc(app.applicantName || '지원자')}</h3>
+              <p class="meta" style="margin:6px 0 4px;">상태: ${esc(statusLabel)} · ${esc(app.createdAt ? new Date(app.createdAt).toLocaleString('ko-KR') : '')}</p>
+              <p class="meta" style="margin:0 0 8px;">${esc(app.applicantEmail || '이메일 없음')}</p>
+              <p style="margin:0 0 10px;white-space:pre-wrap;">${esc(app.motivation || '지원 동기 없음')}</p>
+              <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button class="btn btn--secondary" data-app-status="rejected" ${canReview ? '' : 'disabled'} type="button">반려</button>
+                <button class="btn btn--primary" data-app-status="accepted" ${canReview ? '' : 'disabled'} type="button">수락</button>
+              </div>
+            </article>`;
+          }).join('')}`;
+
+        el.querySelectorAll('[data-app-status]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const card = btn.closest('[data-application-id]');
+            const applicationId = card?.getAttribute('data-application-id');
+            const status = btn.getAttribute('data-app-status');
+            if (!applicationId || !status || !currentProject) return;
+            try {
+              await hubApi(`/projects/${encodeURIComponent(currentProject.id)}/applications/${encodeURIComponent(applicationId)}/status`, {
+                method: 'POST',
+                body: JSON.stringify({ status })
+              });
+              await loadTeamApplicationsForCurrentProject();
+              currentProject = WETHUS.getProjectById?.(currentProject.id, { preferCloud: true }) || currentProject;
+              await renderHub();
+            } catch (e) {
+              alert(e?.message || '지원서 처리에 실패했습니다.');
+            }
+          });
+        });
+        return;
+      }
+
+      if (mine.length) {
+        el.innerHTML = mine.map(app => {
+          const normalized = normalizeApplicationStatus(app?.status);
+          const statusLabel = normalized === 'accepted' ? '합류 완료' : applicationStatusLabel(normalized);
+          const canCancel = normalized === 'applied';
+          return `<article class="list-item">
+            <h3>내 지원서</h3>
+            <p class="meta" style="margin:6px 0 8px;">상태: ${esc(statusLabel)}</p>
+            <p style="margin:0;white-space:pre-wrap;">${esc(app.motivation || '')}</p>
+            ${canCancel ? '<div style="display:flex;justify-content:flex-end;margin-top:10px;"><button class="btn btn--secondary" data-cancel-application="1" type="button">지원 취소</button></div>' : ''}
+          </article>`;
+        }).join('');
+
+        el.querySelectorAll('[data-cancel-application]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!currentProject) return;
+            try {
+              await hubApi(`/projects/${encodeURIComponent(currentProject.id)}/applications/me`, {
+                method: 'DELETE'
+              });
+              await loadTeamApplicationsForCurrentProject();
+              await renderHub();
+            } catch (e) {
+              alert(e?.message || '지원 취소에 실패했습니다.');
+            }
+          });
+        });
+        return;
+      }
+
+      if (isCurrentProjectMember()) {
+        el.innerHTML = '<article class="list-item"><h3>지원서 권한 없음</h3><p class="meta">팀원은 자신의 지원 기록만 볼 수 있습니다. 전체 지원서는 대표 또는 리더가 검토합니다.</p></article>';
         return;
       }
 
@@ -975,22 +1302,25 @@
         const st = currentToolState(t);
         const meta = currentToolProviderMeta(t);
         const setupRequired = meta?.setupRequired === true;
+        const deferred = isDeferredTool(t);
         const connectLabel = st?.connected ? '재연결' : (st?.everConnected ? '재연결' : '연결');
-        const statusLabel = setupRequired ? '설정 필요' : (t.ready ? (st?.connected ? '연결됨' : (st?.everConnected ? '연결해제됨' : '미연결')) : '준비중');
+        const statusLabel = deferred
+          ? '로드맵'
+          : (setupRequired ? '설정 필요' : (t.ready ? (st?.connected ? '연결됨' : (st?.everConnected ? '연결해제됨' : '미연결')) : '준비중'));
         const actionLabel = st?.connected ? '동기화' : connectLabel;
-        const hint = meta?.message || '';
+        const hint = deferred ? currentToolLaunchNote(t) : (meta?.message || currentToolLaunchNote(t) || '');
         return `<article class="tool-card" data-tool="${esc(t.name)}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
             <div>
               <strong style="font-size:1.15rem;">${esc(t.logo)} ${esc(t.name)}</strong>
               <p class="meta" style="margin:4px 0 0;">${esc(t.desc)}</p>
               <p class="meta" style="margin:4px 0 0;">${esc(statusLabel)} ${st?.lastSynced ? '· 마지막 반영 ' + esc(new Date(st.lastSynced).toLocaleString('ko-KR')) : ''}</p>
-              ${hint ? `<p class="meta" style="margin:4px 0 0;color:${setupRequired ? '#ffb36b' : '#9ca3af'};">${esc(hint)}</p>` : ''}
+              ${hint ? `<p class="meta" style="margin:4px 0 0;color:${(setupRequired || deferred) ? '#ffb36b' : '#9ca3af'};">${esc(hint)}</p>` : ''}
             </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
-            <button class="btn btn--primary" data-tool-connect="${esc(t.name)}" type="button" ${(t.ready && !setupRequired) ? '' : 'disabled'}>${esc(actionLabel)}</button>
-            <button class="btn btn--secondary" data-tool-disconnect="${esc(t.name)}" type="button" ${(t.ready && !setupRequired) ? '' : 'disabled'}>해제</button>
+            <button class="btn btn--primary" data-tool-connect="${esc(t.name)}" type="button" ${(t.ready && !setupRequired && !deferred) ? '' : 'disabled'}>${esc(actionLabel)}</button>
+            <button class="btn btn--secondary" data-tool-disconnect="${esc(t.name)}" type="button" ${(t.ready && !setupRequired && !deferred) ? '' : 'disabled'}>해제</button>
           </div>
         </article>`;
       }).join('');
@@ -1011,6 +1341,10 @@
           const googleAccount = currentGoogleAccountIntegration();
 
           try {
+            if (isDeferredTool(tool)) {
+              alert(`${name} 연동은 현재 로드맵 기능입니다.\n\n${currentToolLaunchNote(tool) || '상용 런칭 범위에는 아직 포함되지 않습니다.'}`);
+              return;
+            }
             if (providerMeta?.setupRequired) {
               alert(`${name} 연결은 아직 사용할 수 없습니다.\n\n${providerMeta.message || 'OAuth 설정이 필요합니다.'}`);
               return;

@@ -17,6 +17,20 @@ function countMatches(text, pattern) {
   return (text.match(pattern) || []).length;
 }
 
+function validateInlineScripts(rel, text) {
+  const matches = [...text.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
+  for (const [index, match] of matches.entries()) {
+    const code = String(match?.[1] || '').trim();
+    if (!code) continue;
+    try {
+      // Parse inline browser scripts early so hub-sized pages cannot regress silently.
+      new Function(code);
+    } catch (err) {
+      fail(`${rel} inline <script> #${index + 1} failed to parse: ${err.message}`);
+    }
+  }
+}
+
 function activeOpportunityCount(items) {
   const now = Date.now();
   return items.filter(item => {
@@ -105,6 +119,176 @@ function validateOpsRunbooks() {
 
 validateOpsRunbooks();
 
+function validateProjectHubContracts() {
+  const file = path.join(appRoot, 'project-hub.html');
+  if (!fs.existsSync(file)) {
+    fail('WETHUS2/project-hub.html must exist');
+    return;
+  }
+  const text = read(file);
+  const requiredSnippets = [
+    'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+    'renderHub = async function renderHubStable()',
+    'loadRemoteActivityEventsForCurrentProject()',
+    'loadRemoteStatusSnapshotForCurrentProject()',
+    'mergedProjectTimeline(80)',
+    '서버기록'
+  ];
+  for (const snippet of requiredSnippets) {
+    if (!text.includes(snippet)) fail(`project-hub.html must include: ${snippet}`);
+  }
+
+  const serverStatusHints = [
+    '서버 스냅샷',
+    'remoteStatusSnapshot',
+    'statusRows'
+  ];
+  for (const snippet of serverStatusHints) {
+    if (!text.includes(snippet)) fail(`project-hub.html must include server status wiring: ${snippet}`);
+  }
+
+  const legacyRenderer = /function\s+renderTeamApplicationsLegacyUnused\s*\(\)\s*\{\s*return\s+null\s*;/;
+  if (!legacyRenderer.test(text)) {
+    fail('project-hub.html legacy application renderer must stay fully disabled until it is removed');
+  }
+
+  const legacyHubRenderer = /async\s+function\s+renderHubLegacyUnused\s*\(\)\s*\{\s*\/\/ The stable override below is the only supported hub renderer\.\s*return\s+null\s*;/;
+  if (!legacyHubRenderer.test(text)) {
+    fail('project-hub.html legacy hub renderer must stay fully disabled until it is removed');
+  }
+
+  if (/async\s+function\s+renderHub\s*\(/.test(text)) {
+    fail('project-hub.html must not keep the old async renderHub() implementation active');
+  }
+}
+
+function validateInteractionContracts() {
+  const file = path.join(appRoot, 'app.js');
+  if (!fs.existsSync(file)) {
+    fail('WETHUS2/app.js must exist');
+    return;
+  }
+  const text = read(file);
+  const requiredSnippets = [
+    'function mergeServerBookmarks(',
+    'async function refreshServerBookmarks()',
+    'function toggleBookmark(projectId)',
+    'function myBookmarkedProjects()',
+    'function myLikedProjects()',
+    'function goLoginIfGuest(extra = {})',
+    'reopenCommentPanel: true',
+    'pendingCommentText: String(text || \'\').trim()',
+    'reopenApplyModal: true',
+    'pendingApplyMotivation: String(motivation || \'\').trim()'
+  ];
+  for (const snippet of requiredSnippets) {
+    if (!text.includes(snippet)) fail(`app.js must include interaction contract: ${snippet}`);
+  }
+}
+
+function validateInteractionConsumers() {
+  const profileFile = path.join(appRoot, 'profile.html');
+  if (fs.existsSync(profileFile)) {
+    const text = read(profileFile);
+    const requiredSnippets = [
+      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'data-tab="liked"',
+      'data-tab="bookmarked"',
+      'WETHUS.myBookmarkedProjects()',
+      'WETHUS.myLikedProjects()',
+      'data-open-project'
+    ];
+    for (const snippet of requiredSnippets) {
+      if (!text.includes(snippet)) fail(`profile.html must include interaction consumer: ${snippet}`);
+    }
+  }
+
+  const bookmarkConsumerPages = [
+    path.join(appRoot, 'index.html'),
+    path.join(appRoot, 'explore_theme.html')
+  ];
+  for (const file of bookmarkConsumerPages) {
+    if (!fs.existsSync(file)) continue;
+    const rel = path.relative(repoRoot, file).replace(/\\/g, '/');
+    const text = read(file);
+    const requiredSnippets = [
+      'bookmark-btn',
+      'WETHUS.isBookmarked(',
+      'classList.toggle(\'active\'',
+      'data-bm='
+    ];
+    for (const snippet of requiredSnippets) {
+      if (!text.includes(snippet)) fail(`${rel} must include bookmark consumer: ${snippet}`);
+    }
+  }
+
+  const homeFile = path.join(appRoot, 'index.html');
+  if (fs.existsSync(homeFile)) {
+    const text = read(homeFile);
+    const requiredSnippets = [
+      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'class="hero-banner"',
+      'id="homeFeatured"',
+      'WETHUS MANIFESTO',
+      'reopenApplyModal: true',
+      'pendingApplyMotivation: String(applyMotivation.value || \'\').trim()',
+      'applyMotivation?.focus()'
+    ];
+    for (const snippet of requiredSnippets) {
+      if (!text.includes(snippet)) fail(`index.html must include home launch contract: ${snippet}`);
+    }
+  }
+
+  const themedExplore = path.join(appRoot, 'explore_theme.html');
+  if (fs.existsSync(themedExplore)) {
+    const text = read(themedExplore);
+    const requiredSnippets = [
+      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'reopenCommentPanel',
+      'pendingCommentText',
+      'reopenApplyModal',
+      'pendingApplyMotivation',
+      'applyMotivation.focus()'
+    ];
+    for (const snippet of requiredSnippets) {
+      if (!text.includes(snippet)) fail(`explore_theme.html must include auth return consumer: ${snippet}`);
+    }
+  }
+
+  const loginFile = path.join(appRoot, 'login.html');
+  if (fs.existsSync(loginFile)) {
+    const text = read(loginFile);
+    const requiredSnippets = [
+      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'function resolvePendingReturnTarget()',
+      'function preserveReturnTargetForOnboarding(target)',
+      'function redirectAfterAuth(user, options = {})',
+      'onboardingReturnTo',
+      'profile.html?onboarding=1&next=${encodeURIComponent(target)}'
+    ];
+    for (const snippet of requiredSnippets) {
+      if (!text.includes(snippet)) fail(`login.html must include auth return contract: ${snippet}`);
+    }
+  }
+
+  const profileFileForReturn = path.join(appRoot, 'profile.html');
+  if (fs.existsSync(profileFileForReturn)) {
+    const text = read(profileFileForReturn);
+    const requiredSnippets = [
+      'const onboardingReturnTarget = (() => {',
+      'clearOnboardingReturnTarget',
+      'location.href = onboardingReturnTarget || \'index.html\''
+    ];
+    for (const snippet of requiredSnippets) {
+      if (!text.includes(snippet)) fail(`profile.html must include onboarding return contract: ${snippet}`);
+    }
+  }
+}
+
+validateProjectHubContracts();
+validateInteractionContracts();
+validateInteractionConsumers();
+
 if (!fs.existsSync(appRoot)) {
   fail(`Missing app root: ${path.relative(repoRoot, appRoot)}`);
 } else {
@@ -148,6 +332,8 @@ if (!fs.existsSync(appRoot)) {
       if (/^\s*tGoogleSignIn\(|^\s*nce: true\}\);/m.test(text)) {
         fail(`${rel} contains known leaked script fragments`);
       }
+
+      validateInlineScripts(rel, text);
     }
   }
 

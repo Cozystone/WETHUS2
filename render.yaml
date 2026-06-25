@@ -19,6 +19,8 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
       - key: ALLOWED_ORIGINS
         value: https://wethus.co.kr,https://www.wethus.co.kr
       - key: AI_PROVIDER
@@ -27,11 +29,47 @@ services:
         sync: false
       - key: OPENAI_MODEL
         value: gpt-4o-mini
+      - key: INTEGRATION_APP_URL
+        value: https://wethus-api.onrender.com
+      - key: GOOGLE_OAUTH_CLIENT_ID
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_OAUTH_REDIRECT_URI
+        value: https://wethus-api.onrender.com/oauth/google/callback
+      - key: GOOGLE_OAUTH_REDIRECT_URIS
+        value: http://127.0.0.1:8787/oauth/google/callback,https://wethus-api.onrender.com/oauth/google/callback
+      - key: NOTION_CLIENT_ID
+        sync: false
+      - key: NOTION_CLIENT_SECRET
+        sync: false
+      - key: NOTION_REDIRECT_URI
+        value: https://wethus-api.onrender.com/oauth/notion/callback
+      - key: SLACK_CLIENT_ID
+        sync: false
+      - key: SLACK_CLIENT_SECRET
+        sync: false
+      - key: SLACK_REDIRECT_URI
+        value: https://wethus-api.onrender.com/oauth/slack/callback
+      - key: FIGMA_CLIENT_ID
+        sync: false
+      - key: FIGMA_CLIENT_SECRET
+        sync: false
+      - key: FIGMA_REDIRECT_URI
+        value: https://wethus-api.onrender.com/oauth/figma/callback
+      - key: WETHUS_LAUNCH_PROVIDERS
+        value: google_docs,google_sheets
+      - key: WETHUS_DEFERRED_PROVIDERS
+        value: notion,slack,figma
       - key: CLOUD_STATE_REQUIRE_SESSION
         value: "false"
       - key: INTEGRATIONS_REQUIRE_ACTOR
         value: "false"
       - key: INTEGRATIONS_REQUIRE_SESSION
         value: "false"
+      - key: INTEGRATIONS_ENFORCE_LAUNCH_SCOPE
+        value: "false"
       - key: PROJECT_INTERACTIONS_REQUIRE_SESSION
+        value: "false"
+      - key: PROJECT_ACCESS_REQUIRE_MEMBERSHIP
         value: "false"

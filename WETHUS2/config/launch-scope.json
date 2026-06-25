@@ -1,0 +1,15 @@
+{
+  "launchProviders": [
+    "google_docs",
+    "google_sheets"
+  ],
+  "deferredProviders": [
+    "notion",
+    "slack",
+    "figma"
+  ],
+  "notes": [
+    "Commercial launch scope currently includes only Google Docs and Google Sheets integrations.",
+    "Notion, Slack, and Figma remain valid roadmap integrations but are deferred until their OAuth setup and production operations are ready."
+  ]
+}

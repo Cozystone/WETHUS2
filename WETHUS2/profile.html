@@ -13,6 +13,7 @@
   
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1" />
   <title>WETHUS | 프로필</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260319-23" />
@@ -218,6 +219,28 @@
         return fallback;
       };
 
+      const onboardingReturnTarget = (() => {
+        const next = String(new URLSearchParams(location.search).get('next') || '').trim();
+        if (next && !/^https?:/i.test(next)) return next;
+        try {
+          const state = JSON.parse(sessionStorage.getItem('wethus_auth_return_state') || 'null');
+          const stored = String(state?.onboardingReturnTo || '').trim();
+          if (stored && !/^https?:/i.test(stored)) return stored;
+        } catch (_) {}
+        return '';
+      })();
+      const clearOnboardingReturnTarget = () => {
+        try {
+          const state = JSON.parse(sessionStorage.getItem('wethus_auth_return_state') || 'null');
+          if (!state || typeof state !== 'object' || !('onboardingReturnTo' in state)) return;
+          delete state.onboardingReturnTo;
+          if (!Object.keys(state).length) {
+            sessionStorage.removeItem('wethus_auth_return_state');
+            return;
+          }
+          sessionStorage.setItem('wethus_auth_return_state', JSON.stringify(state));
+        } catch (_) {}
+      };
       const fallbackUser = { name: '개발자 모드', nickname: 'dev_mode', email: 'dev@local', bio: '임시 세션으로 로그인됨', founderVerified: false, profileImage: '', age: 17, school: '', careerRaw: '', careerSummary: '', onboardingComplete: true };
       const user = u || fallbackUser;
       const founderBadge = user.founderVerified ? '<span class="verify-badge">Founder 인증</span>' : '';
@@ -615,8 +638,9 @@
             profileImage: stagedProfileImage || u.profileImage || '',
             onboardingComplete: true
           });
+          clearOnboardingReturnTarget();
           closeProfileEdit();
-          location.href = 'index.html';
+          location.href = onboardingReturnTarget || 'index.html';
         });
 
       }
