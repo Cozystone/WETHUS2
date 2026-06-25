@@ -43,6 +43,9 @@ jobs:
       - name: Project interactions smoke
         run: node scripts/smoke-project-interactions.js
 
+      - name: Project mentor smoke
+        run: node scripts/smoke-project-mentor.js
+
       - name: Integration activity log smoke
         run: node scripts/smoke-integration-activity-log.js
 

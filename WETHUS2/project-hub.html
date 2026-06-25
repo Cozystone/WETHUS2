@@ -149,7 +149,7 @@
 
           <div id="tab-progress" class="hidden">
             <article class="hub-card"><h3>진행 로그</h3><ul id="pgLogs" class="meta-bullet"></ul></article>
-            <article class="hub-card"><h3>프로젝트 운영 AI 요약</h3><button id="pgAiSummBtn" class="btn btn--secondary" type="button">허브 문맥 기반 요약 생성</button><p id="pgAiSummary" style="margin:10px 0 0;"></p></article>
+            <article class="hub-card"><h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">프로젝트 운영 AI 요약 <button id="pgAiSummBtn" class="btn btn--secondary" type="button">허브 문맥 기반 요약 생성</button></h3><p id="pgAiSummary" style="margin:10px 0 0;"></p><p id="pgAiPriority" class="meta" style="margin:8px 0 0;"></p><ul id="pgAiGrounding" class="meta-bullet" style="margin-top:8px;"></ul><p id="pgAiChangeLog" class="meta" style="margin:8px 0 0;"></p></article>
           </div>
 
           <div id="tab-materials" class="hidden">
@@ -192,6 +192,8 @@
         <aside class="side-stack">
           <article class="hub-card"><h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">프로젝트 상태 <button id="sdRefreshBtn" class="btn btn--secondary" type="button" style="padding:4px 8px;min-height:auto;line-height:1;">↻</button></h3><ul id="sdStatus" class="meta-bullet"></ul></article>
           <article class="hub-card"><h3>진행 조언</h3><ul id="sdAdvice" class="meta-bullet"></ul></article>
+          <article class="hub-card"><h3>AI 실행 액션</h3><ul id="sdToolActions" class="meta-bullet"></ul></article>
+          <article class="hub-card"><h3>AI 체크 질문</h3><ul id="sdQuestions" class="meta-bullet"></ul></article>
           <article class="hub-card"><h3>멘토 또는 AI에게 요청하기</h3><div style="display:grid;gap:8px;"><button id="sdAiBtn" class="btn btn--primary" type="button">AI 멘토 요청</button><button id="sdHumanBtn" class="btn btn--secondary" type="button">인간 멘토 요청</button></div></article>
         </aside>
       </section>
@@ -443,10 +445,123 @@
       const el = document.getElementById('hubLlmStatus');
       if (el) el.textContent = text;
     }
+    function mentorModeLabel(mode) {
+      const map = {
+        project_management_ai: '프로젝트 매니지먼트 AI',
+        startup_ai: '스타트업 AI',
+        branding_ai: '브랜딩 AI',
+        developer_ai: '개발자 AI',
+        marketing_ai: '마케팅 AI',
+        student_research_ai: '수·과학 연구 AI',
+        film_production_ai: '영상 제작 AI',
+        policy_proposal_ai: '정책 제안 AI'
+      };
+      return map[String(mode || '').trim()] || 'WETHUS AI';
+    }
+    function renderBulletList(elementId, items, emptyText) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      const rows = Array.isArray(items) ? items.filter(Boolean) : [];
+      el.innerHTML = rows.length
+        ? rows.map((item) => `<li>${esc(item)}</li>`).join('')
+        : `<li>${esc(emptyText)}</li>`;
+    }
+    function renderMentorPanels(hub, defaults = {}) {
+      const summaryEl = document.getElementById('pgAiSummary');
+      const priorityEl = document.getElementById('pgAiPriority');
+      const changeLogEl = document.getElementById('pgAiChangeLog');
+      const summary = String(hub?.mentorSummary || '').trim();
+      const priority = String(hub?.mentorPriority || '').trim();
+      const mode = mentorModeLabel(hub?.mentorMode || '');
+      const input = String(hub?.mentorInput || '').trim();
+      const changeLog = String(hub?.mentorChangeLog || '').trim();
+
+      if (summaryEl) {
+        summaryEl.textContent = summary || '허브 문맥을 바탕으로 AI 멘토 요약을 아직 생성하지 않았습니다.';
+      }
+      if (priorityEl) {
+        priorityEl.textContent = priority
+          ? `${mode} 우선순위 · ${priority}${input ? ` · 최근 요청: ${input}` : ''}`
+          : `${mode} 실행 우선순위가 아직 없습니다.`;
+      }
+      renderBulletList('pgAiGrounding', hub?.mentorGrounding, '근거가 아직 없습니다.');
+      if (changeLogEl) {
+        changeLogEl.textContent = changeLog || 'AI 변경 로그가 아직 없습니다.';
+      }
+
+      const statusRows = Array.isArray(defaults.statusRows) ? defaults.statusRows : [];
+      const adviceRows = Array.isArray(defaults.adviceRows) ? defaults.adviceRows : [];
+      renderBulletList('sdStatus', summary ? [summary, ...(priority ? [`우선순위: ${priority}`] : []), ...statusRows.slice(0, 2)] : statusRows, '상태 정보가 아직 없습니다.');
+      renderBulletList('sdAdvice', (hub?.mentorNextActions || []).length ? hub.mentorNextActions : adviceRows, 'AI 실행 조언이 아직 없습니다.');
+      renderBulletList('sdToolActions', hub?.mentorToolActions, '연동 도구 기반 액션이 아직 없습니다.');
+      renderBulletList('sdQuestions', hub?.mentorQuestions, '팀이 답해야 할 질문이 아직 없습니다.');
+    }
+    function buildProjectMentorChatReply(result = {}) {
+      const lines = [];
+      if (result.summary) lines.push(result.summary);
+      if (result.priority) lines.push(`우선순위: ${result.priority}`);
+      (Array.isArray(result.nextActions) ? result.nextActions : []).slice(0, 3).forEach((item, index) => {
+        lines.push(`${index + 1}. ${item}`);
+      });
+      const toolAction = (Array.isArray(result.toolActions) ? result.toolActions : [])[0];
+      if (toolAction) lines.push(`연동 액션: ${toolAction}`);
+      const question = (Array.isArray(result.questions) ? result.questions : [])[0];
+      if (question) lines.push(`확인 질문: ${question}`);
+      return lines.filter(Boolean).join('\n');
+    }
+    function persistProjectMentorResult(result = {}, trigger = 'manual', userPrompt = '') {
+      if (!currentProject || !result?.ok) return WETHUS.getProjectHub(currentProject.id);
+      const hub = WETHUS.getProjectHub(currentProject.id);
+      const runs = Array.isArray(hub.mentorRuns) ? hub.mentorRuns.slice(0, 19) : [];
+      runs.unshift({
+        id: `${Date.now()}`,
+        trigger,
+        prompt: String(userPrompt || '').trim(),
+        mentorMode: String(result.mentorMode || '').trim(),
+        summary: String(result.summary || '').trim(),
+        priority: String(result.priority || '').trim(),
+        reviewedAt: result.reviewedAt || new Date().toISOString()
+      });
+      return WETHUS.upsertProjectHub(currentProject.id, {
+        mentorSummary: String(result.summary || '').trim(),
+        mentorPriority: String(result.priority || '').trim(),
+        mentorMode: String(result.mentorMode || '').trim(),
+        mentorInput: String(userPrompt || '').trim(),
+        mentorChangeLog: String(result.changeLog || '').trim(),
+        mentorNextActions: Array.isArray(result.nextActions) ? result.nextActions.slice(0, 3) : [],
+        mentorQuestions: Array.isArray(result.questions) ? result.questions.slice(0, 2) : [],
+        mentorToolActions: Array.isArray(result.toolActions) ? result.toolActions.slice(0, 2) : [],
+        mentorGrounding: Array.isArray(result.grounding) ? result.grounding.slice(0, 4) : [],
+        mentorRuns: runs
+      });
+    }
+    async function requestProjectMentor(trigger = 'manual', userPrompt = '', options = {}) {
+      if (!currentProject) throw new Error('project required');
+      const hub = options.hub || WETHUS.getProjectHub(currentProject.id);
+      const payload = {
+        project: currentProject,
+        hub,
+        insights: Array.isArray(options.insights) ? options.insights : (Array.isArray(cachedIntegrationInsights) ? cachedIntegrationInsights : []),
+        events: Array.isArray(options.events) ? options.events : (Array.isArray(remoteActivityEvents) ? remoteActivityEvents : []),
+        statusSnapshot: options.statusSnapshot || remoteStatusSnapshot || {},
+        trigger,
+        userPrompt
+      };
+      const result = await hubApi('/ai/project-mentor', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      return {
+        ...result,
+        mentorModeLabel: mentorModeLabel(result?.mentorMode || '')
+      };
+    }
     function setHubLoadingState(on, label = '로딩중...') {
       if (on) {
         document.getElementById('sdStatus').innerHTML = `<li>${esc(label)}</li>`;
         document.getElementById('sdAdvice').innerHTML = `<li>${esc(label)}</li>`;
+        document.getElementById('sdToolActions').innerHTML = `<li>${esc(label)}</li>`;
+        document.getElementById('sdQuestions').innerHTML = `<li>${esc(label)}</li>`;
       }
     }
     function startInsightAutoRefresh() {
@@ -513,27 +628,26 @@
           if (nextSig) docSignatureByProject.set(currentProject.id, nextSig);
         } catch (_) {}
 
-        const prompt = `너는 프로젝트 운영 어시스턴트다. 이유:${reason}\n프로젝트:${currentProject.title}\n상태:${currentProject.status}\n목표:${hub.goal}\n할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,6).map(x=>x.text).join(', ')}\n팀채팅:${(hub.teamChat||[]).slice(-8).map(x=>x.text).join(' / ')}\n외부문서건수:${insightCount}\n외부문서이름:${insightNames || '없음'}\n외부문서요약:${externalDocContext || '없음'}\n외부툴연결정보:${externalToolContext || '없음'}\n\n중요 규칙:\n- 외부문서요약에 내용이 있으면 반드시 그 내용의 고유명사/수치/키워드(최소 2개)를 상태요약이나 조언에 반영\n- 문서요약이 없고 외부툴연결정보가 있으면, 연결된 리소스/최근동기화 기준으로 상태와 다음 액션을 구체적으로 제안\n- '업데이트하세요/정리하세요/공유하세요' 같은 일반론만 쓰지 말 것\n- 문서/툴 근거가 부족하면 추측하지 말고 '근거 부족'이라고 명시\n- '상태 요약:' '진행 조언:' 같은 라벨을 쓰지 말고, 결과 문장만 출력\n\n출력 형식(반드시 4줄):\n1줄차: 상태요약 한 줄\n2줄차~4줄차: 진행조언 3줄`;
         try {
-          const out = await WETHUS.askGemini(prompt);
-          const lines = String(out || '')
-            .split(/\n+/)
-            .map(x => x.trim())
-            .filter(Boolean)
-            .map(x => x.replace(/^(상태\s*요약|진행\s*조언)\s*[:：-]\s*/i, '').replace(/^\d+[\.)]\s*/, '').replace(/^[-*]\s*/, '').trim());
-          if (lines[0]) {
-            document.getElementById('sdStatus').innerHTML = `<li>${esc(lines[0])}</li>`;
-          } else {
-            document.getElementById('sdStatus').innerHTML = `<li>문서 ${insightCount}건 기반으로 상태를 분석했습니다.</li>`;
-          }
-          if (lines.length > 1) {
-            document.getElementById('sdAdvice').innerHTML = lines.slice(1,4).map(x => `<li>${esc(x)}</li>`).join('');
-          } else {
-            document.getElementById('sdAdvice').innerHTML = insightCount > 0
-              ? `<li>문서 근거(${insightNames || '연결 문서'}) 중심으로 다음 실행 단계를 세분화하세요.</li><li>문서 기준 성공지표 1~2개를 바로 추가하세요.</li><li>가장 최근 수정 문서부터 검증 우선순위를 잡으세요.</li>`
-              : (externalToolContext
-                ? `<li>연결된 외부툴(${externalToolContext.slice(0, 80)}...) 기준으로 우선순위 액션을 갱신하세요.</li><li>최근 동기화 시각 기준으로 실행 상태를 재판단하세요.</li><li>문서 본문이 필요한 경우 권한/포맷을 재확인하세요.</li>`
-                : '<li>문서 근거 부족: Google Docs 연결/동기화 상태를 먼저 확인하세요.</li>');
+          const previousMentorSummary = String(hub?.mentorSummary || '').trim();
+          const result = await requestProjectMentor(reason, `문서 ${insightCount}건과 최근 활동을 반영해 현재 상태와 다음 액션을 정리해줘. ${externalToolContext ? `연결 툴: ${externalToolContext}` : ''}`, {
+            hub,
+            insights: cachedIntegrationInsights,
+            events: remoteActivityEvents,
+            statusSnapshot: remoteStatusSnapshot
+          });
+          const savedHub = persistProjectMentorResult(result, reason, `문서 ${insightCount}건 기반 자동 갱신`);
+          renderMentorPanels(savedHub, {
+            statusRows: [
+              insightCount > 0 ? `문서 ${insightCount}건 반영` : `연동 툴 ${externalToolCount}개 연결`,
+              insightNames ? `근거 문서: ${insightNames}` : '근거 문서 없음'
+            ],
+            adviceRows: insightCount > 0
+              ? [`문서 근거(${insightNames || '연결 문서'}) 중심으로 다음 실행 단계를 세분화하세요.`]
+              : [externalToolContext ? `연결된 외부툴(${externalToolContext.slice(0, 80)}...) 기준으로 우선순위를 갱신하세요.` : '문서 근거 부족: Google Docs 연결/동기화 상태를 먼저 확인하세요.']
+          });
+          if (result.summary && String(result.summary).trim() !== previousMentorSummary) {
+            WETHUS.addHubActivity(currentProject.id, `${result.mentorModeLabel}가 허브 상태를 재정리했습니다.`);
           }
           const errText = insightErrors > 0 ? ` · 오류 ${insightErrors}건` : '';
           setLlmStatus(`연결됨 · 문서 ${insightCount}건 반영${errText} · 마지막 갱신 ${new Date().toLocaleTimeString('ko-KR')}`);
@@ -543,10 +657,10 @@
               body: JSON.stringify({
                 project_id: currentProject.id,
                 current_stage: currentProject.status || '',
-                recent_activity_summary: lines[0] || '',
+                recent_activity_summary: String(result.summary || '').trim(),
                 recent_activity_at: new Date().toISOString(),
-                blocker_summary: lines[1] || '',
-                suggested_next_action: lines[2] || '',
+                blocker_summary: String((result.grounding || [])[0] || '').trim(),
+                suggested_next_action: String((result.nextActions || [])[0] || '').trim(),
                 activity_health: 'active'
               })
             });
@@ -923,8 +1037,10 @@
       if (snapshot?.updated_at) {
         statusRows.push(`서버 스냅샷: ${new Date(snapshot.updated_at).toLocaleString('ko-KR')}`);
       }
-      document.getElementById('sdStatus').innerHTML = statusRows.map((row) => `<li>${esc(row)}</li>`).join('');
-      document.getElementById('sdAdvice').innerHTML = '<li>목표를 이번 주 단위로 쪼개세요.</li><li>막힘 요소를 카드에 명시하세요.</li><li>멘토링 요청을 구체적으로 작성하세요.</li>';
+      renderMentorPanels(WETHUS.getProjectHub(p.id), {
+        statusRows,
+        adviceRows: ['목표를 이번 주 단위로 쪼개세요.', '막힘 요소를 카드에 명시하세요.', '멘토링 요청을 구체적으로 작성하세요.']
+      });
       renderTab(activeTab);
     };
 
@@ -1844,13 +1960,33 @@
     });
 
     async function askProjectAiWithMessage(hub, rawText) {
-      const routed = routeProjectAssistant(hub, currentProject);
       const query = String(rawText || '').replace(/^\/ai\s*/i, '').trim() || '지금 팀의 우선순위 작업 3가지를 정리해줘';
-      const recentChat = (hub.teamChat || []).slice(-12).map(m => `${m.from}: ${m.text}`).join('\n');
-      const prompt = `${routed.system}\n\n컨텍스트\n프로젝트:${currentProject.title}\n카테고리:${currentProject.category}\n상태:${currentProject.status}\n목표:${hub.goal}\n이번주 할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,6).map(x=>x.text).join(', ')}\n팀채팅 문맥:\n${recentChat || '없음'}\n\n사용자 질문:\n${query}`;
-      let out = '';
-      try { out = await WETHUS.askGemini(prompt); } catch { out = 'AI 응답을 가져오지 못했습니다. API 설정을 확인해주세요.'; }
-      const next=[...(hub.teamChat||[]),{id:Date.now().toString(),from:routed.agentName,kind:'ai',text:out,createdAt:new Date().toISOString()}].slice(-120);
+      let result;
+      try {
+        result = await requestProjectMentor('chat', query, {
+          hub,
+          insights: cachedIntegrationInsights,
+          events: remoteActivityEvents,
+          statusSnapshot: remoteStatusSnapshot
+        });
+      } catch (_) {
+        result = {
+          ok: true,
+          mentorMode: 'project_management_ai',
+          mentorModeLabel: 'WETHUS AI',
+          summary: 'AI 응답을 가져오지 못했습니다. API 설정이나 서버 상태를 확인해주세요.',
+          priority: '',
+          nextActions: [],
+          questions: [],
+          toolActions: [],
+          grounding: [],
+          changeLog: ''
+        };
+      }
+      const savedHub = persistProjectMentorResult(result, 'chat', query);
+      renderMentorPanels(savedHub);
+      const out = buildProjectMentorChatReply(result);
+      const next=[...(hub.teamChat||[]),{id:Date.now().toString(),from:result.mentorModeLabel || 'WETHUS AI',kind:'ai',text:out,createdAt:new Date().toISOString()}].slice(-120);
       WETHUS.upsertProjectHub(currentProject.id,{teamChat:next});
       renderChat();
       refreshHubInsights('ai-chat');
@@ -1930,11 +2066,19 @@
     document.getElementById('pgAiSummBtn').addEventListener('click', async ()=>{
       if(!currentProject) return;
       const hub=WETHUS.getProjectHub(currentProject.id);
-      const prompt=`프로젝트 허브 요약을 만들어줘. 프로젝트명:${currentProject.title}\n목표:${hub.goal}\n할일:${(hub.weeklyTodos||[]).join(', ')}\n최근활동:${(hub.recentActivities||[]).slice(0,5).map(x=>x.text).join(', ')}\n외부툴:${(hub.tools||[]).map(x=>x.name+':'+(x.url?'연결됨':'미연결')).join(', ')}\n자료:${(hub.materials||[]).map(x=>x.name).join(', ')}`;
-      let out='';
-      try { out = await WETHUS.askGemini(prompt); } catch { out = 'AI 요약에 실패했습니다. API 설정을 확인해주세요.'; }
-      document.getElementById('pgAiSummary').textContent=out;
-      WETHUS.addHubActivity(currentProject.id,'프로젝트 운영 AI 요약 생성');
+      try {
+        const result = await requestProjectMentor('manual-summary', '프로젝트 허브 전체를 요약하고 가장 중요한 우선순위와 다음 액션을 정리해줘.', {
+          hub,
+          insights: cachedIntegrationInsights,
+          events: remoteActivityEvents,
+          statusSnapshot: remoteStatusSnapshot
+        });
+        const savedHub = persistProjectMentorResult(result, 'manual-summary', '프로젝트 허브 전체 요약');
+        renderMentorPanels(savedHub);
+        WETHUS.addHubActivity(currentProject.id, `${result.mentorModeLabel || 'WETHUS AI'} 요약 생성`);
+      } catch (_) {
+        document.getElementById('pgAiSummary').textContent='AI 요약에 실패했습니다. API 설정을 확인해주세요.';
+      }
       refreshHubInsights('ai-summary');
     });
 

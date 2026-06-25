@@ -1004,6 +1004,7 @@ function buildProjectMentorFallback(payload = {}, errorMessage = '') {
   return {
     ok: true,
     mentorMode: mode,
+    reviewedAt: new Date().toISOString(),
     summary,
     priority,
     nextActions: [
