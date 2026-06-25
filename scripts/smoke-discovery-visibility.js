@@ -100,10 +100,24 @@ function seedState(context) {
     currentUserId: 'founder-1',
     devMode: false,
     users: [
-      { id: 'founder-1', email: 'founder@example.com', name: 'Founder', nickname: 'Founder' },
+      { id: 'founder-1', email: 'founder@example.com', name: 'Founder', nickname: 'Founder', interestTags: ['환경'] },
       { id: 'other-1', email: 'other@example.com', name: 'Other', nickname: 'Other' }
     ],
     projects: [
+      {
+        id: 'approved-interest-match',
+        title: 'Climate Action Lab',
+        founderId: 'other-1',
+        founderEmail: 'other@example.com',
+        category: 'Science',
+        summary: '환경 데이터 측정과 캠페인 실험을 하는 프로젝트',
+        moderationStatus: 'approved',
+        moderationReviewedAt: daysAgo(5),
+        createdAt: daysAgo(6),
+        comments: [],
+        likedBy: [],
+        likes: 0
+      },
       {
         id: 'approved-fresh',
         title: 'Approved Fresh',
@@ -203,12 +217,19 @@ function expectRecommendationFreshness(context) {
   if (ids.includes('mine-review') || ids.includes('mine-rejected') || ids.includes('other-review')) {
     fail('recommendations should include approved projects only');
   }
-  if (ids.indexOf('approved-fresh') === -1 || ids.indexOf('approved-old') === -1) {
+  if (ids.indexOf('approved-fresh') === -1 || ids.indexOf('approved-old') === -1 || ids.indexOf('approved-interest-match') === -1) {
     fail('recommendations should include approved projects');
     return;
   }
   if (ids.indexOf('approved-fresh') > ids.indexOf('approved-old')) {
     fail('recommendations should rank the more recently approved project ahead of the stale one when popularity is equal');
+  }
+  if (ids.indexOf('approved-interest-match') > ids.indexOf('approved-fresh')) {
+    fail('recommendations should promote a project that matches the current user interest tags');
+  }
+  const interestMatch = recommended.find((project) => String(project?.id || '') === 'approved-interest-match');
+  if (!String(interestMatch?._recommendationReason || '').includes('관심사')) {
+    fail('interest-matched recommendations should expose a recommendation reason tied to the matched interest');
   }
 }
 

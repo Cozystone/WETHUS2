@@ -1439,6 +1439,59 @@
     return true;
   }
 
+  function projectRecommendationBlob(project) {
+    return [
+      project?.title,
+      project?.summary,
+      project?.fullDescription,
+      project?.desc,
+      project?.roles,
+      project?.neededRoles,
+      project?.category
+    ].map((value) => String(value || '').trim()).join(' ').toLowerCase();
+  }
+
+  function interestSignalsForProject(project, interestTags = []) {
+    const selected = normalizeInterestTags(interestTags);
+    if (!selected.length) {
+      return { matchedTags: [], categoryMatches: [], keywordMatches: [], score: 0, reason: '' };
+    }
+    const blob = projectRecommendationBlob(project);
+    const projectCategory = String(project?.category || '').trim();
+    const categoryMatches = [];
+    const keywordMatches = [];
+
+    selected.forEach((tag) => {
+      const meta = INTEREST_CATALOG.find((item) => item.tag === tag);
+      if (!meta) return;
+      if (projectCategory && String(meta.category || '').trim() === projectCategory) {
+        categoryMatches.push(tag);
+      }
+      const keywords = Array.isArray(meta.keywords) ? meta.keywords : [];
+      if (keywords.some((keyword) => {
+        const normalized = String(keyword || '').trim().toLowerCase();
+        return normalized && blob.includes(normalized);
+      })) {
+        keywordMatches.push(tag);
+      }
+    });
+
+    const matchedTags = Array.from(new Set([...categoryMatches, ...keywordMatches]));
+    const score = Math.min(1, categoryMatches.length * 0.7 + keywordMatches.length * 0.28);
+    const primaryTag = matchedTags[0] || '';
+    let reason = '';
+    if (categoryMatches.length && primaryTag) reason = `${primaryTag} 관심사와 맞는 프로젝트`;
+    else if (keywordMatches.length && primaryTag) reason = `${primaryTag} 키워드와 맞는 프로젝트`;
+
+    return {
+      matchedTags,
+      categoryMatches: Array.from(new Set(categoryMatches)),
+      keywordMatches: Array.from(new Set(keywordMatches)),
+      score,
+      reason
+    };
+  }
+
   function getRecommendedProjects(limit = 6) {
     const s = load();
     const actor = currentActorId();
@@ -1452,12 +1505,16 @@
           const approvedAt = new Date(p.moderationReviewedAt || p.createdAt || Date.now()).getTime() || Date.now();
           const approvalAgeDays = Math.max(0, (Date.now() - approvedAt) / 86400000);
           const approvalFreshness = Math.max(0, 1 - approvalAgeDays / 14);
-          return { ...p, _recScore: approvalFreshness * 0.56 + Math.min(1, (likes * 0.6 + comments * 1.1) / 42) * 0.44 };
+          const popularity = Math.min(1, (likes * 0.6 + comments * 1.1) / 42);
+          const reason = approvalFreshness >= popularity ? '최근 승인된 프로젝트' : '반응이 빠른 프로젝트';
+          return { ...p, _recScore: approvalFreshness * 0.56 + popularity * 0.44, _recommendationReason: reason };
         })
         .sort((a, b) => b._recScore - a._recScore)
         .slice(0, max);
     }
 
+    const user = currentUser();
+    const interestTags = normalizeInterestTags(user?.interestTags || []);
     const likesSet = new Set((all.filter(p => Array.isArray(p.likedBy) && p.likedBy.includes(actor)).map(p => p.id)));
     const bmSet = new Set((s.bookmarks || []).filter(b => b.userId === actor).map(b => b.projectId));
     const appliedSet = new Set((s.applications || []).filter(a => a.userId === actor && isActiveApplicationStatus(a.status)).map(a => a.projectId));
@@ -1489,9 +1546,23 @@
         const approvalFreshness = Math.max(0, 1 - approvalAgeDays / 14);
         const popularity = Math.min(1, (likes * 0.6 + comments * 1.1) / 42);
         const affinity = Math.min(1, Number(catScore[p.category] || 0) / 8);
+        const interestSignals = interestSignalsForProject(p, interestTags);
+        const interestAffinity = interestSignals.score;
         const interactionBoost = likesSet.has(p.id) || bmSet.has(p.id) ? 0.2 : 0;
-        const score = affinity * 0.34 + popularity * 0.22 + freshness * 0.16 + approvalFreshness * 0.28 + interactionBoost + Math.random() * 0.02;
-        return { ...p, _recScore: score };
+        const interestWeight = interestTags.length ? 0.28 : 0;
+        const historyWeight = interestTags.length ? 0.18 : 0.34;
+        const score = affinity * historyWeight + interestAffinity * interestWeight + popularity * 0.2 + freshness * 0.12 + approvalFreshness * 0.22 + interactionBoost + Math.random() * 0.02;
+        const recommendationReason = interestSignals.reason
+          || (affinity >= 0.6 ? '최근 본 카테고리와 비슷한 프로젝트' : '')
+          || (approvalFreshness >= 0.78 ? '최근 승인된 프로젝트' : '')
+          || (popularity >= 0.45 ? '반응이 빠른 프로젝트' : '')
+          || '지금 살펴볼 만한 프로젝트';
+        return {
+          ...p,
+          _recScore: score,
+          _recommendationReason: recommendationReason,
+          _recommendedInterestTags: interestSignals.matchedTags
+        };
       })
       .sort((a,b) => b._recScore - a._recScore)
       .slice(0, max);

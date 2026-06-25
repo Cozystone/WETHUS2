@@ -192,7 +192,7 @@
     </article>
   </div>
 
-  <script src="app.js?v=20260624-integrations-2"></script>
+  <script src="app.js?v=20260626-interest-recs-1"></script>
   <script>
     (function(){
       if (!window.WETHUS) return;
@@ -285,6 +285,7 @@
             <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${esc(p.id)}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
           </div>
           <p class="card-summary">${esc(p.summary || '')}</p>
+          ${p._recommendationReason ? `<p class="meta" style="margin:8px 0 0;color:#ffbf73;">추천 이유 · ${esc(p._recommendationReason)}</p>` : ''}
           ${renderTeam(p.teamMembers)}
           <div class="meta"><span class="card-status">${esc(p.status || '기획 중')}</span> · ${esc(p.roles || '')}${p.neededRoles ? ` · 필요:${esc(p.neededRoles)}` : ''}${p.neededAgeGroup ? ` · ${esc(p.neededAgeGroup)}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
           <div class="card-bottom-row">
