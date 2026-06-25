@@ -175,6 +175,8 @@ function validateInteractionContracts() {
   const requiredSnippets = [
     'function mergeServerBookmarks(',
     'async function refreshServerBookmarks()',
+    'function mergeServerLikedProjects(',
+    'async function refreshServerLikes()',
     'function toggleBookmark(projectId)',
     'function myBookmarkedProjects()',
     'function myLikedProjects()',

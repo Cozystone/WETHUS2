@@ -1180,7 +1180,13 @@
       likes: likedBy.length,
       _liked: liked
     }));
-    postProjectInteraction(`/projects/${encodeURIComponent(projectId)}/likes/toggle`);
+    postProjectInteraction(`/projects/${encodeURIComponent(projectId)}/likes/toggle`)
+      .then(() => {
+        refreshServerLikes().catch(() => {});
+      })
+      .catch(() => {
+        refreshServerLikes().catch(() => {});
+      });
     scheduleCloudSync('save');
     return { likes: result.project?.likes || likedBy.length, liked };
   }
@@ -1238,6 +1244,52 @@
     const payload = await response.json().catch(() => ({}));
     if (!payload?.ok) throw new Error(payload?.error || 'bookmark sync failed');
     return mergeServerBookmarks(payload.bookmarks || []);
+  }
+
+  function mergeServerLikedProjects(rows) {
+    const actor = currentActorId();
+    if (!actor) return [];
+    const likedIds = new Set((Array.isArray(rows) ? rows : []).map((row) => String(row?.id || '')).filter(Boolean));
+    const updateProject = (project) => {
+      if (!project?.id) return project;
+      const likedBy = Array.isArray(project.likedBy) ? [...project.likedBy] : [];
+      const actorIdx = likedBy.indexOf(actor);
+      const shouldLike = likedIds.has(String(project.id));
+      if (shouldLike && actorIdx === -1) likedBy.push(actor);
+      if (!shouldLike && actorIdx !== -1) likedBy.splice(actorIdx, 1);
+      return {
+        ...project,
+        likedBy,
+        likes: likedBy.length,
+        _liked: shouldLike
+      };
+    };
+
+    const s = load();
+    s.projects = (s.projects || []).map(updateProject);
+    try {
+      const globals = JSON.parse(localStorage.getItem(GLOBAL_PROJECTS_KEY) || '[]');
+      if (Array.isArray(globals)) {
+        localStorage.setItem(GLOBAL_PROJECTS_KEY, JSON.stringify(globals.map(updateProject)));
+      }
+    } catch (_) {}
+    save(s);
+    return listProjects({ includePending: true, includeRejected: true }).filter((project) => likedIds.has(String(project?.id || '')));
+  }
+
+  async function refreshServerLikes() {
+    const actor = currentActorId();
+    if (!actor) return [];
+    const base = currentCloudApiBase();
+    if (!base) return myLikedProjects();
+    const response = await fetch(`${String(base).replace(/\/$/, '')}/me/liked-projects`, {
+      headers: actorRequestHeaders(),
+      credentials: 'include'
+    });
+    if (!response.ok) throw new Error(`liked project sync failed (${response.status})`);
+    const payload = await response.json().catch(() => ({}));
+    if (!payload?.ok) throw new Error(payload?.error || 'liked project sync failed');
+    return mergeServerLikedProjects(payload.projects || []);
   }
 
   function toggleBookmark(projectId) {
@@ -1708,6 +1760,7 @@
         const user = upsertCloudUser(payload.user);
         if (user?.email) syncCloudState(user.email).catch(() => {});
         refreshServerBookmarks().catch(() => {});
+        refreshServerLikes().catch(() => {});
         return { ok: true, user, session: payload.session || null };
       } catch (_) {}
     }
@@ -1753,6 +1806,7 @@
     }
 
     refreshServerBookmarks().catch(() => {});
+    refreshServerLikes().catch(() => {});
 
     const toPush = sanitizeAccountProjects(load(), email);
     const chosenCount = Array.isArray(toPush.projects) ? toPush.projects.length : 0;

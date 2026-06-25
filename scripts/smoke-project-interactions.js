@@ -130,6 +130,14 @@ async function expectLikeLifecycle() {
     fail('like add should persist likedBy and likes to cloud-projects');
   }
 
+  const likedProjectsAfterAdd = await fetch(`${baseUrl}/me/liked-projects`, {
+    headers: actorHeaders('actor-b')
+  });
+  const likedProjectsAddPayload = await likedProjectsAfterAdd.json().catch(() => ({}));
+  if (!likedProjectsAfterAdd.ok || !Array.isArray(likedProjectsAddPayload?.projectIds) || likedProjectsAddPayload.projectIds.length !== 1) {
+    fail(`GET /me/liked-projects after add should return one liked project, got ${likedProjectsAfterAdd.status}`);
+  }
+
   const likeRemove = await fetch(`${baseUrl}/projects/interaction-project/likes/toggle`, {
     method: 'POST',
     headers: actorHeaders('actor-b')
@@ -147,6 +155,14 @@ async function expectLikeLifecycle() {
   const likedByAfterRemove = Array.isArray(afterRemove?.likedBy) ? afterRemove.likedBy : [];
   if (likedByAfterRemove.includes('actor-b') || Number(afterRemove?.likes || 0) !== 0) {
     fail('like remove should persist likedBy removal and likes=0 to cloud-projects');
+  }
+
+  const likedProjectsAfterRemove = await fetch(`${baseUrl}/me/liked-projects`, {
+    headers: actorHeaders('actor-b')
+  });
+  const likedProjectsRemovePayload = await likedProjectsAfterRemove.json().catch(() => ({}));
+  if (!likedProjectsAfterRemove.ok || !Array.isArray(likedProjectsRemovePayload?.projectIds) || likedProjectsRemovePayload.projectIds.length !== 0) {
+    fail(`GET /me/liked-projects after remove should return zero liked projects, got ${likedProjectsAfterRemove.status}`);
   }
 }
 

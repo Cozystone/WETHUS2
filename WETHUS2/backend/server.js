@@ -3499,6 +3499,20 @@ app.get('/me/bookmarks', (req, res) => {
   }
 });
 
+app.get('/me/liked-projects', (req, res) => {
+  try {
+    const actorId = requireProjectActor(req, res);
+    if (!actorId) return;
+    const projects = readCloudProjects().filter((project) => (
+      Array.isArray(project?.likedBy) && project.likedBy.includes(actorId)
+    ));
+    const projectIds = projects.map((project) => String(project?.id || '')).filter(Boolean);
+    return res.json({ ok: true, projectIds, projects });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'liked projects failed' });
+  }
+});
+
 app.post('/projects/:projectId/bookmarks/toggle', (req, res) => {
   try {
     const actorId = requireProjectActor(req, res);
