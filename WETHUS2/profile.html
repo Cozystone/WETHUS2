@@ -320,9 +320,42 @@
             <span><strong>${WETHUS.listProjects().filter(p => p.founderId === (u ? u.id : 'dev-temp')).length}</strong> 등록</span>
             <span><strong>${esc(currentPlanLabel)}</strong> 플랜</span>
           </div>
-          ${planStatusMarkup}
+          <div id="profilePlanStatus">${planStatusMarkup}</div>
         </div>
       `;
+
+      async function refreshRemotePlanStatus() {
+        const target = document.getElementById('profilePlanStatus');
+        if (!target || !WETHUS.listRemotePlanRequests) return;
+        try {
+          const remoteRequests = await WETHUS.listRemotePlanRequests();
+          const latest = Array.isArray(remoteRequests) ? remoteRequests[0] : null;
+          if (!latest) return;
+          const requestPlan = String(latest.requestedPlan || '').toUpperCase();
+          const status = String(latest.status || '').toLowerCase();
+          const statusLabel = status === 'pending' ? '검토 대기' : (status === 'approved' ? '승인 완료' : '반려');
+          const accent = status === 'approved' ? '#66d18f' : (status === 'rejected' ? '#ff8a80' : '#ffb36b');
+          const summary = status === 'approved'
+            ? `${requestPlan} 요청이 승인되었습니다.${latest.appliedPlan ? ` 현재 반영 플랜은 ${String(latest.appliedPlan).toUpperCase()}입니다.` : ''}`
+            : (status === 'rejected'
+              ? `${requestPlan} 요청이 반려되었습니다.${latest.reviewNote ? ` ${latest.reviewNote}` : ''}`
+              : `${requestPlan} 요청이 접수되어 운영팀 검토를 기다리고 있습니다.`);
+          target.innerHTML = `
+            <div style="margin-top:12px;padding:12px 14px;border:1px solid ${accent};border-radius:14px;background:rgba(255,255,255,.04);">
+              <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;">
+                <div>
+                  <strong style="display:block;font-size:.92rem;">플랜 요청 상태 · ${esc(statusLabel)}</strong>
+                  <p class="meta" style="margin:4px 0 0;">${esc(summary)}</p>
+                  <p class="meta" style="margin:6px 0 0;">최근 요청: ${esc(new Date(latest.createdAt).toLocaleString('ko-KR'))}</p>
+                </div>
+                <a href="pricing.html" class="btn btn--secondary" style="padding:6px 10px;">요청 내역</a>
+              </div>
+            </div>
+          `;
+        } catch (_) {}
+      }
+
+      refreshRemotePlanStatus();
 
       if (u) {
         const profileForm = document.getElementById('profileForm');

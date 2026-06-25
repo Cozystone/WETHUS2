@@ -225,6 +225,7 @@ const EXTERNAL_IDENTITIES_DB = path.join(DATA_DIR, 'external-identities.json');
 const CLOUD_STATE_DB = path.join(DATA_DIR, 'cloud-state.json');
 const PROJECT_APPLICATIONS_DB = path.join(DATA_DIR, 'project-applications.json');
 const PROJECT_BOOKMARKS_DB = path.join(DATA_DIR, 'project-bookmarks.json');
+const PLAN_REQUESTS_DB = path.join(DATA_DIR, 'plan-requests.json');
 
 function ensureDb() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -237,6 +238,7 @@ function ensureDb() {
   if (!fs.existsSync(CLOUD_STATE_DB)) fs.writeFileSync(CLOUD_STATE_DB, JSON.stringify({ states: [] }, null, 2));
   if (!fs.existsSync(PROJECT_APPLICATIONS_DB)) fs.writeFileSync(PROJECT_APPLICATIONS_DB, JSON.stringify({ applications: [] }, null, 2));
   if (!fs.existsSync(PROJECT_BOOKMARKS_DB)) fs.writeFileSync(PROJECT_BOOKMARKS_DB, JSON.stringify({ bookmarks: [] }, null, 2));
+  if (!fs.existsSync(PLAN_REQUESTS_DB)) fs.writeFileSync(PLAN_REQUESTS_DB, JSON.stringify({ requests: [] }, null, 2));
   const cp = cloudProjectsDbPath();
   if (!fs.existsSync(cp)) fs.writeFileSync(cp, JSON.stringify({ projects: [] }, null, 2));
 }
@@ -283,6 +285,14 @@ function readCollection(filePath, key) {
 function writeCollection(filePath, key, rows) {
   ensureDb();
   fs.writeFileSync(filePath, JSON.stringify({ [key]: rows }, null, 2));
+}
+
+function readPlanRequests() {
+  return readCollection(PLAN_REQUESTS_DB, 'requests');
+}
+
+function writePlanRequests(rows) {
+  writeCollection(PLAN_REQUESTS_DB, 'requests', rows);
 }
 
 function securityHeaders(req, res, next) {
@@ -3041,6 +3051,138 @@ app.get('/admin/review-projects', (req, res) => {
     return res.json({ ok: true, actor: sanitizeUserForClient(adminUser), rows });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'review projects failed' });
+  }
+});
+
+app.get('/plan-requests', (req, res) => {
+  try {
+    const user = requireSessionUser(req, res);
+    if (!user) return;
+    const email = normEmail(user?.email);
+    const userId = String(user?.id || '').trim();
+    const rows = readPlanRequests()
+      .filter((row) => String(row?.userId || '').trim() === userId || normEmail(row?.userEmail) === email)
+      .sort((a, b) => {
+        const left = new Date(b?.updatedAt || b?.createdAt || 0).getTime() || 0;
+        const right = new Date(a?.updatedAt || a?.createdAt || 0).getTime() || 0;
+        return left - right;
+      });
+    return res.json({ ok: true, rows });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'plan requests failed' });
+  }
+});
+
+app.post('/plan-requests', (req, res) => {
+  try {
+    const user = requireSessionUser(req, res);
+    if (!user) return;
+    const requestedPlan = String(req.body?.requestedPlan || req.body?.plan || '').trim().toLowerCase();
+    const note = String(req.body?.note || '').trim();
+    if (!['premium', 'pro', 'master'].includes(requestedPlan)) {
+      return res.status(400).json({ ok: false, error: 'requestedPlan must be premium, pro, or master' });
+    }
+
+    const userId = String(user?.id || '').trim();
+    const userEmail = normEmail(user?.email);
+    const rows = readPlanRequests();
+    const existing = rows.find((row) =>
+      (String(row?.userId || '').trim() === userId || normEmail(row?.userEmail) === userEmail) &&
+      String(row?.requestedPlan || '').trim().toLowerCase() === requestedPlan &&
+      String(row?.status || '').trim().toLowerCase() === 'pending'
+    );
+    if (existing) return res.json({ ok: true, row: existing, duplicate: true });
+
+    const now = new Date().toISOString();
+    const row = {
+      id: crypto.randomUUID(),
+      userId,
+      userEmail,
+      userName: String(user?.nickname || user?.name || '사용자').trim(),
+      currentPlan: String(user?.plan || 'free').trim().toLowerCase(),
+      requestedPlan,
+      note,
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now
+    };
+    rows.push(row);
+    writePlanRequests(rows);
+    return res.json({ ok: true, row });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'create plan request failed' });
+  }
+});
+
+app.get('/admin/plan-requests', (req, res) => {
+  try {
+    const adminUser = requireAdminUser(req, res);
+    if (!adminUser) return;
+    const rows = readPlanRequests().sort((a, b) => {
+      const aPending = String(a?.status || '').trim().toLowerCase() === 'pending' ? 0 : 1;
+      const bPending = String(b?.status || '').trim().toLowerCase() === 'pending' ? 0 : 1;
+      if (aPending !== bPending) return aPending - bPending;
+      const left = new Date(b?.updatedAt || b?.createdAt || 0).getTime() || 0;
+      const right = new Date(a?.updatedAt || a?.createdAt || 0).getTime() || 0;
+      return left - right;
+    });
+    return res.json({ ok: true, actor: sanitizeUserForClient(adminUser), rows });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'admin plan requests failed' });
+  }
+});
+
+app.post('/admin/plan-requests/:requestId/decision', (req, res) => {
+  try {
+    const adminUser = requireAdminUser(req, res);
+    if (!adminUser) return;
+    const requestId = String(req.params.requestId || '').trim();
+    const decision = String(req.body?.decision || '').trim().toLowerCase();
+    const note = String(req.body?.note || '').trim();
+    if (!requestId) return res.status(400).json({ ok: false, error: 'requestId required' });
+    if (!['approve', 'reject'].includes(decision)) {
+      return res.status(400).json({ ok: false, error: 'approve or reject required' });
+    }
+
+    const rows = readPlanRequests();
+    const idx = rows.findIndex((row) => String(row?.id || '') === requestId);
+    if (idx < 0) return res.status(404).json({ ok: false, error: 'plan request not found' });
+
+    const now = new Date().toISOString();
+    const current = rows[idx];
+    const requestedPlan = String(current?.requestedPlan || '').trim().toLowerCase();
+    const appliedPlan = requestedPlan === 'master' ? 'pro' : requestedPlan;
+    const next = {
+      ...current,
+      status: decision === 'approve' ? 'approved' : 'rejected',
+      reviewNote: note || (decision === 'approve' ? '운영 검토 후 승인' : '운영 검토 결과 반려'),
+      reviewedAt: now,
+      reviewedBy: String(adminUser?.nickname || adminUser?.name || 'WETHUS 운영팀').trim(),
+      appliedPlan: decision === 'approve' ? appliedPlan : '',
+      updatedAt: now
+    };
+    rows[idx] = next;
+    writePlanRequests(rows);
+
+    if (decision === 'approve') {
+      const users = readUsers();
+      const userIdx = users.findIndex((user) =>
+        String(user?.id || '').trim() === String(current?.userId || '').trim() ||
+        normEmail(user?.email) === normEmail(current?.userEmail)
+      );
+      if (userIdx >= 0) {
+        users[userIdx] = {
+          ...users[userIdx],
+          plan: appliedPlan,
+          updatedAt: now
+        };
+        writeUsers(users);
+      }
+    }
+
+    return res.json({ ok: true, row: next });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'admin plan decision failed' });
   }
 });
 

@@ -177,9 +177,18 @@
         `).join('');
       }
 
+      async function loadPlanRequests() {
+        if (WETHUS.listRemotePlanRequests) {
+          try {
+            return await WETHUS.listRemotePlanRequests({ admin: true });
+          } catch (_) {}
+        }
+        return WETHUS.listPlanRequests({ mineOnly: false });
+      }
+
       async function renderAll() {
         const projectItems = await loadProjectReviewItems();
-        const planRequests = WETHUS.listPlanRequests({ mineOnly: false });
+        const planRequests = await loadPlanRequests();
         renderSummary(planRequests, projectItems);
         renderPlanRequests(planRequests);
         renderProjects(projectItems);
@@ -224,7 +233,15 @@
         if (event.target.closest('.js-plan-approve')) {
           const note = prompt('승인 메모를 입력하세요.', '운영 검토 후 승인');
           if (note == null) return;
-          WETHUS.reviewPlanRequest(id, 'approve', note);
+          if (WETHUS.reviewPlanRequestRemote) {
+            try {
+              await WETHUS.reviewPlanRequestRemote(id, 'approve', note);
+            } catch (_) {
+              WETHUS.reviewPlanRequest(id, 'approve', note);
+            }
+          } else {
+            WETHUS.reviewPlanRequest(id, 'approve', note);
+          }
           renderAll();
           return;
         }
@@ -232,7 +249,15 @@
         if (event.target.closest('.js-plan-reject')) {
           const reason = prompt('반려 사유를 입력하세요.', '현재 운영 기준과 맞지 않아 반려합니다.');
           if (reason == null) return;
-          WETHUS.reviewPlanRequest(id, 'reject', reason);
+          if (WETHUS.reviewPlanRequestRemote) {
+            try {
+              await WETHUS.reviewPlanRequestRemote(id, 'reject', reason);
+            } catch (_) {
+              WETHUS.reviewPlanRequest(id, 'reject', reason);
+            }
+          } else {
+            WETHUS.reviewPlanRequest(id, 'reject', reason);
+          }
           renderAll();
         }
       });

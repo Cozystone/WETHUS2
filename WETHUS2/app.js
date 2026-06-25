@@ -2089,6 +2089,29 @@
     return data?.project || null;
   }
 
+  async function listRemotePlanRequests(options = {}) {
+    const adminMode = options?.admin === true;
+    const path = adminMode ? '/admin/plan-requests' : '/plan-requests';
+    const data = await reviewFetch(path, { method: 'GET' });
+    return Array.isArray(data?.rows) ? data.rows : [];
+  }
+
+  async function requestPlanUpgradeRemote(plan, note = '') {
+    const data = await reviewFetch('/plan-requests', {
+      method: 'POST',
+      body: JSON.stringify({ requestedPlan: plan, note: note || '' })
+    });
+    return data?.row || null;
+  }
+
+  async function reviewPlanRequestRemote(requestId, decision, note) {
+    const data = await reviewFetch(`/admin/plan-requests/${encodeURIComponent(requestId)}/decision`, {
+      method: 'POST',
+      body: JSON.stringify({ decision, note: note || '' })
+    });
+    return data?.row || null;
+  }
+
   function listDmThreadsLocal() {
     const s = load();
     return s.dmThreads || [];
@@ -3093,6 +3116,9 @@
     listReviewProjects,
     reviewPlanRequest,
     listRemoteReviewProjects,
+    listRemotePlanRequests,
+    requestPlanUpgradeRemote,
+    reviewPlanRequestRemote,
     isAdminActor,
     updateCurrentUserProfile,
     upsertCloudUser,

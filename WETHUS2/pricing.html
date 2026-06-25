@@ -190,12 +190,24 @@
 
     const planRequestState = document.getElementById('planRequestState');
     const planRequestNote = document.getElementById('planRequestNote');
+    let remotePlanRequests = [];
+
+    async function loadPlanRequests() {
+      if (WETHUS.listRemotePlanRequests) {
+        try {
+          remotePlanRequests = await WETHUS.listRemotePlanRequests();
+          return remotePlanRequests;
+        } catch (_) {}
+      }
+      remotePlanRequests = WETHUS.listPlanRequests({ mineOnly: true });
+      return remotePlanRequests;
+    }
 
     function renderPlanRequestState() {
       const state = WETHUS.getState();
       const me = state.users.find(u => u.id === state.currentUserId);
       const current = WETHUS.currentPlan();
-      const requests = WETHUS.listPlanRequests({ mineOnly: true }).slice(0, 3);
+      const requests = remotePlanRequests.slice(0, 3);
       const currentLine = `<p class="meta" style="margin:0;">현재 계정 플랜: <strong>${String(current || 'free').toUpperCase()}</strong>${me?.email ? ` · ${me.email}` : ''}</p>`;
       if (!requests.length) {
         planRequestState.innerHTML = `${currentLine}<p class="meta" style="margin:0;">아직 접수된 업그레이드 요청이 없습니다.</p>`;
@@ -209,13 +221,13 @@
       `).join('')}</ul>`;
     }
 
-    renderPlanRequestState();
+    loadPlanRequests().finally(() => renderPlanRequestState());
 
     document.querySelectorAll('[data-plan]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const plan = btn.getAttribute('data-plan');
         const current = WETHUS.currentPlan();
-        const pending = WETHUS.listPlanRequests({ mineOnly: true, plan }).find(request => request.status === 'pending');
+        const pending = remotePlanRequests.find(request => String(request?.requestedPlan || '').toLowerCase() === String(plan || '').toLowerCase() && request.status === 'pending');
         if (plan === 'free') {
           if (current === 'free') {
             await WETHUS.uiAlert('이미 Free 플랜을 사용 중입니다.');
@@ -231,9 +243,21 @@
           return;
         }
         const note = String(planRequestNote?.value || '').trim();
-        WETHUS.requestPlanUpgrade(plan, note);
+        if (WETHUS.requestPlanUpgradeRemote) {
+          try {
+            const row = await WETHUS.requestPlanUpgradeRemote(plan, note);
+            if (row) remotePlanRequests = [row, ...remotePlanRequests.filter(request => request.id !== row.id)];
+          } catch (_) {
+            const localRow = WETHUS.requestPlanUpgrade(plan, note);
+            remotePlanRequests = [localRow, ...remotePlanRequests.filter(request => request.id !== localRow.id)];
+          }
+        } else {
+          const localRow = WETHUS.requestPlanUpgrade(plan, note);
+          remotePlanRequests = [localRow, ...remotePlanRequests.filter(request => request.id !== localRow.id)];
+        }
         await WETHUS.uiAlert(`${plan.toUpperCase()} 플랜 요청이 접수되었습니다.\n운영팀 검토 후 계정 상태에 반영됩니다.`);
         if (planRequestNote) planRequestNote.value = '';
+        await loadPlanRequests().catch(() => {});
         renderPlanRequestState();
       });
     });
