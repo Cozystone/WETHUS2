@@ -105,6 +105,18 @@ async function getProjectEvents() {
   return Array.isArray(payload?.events) ? payload.events : [];
 }
 
+async function getProjectIntegrations() {
+  const response = await fetch(`${baseUrl}/integrations?projectId=integration-project`, {
+    headers: actorHeaders('actor-a')
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    fail(`GET /integrations should succeed for founder, got ${response.status}`);
+    return [];
+  }
+  return Array.isArray(payload?.integrations) ? payload.integrations : [];
+}
+
 async function expectLifecycleEvents() {
   const createResponse = await fetch(`${baseUrl}/integrations`, {
     method: 'POST',
@@ -174,6 +186,25 @@ async function expectLifecycleEvents() {
   const recreatePayload = await recreateResponse.json().catch(() => ({}));
   if (!recreateResponse.ok || !recreatePayload?.integration?.id) {
     fail(`reconnecting an integration should succeed, got ${recreateResponse.status}`);
+  }
+
+  const integrations = await getProjectIntegrations();
+  const recreated = integrations.find((item) => String(item?.id || '') === String(recreatePayload?.integration?.id || ''));
+  if (!recreated) {
+    fail('reconnected integration should still be listed before hard delete');
+    return;
+  }
+  if (!String(recreated?.webhook_last_event_at || '').trim()) {
+    fail('integration webhook state should retain the last external event timestamp');
+  }
+  if (String(recreated?.webhook_last_event_type || '') !== 'task_updated') {
+    fail(`integration webhook state should retain the last external event type, got ${recreated?.webhook_last_event_type || 'missing'}`);
+  }
+  if (String(recreated?.webhook_last_item_name || '') !== 'Sprint Plan') {
+    fail('integration webhook state should retain the last external item name');
+  }
+  if (Number(recreated?.webhook_delivery_count || 0) < 1) {
+    fail('integration webhook state should increment delivery count after a webhook event');
   }
 
   const hardDeleteResponse = await fetch(`${baseUrl}/integrations/${integrationId}?hard=1`, {

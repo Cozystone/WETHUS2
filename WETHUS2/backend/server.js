@@ -556,6 +556,11 @@ function sanitizeIntegrationForClient(row = {}, options = {}) {
     ...rest,
     webhook_enabled: !!row?.webhook_enabled,
     webhook_updated_at: row?.webhook_updated_at || '',
+    webhook_last_event_at: row?.webhook_last_event_at || '',
+    webhook_last_event_type: row?.webhook_last_event_type || '',
+    webhook_last_item_name: row?.webhook_last_item_name || '',
+    webhook_delivery_count: Number(row?.webhook_delivery_count || 0),
+    webhook_verified: !!row?.webhook_last_event_at,
     webhook_secret_preview: row?.webhook_secret ? `${String(row.webhook_secret).slice(0, 6)}...` : '',
     ...(includeWebhookSecret ? { webhook_secret: row?.webhook_secret || '' } : {})
   };
@@ -1545,6 +1550,10 @@ app.post('/integrations/:id/webhook-config', (req, res) => {
     webhook_secret: secret,
     webhook_enabled: true,
     webhook_updated_at: now,
+    webhook_last_event_at: '',
+    webhook_last_event_type: '',
+    webhook_last_item_name: '',
+    webhook_delivery_count: 0,
     updated_at: now
   };
   writeIntegrations(rows);
@@ -1588,7 +1597,15 @@ app.post('/webhooks/:provider/:integrationId', (req, res) => {
 
   const i = rows.findIndex(r => r.id === integration.id);
   if (i >= 0) {
-    rows[i] = { ...rows[i], last_synced_at: now, updated_at: now };
+    rows[i] = {
+      ...rows[i],
+      last_synced_at: now,
+      webhook_last_event_at: String(payload.occurred_at || now),
+      webhook_last_event_type: eventType,
+      webhook_last_item_name: itemName,
+      webhook_delivery_count: Number(rows[i]?.webhook_delivery_count || 0) + 1,
+      updated_at: now
+    };
     writeIntegrations(rows);
   }
 

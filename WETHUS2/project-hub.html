@@ -927,6 +927,22 @@
       return `최근 이벤트 ${rows.length}건${lastAt ? ` · 마지막 ${new Date(lastAt).toLocaleString('ko-KR')}` : ''}${latestEvent ? ` · ${latestEvent}` : ''}`;
     }
 
+    function integrationWebhookStatus(integration, providerMeta) {
+      if (!integration) return 'Webhook 상태 확인 불가';
+      const collectionPolicy = activityLogSummaryForMeta(providerMeta, '');
+      const verifiedAt = String(integration.webhook_last_event_at || '').trim();
+      const deliveryCount = Number(integration.webhook_delivery_count || 0);
+      const lastType = String(integration.webhook_last_event_type || '').trim();
+      const lastItem = String(integration.webhook_last_item_name || '').trim();
+      if (!integration.webhook_enabled) {
+        return `Webhook 미설정 · 현재는 연결/동기화 이벤트만 자동 기록됩니다.${collectionPolicy ? ` · ${collectionPolicy}` : ''}`;
+      }
+      if (verifiedAt) {
+        return `외부 푸시 확인됨 · 마지막 ${new Date(verifiedAt).toLocaleString('ko-KR')}${deliveryCount ? ` · 누적 ${deliveryCount}건` : ''}${lastType ? ` · ${friendlyEventLabel(lastType)}` : ''}${lastItem ? ` · ${lastItem}` : ''}`;
+      }
+      return `Webhook 수집 준비됨${integration.webhook_updated_at ? ` · ${new Date(integration.webhook_updated_at).toLocaleString('ko-KR')}` : ''}${collectionPolicy ? ` · ${collectionPolicy}` : ''}`;
+    }
+
     function integrationWebhookUrl(integration) {
       if (!integration?.id || !integration?.provider) return '';
       return `${currentApiBaseForDisplay()}/webhooks/${encodeURIComponent(integration.provider)}/${encodeURIComponent(integration.id)}`;
@@ -1113,10 +1129,8 @@
         const matchedCount = matches.filter(m => String(m?.snippet || '').trim().length > 0).length;
         const errorCount = matches.filter(m => m?.error).length;
         const eventSummary = integrationEventSummary(i.id);
-        const webhookSummary = i.webhook_enabled
-          ? `Webhook 로그 수집 준비됨${i.webhook_updated_at ? ` · ${new Date(i.webhook_updated_at).toLocaleString('ko-KR')}` : ''}`
-          : 'Webhook 미설정 · 연결/동기화 로그만 기록중';
         const collectionPolicy = activityLogSummaryForMeta(providerMeta, '');
+        const webhookSummary = integrationWebhookStatus(i, providerMeta);
         return `<article class="list-item">
           <h3>${esc(i.provider)} · ${esc(i.integration_type)}</h3>
           <p style="margin:6px 0 4px;">${esc(i.external_resource_name || i.external_resource_id || '-')}</p>
@@ -1657,9 +1671,7 @@ function logManualUpdate() {
       const revealSecret = issuedSecret || '';
       const relayNeeded = providerMeta?.relayRequired === true;
       nameEl.textContent = `${activeWebhookToolName || integration.provider} · ${integration.external_resource_name || integration.external_resource_id || '연결 리소스'}`;
-      statusEl.textContent = webhookReady
-        ? `Webhook 수집 준비됨${integration.webhook_updated_at ? ` · ${new Date(integration.webhook_updated_at).toLocaleString('ko-KR')}` : ''}${collectionPolicy ? ` · ${collectionPolicy}` : ''}`
-        : `Webhook 미설정 · 현재는 연결/동기화 이벤트만 자동 기록됩니다.${collectionPolicy ? ` · ${collectionPolicy}` : ''}`;
+      statusEl.textContent = integrationWebhookStatus(integration, providerMeta);
       eventsEl.textContent = eventSummary;
       urlEl.value = integrationWebhookUrl(integration);
       headerEl.value = issuedSecret ? `x-webhook-secret: ${issuedSecret}` : `x-webhook-secret: ${integration.webhook_secret_preview || '(발급 후 표시)'}`;
@@ -1801,7 +1813,7 @@ function logManualUpdate() {
         const hasLogs = !!integration?.webhook_enabled;
         const activitySummary = activityLogSummaryForMeta(meta, '');
         const logSummary = integration?.id
-          ? (hasLogs ? `로그 수집 준비됨 · ${integrationEventSummary(integration.id)}` : `Webhook 미설정 · ${integrationEventSummary(integration.id)}`)
+          ? `${integrationWebhookStatus(integration, meta)} · ${integrationEventSummary(integration.id)}`
           : '연결 후 로그 수집 상태를 확인할 수 있습니다.';
         const hint = !canManage
           ? '대표/리더만 연결을 변경할 수 있습니다.'

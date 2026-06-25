@@ -133,6 +133,7 @@ function validateProjectHubContracts() {
     'loadRemoteStatusSnapshotForCurrentProject()',
     'mergedProjectTimeline(80)',
     'id="hubWebhookModal"',
+    'function integrationWebhookStatus(integration, providerMeta) {',
     'function sendWebhookTestEvent()',
     'data-tool-webhook',
     '서버기록',
