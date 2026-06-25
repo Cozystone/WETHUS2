@@ -4,6 +4,14 @@ const { spawnSync } = require('child_process');
 
 const repoRoot = path.resolve(__dirname, '..');
 const tempSummaryPath = path.join(repoRoot, '.tmp-launch-readiness-step-summary.md');
+const generatedArtifactPaths = [
+  'commercialization-readiness-summary.txt',
+  'commercialization-readiness-summary.json',
+  'production-rollout-status.txt',
+  'production-rollout-status.json',
+  'launch-readiness-snapshot.md',
+  'launch-readiness-snapshot.json'
+].map((file) => path.join(repoRoot, file));
 
 function runNode(args, extraEnv = {}) {
   const result = spawnSync(process.execPath, args, {
@@ -23,9 +31,33 @@ function readJson(file) {
   return JSON.parse(fs.readFileSync(path.join(repoRoot, file), 'utf8').replace(/^\uFEFF/, ''));
 }
 
+function waitForFile(filePath, attempts = 5) {
+  for (let i = 0; i < attempts; i += 1) {
+    if (fs.existsSync(filePath)) return true;
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
+  }
+  return fs.existsSync(filePath);
+}
+
+function missingArtifacts() {
+  return generatedArtifactPaths.filter((file) => !waitForFile(file));
+}
+
+function ensureArtifactsExist() {
+  let missing = missingArtifacts();
+  if (!missing.length) return;
+
+  runNode(['scripts/generate-launch-readiness-artifacts.js']);
+  missing = missingArtifacts();
+  if (missing.length) {
+    throw new Error(`launch readiness artifacts were not created: ${missing.map((file) => path.basename(file)).join(', ')}`);
+  }
+}
+
 function main() {
   try {
     runNode(['scripts/generate-launch-readiness-artifacts.js']);
+    ensureArtifactsExist();
 
     const summaryText = fs.readFileSync(path.join(repoRoot, 'commercialization-readiness-summary.txt'), 'utf8');
     const rolloutText = fs.readFileSync(path.join(repoRoot, 'production-rollout-status.txt'), 'utf8');
@@ -69,6 +101,11 @@ function main() {
     try {
       fs.rmSync(tempSummaryPath, { force: true });
     } catch (_) {}
+    for (const file of generatedArtifactPaths) {
+      try {
+        fs.rmSync(file, { force: true });
+      } catch (_) {}
+    }
   }
 }
 
