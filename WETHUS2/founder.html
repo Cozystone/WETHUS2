@@ -117,6 +117,37 @@
       border-radius: 50%;
       animation: founderSpin .8s linear infinite;
     }
+    .insight-card {
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .insight-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .insight-block {
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      background: rgba(0,0,0,.18);
+      padding: 12px;
+    }
+    .insight-block h4 { margin: 0 0 8px; font-size: .92rem; }
+    .insight-list { margin: 0; padding-left: 18px; color: #dedede; display: grid; gap: 6px; }
+    .insight-similar { display: grid; gap: 8px; }
+    .insight-similar-item {
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,.03);
+    }
+    @media (max-width: 960px) {
+      .insight-grid { grid-template-columns: 1fr; }
+    }
     @keyframes founderSpin { to { transform: rotate(360deg); } }
   </style>
 </head>
@@ -195,6 +226,17 @@
             <textarea required name="description" data-min="100" placeholder="어떤 문제를 해결하려는 프로젝트인지, 누구를 위한 프로젝트인지, 실행 범위를 구체적으로 적어주세요."></textarea>
           </div>
         </label>
+
+        <section id="founderInsightCard" class="insight-card" aria-live="polite">
+          <div class="form-row" style="justify-content:space-between;align-items:center;">
+            <div>
+              <strong style="display:block;">아이디어 인사이트</strong>
+              <span id="founderInsightStatus" class="meta">제목과 설명을 더 쓰면 유사 프로젝트와 실행 포인트를 바로 볼 수 있습니다.</span>
+            </div>
+            <button id="founderInsightRefresh" class="btn btn--secondary founder-ghost-btn" type="button">다시 분석</button>
+          </div>
+          <div id="founderInsightBody" class="meta">아직 분석할 내용이 충분하지 않습니다.</div>
+        </section>
 
         <label>동기 (공백 제외 100자 이상)
           <div class="textarea-wrap">
@@ -331,7 +373,7 @@
   </div>
 
   <script src="local-config.js"></script>
-  <script src="app.js?v=20260624-integrations-2"></script>
+  <script src="app.js?v=20260626-founder-insights-1"></script>
   <script>
     WETHUS.requireAuth();
     const authLink = document.querySelector('.js-auth-link');
@@ -376,6 +418,10 @@
     const endYear = document.getElementById('endYear');
     const endMonth = document.getElementById('endMonth');
     const endDay = document.getElementById('endDay');
+    const founderInsightStatus = document.getElementById('founderInsightStatus');
+    const founderInsightBody = document.getElementById('founderInsightBody');
+    const founderInsightRefresh = document.getElementById('founderInsightRefresh');
+    let founderInsightTimer = 0;
 
     const oppParams = new URLSearchParams(location.search);
     const oppId = String(oppParams.get('opportunityId') || '').trim();
@@ -530,6 +576,93 @@
       const start = formatDateDot(startDate);
       if (!start) return '';
       return `${start}~${isOngoing ? '현재' : formatDateDot(endDate)}`;
+    }
+
+    function esc(value) {
+      return String(value || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function founderThemeHref(category) {
+      const raw = String(category || '').trim().toLowerCase();
+      let cat = 'StartupBusiness';
+      if (raw.includes('science') || raw.includes('research') || raw.includes('math')) cat = 'MathSci';
+      else if (raw.includes('policy') || raw.includes('campaign') || raw.includes('society') || raw.includes('law')) cat = 'SocietyLaw';
+      else if (raw.includes('film') || raw.includes('creative') || raw.includes('art') || raw.includes('culture') || raw.includes('design') || raw.includes('brand')) cat = 'ArtCulture';
+      return `explore_theme.html?cat=${encodeURIComponent(cat)}`;
+    }
+
+    function founderIdeaPayload() {
+      return {
+        id: 'draft-founder-idea',
+        title: String(form.elements.title?.value || '').trim(),
+        category: resolvedCategory(),
+        summary: String(form.elements.description?.value || '').trim().slice(0, 120),
+        fullDescription: String(form.elements.description?.value || '').trim(),
+        roles: String(form.elements.roles?.value || '').trim()
+      };
+    }
+
+    function renderFounderIdeaInsight() {
+      if (!founderInsightStatus || !founderInsightBody || !WETHUS.analyzeProjectIdea) return;
+      const payload = founderIdeaPayload();
+      if (payload.title.length < 4 || payload.fullDescription.length < 40) {
+        founderInsightStatus.textContent = '제목과 설명을 조금 더 적으면 유사 프로젝트와 실행 포인트를 바로 볼 수 있습니다.';
+        founderInsightBody.textContent = '아직 분석할 내용이 충분하지 않습니다.';
+        return;
+      }
+      const insight = WETHUS.analyzeProjectIdea(payload);
+      if (!insight) {
+        founderInsightStatus.textContent = '아이디어 분석을 불러오지 못했습니다.';
+        founderInsightBody.textContent = '잠시 후 다시 시도해주세요.';
+        return;
+      }
+      const similar = Array.isArray(insight.similar) ? insight.similar : [];
+      const opportunities = Array.isArray(insight.opportunities) ? insight.opportunities : [];
+      const risks = Array.isArray(insight.risks) ? insight.risks : [];
+      const nextActions = Array.isArray(insight.nextActions) ? insight.nextActions : [];
+      founderInsightStatus.textContent = similar.length
+        ? `현재 입력 기준으로 유사 프로젝트 ${similar.length}개와 실행 포인트를 찾았습니다.`
+        : '현재 입력 기준으로 뚜렷한 내부 유사 프로젝트는 많지 않습니다.';
+      founderInsightBody.innerHTML = `
+        ${similar.length ? `
+          <div class="insight-block">
+            <h4>유사 프로젝트</h4>
+            <div class="insight-similar">
+              ${similar.map((item) => `
+                <article class="insight-similar-item">
+                  <strong style="display:block;margin-bottom:4px;">${esc(item.title || '제목 없음')}</strong>
+                  <p style="margin:0 0 6px;color:#d6d6d6;">${esc((item.summary || item.fullDescription || '').slice(0, 100) || '설명 없음')}</p>
+                  <a href="${esc(founderThemeHref(item.category || payload.category))}" style="color:var(--orange);font-size:.82rem;">같은 테마 보기</a>
+                </article>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+        <div class="insight-grid">
+          <div class="insight-block">
+            <h4>기회 포인트</h4>
+            <ul class="insight-list">${opportunities.map((item) => `<li>${esc(item)}</li>`).join('') || '<li>핵심 고객을 좁히고 빠르게 검증해보세요.</li>'}</ul>
+          </div>
+          <div class="insight-block">
+            <h4>주의할 점</h4>
+            <ul class="insight-list">${risks.map((item) => `<li>${esc(item)}</li>`).join('') || '<li>현재 큰 위험 신호는 적지만 수요 검증은 계속 필요합니다.</li>'}</ul>
+          </div>
+          <div class="insight-block">
+            <h4>바로 할 일</h4>
+            <ul class="insight-list">${nextActions.map((item) => `<li>${esc(item)}</li>`).join('') || '<li>인터뷰와 작은 MVP 계획을 먼저 적어보세요.</li>'}</ul>
+          </div>
+        </div>
+      `;
+    }
+
+    function scheduleFounderInsightRender() {
+      window.clearTimeout(founderInsightTimer);
+      founderInsightTimer = window.setTimeout(renderFounderIdeaInsight, 180);
     }
 
     function setImageError(text = '') {
@@ -772,14 +905,23 @@
 
     form.querySelectorAll('textarea[data-min]').forEach(textarea => {
       updateCounter(textarea);
-      textarea.addEventListener('input', () => updateCounter(textarea));
+      textarea.addEventListener('input', () => {
+        updateCounter(textarea);
+        if (textarea.name === 'description') scheduleFounderInsightRender();
+      });
     });
+    [form.elements.title, form.elements.roles, categorySelect, customCategoryInput].forEach((el) => {
+      if (!el) return;
+      ['input', 'change'].forEach((eventName) => el.addEventListener(eventName, scheduleFounderInsightRender));
+    });
+    founderInsightRefresh?.addEventListener('click', renderFounderIdeaInsight);
     const now = new Date();
     populateDateSelects(startYear, startMonth, startDay, now);
     populateDateSelects(endYear, endMonth, endDay, now);
     endMode.value = 'current';
     endMode.dispatchEvent(new Event('change'));
     setAiButtonState();
+    renderFounderIdeaInsight();
 
     const DRAFT_KEY = 'wethus_founder_draft_v1';
     const DRAFT_VERSIONS_KEY = 'wethus_founder_draft_versions_v1';
@@ -853,6 +995,7 @@
       }
       setAiButtonState();
       form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
+      renderFounderIdeaInsight();
     }
 
     function clearFormAll() {
@@ -873,6 +1016,7 @@
       imageActionMsg.textContent = '';
       msg.textContent = '';
       form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
+      renderFounderIdeaInsight();
     }
 
     function getDraftVersions() {
@@ -920,6 +1064,7 @@
           draftVersionsModal.setAttribute('aria-hidden', 'true');
           document.body.style.overflow = '';
           msg.textContent = '임시저장 버전을 불러왔습니다.';
+          renderFounderIdeaInsight();
         });
       });
 
@@ -986,12 +1131,14 @@
         const raw = localStorage.getItem(DRAFT_KEY);
         if (!raw) {
           applyEntryPrefill();
+          renderFounderIdeaInsight();
           return;
         }
         const d = JSON.parse(raw);
         const ok = await WETHUS.uiConfirm('마지막 임시저장 버전을 불러오시겠습니까?', { title: '임시저장 불러오기' });
         if (ok) applyDraft(d);
         else applyEntryPrefill();
+        renderFounderIdeaInsight();
       } catch (_) {}
     }
     initFounderEntry();
