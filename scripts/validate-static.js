@@ -207,6 +207,10 @@ function validateProjectHubContracts() {
     '외부 푸시 오래됨',
     'function sendWebhookTestEvent()',
     'data-tool-webhook',
+    'id="hubWebhookDownloadCode"',
+    'id="hubWebhookDownloadManifest"',
+    'function webhookRelayManifest() {',
+    'function downloadTextFile(filename, text) {',
     '서버기록',
     'WETHUS.mergeRemoteProject',
     'result?.project'

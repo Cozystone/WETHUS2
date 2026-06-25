@@ -6,6 +6,7 @@ const relayDir = path.join(repoRoot, 'WETHUS2', 'integrations', 'google-apps-scr
 const codeFile = path.join(relayDir, 'Code.js');
 const manifestFile = path.join(relayDir, 'appsscript.json');
 const runbookFile = path.join(repoRoot, 'WETHUS2', 'docs', 'ops', 'google-apps-script-relay.md');
+const hubFile = path.join(repoRoot, 'WETHUS2', 'project-hub.html');
 const errors = [];
 
 function fail(message) {
@@ -68,6 +69,22 @@ if (!fs.existsSync(runbookFile)) {
     'createDocsHeartbeatTrigger();'
   ].forEach((snippet) => {
     if (!text.includes(snippet)) fail(`google relay runbook must include: ${snippet}`);
+  });
+}
+
+if (!fs.existsSync(hubFile)) {
+  fail('project hub must exist for relay download wiring');
+} else {
+  const text = read(hubFile);
+  [
+    'id="hubWebhookDownloadCode"',
+    'id="hubWebhookDownloadManifest"',
+    'function webhookRelayManifest() {',
+    'function downloadTextFile(filename, text) {',
+    "document.getElementById('hubWebhookDownloadCode').addEventListener('click', async () => {",
+    "document.getElementById('hubWebhookDownloadManifest').addEventListener('click', async () => {"
+  ].forEach((snippet) => {
+    if (!text.includes(snippet)) fail(`project hub relay download flow must include: ${snippet}`);
   });
 }
 

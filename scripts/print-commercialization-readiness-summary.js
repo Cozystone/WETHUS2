@@ -53,7 +53,11 @@ const frontendChecks = [
       'Webhook을 재발급하면 기존 secret은 즉시 무효화됩니다.',
       '외부 푸시 오래됨',
       'function sendWebhookTestEvent()',
-      'data-tool-webhook'
+      'data-tool-webhook',
+      'id="hubWebhookDownloadCode"',
+      'id="hubWebhookDownloadManifest"',
+      'function webhookRelayManifest() {',
+      'function downloadTextFile(filename, text) {'
     ]
   },
   {
@@ -157,14 +161,18 @@ async function frontendDriftStatus() {
   const rows = [];
   for (const check of frontendChecks) {
     const localText = fs.readFileSync(path.join(appRoot, check.file), 'utf8');
+    const localNormalized = String(localText || '').replace(/\r\n/g, '\n').replace(/\s+/g, ' ').trim();
     const url = check.urlPath ? `${BASE_URL}${check.urlPath}` : `${BASE_URL}/${check.file}`;
     const { res, text: liveText } = await fetchText(url);
+    const liveNormalized = String(liveText || '').replace(/\r\n/g, '\n').replace(/\s+/g, ' ').trim();
     const snippetDrift = check.snippets.filter((snippet) => localText.includes(snippet) !== liveText.includes(snippet));
+    const hashMatch = localNormalized === liveNormalized;
     rows.push({
       file: check.file,
-      ok: res.status === 200 && snippetDrift.length === 0,
+      ok: res.status === 200 && snippetDrift.length === 0 && hashMatch,
       status: res.status,
-      snippetDrift
+      snippetDrift,
+      hashMatch
     });
   }
   return rows;
