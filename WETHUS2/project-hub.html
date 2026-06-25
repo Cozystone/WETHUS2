@@ -267,18 +267,25 @@
     }
 
     async function hubApi(path, options = {}) {
-      const bases = [`${location.protocol}//${location.hostname}:8787`, 'http://127.0.0.1:8787', window.WETHUS_API_BASE || 'https://wethus-api.onrender.com'];
+      const isLocalHost = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+      const remoteBase = String(window.WETHUS_API_BASE || 'https://wethus-api.onrender.com').replace(/\/$/, '');
+      const localBases = [`${location.protocol}//${location.hostname}:8787`, 'http://127.0.0.1:8787', 'http://localhost:8787']
+        .map((base) => String(base).replace(/\/$/, ''));
+      const bases = Array.from(new Set((isLocalHost ? [...localBases, remoteBase] : [remoteBase]).filter(Boolean)));
       let lastErr;
       for (const b of bases) {
         try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), isLocalHost ? 5000 : 3500);
           const r = await fetch(`${String(b).replace(/\/$/, '')}${path}`, {
             ...options,
             credentials: 'include',
+            signal: controller.signal,
             headers: hubActorHeaders({
               'Content-Type': 'application/json',
               ...(options.headers || {})
             })
-          });
+          }).finally(() => clearTimeout(timeout));
           const data = await r.json().catch(() => ({}));
           if (!r.ok || data?.ok === false) throw new Error(data?.error || `hub api failed (${r.status})`);
           return data;
