@@ -86,6 +86,11 @@ async function fetchText(url) {
   return { res, text };
 }
 
+function extractFrontendContractMarker(text) {
+  const match = String(text || '').match(/<meta\s+name="wethus-frontend-contract"\s+content="([^"]+)"/i);
+  return match ? String(match[1] || '').trim() : '';
+}
+
 async function summarizeFrontendDrift() {
   const rows = [];
   for (const check of frontendChecks) {
@@ -98,7 +103,9 @@ async function summarizeFrontendDrift() {
       file: check.file,
       status: res.status,
       driftCount: snippetDrift.length,
-      snippetDrift
+      snippetDrift,
+      localContractMarker: extractFrontendContractMarker(localText),
+      liveContractMarker: extractFrontendContractMarker(liveText)
     });
   }
   return rows;
@@ -224,6 +231,9 @@ async function main() {
       for (const snippet of row.snippetDrift) {
         console.log(`  - missing parity: ${snippet}`);
       }
+    }
+    if ((row.localContractMarker || row.liveContractMarker) && row.localContractMarker !== row.liveContractMarker) {
+      console.log(`  - contract marker local=${row.localContractMarker || 'missing'} live=${row.liveContractMarker || 'missing'}`);
     }
   }
 

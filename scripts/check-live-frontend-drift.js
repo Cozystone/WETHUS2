@@ -68,6 +68,11 @@ function normalizeText(text) {
     .trim();
 }
 
+function extractFrontendContractMarker(text) {
+  const match = String(text || '').match(/<meta\s+name="wethus-frontend-contract"\s+content="([^"]+)"/i);
+  return match ? String(match[1] || '').trim() : '';
+}
+
 async function fetchText(url) {
   const res = await fetch(url, { redirect: 'follow' });
   const text = await res.text();
@@ -82,11 +87,13 @@ async function run() {
     const localText = fs.readFileSync(localPath, 'utf8');
     const localNormalized = normalizeText(localText);
     const localHash = sha256(localNormalized);
+    const localMarker = extractFrontendContractMarker(localText);
 
     const url = check.urlPath ? `${BASE_URL}${check.urlPath}` : `${BASE_URL}/${check.file}`;
     const { res, text: liveText } = await fetchText(url);
     const liveNormalized = normalizeText(liveText);
     const liveHash = sha256(liveNormalized);
+    const liveMarker = extractFrontendContractMarker(liveText);
 
     console.log(`\n== ${check.file} ==`);
     console.log(`URL: ${url}`);
@@ -97,6 +104,10 @@ async function run() {
     console.log(`local normalized sha256: ${localHash}`);
     console.log(`live  normalized sha256: ${liveHash}`);
     console.log(`normalized match: ${localHash === liveHash ? 'yes' : 'no'}`);
+    if (localMarker || liveMarker) {
+      console.log(`frontend contract marker local: ${localMarker || 'missing'}`);
+      console.log(`frontend contract marker live : ${liveMarker || 'missing'}`);
+    }
 
     if (res.status !== 200) {
       console.log(`- FAIL: live page returned HTTP ${res.status}`);
