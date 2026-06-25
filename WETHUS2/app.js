@@ -470,6 +470,7 @@
         currentUserId: null,
         devMode: false,
         applications: [],
+        planRequests: [],
         bookmarks: [],
         notifications: seedNotifications,
         dmThreads: [
@@ -489,6 +490,7 @@
     const parsed = JSON.parse(raw);
     if (!parsed.geminiApiKey) parsed.geminiApiKey = '';
     if (!Array.isArray(parsed.applications)) parsed.applications = [];
+    if (!Array.isArray(parsed.planRequests)) parsed.planRequests = [];
     if (!Array.isArray(parsed.bookmarks)) parsed.bookmarks = [];
     if (!Array.isArray(parsed.notifications)) parsed.notifications = [];
     parsed.notifications = parsed.notifications.filter(n => !(n?.type === 'founder_submitted' && n?.userId == null));
@@ -695,6 +697,81 @@
     return true;
   }
 
+  function listPlanRequests(options = {}) {
+    const s = load();
+    const actor = currentActorId();
+    const requestedPlan = String(options?.plan || '').trim().toLowerCase();
+    const mineOnly = options?.mineOnly !== false;
+    return (Array.isArray(s.planRequests) ? s.planRequests : [])
+      .filter((request) => {
+        if (!request) return false;
+        if (mineOnly && actor && request.userId !== actor) return false;
+        if (requestedPlan && String(request.requestedPlan || '').toLowerCase() !== requestedPlan) return false;
+        return true;
+      })
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+  }
+
+  function requestPlanUpgrade(plan, note = '') {
+    const s = load();
+    const actor = currentActorId();
+    if (!actor) throw new Error('로그인이 필요합니다.');
+    const user = currentUser();
+    if (!user) throw new Error('사용자 정보를 찾을 수 없습니다.');
+    const requestedPlan = String(plan || '').trim().toLowerCase();
+    if (!['premium', 'pro', 'master'].includes(requestedPlan)) {
+      throw new Error('요청 가능한 플랜이 아닙니다.');
+    }
+    s.planRequests = Array.isArray(s.planRequests) ? s.planRequests : [];
+    const existing = s.planRequests.find((request) =>
+      request?.userId === actor &&
+      String(request?.requestedPlan || '').toLowerCase() === requestedPlan &&
+      String(request?.status || '').toLowerCase() === 'pending'
+    );
+    if (existing) return existing;
+
+    const now = new Date().toISOString();
+    const request = {
+      id: uid(),
+      userId: actor,
+      userEmail: String(user.email || '').trim().toLowerCase(),
+      userName: user.nickname || user.name || '사용자',
+      currentPlan: currentPlan(),
+      requestedPlan,
+      note: String(note || '').trim(),
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now
+    };
+    s.planRequests.unshift(request);
+    s.notifications = s.notifications || [];
+    s.notifications.unshift({
+      id: uid(),
+      type: 'plan_request_submitted',
+      title: `${requestedPlan.toUpperCase()} 플랜 요청 접수`,
+      body: '운영팀이 요청 내용을 검토한 뒤 계정 상태를 안내합니다.',
+      href: 'pricing.html',
+      sender: 'WETHUS 운영팀',
+      unread: true,
+      createdAt: now,
+      userId: actor
+    });
+    s.notifications.unshift({
+      id: uid(),
+      type: 'plan_request_admin',
+      title: `${requestedPlan.toUpperCase()} 플랜 요청 도착`,
+      body: `${request.userName} · ${request.userEmail || '이메일 없음'}${request.note ? ` · 메모: ${request.note}` : ''}`,
+      href: 'pricing.html',
+      sender: 'WETHUS',
+      unread: true,
+      createdAt: now,
+      userId: ADMIN_MODE_USER_ID
+    });
+    save(s);
+    if (request.userEmail) syncCloudState(request.userEmail).catch(() => {});
+    return request;
+  }
+
   function localPasswordSalt(user) {
     return `${String(user?.id || '')}:${String(user?.email || '').trim().toLowerCase()}`;
   }
@@ -886,6 +963,7 @@
       users: mergeRecordsByKey(remote.users, local.users, (user) => String(user?.email || user?.id || '').toLowerCase()),
       projects: mergeRecordsByKey(remote.projects, local.projects, (project) => String(project?.id || '')),
       applications: mergeRecordsByKey(remote.applications, local.applications, (application) => String(application?.id || '')),
+      planRequests: mergeRecordsByKey(remote.planRequests, local.planRequests, (request) => String(request?.id || '')),
       bookmarks: mergeRecordsByKey(remote.bookmarks, local.bookmarks, (bookmark) => String(bookmark?.id || `${bookmark?.userId || ''}:${bookmark?.projectId || ''}`)),
       notifications: mergeRecordsByKey(remote.notifications, local.notifications, (notification) => String(notification?.id || '')),
       dmThreads: mergeRecordsByKey(remote.dmThreads, local.dmThreads, (thread) => String(thread?.id || '')),
@@ -2950,6 +3028,8 @@
     syncCloudState,
     currentPlan,
     setCurrentUserPlan,
+    listPlanRequests,
+    requestPlanUpgrade,
     listNotifications,
     unreadNotificationCount,
     refreshNavBadges,
