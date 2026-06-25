@@ -86,7 +86,7 @@ function expectList(name, value, maxLength) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         trigger: 'smoke',
-        userPrompt: '배포 우선순위와 다음 실행 단계를 정리해줘.',
+        userPrompt: '문서 0건과 최근 활동을 반영해 현재 상태와 다음 액션을 정리해줘.',
         project: {
           title: 'WETHUS Commerce Hub',
           category: 'StartupBusiness',
@@ -138,6 +138,9 @@ function expectList(name, value, maxLength) {
     expectList('questions', payload?.questions, 2);
     expectList('toolActions', payload?.toolActions, 2);
     expectList('grounding', payload?.grounding, 4);
+    if (Array.isArray(payload?.questions) && payload.questions.some((item) => String(item || '').includes('문서 0건과 최근 활동을 반영해'))) {
+      fail('project mentor fallback should not leak internal auto-refresh prompts into user-facing questions');
+    }
   } catch (error) {
     fail(error.message || String(error));
   } finally {

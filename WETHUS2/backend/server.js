@@ -976,6 +976,19 @@ function detectProjectMentorMode(project = {}, hub = {}, userPrompt = '') {
   return 'project_management_ai';
 }
 
+function sanitizeProjectMentorPrompt(rawPrompt = '') {
+  const prompt = String(rawPrompt || '').replace(/\s+/g, ' ').trim();
+  if (!prompt) return '';
+  const internalPatterns = [
+    /^문서 \d+건 기반 자동 갱신$/i,
+    /^문서 \d+건과 최근 활동을 반영해/i,
+    /^최근 활동과 문서를 반영해/i,
+    /^연결 툴:/i
+  ];
+  if (internalPatterns.some((pattern) => pattern.test(prompt))) return '';
+  return prompt.slice(0, 160);
+}
+
 function buildProjectMentorFallback(payload = {}, errorMessage = '') {
   const project = payload?.project || {};
   const hub = payload?.hub || {};
@@ -984,19 +997,22 @@ function buildProjectMentorFallback(payload = {}, errorMessage = '') {
   const recentActivity = String((hub?.recentActivities || []).find((item) => !/AI 멘토 점검/i.test(String(item?.text || '')))?.text || '').trim();
   const recentChat = String((hub?.teamChat || []).slice(-1)[0]?.text || '').trim();
   const connectedTool = String((hub?.tools || []).find((item) => item?.connected)?.name || '').trim();
-  const userPrompt = String(payload?.userPrompt || '').trim();
+  const userPrompt = sanitizeProjectMentorPrompt(payload?.userPrompt || '');
   const mode = detectProjectMentorMode(project, hub, payload?.userPrompt || '');
+  const projectTitle = String(project?.title || '프로젝트').trim();
+  const projectStatus = String(project?.status || '정리 필요').trim();
+  const goal = String(hub?.goal || '').trim();
   const summaryParts = [
-    `${project?.title || '프로젝트'}의 현재 단계는 ${project?.status || '정리 필요'}입니다.`,
-    hub?.goal ? `지금 목표는 ${String(hub.goal).slice(0, 80)} 쪽으로 읽힙니다.` : '목표 문장이 아직 약해서 팀이 같은 방향을 보기 어렵습니다.',
+    `${projectTitle}는 현재 ${projectStatus} 단계입니다.`,
+    goal ? `지금 목표는 ${goal.slice(0, 90)} 쪽으로 모여 있습니다.` : '현재 목표 문장이 비어 있어 팀이 같은 기준으로 움직이기 어렵습니다.',
     firstTodo ? `가장 먼저 보이는 실행 단위는 ${firstTodo}입니다.` : '이번 주 할 일이 아직 선명하게 쪼개지지 않았습니다.'
   ];
-  if (recentActivity) summaryParts.push(`최근 활동상 ${recentActivity}까지는 진행됐습니다.`);
+  if (recentActivity) summaryParts.push(`최근 활동 기준으로는 ${recentActivity}까지 반영돼 있습니다.`);
   const summary = summaryParts.join(' ');
-  const priority = firstTodo || (hub?.goal ? `${hub.goal}에 바로 연결되는 검증 행동 1개를 오늘 안에 확정하세요.` : '이번 주 검증할 핵심 가설 1개를 먼저 고정하세요.');
+  const priority = firstTodo || (goal ? `${goal.slice(0, 70)}와 바로 연결되는 검증 액션 1개를 오늘 안에 확정하세요.` : '이번 주 검증할 핵심 가설 1개를 먼저 고정하세요.');
   const secondAction = connectedTool
-    ? `${connectedTool}에 최신 결정 사항과 다음 일정이 실제로 반영됐는지 확인하세요.`
-    : (firstMaterial ? `${firstMaterial} 문서에 현재 가설과 성공 기준을 5줄로 정리하세요.` : '핵심 문서 1개에 가설, 사용자, 검증 방식을 한 번에 보이게 정리하세요.');
+    ? `${connectedTool}의 최신 변경사항이 실제 일정과 우선순위에 반영됐는지 확인하세요.`
+    : (firstMaterial ? `${firstMaterial} 문서를 기준으로 현재 가설과 성공 기준을 5줄로 정리하세요.` : '핵심 문서 1개에 가설, 사용자, 검증 방식을 한 번에 보이게 정리하세요.');
   const questionA = userPrompt || '지금 가장 빨리 검증해야 하는 가설은 무엇인가요?';
   const questionB = recentChat
     ? `방금 팀 대화에서 나온 "${recentChat.slice(0, 40)}"를 실행으로 옮기려면 누가 언제까지 무엇을 끝내야 하나요?`
@@ -1017,13 +1033,13 @@ function buildProjectMentorFallback(payload = {}, errorMessage = '') {
       questionB
     ],
     toolActions: [
-      connectedTool ? `${connectedTool}에서 최신 문서 또는 리소스를 다시 동기화해 변화 로그를 남기세요.` : '외부 툴을 연결했다면 핵심 문서 1개만 먼저 연결해 변화 로그가 쌓이게 하세요.'
+      connectedTool ? `${connectedTool}에서 최신 문서 또는 리소스를 다시 동기화해 변화 로그를 남기세요.` : 'Google Docs 또는 Sheets 중 하나를 먼저 연결해 변화 로그가 쌓이게 하세요.'
     ],
     grounding: [
-      hub?.goal ? `목표 근거: ${String(hub.goal).slice(0, 90)}` : '목표 근거가 부족해 목표 입력값을 우선 보강해야 합니다.',
+      goal ? `목표 근거: ${goal.slice(0, 90)}` : '목표 근거가 부족해 목표 입력값을 우선 보강해야 합니다.',
       firstTodo ? `할 일 근거: ${firstTodo}` : '이번 주 할 일 근거가 부족합니다.',
       recentActivity ? `최근 활동 근거: ${recentActivity}` : '최근 활동 근거가 적습니다.',
-      errorMessage ? `AI fallback 사용: ${String(errorMessage).slice(0, 120)}` : '규칙 기반 fallback으로 생성되었습니다.'
+      errorMessage ? `AI fallback 사유: ${String(errorMessage).slice(0, 120)}` : '규칙 기반 fallback으로 생성되었습니다.'
     ],
     changeLog: '프로젝트 문맥을 기준으로 다음 실행 우선순위를 다시 정렬했습니다.'
   };
