@@ -6,6 +6,14 @@
   - opportunity points
   - risk reminders
   - immediate next actions
+- Extended the same founder card with backend-powered `AI 멘토 초안 피드백` using the existing `/ai/project-mentor` contract.
+- Draft ideas now receive a second layer of execution guidance:
+  - summary
+  - priority
+  - next actions
+  - key questions
+  - grounding
+  - suggested change-log phrasing
 - Added a lightweight manual refresh action so founders can re-run the draft analysis after editing.
 - Kept the existing founder submit, draft, preview, and moderation flow unchanged while improving idea-shaping quality before submission.
 
@@ -17,4 +25,5 @@
 ## Verification
 
 - `node scripts/validate-static.js`
+- `node scripts/smoke-project-mentor.js`
 - `node scripts/run-commercial-gate.js`

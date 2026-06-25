@@ -422,6 +422,9 @@
     const founderInsightBody = document.getElementById('founderInsightBody');
     const founderInsightRefresh = document.getElementById('founderInsightRefresh');
     let founderInsightTimer = 0;
+    let founderMentorTimer = 0;
+    let founderMentorRequestId = 0;
+    let founderMentorState = { status: 'idle', result: null, error: '' };
 
     const oppParams = new URLSearchParams(location.search);
     const oppId = String(oppParams.get('opportunityId') || '').trim();
@@ -607,6 +610,97 @@
       };
     }
 
+    async function founderApi(path, options = {}) {
+      const remoteBase = String(window.WETHUS_API_BASE || 'https://wethus-api.onrender.com').replace(/\/$/, '');
+      const response = await fetch(`${remoteBase}${path}`, {
+        method: options.method || 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        },
+        credentials: 'include',
+        body: options.body
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error || `request failed (${response.status})`);
+      return payload;
+    }
+
+    function founderMentorPayload() {
+      const fd = new FormData(form);
+      const description = String(fd.get('description') || '').trim();
+      const motivation = String(fd.get('motivation') || '').trim();
+      const output = String(fd.get('output') || '').trim();
+      const plan = String(fd.get('plan') || '').trim();
+      const roles = String(fd.get('roles') || '').trim();
+      return {
+        trigger: 'founder-draft',
+        userPrompt: 'Founder 제출 전 초안입니다. 무엇을 더 선명하게 써야 통과 가능성과 실행력이 높아지는지 간단명료하게 정리해주세요.',
+        project: {
+          title: String(fd.get('title') || '').trim(),
+          category: resolvedCategory(),
+          status: String(fd.get('status') || '').trim(),
+          summary: description.slice(0, 220),
+          fullDescription: description,
+          motivation,
+          expectedOutput: output,
+          firstTwoWeekPlan: plan,
+          roles
+        },
+        hub: {
+          goal: motivation,
+          weeklyTodos: plan.split(/\n+/).map((item) => String(item || '').trim()).filter(Boolean).slice(0, 6),
+          recentActivities: output ? [{ text: `예상 산출물 초안: ${output.slice(0, 180)}` }] : [],
+          teamChat: roles ? [{ from: 'Founder draft', text: `현재 팀/역할 구상: ${roles}` }] : [],
+          materials: [],
+          tools: []
+        },
+        insights: [],
+        events: [],
+        statusSnapshot: {
+          current_stage: String(fd.get('status') || '').trim(),
+          recent_activity_summary: description.slice(0, 220),
+          suggested_next_action: plan.split(/\n+/).map((item) => String(item || '').trim()).find(Boolean) || ''
+        }
+      };
+    }
+
+    async function requestFounderMentorInsight({ force = false } = {}) {
+      const payload = founderMentorPayload();
+      if (payload.project.title.length < 4 || payload.project.fullDescription.length < 120 || payload.project.firstTwoWeekPlan.length < 40) {
+        founderMentorState = { status: 'idle', result: null, error: '' };
+        renderFounderIdeaInsight();
+        return null;
+      }
+      if (!force && founderMentorState.status === 'loading') return null;
+      const requestId = Date.now();
+      founderMentorRequestId = requestId;
+      founderMentorState = { status: 'loading', result: founderMentorState.result, error: '' };
+      renderFounderIdeaInsight();
+      try {
+        const result = await founderApi('/ai/project-mentor', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        if (founderMentorRequestId !== requestId) return null;
+        founderMentorState = { status: 'ready', result, error: '' };
+        renderFounderIdeaInsight();
+        return result;
+      } catch (error) {
+        if (founderMentorRequestId !== requestId) return null;
+        founderMentorState = { status: 'error', result: null, error: error?.message || 'AI mentor request failed' };
+        renderFounderIdeaInsight();
+        return null;
+      }
+    }
+
+    function scheduleFounderMentorInsight() {
+      window.clearTimeout(founderMentorTimer);
+      founderMentorTimer = window.setTimeout(() => {
+        requestFounderMentorInsight().catch(() => {});
+      }, 900);
+    }
+
     function renderFounderIdeaInsight() {
       if (!founderInsightStatus || !founderInsightBody || !WETHUS.analyzeProjectIdea) return;
       const payload = founderIdeaPayload();
@@ -663,6 +757,119 @@
     function scheduleFounderInsightRender() {
       window.clearTimeout(founderInsightTimer);
       founderInsightTimer = window.setTimeout(renderFounderIdeaInsight, 180);
+    }
+
+    function renderFounderIdeaInsight() {
+      if (!founderInsightStatus || !founderInsightBody || !WETHUS.analyzeProjectIdea) return;
+      const payload = founderIdeaPayload();
+      if (payload.title.length < 4 || payload.fullDescription.length < 40) {
+        founderInsightStatus.textContent = '제목과 설명을 조금 더 쓰면 유사 프로젝트와 실행 포인트를 바로 볼 수 있습니다.';
+        founderInsightBody.textContent = '아직 분석할 내용이 충분하지 않습니다.';
+        return;
+      }
+      const insight = WETHUS.analyzeProjectIdea(payload);
+      if (!insight) {
+        founderInsightStatus.textContent = '아이디어 분석을 불러오지 못했습니다.';
+        founderInsightBody.textContent = '잠시 후 다시 시도해주세요.';
+        return;
+      }
+      const similar = Array.isArray(insight.similar) ? insight.similar : [];
+      const opportunities = Array.isArray(insight.opportunities) ? insight.opportunities : [];
+      const risks = Array.isArray(insight.risks) ? insight.risks : [];
+      const nextActions = Array.isArray(insight.nextActions) ? insight.nextActions : [];
+      const mentorResult = founderMentorState.result || {};
+      const mentorSummary = String(mentorResult.summary || '').trim();
+      const mentorPriority = String(mentorResult.priority || '').trim();
+      const mentorNextActions = Array.isArray(mentorResult.nextActions) ? mentorResult.nextActions : [];
+      const mentorQuestions = Array.isArray(mentorResult.questions) ? mentorResult.questions : [];
+      const mentorGrounding = Array.isArray(mentorResult.grounding) ? mentorResult.grounding : [];
+      const mentorToolActions = Array.isArray(mentorResult.toolActions) ? mentorResult.toolActions : [];
+      const mentorChangeLog = String(mentorResult.changeLog || '').trim();
+      const mentorMarkup = founderMentorState.status === 'loading'
+        ? `
+          <div class="insight-block" style="margin-top:10px;">
+            <h4>AI 멘토 초안 피드백</h4>
+            <p style="margin:0;color:#d6d6d6;">입력 중인 초안을 바탕으로 실행 피드백을 정리하고 있습니다...</p>
+          </div>
+        `
+        : founderMentorState.status === 'error'
+          ? `
+            <div class="insight-block" style="margin-top:10px;">
+              <h4>AI 멘토 초안 피드백</h4>
+              <p style="margin:0;color:#d6d6d6;">지금은 멘토 피드백을 불러오지 못했습니다. 로컬 인사이트를 먼저 참고해주세요.</p>
+            </div>
+          `
+          : founderMentorState.status === 'ready'
+            ? `
+              <div class="insight-block" style="margin-top:10px;">
+                <h4>AI 멘토 초안 피드백</h4>
+                <p style="margin:0 0 6px;color:#f5f5f5;">${esc(mentorSummary || 'AI 멘토 요약이 준비되었습니다.')}</p>
+                ${mentorPriority ? `<p style="margin:0 0 10px;color:#ffcf99;">우선순위: ${esc(mentorPriority)}</p>` : ''}
+                <div class="insight-grid">
+                  <div class="insight-block">
+                    <h4>다음 액션</h4>
+                    <ul class="insight-list">${mentorNextActions.map((item) => `<li>${esc(item)}</li>`).join('') || '<li>바로 실행할 액션은 아직 없습니다.</li>'}</ul>
+                  </div>
+                  <div class="insight-block">
+                    <h4>확인 질문</h4>
+                    <ul class="insight-list">${mentorQuestions.map((item) => `<li>${esc(item)}</li>`).join('') || '<li>더 물어볼 질문은 아직 없습니다.</li>'}</ul>
+                  </div>
+                  <div class="insight-block">
+                    <h4>근거와 연결</h4>
+                    <ul class="insight-list">${mentorGrounding.map((item) => `<li>${esc(item)}</li>`).join('') || '<li>입력된 초안 근거가 아직 얕습니다.</li>'}</ul>
+                  </div>
+                </div>
+                ${(mentorToolActions.length || mentorChangeLog) ? `
+                  <div style="margin-top:10px;display:grid;gap:8px;">
+                    ${mentorToolActions.length ? `<p style="margin:0;color:#d6d6d6;"><strong style="color:#fff;">연동 액션:</strong> ${esc(mentorToolActions.join(' / '))}</p>` : ''}
+                    ${mentorChangeLog ? `<p style="margin:0;color:#d6d6d6;"><strong style="color:#fff;">변화 로그 제안:</strong> ${esc(mentorChangeLog)}</p>` : ''}
+                  </div>
+                ` : ''}
+              </div>
+            `
+            : '';
+      founderInsightStatus.textContent = similar.length
+        ? `현재 입력 기준으로 유사 프로젝트 ${similar.length}개와 실행 포인트를 찾았습니다.${founderMentorState.status === 'ready' ? ' AI 멘토 초안 피드백도 준비됐습니다.' : founderMentorState.status === 'loading' ? ' AI 멘토가 추가 피드백을 정리 중입니다.' : ''}`
+        : `현재 입력 기준으로 뚜렷한 내부 유사 프로젝트는 많지 않습니다.${founderMentorState.status === 'ready' ? ' 대신 AI 멘토가 실행 방향을 보강했습니다.' : founderMentorState.status === 'loading' ? ' AI 멘토가 실행 방향을 정리 중입니다.' : ''}`;
+      founderInsightBody.innerHTML = `
+        ${similar.length ? `
+          <div class="insight-block">
+            <h4>유사 프로젝트</h4>
+            <div class="insight-similar">
+              ${similar.map((item) => `
+                <article class="insight-similar-item">
+                  <strong style="display:block;margin-bottom:4px;">${esc(item.title || '제목 없음')}</strong>
+                  <p style="margin:0 0 6px;color:#d6d6d6;">${esc((item.summary || item.fullDescription || '').slice(0, 100) || '설명 없음')}</p>
+                  <a href="${esc(founderThemeHref(item.category || payload.category))}" style="color:var(--orange);font-size:.82rem;">같은 테마 보기</a>
+                </article>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+        <div class="insight-grid">
+          <div class="insight-block">
+            <h4>기회 포인트</h4>
+            <ul class="insight-list">${opportunities.map((item) => `<li>${esc(item)}</li>`).join('') || '<li>핵심 고객을 좁히고 빠르게 검증해보세요.</li>'}</ul>
+          </div>
+          <div class="insight-block">
+            <h4>주의할 점</h4>
+            <ul class="insight-list">${risks.map((item) => `<li>${esc(item)}</li>`).join('') || '<li>현재 큰 위험 신호는 적지만 수요 검증은 계속 필요합니다.</li>'}</ul>
+          </div>
+          <div class="insight-block">
+            <h4>바로 할 일</h4>
+            <ul class="insight-list">${nextActions.map((item) => `<li>${esc(item)}</li>`).join('') || '<li>인터뷰와 작은 MVP 계획을 먼저 적어보세요.</li>'}</ul>
+          </div>
+        </div>
+        ${mentorMarkup}
+      `;
+    }
+
+    function scheduleFounderInsightRender() {
+      window.clearTimeout(founderInsightTimer);
+      founderInsightTimer = window.setTimeout(() => {
+        renderFounderIdeaInsight();
+        scheduleFounderMentorInsight();
+      }, 180);
     }
 
     function setImageError(text = '') {
@@ -914,7 +1121,10 @@
       if (!el) return;
       ['input', 'change'].forEach((eventName) => el.addEventListener(eventName, scheduleFounderInsightRender));
     });
-    founderInsightRefresh?.addEventListener('click', renderFounderIdeaInsight);
+    founderInsightRefresh?.addEventListener('click', () => {
+      renderFounderIdeaInsight();
+      requestFounderMentorInsight({ force: true }).catch(() => {});
+    });
     const now = new Date();
     populateDateSelects(startYear, startMonth, startDay, now);
     populateDateSelects(endYear, endMonth, endDay, now);
@@ -922,6 +1132,7 @@
     endMode.dispatchEvent(new Event('change'));
     setAiButtonState();
     renderFounderIdeaInsight();
+    scheduleFounderMentorInsight();
 
     const DRAFT_KEY = 'wethus_founder_draft_v1';
     const DRAFT_VERSIONS_KEY = 'wethus_founder_draft_versions_v1';
@@ -996,12 +1207,15 @@
       setAiButtonState();
       form.querySelectorAll('textarea[data-min]').forEach(updateCounter);
       renderFounderIdeaInsight();
+      scheduleFounderMentorInsight();
     }
 
     function clearFormAll() {
       form.reset();
       imageData = '';
       aiImageSelected = false;
+      founderMentorState = { status: 'idle', result: null, error: '' };
+      window.clearTimeout(founderMentorTimer);
       setAiButtonState();
       coverPreview.src = '';
       coverPreviewWrap.style.display = 'none';
@@ -1132,6 +1346,7 @@
         if (!raw) {
           applyEntryPrefill();
           renderFounderIdeaInsight();
+          scheduleFounderMentorInsight();
           return;
         }
         const d = JSON.parse(raw);
@@ -1139,6 +1354,7 @@
         if (ok) applyDraft(d);
         else applyEntryPrefill();
         renderFounderIdeaInsight();
+        scheduleFounderMentorInsight();
       } catch (_) {}
     }
     initFounderEntry();
