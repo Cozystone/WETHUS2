@@ -536,11 +536,10 @@
     }
 
     function validateStrict(showMessage = false) {
-      if (!imageData && !aiImageSelected) {
-        if (showMessage) setImageError('메인 사진을 업로드하거나 AI 이미지 생성을 선택해주세요.');
-        return false;
-      }
       setImageError('');
+      if (!imageData && !aiImageSelected && showMessage) {
+        imageActionMsg.textContent = '메인 사진이 없으면 제출 시 기본 커버 이미지가 자동 적용됩니다.';
+      }
 
       const requiredFields = ['title','category','description','motivation','output','plan','roles','status','duration'];
       const targetCap = Number(form.elements.targetCapacity?.value || 0);
@@ -658,7 +657,14 @@
       imageActionMsg.textContent = 'AI가 메인 이미지를 생성 중입니다...';
       let keyword = `${category} ${title} cinematic poster dark orange accent`;
       try {
-        const endpoint = (window.WETHUS_AI_ENDPOINT || 'http://127.0.0.1:8787') + '/ai/image-prompt';
+        const aiBase = String(
+          window.WETHUS_AI_ENDPOINT
+          || window.WETHUS_API_BASE
+          || ((location.hostname === '127.0.0.1' || location.hostname === 'localhost')
+            ? `${location.protocol}//${location.hostname}:8787`
+            : 'https://wethus-api.onrender.com')
+        ).replace(/\/$/, '');
+        const endpoint = `${aiBase}/ai/image-prompt`;
         const ctl = new AbortController();
         const t = setTimeout(() => ctl.abort(), 5000);
         const r = await fetch(endpoint, {
