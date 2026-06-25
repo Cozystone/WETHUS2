@@ -200,7 +200,7 @@
 
   <div id="hubEditModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-edit="true"></div><article class="modal-panel" style="max-width:760px;"><button class="modal-close" id="hubEditClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">프로젝트 수정</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><input id="hubEditTitle" placeholder="제목" /><input id="hubEditSummary" placeholder="요약" /></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><select id="hubEditStatus"><option>모집 중</option><option>기획 중</option><option>진행 중</option><option>피보팅</option><option>완료</option></select><select id="hubEditTeamSize"><option>1인</option><option>2인</option><option>3인</option><option>4인이상</option></select></div><input id="hubEditRoles" placeholder="역할" style="margin-bottom:8px;" /><textarea id="hubEditDesc" style="width:100%;min-height:110px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;" placeholder="프로젝트 설명"></textarea><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="hubEditSave" class="btn btn--primary" type="button">저장</button></div></div></article></div>
   <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 툴 연결</h3><p id="hubToolModalDesc" class="meta" style="margin:0 0 10px;">OAuth로 계정을 연결한 뒤, 프로젝트에 연결할 문서·시트 리소스를 선택하세요.</p><article id="hubToolModalScope" class="hub-card" style="padding:10px;margin:0 0 10px;"><strong style="display:block;margin-bottom:4px;">연동 구조</strong><p class="meta" style="margin:0;">1) 제공자 선택 → 2) OAuth 인증 → 3) 문서/시트 선택 → 4) 프로젝트 허브에 연결 반영</p></article><div id="toolLogoGrid" class="tool-grid"></div></div></article></div>
-  <div id="hubWebhookModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-webhook="true"></div><article class="modal-panel" style="max-width:720px;"><button class="modal-close" id="hubWebhookClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">활동 로그 수집</h3><p id="hubWebhookDesc" class="meta" style="margin:0 0 10px;">외부 툴의 활동 로그를 프로젝트 타임라인에 반영할 수 있도록 수집 상태를 관리합니다.</p><article class="hub-card" style="padding:12px;margin:0 0 10px;"><strong id="hubWebhookName" style="display:block;margin-bottom:6px;">연결된 툴 선택 필요</strong><p id="hubWebhookStatus" class="meta" style="margin:0 0 8px;">연결/동기화 이벤트는 자동 기록되고, webhook을 발급하면 외부 푸시 이벤트도 수집할 수 있습니다.</p><p id="hubWebhookEvents" class="meta" style="margin:0;"></p></article><article class="hub-card" style="padding:12px;margin:0 0 10px;"><strong style="display:block;margin-bottom:6px;">수집 엔드포인트</strong><p class="meta" style="margin:0 0 8px;">외부 서비스나 relay가 이 URL로 이벤트를 보내면 프로젝트 허브 활동 로그에 누적됩니다.</p><input id="hubWebhookUrl" readonly style="width:100%;margin:0 0 8px;" value="" /><input id="hubWebhookHeader" readonly style="width:100%;margin:0 0 8px;" value="x-webhook-secret: (발급 후 표시)" /><input id="hubWebhookSecret" readonly style="width:100%;" value="" /></article><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubWebhookIssue" class="btn btn--primary" type="button">Webhook 발급</button><button id="hubWebhookDone" class="btn btn--secondary" type="button">닫기</button></div></div></article></div>
+  <div id="hubWebhookModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-webhook="true"></div><article class="modal-panel" style="max-width:720px;"><button class="modal-close" id="hubWebhookClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">활동 로그 수집</h3><p id="hubWebhookDesc" class="meta" style="margin:0 0 10px;">외부 툴의 활동 로그를 프로젝트 타임라인에 반영할 수 있도록 수집 상태를 관리합니다.</p><article class="hub-card" style="padding:12px;margin:0 0 10px;"><strong id="hubWebhookName" style="display:block;margin-bottom:6px;">연결된 툴 선택 필요</strong><p id="hubWebhookStatus" class="meta" style="margin:0 0 8px;">연결/동기화 이벤트는 자동 기록되고, webhook을 발급하면 외부 푸시 이벤트도 수집할 수 있습니다.</p><p id="hubWebhookEvents" class="meta" style="margin:0 0 8px;"></p><p id="hubWebhookTestStatus" class="meta" style="margin:0;color:#ffb36d;">리더는 여기서 테스트 이벤트를 바로 남겨 실제 적재 여부를 확인할 수 있습니다.</p></article><article class="hub-card" style="padding:12px;margin:0 0 10px;"><strong style="display:block;margin-bottom:6px;">수집 엔드포인트</strong><p class="meta" style="margin:0 0 8px;">외부 서비스나 relay가 이 URL로 이벤트를 보내면 프로젝트 허브 활동 로그에 누적됩니다.</p><input id="hubWebhookUrl" readonly style="width:100%;margin:0 0 8px;" value="" /><input id="hubWebhookHeader" readonly style="width:100%;margin:0 0 8px;" value="x-webhook-secret: (발급 후 표시)" /><input id="hubWebhookSecret" readonly style="width:100%;" value="" /></article><div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;"><button id="hubWebhookTest" class="btn btn--secondary" type="button">테스트 이벤트 보내기</button><button id="hubWebhookIssue" class="btn btn--primary" type="button">Webhook 발급</button><button id="hubWebhookDone" class="btn btn--secondary" type="button">닫기</button></div></div></article></div>
   <div id="hubChatModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-chat="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubChatClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">팀채팅</h3><p class="meta" style="margin:0 0 8px;">프로젝트 지원 AI는 프로젝트 정보/최근 활동/팀 채팅 문맥을 함께 참고합니다.</p><div id="chatList" style="max-height:320px;overflow:auto;display:grid;gap:8px;"></div><div class="slash-suggest" style="display:flex;gap:8px;margin-top:10px;"><input id="chatInput" style="flex:1;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px;" placeholder="메시지를 입력하세요 (/ai 질문 형태 지원)"/><button id="chatSend" class="btn btn--primary">보내기</button><div id="slashList" class="slash-list"></div></div></div></article></div>
   <div id="worklogModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-worklog="true"></div><article class="modal-panel" style="max-width:620px;"><button class="modal-close" id="worklogClose">×</button><div class="modal-content"><h3 id="worklogTitle" style="margin:0 0 8px;">업무기록</h3><ul id="worklogList" class="meta-bullet"></ul></div></article></div>
   <div id="recentModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-recent="true"></div><article class="modal-panel" style="max-width:680px;"><button class="modal-close" id="recentClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">최근 활동 전체</h3><ul id="recentList" class="meta-bullet"></ul></div></article></div>
@@ -1388,6 +1388,8 @@
       const headerEl = document.getElementById('hubWebhookHeader');
       const secretEl = document.getElementById('hubWebhookSecret');
       const issueBtn = document.getElementById('hubWebhookIssue');
+      const testStatusEl = document.getElementById('hubWebhookTestStatus');
+      const testBtn = document.getElementById('hubWebhookTest');
       const integration = integrationForToolName(activeWebhookToolName);
       const canManage = isCurrentLeader();
 
@@ -1400,6 +1402,8 @@
         secretEl.value = '';
         issueBtn.disabled = true;
         issueBtn.textContent = 'Webhook 발급';
+        testBtn.disabled = true;
+        testStatusEl.textContent = '먼저 연결된 문서나 시트를 선택한 뒤 로그 수집 상태를 확인해주세요.';
         return;
       }
 
@@ -1418,6 +1422,10 @@
         : (integration.webhook_enabled ? `저장된 secret 미리보기: ${integration.webhook_secret_preview || '발급됨'}` : '아직 발급되지 않았습니다.');
       issueBtn.disabled = !canManage;
       issueBtn.textContent = webhookReady ? 'Webhook 재발급' : 'Webhook 발급';
+      testBtn.disabled = !canManage;
+      testStatusEl.textContent = canManage
+        ? '테스트 이벤트는 허브에서 직접 남기는 샘플 로그이며, 외부 relay 없이도 적재 흐름을 바로 확인할 수 있습니다.'
+        : '테스트 이벤트 발송은 대표/리더만 가능합니다.';
     }
 
     async function openWebhookModal(toolName) {
@@ -1431,6 +1439,57 @@
       }
       renderWebhookModal();
       openModal('hubWebhookModal');
+    }
+
+    async function sendWebhookTestEvent() {
+      const integration = integrationForToolName(activeWebhookToolName);
+      const statusEl = document.getElementById('hubWebhookTestStatus');
+      const testBtn = document.getElementById('hubWebhookTest');
+      if (!integration || !currentProject) {
+        statusEl.textContent = '테스트할 연결 리소스를 먼저 선택해주세요.';
+        return;
+      }
+      if (!isCurrentLeader()) {
+        statusEl.textContent = '대표/리더만 테스트 이벤트를 보낼 수 있습니다.';
+        return;
+      }
+
+      const me = WETHUS.currentUser?.() || {};
+      const resourceName = integration.external_resource_name || integration.external_resource_id || '연결 리소스';
+      const previousLabel = testBtn.textContent;
+      testBtn.disabled = true;
+      testBtn.textContent = '전송 중...';
+      statusEl.textContent = '테스트 이벤트를 기록하고 있습니다...';
+
+      try {
+        await hubApi('/activity-events', {
+          method: 'POST',
+          body: JSON.stringify({
+            project_id: currentProject.id,
+            integration_id: integration.id,
+            source_type: integration.provider,
+            source_item_id: integration.external_resource_id || '',
+            source_item_name: resourceName,
+            actor_external_id: currentHubActorId(),
+            actor_name: me?.nickname || me?.name || me?.email || '프로젝트 리더',
+            event_type: 'webhook_event',
+            raw_payload: {
+              summary: '프로젝트 허브에서 테스트 이벤트를 기록했습니다.',
+              origin: 'project_hub_test'
+            }
+          })
+        });
+        await loadRemoteActivityEventsForCurrentProject();
+        renderWebhookModal();
+        renderToolCards();
+        await renderHub();
+        statusEl.textContent = '테스트 이벤트를 기록했습니다. 최근 활동과 이벤트 현황에서 바로 확인할 수 있습니다.';
+      } catch (e) {
+        statusEl.textContent = e?.message || '테스트 이벤트 기록에 실패했습니다.';
+      } finally {
+        testBtn.disabled = !isCurrentLeader();
+        testBtn.textContent = previousLabel;
+      }
     }
 
     async function watchOauthCompletion(tool, popup) {
@@ -1665,6 +1724,9 @@
     document.getElementById('hubWebhookClose').addEventListener('click',()=>closeModal('hubWebhookModal'));
     document.getElementById('hubWebhookDone').addEventListener('click',()=>closeModal('hubWebhookModal'));
     document.querySelector('[data-close-webhook]').addEventListener('click',()=>closeModal('hubWebhookModal'));
+    document.getElementById('hubWebhookTest').addEventListener('click', async () => {
+      await sendWebhookTestEvent();
+    });
     document.getElementById('hubWebhookIssue').addEventListener('click', async () => {
       const integration = integrationForToolName(activeWebhookToolName);
       if (!integration) {
