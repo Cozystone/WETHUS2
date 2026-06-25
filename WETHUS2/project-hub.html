@@ -164,6 +164,7 @@
           <div id="tab-progress" class="hidden">
             <article class="hub-card"><h3>진행 로그</h3><ul id="pgLogs" class="meta-bullet"></ul></article>
             <article class="hub-card"><h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">프로젝트 운영 AI 요약 <button id="pgAiSummBtn" class="btn btn--secondary" type="button">허브 문맥 기반 요약 생성</button></h3><p id="pgAiSummary" style="margin:10px 0 0;"></p><p id="pgAiPriority" class="meta" style="margin:8px 0 0;"></p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;"><div><strong style="display:block;margin-bottom:6px;">지금 막는 점</strong><ul id="pgAiBlockers" class="meta-bullet"></ul></div><div><strong style="display:block;margin-bottom:6px;">근거 빈칸</strong><ul id="pgAiEvidenceGaps" class="meta-bullet"></ul></div></div><ul id="pgAiGrounding" class="meta-bullet" style="margin-top:8px;"></ul><p id="pgAiChangeLog" class="meta" style="margin:8px 0 0;"></p></article>
+            <article class="hub-card"><h3>AI 멘토 히스토리</h3><div id="pgAiRuns" class="list-grid" style="margin-top:8px;"></div></article>
           </div>
 
           <div id="tab-materials" class="hidden">
@@ -489,6 +490,31 @@
         ? rows.map((item) => `<li>${esc(item)}</li>`).join('')
         : `<li>${esc(emptyText)}</li>`;
     }
+    function renderMentorRunHistory(hub) {
+      const el = document.getElementById('pgAiRuns');
+      if (!el) return;
+      const runs = Array.isArray(hub?.mentorRuns) ? hub.mentorRuns.slice(0, 5) : [];
+      if (!runs.length) {
+        el.innerHTML = '<article class="list-item"><h3>아직 기록 없음</h3><p class="meta">AI 멘토를 한 번 실행하면 최근 판단 흐름이 여기에 쌓입니다.</p></article>';
+        return;
+      }
+      el.innerHTML = runs.map((run) => {
+        const reviewedAt = run?.reviewedAt ? new Date(run.reviewedAt).toLocaleString('ko-KR') : '방금';
+        const trigger = String(run?.trigger || '').trim() || 'manual';
+        const mode = mentorModeLabel(run?.mentorMode || '');
+        const prompt = String(run?.prompt || '').trim();
+        const blocker = String(run?.executionBlocker || '').trim();
+        const summary = String(run?.summary || '').trim();
+        const priority = String(run?.priority || '').trim();
+        return `<article class="list-item">
+          <h3 style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><span>${esc(mode)}</span><span class="meta" style="white-space:nowrap;">${esc(reviewedAt)}</span></h3>
+          <p class="meta" style="margin:6px 0 0;">실행 방식: ${esc(trigger)}${prompt ? ` · 요청: ${esc(prompt)}` : ''}</p>
+          <p style="margin:8px 0 0;">${esc(summary || '요약 없음')}</p>
+          ${priority ? `<p class="meta" style="margin:8px 0 0;">우선순위: ${esc(priority)}</p>` : ''}
+          ${blocker ? `<p class="meta" style="margin:6px 0 0;">막는 점: ${esc(blocker)}</p>` : ''}
+        </article>`;
+      }).join('');
+    }
     function renderMentorPanels(hub, defaults = {}) {
       const summaryEl = document.getElementById('pgAiSummary');
       const priorityEl = document.getElementById('pgAiPriority');
@@ -513,6 +539,7 @@
       if (changeLogEl) {
         changeLogEl.textContent = changeLog || 'AI 변경 로그가 아직 없습니다.';
       }
+      renderMentorRunHistory(hub);
 
       const statusRows = Array.isArray(defaults.statusRows) ? defaults.statusRows : [];
       const adviceRows = Array.isArray(defaults.adviceRows) ? defaults.adviceRows : [];
@@ -548,6 +575,7 @@
         mentorMode: String(result.mentorMode || '').trim(),
         summary: String(result.summary || '').trim(),
         priority: String(result.priority || '').trim(),
+        executionBlocker: String(result.executionBlocker || '').trim(),
         reviewedAt: result.reviewedAt || new Date().toISOString()
       });
       return WETHUS.upsertProjectHub(currentProject.id, {

@@ -39,6 +39,8 @@ const frontendChecks = [
       'id="hubWebhookOpsStatus"',
       'id="pgAiBlockers"',
       'id="pgAiEvidenceGaps"',
+      'id="pgAiRuns"',
+      'function renderMentorRunHistory(hub) {',
       'id="sdBlockers"',
       'id="sdEvidence"',
       'executionBlocker',
