@@ -23,6 +23,11 @@ const steps = [
     args: ['scripts/validate-static.js']
   },
   {
+    label: 'Mobile commercial UI smoke',
+    command: process.execPath,
+    args: ['scripts/smoke-mobile-commercial-ui.js']
+  },
+  {
     label: 'Deploy config parity',
     command: process.execPath,
     args: ['scripts/check-deploy-config-parity.js']

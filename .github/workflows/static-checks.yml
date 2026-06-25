@@ -21,6 +21,9 @@ jobs:
       - name: Validate static site files
         run: node scripts/validate-static.js
 
+      - name: Mobile commercial UI smoke
+        run: node scripts/smoke-mobile-commercial-ui.js
+
       - name: Check deploy config parity
         run: node scripts/check-deploy-config-parity.js
 
