@@ -46,7 +46,20 @@ function runNode(args) {
 
 function main() {
   for (const output of outputs) {
-    const text = runNode(output.command);
+    const extraEnv = output.file.startsWith('launch-readiness-snapshot.')
+      ? { LAUNCH_READINESS_USE_GENERATED_ARTIFACTS: 'true' }
+      : {};
+    const result = spawnSync(process.execPath, output.command, {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      shell: false,
+      env: { ...process.env, ...extraEnv }
+    });
+    if (result.status !== 0) {
+      throw new Error((result.stderr || result.stdout || `${output.command.join(' ')} failed`).trim());
+    }
+    const text = String(result.stdout || '');
     fs.writeFileSync(path.join(repoRoot, output.file), text, 'utf8');
     console.log(`Wrote ${output.file}`);
   }

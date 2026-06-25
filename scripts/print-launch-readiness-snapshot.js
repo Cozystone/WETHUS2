@@ -1,8 +1,12 @@
 const { spawnSync } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '..');
 const JSON_MODE = process.argv.includes('--json');
+const USE_GENERATED_ARTIFACTS = String(process.env.LAUNCH_READINESS_USE_GENERATED_ARTIFACTS || 'false').toLowerCase() === 'true';
+const READINESS_JSON_PATH = path.join(repoRoot, 'commercialization-readiness-summary.json');
+const ROLLOUT_JSON_PATH = path.join(repoRoot, 'production-rollout-status.json');
 
 function runNodeScript(script) {
   const result = spawnSync(process.execPath, [script, '--json'], {
@@ -15,6 +19,24 @@ function runNodeScript(script) {
     throw new Error((result.stderr || result.stdout || `${script} failed`).trim());
   }
   return JSON.parse(String(result.stdout || '').replace(/^\uFEFF/, '').trim());
+}
+
+function readJsonArtifact(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, 'utf8').replace(/^\uFEFF/, '').trim());
+}
+
+function loadReadinessJson() {
+  if (USE_GENERATED_ARTIFACTS && fs.existsSync(READINESS_JSON_PATH)) {
+    return readJsonArtifact(READINESS_JSON_PATH);
+  }
+  return runNodeScript('scripts/print-commercialization-readiness-summary.js');
+}
+
+function loadRolloutJson() {
+  if (USE_GENERATED_ARTIFACTS && fs.existsSync(ROLLOUT_JSON_PATH)) {
+    return readJsonArtifact(ROLLOUT_JSON_PATH);
+  }
+  return runNodeScript('scripts/print-production-rollout-status.js');
 }
 
 function push(lines, text = '') {
@@ -45,8 +67,8 @@ function renderBlockers(readiness) {
 }
 
 function main() {
-  const readiness = runNodeScript('scripts/print-commercialization-readiness-summary.js');
-  const rollout = runNodeScript('scripts/print-production-rollout-status.js');
+  const readiness = loadReadinessJson();
+  const rollout = loadRolloutJson();
   const blockers = renderBlockers(readiness);
 
   const snapshot = {
