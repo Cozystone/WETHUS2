@@ -16,7 +16,7 @@ const checks = [
     status: 200,
     includes: [
       'WETHUS',
-      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       'id="homeFeatured"',
       'WETHUS MANIFESTO'
     ],
@@ -32,7 +32,7 @@ const checks = [
     path: '/login.html',
     status: 200,
     includes: [
-      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       'id="devModeRow" style="display:none;"',
       'const allowDevMode = isLocalHost || window.WETHUS_ENABLE_DEV_MODE === true;',
       'function redirectAfterAuth(user, options = {})',
@@ -55,7 +55,7 @@ const checks = [
     status: 200,
     frontendContract: true,
     includes: [
-      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       'renderHub = async function renderHubStable()',
       'loadRemoteActivityEventsForCurrentProject()',
       'loadRemoteStatusSnapshotForCurrentProject()',
@@ -71,7 +71,7 @@ const checks = [
     status: 200,
     frontendContract: true,
     includes: [
-      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       'WETHUS.myBookmarkedProjects()',
       'WETHUS.myLikedProjects()',
       'data-open-project',
@@ -85,7 +85,7 @@ const checks = [
     status: 200,
     frontendContract: true,
     includes: [
-      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       'WETHUS.isBookmarked(',
       'class="bookmark-btn',
       'data-bm="',

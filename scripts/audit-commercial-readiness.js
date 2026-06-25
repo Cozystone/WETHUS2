@@ -191,7 +191,7 @@ async function auditFrontendFlows() {
     {
       path: '/login.html',
       frontendContract: [
-        'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+        'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
         'function redirectAfterAuth(user, options = {})',
         'onboardingReturnTo'
       ]
@@ -199,7 +199,7 @@ async function auditFrontendFlows() {
     {
       path: '/',
       frontendContract: [
-        'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+        'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
         'class="hero-banner"',
         'id="homeFeatured"',
         'WETHUS MANIFESTO'
@@ -208,7 +208,7 @@ async function auditFrontendFlows() {
     {
       path: '/project-hub.html',
       frontendContract: [
-        'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+        'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
         'renderHub = async function renderHubStable()',
         'loadRemoteActivityEventsForCurrentProject()',
         'loadRemoteStatusSnapshotForCurrentProject()',
@@ -221,7 +221,7 @@ async function auditFrontendFlows() {
     {
       path: '/profile.html',
       frontendContract: [
-        'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+        'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
         'WETHUS.myBookmarkedProjects()',
         'WETHUS.myLikedProjects()',
         'data-open-project'
@@ -230,7 +230,7 @@ async function auditFrontendFlows() {
     {
       path: '/explore_theme.html',
       frontendContract: [
-        'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+        'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
         'WETHUS.isBookmarked(',
         'class="bookmark-btn',
         'data-bm="'

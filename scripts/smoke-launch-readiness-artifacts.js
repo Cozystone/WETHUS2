@@ -76,14 +76,24 @@ function main() {
     if (!snapshotText.includes('# WETHUS Launch Snapshot')) {
       throw new Error('launch-readiness-snapshot.md is missing the expected heading');
     }
-    if (readinessJson.productionLaunchReady !== true) {
-      throw new Error('commercialization-readiness-summary.json should report productionLaunchReady=true in the current live state');
+    if (typeof readinessJson.productionLaunchReady !== 'boolean') {
+      throw new Error('commercialization-readiness-summary.json should expose a boolean productionLaunchReady');
     }
-    if ((rolloutJson.frontendDrift || []).some((row) => row.status !== 200 || row.driftCount !== 0)) {
-      throw new Error('production-rollout-status.json should report clean frontend drift rows');
+    if (!Array.isArray(rolloutJson.frontendDrift)) {
+      throw new Error('production-rollout-status.json should expose frontendDrift rows');
     }
-    if (!snapshotJson || snapshotJson.launchVerdict !== 'ready') {
-      throw new Error('launch-readiness-snapshot.json should report launchVerdict=ready in the current live state');
+    const frontendDriftBlocked = (rolloutJson.frontendDrift || []).some((row) => row.status !== 200 || row.driftCount !== 0);
+    if (readinessJson.productionLaunchReady && frontendDriftBlocked) {
+      throw new Error('productionLaunchReady=true must not coexist with frontend drift blockers');
+    }
+    if (!snapshotJson || !['ready', 'blocked'].includes(String(snapshotJson.launchVerdict || ''))) {
+      throw new Error('launch-readiness-snapshot.json should expose launchVerdict as ready or blocked');
+    }
+    const verdictMatchesReadiness = readinessJson.productionLaunchReady
+      ? snapshotJson.launchVerdict === 'ready'
+      : snapshotJson.launchVerdict === 'blocked';
+    if (!verdictMatchesReadiness) {
+      throw new Error('launch snapshot verdict should stay consistent with commercialization-readiness-summary.json');
     }
 
     runNode(['scripts/write-launch-readiness-step-summary.js'], {

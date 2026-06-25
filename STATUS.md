@@ -35,7 +35,7 @@
 - `REQUIRE_WETHUS_API_SECURITY_HEADERS=true`: enable in production smoke after Render is confirmed to run the hardened backend.
 - `REQUIRE_WETHUS_API_SECURITY_FLAGS=true`: enable in production smoke when all session/membership guards are intentionally active in production.
 - `REQUIRE_WETHUS_FRONTEND_HUB_CONTRACTS=true`: enable in strict launch-grade checks when the live `index.html`, `login.html`, `project-hub.html`, `profile.html`, and `explore_theme.html` match the current local interaction contracts.
-  - This now includes the shared frontend contract marker `2026-06-25-commercial-hardening-v1`.
+  - This now includes the shared frontend contract marker `2026-06-26-commercial-interactions-v1`.
 - `REQUIRE_WETHUS_BACKEND_CONTRACTS=true`: enable in strict launch-grade checks when the live Render backend exposes the hardened `/health` and `/integrations/providers` contract surface expected by the current local source.
 - `WETHUS_DEPLOY_SOURCE_STRICT=true`: enable when the local worktree must be clean and aligned with `origin/main` before treating the run as launch-grade.
 

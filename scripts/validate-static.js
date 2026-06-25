@@ -127,7 +127,7 @@ function validateProjectHubContracts() {
   }
   const text = read(file);
   const requiredSnippets = [
-    'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+    'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
     'renderHub = async function renderHubStable()',
     'loadRemoteActivityEventsForCurrentProject()',
     'loadRemoteStatusSnapshotForCurrentProject()',
@@ -199,7 +199,7 @@ function validateInteractionConsumers() {
   if (fs.existsSync(profileFile)) {
     const text = read(profileFile);
     const requiredSnippets = [
-      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       'data-tab="liked"',
       'data-tab="bookmarked"',
       'WETHUS.myBookmarkedProjects()',
@@ -234,7 +234,7 @@ function validateInteractionConsumers() {
   if (fs.existsSync(homeFile)) {
     const text = read(homeFile);
     const requiredSnippets = [
-      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       'class="hero-banner"',
       'id="homeFeatured"',
       'WETHUS MANIFESTO',
@@ -251,7 +251,7 @@ function validateInteractionConsumers() {
   if (fs.existsSync(themedExplore)) {
     const text = read(themedExplore);
     const requiredSnippets = [
-      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       'reopenCommentPanel',
       'pendingCommentText',
       'reopenApplyModal',
@@ -267,7 +267,7 @@ function validateInteractionConsumers() {
   if (fs.existsSync(loginFile)) {
     const text = read(loginFile);
     const requiredSnippets = [
-      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       'function resolvePendingReturnTarget()',
       'function preserveReturnTargetForOnboarding(target)',
       'function redirectAfterAuth(user, options = {})',

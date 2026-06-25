@@ -10,7 +10,7 @@ const checks = [
     file: 'index.html',
     urlPath: '/',
     snippets: [
-      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       'class="hero-banner"',
       'id="homeFeatured"',
       'WETHUS MANIFESTO'
@@ -19,7 +19,7 @@ const checks = [
   {
     file: 'project-hub.html',
     snippets: [
-      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       'renderHub = async function renderHubStable()',
       'loadRemoteActivityEventsForCurrentProject()',
       'loadRemoteStatusSnapshotForCurrentProject()',
@@ -32,7 +32,7 @@ const checks = [
   {
     file: 'profile.html',
     snippets: [
-      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       'WETHUS.myBookmarkedProjects()',
       'WETHUS.myLikedProjects()',
       'data-open-project'
@@ -41,7 +41,7 @@ const checks = [
   {
     file: 'explore_theme.html',
     snippets: [
-      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       'WETHUS.isBookmarked(',
       'class="bookmark-btn',
       'data-bm="'
@@ -50,7 +50,7 @@ const checks = [
   {
     file: 'login.html',
     snippets: [
-      'meta name="wethus-frontend-contract" content="2026-06-25-commercial-hardening-v1"',
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       'function redirectAfterAuth(user, options = {})',
       'onboardingReturnTo'
     ]
