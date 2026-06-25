@@ -418,13 +418,13 @@
       document.getElementById('sdAdvice').innerHTML='<li>목표를 이번 주 단위로 쪼개세요.</li><li>막힌 점을 카드에 명시하세요.</li><li>멘토링 요청은 구체적으로 작성하세요.</li>';
       const mergedTimeline = mergedProjectTimeline(80);
       const mergedRecentTop = mergedTimeline.slice(0, 5);
-      document.getElementById('ovRecent').innerHTML = mergedRecentTop.map((item) => `<li>${esc(item.text)} 쨌 ${esc(new Date(item.createdAt).toLocaleString('ko-KR'))}${item.source === 'server' ? ' 쨌 ?쒕쾭湲곕줉' : ''}</li>`).join('') || '<li>理쒓렐 ?쒕룞???놁뒿?덈떎.</li>';
+      document.getElementById('ovRecent').innerHTML = mergedRecentTop.map((item) => `<li>${esc(renderTimelineItem(item))}</li>`).join('') || '<li>최근 활동이 없습니다.</li>';
       moreBtn.style.display = mergedTimeline.length > 10 ? 'inline-flex' : 'none';
       moreBtn.onclick = () => {
-        document.getElementById('recentList').innerHTML = mergedTimeline.map((item) => `<li>${esc(item.text)} 쨌 ${esc(new Date(item.createdAt).toLocaleString('ko-KR'))}${item.source === 'server' ? ' 쨌 ?쒕쾭湲곕줉' : ''}</li>`).join('') || '<li>理쒓렐 ?쒕룞???놁뒿?덈떎.</li>';
+        document.getElementById('recentList').innerHTML = mergedTimeline.map((item) => `<li>${esc(renderTimelineItem(item))}</li>`).join('') || '<li>최근 활동이 없습니다.</li>';
         openModal('recentModal');
       };
-      document.getElementById('pgLogs').innerHTML = mergedTimeline.map((item) => `<li>${esc(item.text)} 쨌 ${esc(new Date(item.createdAt || Date.now()).toLocaleString('ko-KR'))}${item.source === 'server' ? ' 쨌 ?쒕쾭湲곕줉' : ''}</li>`).join('') || '<li>吏꾪뻾 濡쒓렇 ?놁쓬</li>';
+      document.getElementById('pgLogs').innerHTML = mergedTimeline.map((item) => `<li>${esc(renderTimelineItem(item))}</li>`).join('') || '<li>진행 로그 없음</li>';
       const snapshot = remoteStatusSnapshot;
       const snapshotUpdatedAt = snapshot?.updated_at ? new Date(snapshot.updated_at).toLocaleString('ko-KR') : '';
       const statusRows = [];
@@ -691,10 +691,57 @@
     let activeWebhookToolName = '';
     let lastIssuedWebhookConfig = null;
 
+    function providerLabel(provider) {
+      const value = String(provider || '').trim().toLowerCase();
+      if (value === 'google') return 'Google';
+      if (value === 'google_docs') return 'Google Docs';
+      if (value === 'google_sheets') return 'Google Sheets';
+      if (value === 'notion') return 'Notion';
+      if (value === 'slack') return 'Slack';
+      if (value === 'figma') return 'Figma';
+      return value ? value.replace(/_/g, ' ') : '외부 도구';
+    }
+
+    function summarizeActivityPayload(event) {
+      const payload = event?.raw_payload && typeof event.raw_payload === 'object' ? event.raw_payload : {};
+      const summary = String(payload.summary || payload.delta || payload.action || payload.status || '').trim();
+      return summary ? summary.slice(0, 80) : '';
+    }
+
+    function humanizeExternalEventType(type) {
+      const value = String(type || '').trim().toLowerCase();
+      if (!value) return '새 활동';
+      if (value === 'resource_seen') return '변경 감지';
+      if (value === 'webhook_event') return '새 활동 감지';
+
+      const labelMap = [
+        ['page_updated', '문서 업데이트'],
+        ['document_updated', '문서 업데이트'],
+        ['doc_updated', '문서 업데이트'],
+        ['sheet_updated', '시트 업데이트'],
+        ['database_updated', '데이터베이스 업데이트'],
+        ['task_updated', '작업 업데이트'],
+        ['message_posted', '메시지 등록'],
+        ['comment_added', '댓글 추가'],
+        ['file_updated', '파일 업데이트'],
+        ['created', '생성'],
+        ['updated', '업데이트'],
+        ['deleted', '삭제'],
+        ['removed', '삭제'],
+        ['archived', '보관'],
+        ['synced', '동기화']
+      ];
+      const found = labelMap.find(([needle]) => value.endsWith(needle));
+      if (found) return found[1];
+      return value.replace(/^[a-z0-9]+_/, '').replace(/_/g, ' ').trim() || '새 활동';
+    }
+
     function formatProjectAuditEvent(event) {
       const type = String(event?.event_type || '').trim();
       const actorName = String(event?.actor_name || '').trim() || '사용자';
       const sourceName = String(event?.source_item_name || '').trim();
+      const sourceType = String(event?.source_type || '').trim();
+      const payloadSummary = summarizeActivityPayload(event);
       if (type === 'project_like_added') return `${actorName}님이 프로젝트에 좋아요를 남겼습니다.`;
       if (type === 'project_like_removed') return `${actorName}님이 프로젝트 좋아요를 취소했습니다.`;
       if (type === 'project_bookmark_added') return `${actorName}님이 프로젝트를 북마크했습니다.`;
@@ -709,9 +756,16 @@
       if (type === 'integration_synced') return `${actorName}님이 ${sourceName || '외부 도구'} 연동을 동기화했습니다.`;
       if (type === 'integration_disconnected') return `${actorName}님이 ${sourceName || '외부 도구'} 연동을 해제했습니다.`;
       if (type === 'integration_deleted') return `${actorName}님이 ${sourceName || '외부 도구'} 연동 기록을 삭제했습니다.`;
-      if (type === 'resource_seen') return `${sourceName || '외부 문서'} 변경 항목이 감지되었습니다.`;
-      if (type === 'webhook_event') return `${sourceName || '외부 도구'}에서 새 활동이 감지되었습니다.`;
-      return sourceName ? `${sourceName}: ${type || 'activity'}` : (type || 'activity');
+      const providerName = providerLabel(sourceType);
+      const actionLabel = humanizeExternalEventType(type);
+      const resourceLabel = sourceName || '연결 리소스';
+      return `${providerName} 활동 · ${resourceLabel} · ${actionLabel}${payloadSummary ? ` (${payloadSummary})` : ''}`;
+    }
+
+    function renderTimelineItem(item) {
+      const timestamp = new Date(item?.createdAt || Date.now()).toLocaleString('ko-KR');
+      const sourceLabel = item?.source === 'server' ? '서버 로그' : '허브 메모';
+      return `${String(item?.text || '').trim()} · ${timestamp} · ${sourceLabel}`;
     }
     function normalizedRemoteActivityEvents(limit = 50) {
       return (remoteActivityEvents || [])
@@ -746,7 +800,10 @@
         .map(row => row?.occurred_at || row?.created_at || '')
         .filter(Boolean)
         .sort((a, b) => new Date(b) - new Date(a))[0];
-      return `최근 이벤트 ${rows.length}건${lastAt ? ` · 마지막 ${new Date(lastAt).toLocaleString('ko-KR')}` : ''}`;
+      const latestEvent = formatProjectAuditEvent(rows
+        .slice()
+        .sort((a, b) => new Date(b?.occurred_at || b?.created_at || 0) - new Date(a?.occurred_at || a?.created_at || 0))[0]);
+      return `최근 이벤트 ${rows.length}건${lastAt ? ` · 마지막 ${new Date(lastAt).toLocaleString('ko-KR')}` : ''}${latestEvent ? ` · ${latestEvent}` : ''}`;
     }
 
     function integrationWebhookUrl(integration) {
