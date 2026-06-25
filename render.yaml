@@ -33,3 +33,5 @@ services:
         value: "false"
       - key: INTEGRATIONS_REQUIRE_SESSION
         value: "false"
+      - key: PROJECT_INTERACTIONS_REQUIRE_SESSION
+        value: "false"

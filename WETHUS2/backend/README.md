@@ -17,6 +17,7 @@ cp .env.example .env
 - `CLOUD_STATE_REQUIRE_SESSION`: set to `true` after production login/session cookies are verified. This blocks `/cloud/state` reads and writes unless the session email matches the requested email.
 - `INTEGRATIONS_REQUIRE_ACTOR`: set to `true` after project hub requests are verified to send `x-user-id`. This blocks integration, activity, snapshot, and external identity APIs unless an actor is present.
 - `INTEGRATIONS_REQUIRE_SESSION`: set to `true` after `INTEGRATIONS_REQUIRE_ACTOR` and session cookies are verified. This requires the session subject to match `x-user-id`.
+- `PROJECT_INTERACTIONS_REQUIRE_SESSION`: set to `true` after session restore is verified. This requires likes, comments, and project application APIs to match the browser session subject to `x-user-id`.
 - `WETHUS_DATA_DIR`: optional path for JSON state files. Defaults to `backend/data`; tests should use a temporary directory and production should use a persistent disk or database-backed replacement.
 - AI provider:
   - `AI_PROVIDER=openai` is recommended.
@@ -71,8 +72,9 @@ window.WETHUS_GOOGLE_AUTH_ENDPOINT = 'http://localhost:8787/auth/google';
 - API responses include baseline security headers.
 - Auth, AI, webhook, and metadata fetch endpoints use in-memory rate limits.
 - `/tools/fetch-meta` rejects localhost/private IP targets and rechecks redirect targets to reduce SSRF risk.
+- `/auth/session` returns both the decoded session and the matched sanitized user so the frontend can restore identity after refresh.
 - Frontend currently stores app profile state in `localStorage` for the MVP. `/cloud/state` can be protected with `CLOUD_STATE_REQUIRE_SESSION=true`, but the long-term target is DB-backed sessions and project/review state.
 - Backend JSON state is intentionally MVP-grade. Use `WETHUS_DATA_DIR` for isolated test runs or a persistent production disk, and migrate high-value state to a database before scaling usage.
-- Project hub integration APIs can be protected with `INTEGRATIONS_REQUIRE_ACTOR=true` and then tightened with `INTEGRATIONS_REQUIRE_SESSION=true`; this is an interim boundary until project membership authorization moves to the database.
+- Project hub integration APIs can be protected with `INTEGRATIONS_REQUIRE_ACTOR=true` and then tightened with `INTEGRATIONS_REQUIRE_SESSION=true`; likes/comments/applications can separately be tightened with `PROJECT_INTERACTIONS_REQUIRE_SESSION=true`. These are interim boundaries until project membership authorization moves to the database.
 - Admin bootstrap only works when no matching admin user exists yet. Set a strong `ADMIN_BOOTSTRAP_PASSWORD`, log in once with `ADMIN_EMAIL`, then rotate or remove the bootstrap password.
 - If `/admin.html` shows "권한 없음" and `/auth/login` for `admin@wethus.ai` returns "가입된 계정이 없습니다.", production probably has no admin user and no valid bootstrap password configured.

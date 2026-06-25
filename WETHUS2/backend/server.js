@@ -87,6 +87,7 @@ const RATE_LIMIT_DISABLED = String(process.env.RATE_LIMIT_DISABLED || 'false').t
 const CLOUD_STATE_REQUIRE_SESSION = String(process.env.CLOUD_STATE_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
 const INTEGRATIONS_REQUIRE_ACTOR = String(process.env.INTEGRATIONS_REQUIRE_ACTOR || 'false').toLowerCase() === 'true';
 const INTEGRATIONS_REQUIRE_SESSION = String(process.env.INTEGRATIONS_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
+const PROJECT_INTERACTIONS_REQUIRE_SESSION = String(process.env.PROJECT_INTERACTIONS_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
 const BUILD_COMMIT = String(process.env.RENDER_GIT_COMMIT || process.env.VERCEL_GIT_COMMIT_SHA || process.env.GIT_COMMIT || process.env.SOURCE_VERSION || '').trim();
 const BUILD_REF = String(process.env.RENDER_GIT_BRANCH || process.env.VERCEL_GIT_COMMIT_REF || process.env.GIT_BRANCH || '').trim();
 const RATE_LIMIT_SWEEP_MS = 5 * 60 * 1000;
@@ -429,6 +430,41 @@ function requireIntegrationActor(req, res) {
   return actorId;
 }
 
+function findUserForSession(session) {
+  if (!session) return null;
+  const sessionSub = String(session.sub || '').trim();
+  const sessionEmail = normEmail(session.email);
+  if (!sessionSub && !sessionEmail) return null;
+  return readUsers().find(user => {
+    const userId = String(user?.id || user?.googleSub || '').trim();
+    return (sessionSub && userId === sessionSub) || (sessionEmail && normEmail(user?.email) === sessionEmail);
+  }) || null;
+}
+
+function sanitizeUserForClient(user) {
+  if (!user) return null;
+  const copy = { ...user };
+  delete copy.passwordHash;
+  delete copy.password;
+  return copy;
+}
+
+function requireProjectActor(req, res) {
+  const actorId = requireActor(req, res);
+  if (!actorId) return null;
+  if (!PROJECT_INTERACTIONS_REQUIRE_SESSION) return actorId;
+  const session = getSession(req);
+  if (!session?.sub) {
+    res.status(401).json({ ok: false, error: 'session required' });
+    return null;
+  }
+  if (String(session.sub) !== String(actorId)) {
+    res.status(403).json({ ok: false, error: 'session actor mismatch' });
+    return null;
+  }
+  return actorId;
+}
+
 function actorOwnsIntegration(actorId, integration) {
   if (!INTEGRATIONS_REQUIRE_ACTOR) return true;
   if (!integration) return false;
@@ -629,7 +665,8 @@ function healthPayload() {
       rateLimit: !RATE_LIMIT_DISABLED,
       cloudStateRequireSession: CLOUD_STATE_REQUIRE_SESSION,
       integrationsRequireActor: INTEGRATIONS_REQUIRE_ACTOR,
-      integrationsRequireSession: INTEGRATIONS_REQUIRE_SESSION
+      integrationsRequireSession: INTEGRATIONS_REQUIRE_SESSION,
+      projectInteractionsRequireSession: PROJECT_INTERACTIONS_REQUIRE_SESSION
     }
   };
 }
@@ -2582,7 +2619,8 @@ app.get('/auth/session', (req, res) => {
     const token = req.cookies?.wethus_session;
     if (!token) return res.status(401).json({ ok: false });
     const decoded = jwt.verify(token, JWT_SECRET);
-    return res.json({ ok: true, session: decoded });
+    const user = findUserForSession(decoded);
+    return res.json({ ok: true, session: decoded, user: sanitizeUserForClient(user) });
   } catch {
     return res.status(401).json({ ok: false });
   }
@@ -2595,7 +2633,7 @@ app.post('/auth/logout', (req, res) => {
 
 app.post('/projects/:projectId/likes/toggle', (req, res) => {
   try {
-    const actorId = requireActor(req, res);
+    const actorId = requireProjectActor(req, res);
     if (!actorId) return;
     const projectId = String(req.params.projectId || '').trim();
     if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
@@ -2615,7 +2653,7 @@ app.post('/projects/:projectId/likes/toggle', (req, res) => {
 
 app.post('/projects/:projectId/comments', (req, res) => {
   try {
-    const actorId = requireActor(req, res);
+    const actorId = requireProjectActor(req, res);
     if (!actorId) return;
     const projectId = String(req.params.projectId || '').trim();
     const text = String(req.body?.text || '').trim();
@@ -2642,7 +2680,7 @@ app.post('/projects/:projectId/comments', (req, res) => {
 
 app.get('/projects/:projectId/applications', (req, res) => {
   try {
-    const actorId = requireActor(req, res);
+    const actorId = requireProjectActor(req, res);
     if (!actorId) return;
     const projectId = String(req.params.projectId || '').trim();
     if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
@@ -2660,7 +2698,7 @@ app.get('/projects/:projectId/applications', (req, res) => {
 
 app.post('/projects/:projectId/applications', (req, res) => {
   try {
-    const actorId = requireActor(req, res);
+    const actorId = requireProjectActor(req, res);
     if (!actorId) return;
     const projectId = String(req.params.projectId || '').trim();
     const motivation = String(req.body?.motivation || '').trim();
@@ -2697,7 +2735,7 @@ app.post('/projects/:projectId/applications', (req, res) => {
 
 app.post('/projects/:projectId/applications/:applicationId/status', (req, res) => {
   try {
-    const actorId = requireActor(req, res);
+    const actorId = requireProjectActor(req, res);
     if (!actorId) return;
     const projectId = String(req.params.projectId || '').trim();
     const applicationId = String(req.params.applicationId || '').trim();
@@ -2736,7 +2774,7 @@ app.post('/projects/:projectId/applications/:applicationId/status', (req, res) =
 
 app.delete('/projects/:projectId/applications/me', (req, res) => {
   try {
-    const actorId = requireActor(req, res);
+    const actorId = requireProjectActor(req, res);
     if (!actorId) return;
     const projectId = String(req.params.projectId || '').trim();
     const rows = readProjectApplications();

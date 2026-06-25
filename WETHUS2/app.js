@@ -662,6 +662,13 @@
         if (k.startsWith('wethus.hub.selected.')) localStorage.removeItem(k);
       });
     } catch (_) {}
+    const base = currentCloudApiBase();
+    if (base) {
+      fetch(`${String(base).replace(/\/$/, '')}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      }).catch(() => {});
+    }
   }
 
   function currentUser() {
@@ -1513,6 +1520,24 @@
     s.devMode = false;
     save(s);
     return target;
+  }
+
+  async function restoreServerSession() {
+    const bases = Array.from(new Set(CLOUD_BASE_CANDIDATES));
+    for (const base of bases) {
+      try {
+        const response = await fetch(new URL('/auth/session', base).toString(), {
+          credentials: 'include'
+        });
+        if (!response.ok) continue;
+        const payload = await response.json().catch(() => ({}));
+        if (!payload?.ok || !payload?.user) continue;
+        const user = upsertCloudUser(payload.user);
+        if (user?.email) syncCloudState(user.email).catch(() => {});
+        return { ok: true, user, session: payload.session || null };
+      } catch (_) {}
+    }
+    return { ok: false };
   }
 
   async function syncCloudState(emailInput) {
@@ -2671,19 +2696,9 @@
     showTopToast(latest.title || '새 알림');
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      ensureFavicon();
-      initGuestNavGuard();
-      initGuestApplyGuard();
-      initNotificationNav();
-      applyLanguageUI();
-      applyAuthReturnState();
-      initNotifyToast();
-      startAutoCloudSync();
-    });
-  } else {
+  async function initAppShell() {
     ensureFavicon();
+    await restoreServerSession().catch(() => ({ ok: false }));
     initGuestNavGuard();
     initGuestApplyGuard();
     initNotificationNav();
@@ -2691,6 +2706,14 @@
     applyAuthReturnState();
     initNotifyToast();
     startAutoCloudSync();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      initAppShell().catch(() => {});
+    });
+  } else {
+    initAppShell().catch(() => {});
   }
 
   window.WETHUS = {
@@ -2726,6 +2749,7 @@
     isAdminActor,
     updateCurrentUserProfile,
     upsertCloudUser,
+    restoreServerSession,
     syncCloudState,
     currentPlan,
     setCurrentUserPlan,
