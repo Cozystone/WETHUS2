@@ -58,7 +58,7 @@ const GOOGLE_OAUTH_CLIENT_ID = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env
 const GOOGLE_OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || '';
 const GOOGLE_OAUTH_REDIRECT_URI = process.env.GOOGLE_OAUTH_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/google/callback`;
 const PUBLIC_APP_URL = String(process.env.PUBLIC_APP_URL || 'https://www.wethus.co.kr').trim();
-const GOOGLE_LOGIN_REDIRECT_URI = process.env.GOOGLE_LOGIN_REDIRECT_URI || `${INTEGRATION_APP_URL}/auth/google/callback`;
+const GOOGLE_LOGIN_REDIRECT_URI = process.env.GOOGLE_LOGIN_REDIRECT_URI || GOOGLE_OAUTH_REDIRECT_URI;
 const GOOGLE_OAUTH_REDIRECT_URIS = Array.from(new Set([
   GOOGLE_OAUTH_REDIRECT_URI,
   ...(process.env.GOOGLE_OAUTH_REDIRECT_URIS || process.env.GOOGLE_REDIRECT_URIS || '')
@@ -272,6 +272,77 @@ function buildPostAuthRedirectUrl({ appOrigin, nextPath, onboardingComplete }) {
   redirect.searchParams.set('onboarding', '1');
   if (safeNextPath) redirect.searchParams.set('next', safeNextPath);
   return redirect.toString();
+}
+
+function upsertGoogleUserFromPayload(payload = {}) {
+  const email = normEmail(payload.email);
+  const users = readUsers();
+  let user = users.find(u => (u.googleSub && u.googleSub === payload.sub) || normEmail(u.email) === email);
+  const now = new Date().toISOString();
+  if (!user) {
+    user = {
+      id: crypto.randomUUID(),
+      name: payload.name || email,
+      nickname: String(payload.name || email.split('@')[0] || 'google_user').replace(/\s+/g, ''),
+      email,
+      passwordHash: '',
+      plan: 'free',
+      founderVerified: false,
+      profileImage: payload.picture || '',
+      bio: '',
+      onboardingComplete: false,
+      school: '',
+      careerRaw: '',
+      careerSummary: '',
+      interestTags: [],
+      googleSub: payload.sub,
+      createdAt: now,
+      updatedAt: now
+    };
+    users.push(user);
+  } else {
+    user.googleSub = payload.sub;
+    user.name = payload.name || user.name;
+    user.profileImage = payload.picture || user.profileImage || '';
+    user.updatedAt = now;
+  }
+  writeUsers(users);
+  return user;
+}
+
+async function completeGoogleLoginFlow(req, res, { code, redirectUri, appOrigin, nextPath }) {
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      code,
+      client_id: GOOGLE_OAUTH_CLIENT_ID,
+      client_secret: GOOGLE_OAUTH_CLIENT_SECRET,
+      redirect_uri: redirectUri,
+      grant_type: 'authorization_code'
+    })
+  });
+  const tokenJson = await tokenRes.json().catch(() => ({}));
+  if (!tokenRes.ok || !tokenJson?.id_token) {
+    return res.status(500).send(tokenJson?.error_description || 'google token exchange failed');
+  }
+
+  const ticket = await googleClient.verifyIdToken({
+    idToken: tokenJson.id_token,
+    audience: GOOGLE_CLIENT_IDS
+  });
+  const payload = ticket.getPayload();
+  if (!payload?.sub || !payload?.email) {
+    return res.status(401).send('invalid google token payload');
+  }
+
+  const user = upsertGoogleUserFromPayload(payload);
+  setSessionCookie(req, res, createSessionToken(user));
+  return res.redirect(buildPostAuthRedirectUrl({
+    appOrigin,
+    nextPath,
+    onboardingComplete: !!user.onboardingComplete
+  }));
 }
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -1889,11 +1960,22 @@ app.get('/oauth/:provider/callback', async (req, res) => {
   const projectId = String(state?.project_id || req.query?.project_id || '').trim();
   const userId = String(state?.user_id || req.query?.user_id || 'unknown').trim();
   const googleRedirectUri = String(state?.redirect_uri || resolveGoogleOAuthRedirectUri(req)).trim();
+  const authFlow = String(state?.auth_flow || '').trim();
 
   if (!code) return res.status(400).json({ ok: false, error: 'code missing' });
 
   try {
     if (provider === 'google') {
+      if (authFlow === 'login') {
+        const appOrigin = resolveAllowedAppOrigin(String(state?.app_origin || '').trim());
+        const nextPath = sanitizeReturnPath(String(state?.next_path || '').trim());
+        return await completeGoogleLoginFlow(req, res, {
+          code,
+          redirectUri: googleRedirectUri,
+          appOrigin,
+          nextPath
+        });
+      }
       if (!GOOGLE_OAUTH_CLIENT_ID || !GOOGLE_OAUTH_CLIENT_SECRET || !googleRedirectUri) {
         return res.status(400).json({ ok: false, error: 'GOOGLE oauth env missing', setupRequired: true });
       }
@@ -3024,6 +3106,7 @@ app.get('/auth/google/start', (req, res) => {
     const appOrigin = resolveAllowedAppOrigin(String(req.query?.origin || req.get('origin') || req.get('referer') || '').trim());
     const state = encodeState({
       ts: Date.now(),
+      auth_flow: 'login',
       next_path: nextPath,
       app_origin: appOrigin,
       redirect_uri: redirectUri
@@ -3054,69 +3137,7 @@ app.get('/auth/google/callback', async (req, res) => {
   }
 
   try {
-    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        code,
-        client_id: GOOGLE_OAUTH_CLIENT_ID,
-        client_secret: GOOGLE_OAUTH_CLIENT_SECRET,
-        redirect_uri: redirectUri,
-        grant_type: 'authorization_code'
-      })
-    });
-    const tokenJson = await tokenRes.json().catch(() => ({}));
-    if (!tokenRes.ok || !tokenJson?.id_token) {
-      return res.status(500).send(tokenJson?.error_description || 'google token exchange failed');
-    }
-
-    const ticket = await googleClient.verifyIdToken({
-      idToken: tokenJson.id_token,
-      audience: GOOGLE_CLIENT_IDS
-    });
-    const payload = ticket.getPayload();
-    if (!payload?.sub || !payload?.email) {
-      return res.status(401).send('invalid google token payload');
-    }
-
-    const email = normEmail(payload.email);
-    const users = readUsers();
-    let user = users.find(u => (u.googleSub && u.googleSub === payload.sub) || normEmail(u.email) === email);
-    const now = new Date().toISOString();
-    if (!user) {
-      user = {
-        id: crypto.randomUUID(),
-        name: payload.name || email,
-        nickname: String(payload.name || email.split('@')[0] || 'google_user').replace(/\s+/g, ''),
-        email,
-        passwordHash: '',
-        plan: 'free',
-        founderVerified: false,
-        profileImage: payload.picture || '',
-        bio: '',
-        onboardingComplete: false,
-        school: '',
-        careerRaw: '',
-        careerSummary: '',
-        interestTags: [],
-        googleSub: payload.sub,
-        createdAt: now,
-        updatedAt: now
-      };
-      users.push(user);
-    } else {
-      user.googleSub = payload.sub;
-      user.name = payload.name || user.name;
-      user.profileImage = payload.picture || user.profileImage || '';
-      user.updatedAt = now;
-    }
-    writeUsers(users);
-    setSessionCookie(req, res, createSessionToken(user));
-    return res.redirect(buildPostAuthRedirectUrl({
-      appOrigin,
-      nextPath,
-      onboardingComplete: !!user.onboardingComplete
-    }));
+    return await completeGoogleLoginFlow(req, res, { code, redirectUri, appOrigin, nextPath });
   } catch (err) {
     console.error('[auth/google/callback] failed:', err?.message || err);
     return res.status(500).send(err?.message || 'google oauth callback failed');
