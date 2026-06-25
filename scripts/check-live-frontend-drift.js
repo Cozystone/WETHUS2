@@ -147,6 +147,11 @@ async function run() {
       continue;
     }
 
+    if (localHash !== liveHash) {
+      console.log('- DRIFT: normalized page content hash differs');
+      hasFailure = true;
+    }
+
     for (const snippet of check.snippets) {
       const localHas = localText.includes(snippet);
       const liveHas = liveText.includes(snippet);

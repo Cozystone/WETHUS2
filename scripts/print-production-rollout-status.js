@@ -2,6 +2,7 @@ const BASE_URL = (process.env.WETHUS_BASE_URL || 'https://www.wethus.co.kr').rep
 const API_BASE_URL = (process.env.WETHUS_API_BASE_URL || 'https://wethus-api.onrender.com').replace(/\/$/, '');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { getLaunchScope } = require('./lib/launch-scope');
 const { analyzeRenderEnvSync, backendSourceHead } = require('./lib/render-env-sync');
 const JSON_MODE = process.argv.includes('--json');
@@ -118,6 +119,17 @@ async function fetchText(url) {
   return { res, text };
 }
 
+function sha256(input) {
+  return crypto.createHash('sha256').update(input).digest('hex');
+}
+
+function normalizeText(text) {
+  return String(text || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function extractFrontendContractMarker(text) {
   const match = String(text || '').match(/<meta\s+name="wethus-frontend-contract"\s+content="([^"]+)"/i);
   return match ? String(match[1] || '').trim() : '';
@@ -128,14 +140,22 @@ async function summarizeFrontendDrift() {
   for (const check of frontendChecks) {
     const localPath = path.join(appRoot, check.file);
     const localText = fs.readFileSync(localPath, 'utf8');
+    const localNormalized = normalizeText(localText);
     const url = check.urlPath ? `${BASE_URL}${check.urlPath}` : `${BASE_URL}/${check.file}`;
     const { res, text: liveText } = await fetchText(url);
+    const liveNormalized = normalizeText(liveText);
     const snippetDrift = check.snippets.filter((snippet) => localText.includes(snippet) !== liveText.includes(snippet));
+    const localHash = sha256(localNormalized);
+    const liveHash = sha256(liveNormalized);
+    const hashMatch = localHash === liveHash;
     rows.push({
       file: check.file,
       status: res.status,
-      driftCount: snippetDrift.length,
+      driftCount: snippetDrift.length + (hashMatch ? 0 : 1),
       snippetDrift,
+      hashMatch,
+      localHash,
+      liveHash,
       localContractMarker: extractFrontendContractMarker(localText),
       liveContractMarker: extractFrontendContractMarker(liveText)
     });

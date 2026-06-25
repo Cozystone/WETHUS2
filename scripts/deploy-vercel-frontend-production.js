@@ -12,6 +12,11 @@ const project = String(process.env.WETHUS_VERCEL_PROJECT || 'wethus-2').trim();
 const skipVerify = String(process.env.WETHUS_SKIP_LIVE_FRONTEND_VERIFY || 'false').toLowerCase() === 'true';
 const dryRun = String(process.env.WETHUS_VERCEL_DEPLOY_DRY_RUN || 'false').toLowerCase() === 'true';
 
+function isVercelDailyQuotaError(message) {
+  const text = String(message || '');
+  return text.includes('api-deployments-free-per-day') || text.includes('Resource is limited - try again in 24 hours');
+}
+
 function runCommand(command, args, options = {}) {
   let resolvedCommand = command;
   let resolvedArgs = args;
@@ -68,18 +73,41 @@ function main() {
       console.log('\nExisting repo-root Vercel link detected.');
     }
 
+    let deployQuotaBlocked = false;
     if (!dryRun) {
       console.log('\nDeploying current repo root to Vercel production...');
-      runCommand('vercel', ['deploy', '--prod', '--yes', '--scope', scope], { cwd: repoRoot });
+      try {
+        runCommand('vercel', ['deploy', '--prod', '--yes', '--scope', scope], { cwd: repoRoot });
+      } catch (error) {
+        if (!isVercelDailyQuotaError(error?.message || error)) throw error;
+        deployQuotaBlocked = true;
+        console.warn('\nVercel production deploy quota reached for today.');
+        console.warn('- Manual `vercel deploy --prod` is blocked by the daily free-plan limit.');
+        console.warn('- Checking whether Git-backed live deploys have already caught up anyway...');
+      }
     } else {
       console.log('\nDry-run enabled: skipping `vercel deploy --prod`.');
     }
 
     if (!skipVerify) {
       console.log('\nVerifying live frontend drift...');
-      runCommand(process.execPath, ['scripts/check-live-frontend-drift.js'], { cwd: repoRoot });
+      try {
+        runCommand(process.execPath, ['scripts/check-live-frontend-drift.js'], { cwd: repoRoot });
+      } catch (error) {
+        if (deployQuotaBlocked) {
+          throw new Error(
+            'Vercel daily deploy quota blocked the manual production deploy, and live frontend drift still remains. Wait for the next deploy window or rely on a successful Git auto-deploy before calling this release complete.'
+          );
+        }
+        throw error;
+      }
     } else {
       console.log('\nLive frontend drift verification skipped by env.');
+    }
+
+    if (deployQuotaBlocked) {
+      console.log('\nManual deploy was quota-blocked, but live drift is already clean.');
+      console.log('Git-backed production output appears to be current.');
     }
 
     console.log('\nFrontend production deploy flow completed.');
