@@ -200,6 +200,7 @@
 
   <div id="hubEditModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-edit="true"></div><article class="modal-panel" style="max-width:760px;"><button class="modal-close" id="hubEditClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">프로젝트 수정</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><input id="hubEditTitle" placeholder="제목" /><input id="hubEditSummary" placeholder="요약" /></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><select id="hubEditStatus"><option>모집 중</option><option>기획 중</option><option>진행 중</option><option>피보팅</option><option>완료</option></select><select id="hubEditTeamSize"><option>1인</option><option>2인</option><option>3인</option><option>4인이상</option></select></div><input id="hubEditRoles" placeholder="역할" style="margin-bottom:8px;" /><textarea id="hubEditDesc" style="width:100%;min-height:110px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;" placeholder="프로젝트 설명"></textarea><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="hubEditSave" class="btn btn--primary" type="button">저장</button></div></div></article></div>
   <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 툴 연결</h3><p id="hubToolModalDesc" class="meta" style="margin:0 0 10px;">OAuth로 계정을 연결한 뒤, 프로젝트에 연결할 문서·시트 리소스를 선택하세요.</p><article id="hubToolModalScope" class="hub-card" style="padding:10px;margin:0 0 10px;"><strong style="display:block;margin-bottom:4px;">연동 구조</strong><p class="meta" style="margin:0;">1) 제공자 선택 → 2) OAuth 인증 → 3) 문서/시트 선택 → 4) 프로젝트 허브에 연결 반영</p></article><div id="toolLogoGrid" class="tool-grid"></div></div></article></div>
+  <div id="hubWebhookModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-webhook="true"></div><article class="modal-panel" style="max-width:720px;"><button class="modal-close" id="hubWebhookClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">활동 로그 수집</h3><p id="hubWebhookDesc" class="meta" style="margin:0 0 10px;">외부 툴의 활동 로그를 프로젝트 타임라인에 반영할 수 있도록 수집 상태를 관리합니다.</p><article class="hub-card" style="padding:12px;margin:0 0 10px;"><strong id="hubWebhookName" style="display:block;margin-bottom:6px;">연결된 툴 선택 필요</strong><p id="hubWebhookStatus" class="meta" style="margin:0 0 8px;">연결/동기화 이벤트는 자동 기록되고, webhook을 발급하면 외부 푸시 이벤트도 수집할 수 있습니다.</p><p id="hubWebhookEvents" class="meta" style="margin:0;"></p></article><article class="hub-card" style="padding:12px;margin:0 0 10px;"><strong style="display:block;margin-bottom:6px;">수집 엔드포인트</strong><p class="meta" style="margin:0 0 8px;">외부 서비스나 relay가 이 URL로 이벤트를 보내면 프로젝트 허브 활동 로그에 누적됩니다.</p><input id="hubWebhookUrl" readonly style="width:100%;margin:0 0 8px;" value="" /><input id="hubWebhookHeader" readonly style="width:100%;margin:0 0 8px;" value="x-webhook-secret: (발급 후 표시)" /><input id="hubWebhookSecret" readonly style="width:100%;" value="" /></article><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubWebhookIssue" class="btn btn--primary" type="button">Webhook 발급</button><button id="hubWebhookDone" class="btn btn--secondary" type="button">닫기</button></div></div></article></div>
   <div id="hubChatModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-chat="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubChatClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">팀채팅</h3><p class="meta" style="margin:0 0 8px;">프로젝트 지원 AI는 프로젝트 정보/최근 활동/팀 채팅 문맥을 함께 참고합니다.</p><div id="chatList" style="max-height:320px;overflow:auto;display:grid;gap:8px;"></div><div class="slash-suggest" style="display:flex;gap:8px;margin-top:10px;"><input id="chatInput" style="flex:1;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px;" placeholder="메시지를 입력하세요 (/ai 질문 형태 지원)"/><button id="chatSend" class="btn btn--primary">보내기</button><div id="slashList" class="slash-list"></div></div></div></article></div>
   <div id="worklogModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-worklog="true"></div><article class="modal-panel" style="max-width:620px;"><button class="modal-close" id="worklogClose">×</button><div class="modal-content"><h3 id="worklogTitle" style="margin:0 0 8px;">업무기록</h3><ul id="worklogList" class="meta-bullet"></ul></div></article></div>
   <div id="recentModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-recent="true"></div><article class="modal-panel" style="max-width:680px;"><button class="modal-close" id="recentClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">최근 활동 전체</h3><ul id="recentList" class="meta-bullet"></ul></div></article></div>
@@ -686,6 +687,9 @@
     let providerCatalog = {};
     let remoteActivityEvents = [];
     let remoteStatusSnapshot = null;
+    let activeWebhookIntegrationId = '';
+    let activeWebhookToolName = '';
+    let lastIssuedWebhookConfig = null;
 
     function formatProjectAuditEvent(event) {
       const type = String(event?.event_type || '').trim();
@@ -722,6 +726,32 @@
         .filter((item) => item.id && item.text)
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, Math.max(1, Number(limit || 50)));
+    }
+
+    function currentApiBaseForDisplay() {
+      if (location.hostname === '127.0.0.1' || location.hostname === 'localhost') {
+        return `${location.protocol}//${location.hostname}:8787`;
+      }
+      return String(window.WETHUS_API_BASE || 'https://wethus-api.onrender.com').replace(/\/$/, '');
+    }
+
+    function integrationEvents(integrationId) {
+      return (remoteActivityEvents || []).filter(event => String(event?.integration_id || '') === String(integrationId || ''));
+    }
+
+    function integrationEventSummary(integrationId) {
+      const rows = integrationEvents(integrationId);
+      if (!rows.length) return '최근 수집 이벤트 없음';
+      const lastAt = rows
+        .map(row => row?.occurred_at || row?.created_at || '')
+        .filter(Boolean)
+        .sort((a, b) => new Date(b) - new Date(a))[0];
+      return `최근 이벤트 ${rows.length}건${lastAt ? ` · 마지막 ${new Date(lastAt).toLocaleString('ko-KR')}` : ''}`;
+    }
+
+    function integrationWebhookUrl(integration) {
+      if (!integration?.id || !integration?.provider) return '';
+      return `${currentApiBaseForDisplay()}/webhooks/${encodeURIComponent(integration.provider)}/${encodeURIComponent(integration.id)}`;
     }
 
     function mergedProjectTimeline(limit = 50) {
@@ -901,12 +931,18 @@
         const firstSnippet = String(matches.find(m => m?.snippet)?.snippet || '').replace(/\s+/g, ' ').trim().slice(0, 180);
         const matchedCount = matches.filter(m => String(m?.snippet || '').trim().length > 0).length;
         const errorCount = matches.filter(m => m?.error).length;
+        const eventSummary = integrationEventSummary(i.id);
+        const webhookSummary = i.webhook_enabled
+          ? `Webhook 로그 수집 준비됨${i.webhook_updated_at ? ` · ${new Date(i.webhook_updated_at).toLocaleString('ko-KR')}` : ''}`
+          : 'Webhook 미설정 · 연결/동기화 로그만 기록중';
         return `<article class="list-item">
           <h3>${esc(i.provider)} · ${esc(i.integration_type)}</h3>
           <p style="margin:6px 0 4px;">${esc(i.external_resource_name || i.external_resource_id || '-')}</p>
           <p class="meta" style="margin:0 0 6px;">최근 동기화: ${esc(i.last_synced_at ? new Date(i.last_synced_at).toLocaleString('ko-KR') : '기록 없음')}</p>
           <p class="meta" style="margin:0;">${esc(firstSnippet || '요약 데이터 없음 (권한/포맷/동기화 상태 확인 필요)')}</p>
           <p class="meta" style="margin:6px 0 0;">반영 문서: ${matchedCount}건${errorCount ? ` · 오류 ${errorCount}건` : ''}</p>
+          <p class="meta" style="margin:6px 0 0;">활동 로그: ${esc(webhookSummary)}</p>
+          <p class="meta" style="margin:6px 0 0;">이벤트 현황: ${esc(eventSummary)}</p>
         </article>`;
       }).join('');
     }
@@ -1282,6 +1318,64 @@
       return (remoteIntegrations || []).find(x => x.provider === 'google' && x.integration_type === 'account' && x.status === 'connected') || null;
     }
 
+    function integrationForToolName(name) {
+      const tool = toolTargets.find(x => x.name === name);
+      return currentToolIntegration(tool);
+    }
+
+    function renderWebhookModal() {
+      const nameEl = document.getElementById('hubWebhookName');
+      const statusEl = document.getElementById('hubWebhookStatus');
+      const eventsEl = document.getElementById('hubWebhookEvents');
+      const urlEl = document.getElementById('hubWebhookUrl');
+      const headerEl = document.getElementById('hubWebhookHeader');
+      const secretEl = document.getElementById('hubWebhookSecret');
+      const issueBtn = document.getElementById('hubWebhookIssue');
+      const integration = integrationForToolName(activeWebhookToolName);
+      const canManage = isCurrentLeader();
+
+      if (!integration) {
+        nameEl.textContent = '연결된 툴 선택 필요';
+        statusEl.textContent = '먼저 문서나 시트 리소스를 연결하면 로그 수집 상태를 확인할 수 있습니다.';
+        eventsEl.textContent = '';
+        urlEl.value = '';
+        headerEl.value = 'x-webhook-secret: (발급 후 표시)';
+        secretEl.value = '';
+        issueBtn.disabled = true;
+        issueBtn.textContent = 'Webhook 발급';
+        return;
+      }
+
+      const eventSummary = integrationEventSummary(integration.id);
+      const webhookReady = !!integration.webhook_enabled;
+      const issuedSecret = activeWebhookIntegrationId === integration.id ? lastIssuedWebhookConfig?.webhook_secret || '' : '';
+      nameEl.textContent = `${activeWebhookToolName || integration.provider} · ${integration.external_resource_name || integration.external_resource_id || '연결 리소스'}`;
+      statusEl.textContent = webhookReady
+        ? `Webhook 수집 준비됨${integration.webhook_updated_at ? ` · ${new Date(integration.webhook_updated_at).toLocaleString('ko-KR')}` : ''}`
+        : 'Webhook 미설정 · 현재는 연결/동기화 이벤트만 자동 기록됩니다.';
+      eventsEl.textContent = eventSummary;
+      urlEl.value = integrationWebhookUrl(integration);
+      headerEl.value = issuedSecret ? `x-webhook-secret: ${issuedSecret}` : `x-webhook-secret: ${integration.webhook_secret_preview || '(발급 후 표시)'}`;
+      secretEl.value = issuedSecret
+        ? issuedSecret
+        : (integration.webhook_enabled ? `저장된 secret 미리보기: ${integration.webhook_secret_preview || '발급됨'}` : '아직 발급되지 않았습니다.');
+      issueBtn.disabled = !canManage;
+      issueBtn.textContent = webhookReady ? 'Webhook 재발급' : 'Webhook 발급';
+    }
+
+    async function openWebhookModal(toolName) {
+      activeWebhookToolName = toolName || '';
+      const integration = integrationForToolName(activeWebhookToolName);
+      activeWebhookIntegrationId = integration?.id || '';
+      if (!integration) {
+        lastIssuedWebhookConfig = null;
+      } else if (activeWebhookIntegrationId !== String(lastIssuedWebhookConfig?.integration_id || '')) {
+        lastIssuedWebhookConfig = null;
+      }
+      renderWebhookModal();
+      openModal('hubWebhookModal');
+    }
+
     async function watchOauthCompletion(tool, popup) {
       const startedAt = Date.now();
       while (Date.now() - startedAt < 90000) {
@@ -1336,10 +1430,19 @@
           ? '로드맵'
           : (setupRequired ? '설정 필요' : (t.ready ? (st?.connected ? '연결됨' : (st?.everConnected ? '연결해제됨' : '미연결')) : '준비중'));
         const actionLabel = st?.connected ? '동기화' : connectLabel;
+        const integration = currentToolIntegration(t);
+        const hasLogs = !!integration?.webhook_enabled;
+        const logSummary = integration?.id
+          ? (hasLogs ? `로그 수집 준비됨 · ${integrationEventSummary(integration.id)}` : `Webhook 미설정 · ${integrationEventSummary(integration.id)}`)
+          : '연결 후 로그 수집 상태를 확인할 수 있습니다.';
         const hint = !canManage
           ? '대표/리더만 연결을 변경할 수 있습니다.'
           : (deferred ? currentToolLaunchNote(t) : (meta?.message || currentToolLaunchNote(t) || ''));
         const actionDisabled = !canManage || !t.ready || setupRequired || deferred;
+        const logButton = integration?.id
+          ? `<button class="btn btn--secondary" data-tool-webhook="${esc(t.name)}" type="button">${canManage ? '로그 설정' : '로그 보기'}</button>`
+          : '';
+        const actionColumns = logButton ? 'grid-template-columns:1fr 1fr 1fr;' : 'grid-template-columns:1fr 1fr;';
         return `<article class="tool-card" data-tool="${esc(t.name)}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
             <div>
@@ -1347,11 +1450,13 @@
               <p class="meta" style="margin:4px 0 0;">${esc(t.desc)}</p>
               <p class="meta" style="margin:4px 0 0;">${esc(statusLabel)} ${st?.lastSynced ? '· 마지막 반영 ' + esc(new Date(st.lastSynced).toLocaleString('ko-KR')) : ''}</p>
               ${hint ? `<p class="meta" style="margin:4px 0 0;color:${(setupRequired || deferred || !canManage) ? '#ffb36b' : '#9ca3af'};">${esc(hint)}</p>` : ''}
+              <p class="meta" style="margin:4px 0 0;">${esc(logSummary)}</p>
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
+          <div style="display:grid;${actionColumns}gap:6px;margin-top:8px;">
             <button class="btn btn--primary" data-tool-connect="${esc(t.name)}" type="button" ${actionDisabled ? 'disabled' : ''}>${esc(actionLabel)}</button>
             <button class="btn btn--secondary" data-tool-disconnect="${esc(t.name)}" type="button" ${actionDisabled ? 'disabled' : ''}>해제</button>
+            ${logButton}
           </div>
         </article>`;
       };
@@ -1486,6 +1591,12 @@
           }
         });
       });
+      toolLogoGrid.querySelectorAll('[data-tool-webhook]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const name = btn.getAttribute('data-tool-webhook') || '';
+          await openWebhookModal(name);
+        });
+      });
       renderIntegrationsTab();
     }
 
@@ -1494,6 +1605,33 @@
     document.getElementById('hubToolBtn').addEventListener('click',()=>openModal('hubToolModal'));
     document.getElementById('hubToolClose').addEventListener('click',()=>closeModal('hubToolModal'));
     document.querySelector('[data-close-tool]').addEventListener('click',()=>closeModal('hubToolModal'));
+    document.getElementById('hubWebhookClose').addEventListener('click',()=>closeModal('hubWebhookModal'));
+    document.getElementById('hubWebhookDone').addEventListener('click',()=>closeModal('hubWebhookModal'));
+    document.querySelector('[data-close-webhook]').addEventListener('click',()=>closeModal('hubWebhookModal'));
+    document.getElementById('hubWebhookIssue').addEventListener('click', async () => {
+      const integration = integrationForToolName(activeWebhookToolName);
+      if (!integration) {
+        alert('먼저 연결된 리소스를 선택해주세요.');
+        return;
+      }
+      if (!isCurrentLeader()) {
+        alert('Webhook 설정은 대표/리더만 가능합니다.');
+        return;
+      }
+      try {
+        const data = await hubApi(`/integrations/${encodeURIComponent(integration.id)}/webhook-config`, { method: 'POST' });
+        lastIssuedWebhookConfig = data || null;
+        activeWebhookIntegrationId = integration.id;
+        WETHUS.addHubActivity(currentProject.id, `${activeWebhookToolName || integration.provider} 활동 로그 수집 URL 발급`);
+        await loadIntegrationsForCurrentProject();
+        await loadRemoteActivityEventsForCurrentProject();
+        renderWebhookModal();
+        renderToolCards();
+        await renderHub();
+      } catch (e) {
+        alert(e?.message || 'Webhook 발급에 실패했습니다.');
+      }
+    });
     document.getElementById('hubResourceClose').addEventListener('click',()=>closeModal('hubResourceModal'));
     document.getElementById('hubResourceCancel').addEventListener('click',()=>closeModal('hubResourceModal'));
     document.querySelector('[data-close-resource]').addEventListener('click',()=>closeModal('hubResourceModal'));

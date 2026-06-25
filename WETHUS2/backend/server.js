@@ -410,6 +410,22 @@ function readProjectApplications() { return readCollection(PROJECT_APPLICATIONS_
 function writeProjectApplications(rows) { writeCollection(PROJECT_APPLICATIONS_DB, 'applications', rows); }
 function readProjectBookmarks() { return readCollection(PROJECT_BOOKMARKS_DB, 'bookmarks'); }
 function writeProjectBookmarks(rows) { writeCollection(PROJECT_BOOKMARKS_DB, 'bookmarks', rows); }
+function sanitizeIntegrationForClient(row = {}, options = {}) {
+  const includeWebhookSecret = options.includeWebhookSecret === true;
+  const {
+    _token_demo_only,
+    _refresh_token_demo_only,
+    webhook_secret,
+    ...rest
+  } = row || {};
+  return {
+    ...rest,
+    webhook_enabled: !!row?.webhook_enabled,
+    webhook_updated_at: row?.webhook_updated_at || '',
+    webhook_secret_preview: row?.webhook_secret ? `${String(row.webhook_secret).slice(0, 6)}...` : '',
+    ...(includeWebhookSecret ? { webhook_secret: row?.webhook_secret || '' } : {})
+  };
+}
 function normEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
@@ -940,11 +956,11 @@ app.get('/integrations', (req, res) => {
   if (projectId) {
     const access = requireProjectAccess(req, res, actorId, projectId);
     if (!access) return;
-    return res.json({ ok: true, integrations: rows.filter(r => r.project_id === projectId) });
+    return res.json({ ok: true, integrations: rows.filter(r => r.project_id === projectId).map(row => sanitizeIntegrationForClient(row)) });
   }
   const scopedRows = INTEGRATIONS_REQUIRE_ACTOR ? rows.filter(r => actorOwnsIntegration(actorId, r)) : rows;
   const list = scopedRows;
-  return res.json({ ok: true, integrations: list });
+  return res.json({ ok: true, integrations: list.map(row => sanitizeIntegrationForClient(row)) });
 });
 
 app.post('/integrations', (req, res) => {
@@ -998,7 +1014,7 @@ app.post('/integrations', (req, res) => {
       external_resource_url: base.external_resource_url || ''
     }
   });
-  return res.json({ ok: true, integration: base });
+  return res.json({ ok: true, integration: sanitizeIntegrationForClient(base) });
 });
 
 app.delete('/integrations/:id', (req, res) => {
@@ -1053,7 +1069,7 @@ app.delete('/integrations/:id', (req, res) => {
       mode: 'soft'
     }
   });
-  return res.json({ ok: true, removed: 1, mode: 'soft', integration: rows[idx] });
+  return res.json({ ok: true, removed: 1, mode: 'soft', integration: sanitizeIntegrationForClient(rows[idx]) });
 });
 
 app.post('/integrations/:id/sync', async (req, res) => {
@@ -1122,7 +1138,7 @@ app.post('/integrations/:id/sync', async (req, res) => {
       payload: summary,
       occurredAt: now
     });
-    return res.json({ ok: true, integration: rows[idx], summary });
+    return res.json({ ok: true, integration: sanitizeIntegrationForClient(rows[idx]), summary });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'sync failed' });
   }
