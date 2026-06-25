@@ -1429,6 +1429,30 @@
       return '검토중';
     }
 
+    function currentProjectMemberById(memberId) {
+      if (!currentProject || !memberId) return null;
+      return (Array.isArray(currentProject.teamMembers) ? currentProject.teamMembers : [])
+        .find((member) => String(member?.id || '') === String(memberId || '')) || null;
+    }
+
+    function applicationReviewHint(status, app) {
+      const normalized = normalizeApplicationStatus(status);
+      if (normalized === 'accepted') {
+        const reviewedAt = app?.reviewedAt ? new Date(app.reviewedAt).toLocaleString('ko-KR') : '';
+        return reviewedAt
+          ? `수락 완료 · ${reviewedAt} · 팀 채팅과 허브 협업 흐름으로 바로 이어집니다.`
+          : '수락 완료 · 팀 채팅과 허브 협업 흐름으로 바로 이어집니다.';
+      }
+      if (normalized === 'rejected') {
+        const reviewedAt = app?.reviewedAt ? new Date(app.reviewedAt).toLocaleString('ko-KR') : '';
+        return reviewedAt
+          ? `반려 처리 · ${reviewedAt} · 필요하면 지원자와 별도 대화를 이어가세요.`
+          : '반려 처리 · 필요하면 지원자와 별도 대화를 이어가세요.';
+      }
+      if (normalized === 'cancelled') return '지원자가 직접 지원을 취소했습니다.';
+      return '검토중 · 프로젝트 상황이 맞으면 수락 후 팀원으로 바로 합류시킬 수 있습니다.';
+    }
+
     function renderTeamApplications() {
       const el = document.getElementById('tmApplications');
       if (!el) return;
@@ -1457,16 +1481,21 @@
           <article class="list-item">
             <h3 style="margin:0 0 8px;">지원서 현황</h3>
             <p class="meta" style="margin:0;">검토중 ${counts.applied || 0} · 수락 ${counts.accepted || 0} · 반려 ${counts.rejected || 0} · 취소 ${counts.cancelled || 0}</p>
+            <p class="meta" style="margin:8px 0 0;">수락 즉시 프로젝트 팀원 목록과 허브 협업 흐름에 합류합니다.</p>
           </article>
           ${teamApplicationsCache.map(app => {
             const normalized = normalizeApplicationStatus(app?.status);
             const statusLabel = applicationStatusLabel(normalized);
             const canReview = normalized === 'applied';
+            const acceptedMember = normalized === 'accepted'
+              ? currentProjectMemberById(app?.userId || app?.applicantId || '')
+              : null;
             return `<article class="list-item" data-application-id="${esc(app.id)}">
               <h3>${esc(app.applicantName || '지원자')}</h3>
               <p class="meta" style="margin:6px 0 4px;">상태: ${esc(statusLabel)} · ${esc(app.createdAt ? new Date(app.createdAt).toLocaleString('ko-KR') : '')}</p>
               <p class="meta" style="margin:0 0 8px;">${esc(app.applicantEmail || '이메일 없음')}</p>
               <p style="margin:0 0 10px;white-space:pre-wrap;">${esc(app.motivation || '지원 동기 없음')}</p>
+              <p class="meta" style="margin:0 0 10px;">${esc(applicationReviewHint(normalized, app))}${acceptedMember ? ` · 현재 역할 ${esc(acceptedMember.role || '팀원')}` : ''}</p>
               <div style="display:flex;gap:8px;justify-content:flex-end;">
                 <button class="btn btn--secondary" data-app-status="rejected" ${canReview ? '' : 'disabled'} type="button">반려</button>
                 <button class="btn btn--primary" data-app-status="accepted" ${canReview ? '' : 'disabled'} type="button">수락</button>
@@ -1504,10 +1533,19 @@
           const normalized = normalizeApplicationStatus(app?.status);
           const statusLabel = normalized === 'accepted' ? '합류 완료' : applicationStatusLabel(normalized);
           const canCancel = normalized === 'applied';
+          const myMember = currentProjectMemberById(app?.userId || app?.applicantId || '');
+          const helperMessage = normalized === 'accepted'
+            ? `이제 이 프로젝트의 팀원으로 참여 중입니다.${myMember?.role ? ` 현재 역할은 ${myMember.role}입니다.` : ''} 프로젝트 허브의 팀 채팅과 외부 툴, 진행 로그를 바로 사용할 수 있습니다.`
+            : normalized === 'rejected'
+              ? '이번 지원서는 반려되었습니다. 프로젝트 방향이 바뀌면 다른 기회에 다시 지원할 수 있습니다.'
+              : normalized === 'cancelled'
+                ? '지원이 취소되었습니다. 다시 참여하고 싶다면 새 지원서를 제출하면 됩니다.'
+                : '대표 또는 리더가 지원서를 검토 중입니다. 검토가 끝나면 이곳 상태가 바로 바뀝니다.';
           return `<article class="list-item">
             <h3>내 지원서</h3>
             <p class="meta" style="margin:6px 0 8px;">상태: ${esc(statusLabel)}</p>
-            <p style="margin:0;white-space:pre-wrap;">${esc(app.motivation || '')}</p>
+            <p style="margin:0 0 10px;white-space:pre-wrap;">${esc(app.motivation || '')}</p>
+            <p class="meta" style="margin:0;">${esc(helperMessage)}</p>
             ${canCancel ? '<div style="display:flex;justify-content:flex-end;margin-top:10px;"><button class="btn btn--secondary" data-cancel-application="1" type="button">지원 취소</button></div>' : ''}
           </article>`;
         }).join('');
@@ -1530,7 +1568,8 @@
       }
 
       if (isCurrentProjectMember()) {
-        el.innerHTML = '<article class="list-item"><h3>지원서 권한 없음</h3><p class="meta">팀원은 자신의 지원 기록만 볼 수 있습니다. 전체 지원서는 대표 또는 리더가 검토합니다.</p></article>';
+        const myMember = currentProjectMemberById(actorId);
+        el.innerHTML = `<article class="list-item"><h3>이미 팀에 참여 중입니다</h3><p class="meta">${esc(myMember?.role ? `현재 역할은 ${myMember.role}입니다.` : '현재 이 프로젝트 팀원으로 등록되어 있습니다.')} 지원서 전체 목록은 대표 또는 리더가 검토합니다.</p></article>`;
         return;
       }
 
