@@ -39,6 +39,10 @@ services:
         value: https://wethus-api.onrender.com/oauth/google/callback
       - key: GOOGLE_OAUTH_REDIRECT_URIS
         value: http://127.0.0.1:8787/oauth/google/callback,https://wethus-api.onrender.com/oauth/google/callback
+      - key: GOOGLE_LOGIN_REDIRECT_URI
+        value: https://wethus-api.onrender.com/auth/google/callback
+      - key: GOOGLE_LOGIN_REDIRECT_URIS
+        value: http://127.0.0.1:8787/auth/google/callback,https://wethus-api.onrender.com/auth/google/callback
       - key: NOTION_CLIENT_ID
         sync: false
       - key: NOTION_CLIENT_SECRET

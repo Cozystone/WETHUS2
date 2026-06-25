@@ -135,6 +135,10 @@ const checks = [
 const errors = [];
 const warnings = [];
 
+function fail(message) {
+  errors.push(message);
+}
+
 function expectedProviderPhase(key) {
   if (LAUNCH_SCOPE.launchProviders.includes(key)) return 'launch';
   if (LAUNCH_SCOPE.deferredProviders.includes(key)) return 'deferred';
@@ -316,10 +320,86 @@ async function runCheck(check) {
   }
 }
 
+async function verifyLiveGoogleOAuthStart() {
+  const origin = BASE_URL;
+  const next = '/project-hub.html?projectId=demo';
+  const url = `${API_BASE_URL}/auth/google/start?next=${encodeURIComponent(next)}`;
+  const response = await fetch(url, {
+    redirect: 'manual',
+    headers: {
+      origin
+    }
+  });
+
+  if (response.status !== 302) {
+    fail(`${url} should return HTTP 302, got ${response.status}`);
+    return;
+  }
+
+  const location = String(response.headers.get('location') || '').trim();
+  if (!location) {
+    fail(`${url} should include a Location header`);
+    return;
+  }
+
+  let redirectUrl;
+  try {
+    redirectUrl = new URL(location);
+  } catch (error) {
+    fail(`${url} returned an invalid Location header: ${error.message}`);
+    return;
+  }
+
+  if (redirectUrl.origin !== 'https://accounts.google.com') {
+    fail(`${url} should redirect to Google Accounts, got ${redirectUrl.origin}`);
+  }
+  if (redirectUrl.pathname !== '/o/oauth2/v2/auth') {
+    fail(`${url} should redirect to /o/oauth2/v2/auth, got ${redirectUrl.pathname}`);
+  }
+  if (redirectUrl.searchParams.get('response_type') !== 'code') {
+    fail(`${url} should request response_type=code`);
+  }
+  if (redirectUrl.searchParams.get('scope') !== 'openid email profile') {
+    fail(`${url} should request openid email profile scope`);
+  }
+  if (redirectUrl.searchParams.get('prompt') !== 'select_account') {
+    fail(`${url} should request prompt=select_account`);
+  }
+
+  const state = String(redirectUrl.searchParams.get('state') || '').trim();
+  if (!state) {
+    fail(`${url} should include encoded state`);
+    return;
+  }
+
+  let decoded = null;
+  try {
+    decoded = JSON.parse(Buffer.from(state, 'base64url').toString('utf8'));
+  } catch (error) {
+    fail(`${url} should provide base64url JSON state: ${error.message}`);
+    return;
+  }
+
+  if (decoded?.auth_flow !== 'login') {
+    fail(`${url} should encode auth_flow=login in state`);
+  }
+  if (decoded?.next_path !== next) {
+    fail(`${url} should preserve next_path in state`);
+  }
+  if (decoded?.app_origin !== origin) {
+    fail(`${url} should preserve app_origin=${origin} in state`);
+  }
+  if (!String(decoded?.redirect_uri || '').trim()) {
+    fail(`${url} should preserve redirect_uri in state`);
+  }
+}
+
 (async () => {
   for (const check of checks) {
     await runCheck(check);
   }
+
+  await verifyLiveGoogleOAuthStart();
 
   if (errors.length) {
     console.error(errors.map(error => `- ${error}`).join('\n'));

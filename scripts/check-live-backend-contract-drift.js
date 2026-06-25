@@ -86,6 +86,67 @@ async function run() {
     }
   }
 
+  const oauthStartUrl = `${API_BASE_URL}/auth/google/start?next=${encodeURIComponent('/project-hub.html?projectId=demo')}`;
+  const oauthStartRes = await fetch(oauthStartUrl, {
+    redirect: 'manual',
+    headers: {
+      origin: 'https://www.wethus.co.kr'
+    }
+  });
+  const oauthLocation = String(oauthStartRes.headers.get('location') || '').trim();
+  console.log('\n== /auth/google/start ==');
+  console.log(`URL: ${oauthStartUrl}`);
+  console.log(`HTTP: ${oauthStartRes.status}`);
+
+  let oauthStateFailure = false;
+  if (oauthStartRes.status !== 302) {
+    console.log(`- DRIFT: expected 302 redirect, got ${oauthStartRes.status}`);
+    oauthStateFailure = true;
+  } else if (!oauthLocation) {
+    console.log('- DRIFT: missing Location header');
+    oauthStateFailure = true;
+  } else {
+    let redirectUrl = null;
+    try {
+      redirectUrl = new URL(oauthLocation);
+    } catch {
+      console.log(`- DRIFT: invalid Location header (${oauthLocation})`);
+      oauthStateFailure = true;
+    }
+
+    if (redirectUrl) {
+      const checks = [
+        ['google accounts origin', redirectUrl.origin === 'https://accounts.google.com', `origin=${redirectUrl.origin}`],
+        ['oauth path', redirectUrl.pathname === '/o/oauth2/v2/auth', `path=${redirectUrl.pathname}`],
+        ['response_type', redirectUrl.searchParams.get('response_type') === 'code', `value=${redirectUrl.searchParams.get('response_type') || 'missing'}`],
+        ['scope', redirectUrl.searchParams.get('scope') === 'openid email profile', `value=${redirectUrl.searchParams.get('scope') || 'missing'}`],
+        ['prompt', redirectUrl.searchParams.get('prompt') === 'select_account', `value=${redirectUrl.searchParams.get('prompt') || 'missing'}`]
+      ];
+
+      const state = String(redirectUrl.searchParams.get('state') || '').trim();
+      let decoded = null;
+      try {
+        decoded = state ? JSON.parse(Buffer.from(state, 'base64url').toString('utf8')) : null;
+      } catch {
+        decoded = null;
+      }
+      checks.push(['state payload', !!decoded, `decoded=${decoded ? 'yes' : 'no'}`]);
+      if (decoded) {
+        checks.push(['state.auth_flow', decoded.auth_flow === 'login', `value=${decoded.auth_flow || 'missing'}`]);
+        checks.push(['state.next_path', decoded.next_path === '/project-hub.html?projectId=demo', `value=${decoded.next_path || 'missing'}`]);
+        checks.push(['state.app_origin', decoded.app_origin === 'https://www.wethus.co.kr', `value=${decoded.app_origin || 'missing'}`]);
+        checks.push(['state.redirect_uri', !!String(decoded.redirect_uri || '').trim(), `value=${decoded.redirect_uri || 'missing'}`]);
+      }
+
+      for (const [label, ok, detail] of checks) {
+        console.log(`- ${ok ? 'OK' : 'DRIFT'}: ${label} (${detail})`);
+        if (!ok) oauthStateFailure = true;
+      }
+    }
+  }
+
+  if (oauthStateFailure) hasFailure = true;
+
   if (hasFailure) process.exit(1);
   console.log('\nLive backend contract drift check passed.');
 }

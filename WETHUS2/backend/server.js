@@ -58,7 +58,7 @@ const GOOGLE_OAUTH_CLIENT_ID = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env
 const GOOGLE_OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || '';
 const GOOGLE_OAUTH_REDIRECT_URI = process.env.GOOGLE_OAUTH_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/google/callback`;
 const PUBLIC_APP_URL = String(process.env.PUBLIC_APP_URL || 'https://www.wethus.co.kr').trim();
-const GOOGLE_LOGIN_REDIRECT_URI = process.env.GOOGLE_LOGIN_REDIRECT_URI || GOOGLE_OAUTH_REDIRECT_URI;
+const GOOGLE_LOGIN_REDIRECT_URI = process.env.GOOGLE_LOGIN_REDIRECT_URI || `${INTEGRATION_APP_URL}/auth/google/callback`;
 const GOOGLE_OAUTH_REDIRECT_URIS = Array.from(new Set([
   GOOGLE_OAUTH_REDIRECT_URI,
   ...(process.env.GOOGLE_OAUTH_REDIRECT_URIS || process.env.GOOGLE_REDIRECT_URIS || '')
@@ -68,6 +68,7 @@ const GOOGLE_OAUTH_REDIRECT_URIS = Array.from(new Set([
 ]));
 const GOOGLE_LOGIN_REDIRECT_URIS = Array.from(new Set([
   GOOGLE_LOGIN_REDIRECT_URI,
+  `${INTEGRATION_APP_URL}/auth/google/callback`,
   ...(process.env.GOOGLE_LOGIN_REDIRECT_URIS || '')
     .split(',')
     .map(s => s.trim())
