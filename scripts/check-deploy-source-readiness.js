@@ -12,7 +12,8 @@ const IGNORE_PATTERNS = [
   /^WETHUS2\/backend\/\.tmp-wethus-backend.*\.pid$/,
   /^commercialization-readiness-summary\.(json|txt)$/,
   /^production-rollout-status\.(json|txt)$/,
-  /^launch-readiness-step-summary\.md$/
+  /^launch-readiness-step-summary\.md$/,
+  /^launch-readiness-snapshot\.(md|json)$/
 ];
 
 function runGit(args) {
