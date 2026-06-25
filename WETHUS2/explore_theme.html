@@ -506,6 +506,7 @@
                   <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${esc(p.id)}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
                 </div>
                 <p class="mini-summary" style="margin:0 0 6px;">${esc(miniSummaryText(p))}</p>
+                ${p._recommendationReason ? `<p class="meta" style="margin:0 0 6px;color:#ffbf73;">추천 이유 · ${esc(p._recommendationReason)}</p>` : ''}
                 <div class="meta"><span class="card-status">${esc(stage)}</span> · ${esc(p.teamSize || '')} · ${esc(p.roles)}${p.neededRoles ? ` · 필요:${esc(p.neededRoles)}` : ''}${p.neededAgeGroup ? ` · ${esc(p.neededAgeGroup)}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
               </div>
               <button class="apply-btn ${mine ? 'mine' : (WETHUS.hasApplied(p.id)?'applied':'')}" data-apply="${esc(p.id)}">${label}</button>
@@ -538,6 +539,7 @@
               <button class="bookmark-btn ${WETHUS.isBookmarked(p.id)?'active':''}" data-bm="${esc(p.id)}" type="button" aria-label="북마크"><svg class="bookmark-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></button>
             </div>
             <p class="card-summary">${esc(miniSummaryText(p))}</p>
+            ${p._recommendationReason ? `<p class="meta" style="margin:8px 0 0;color:#ffbf73;">추천 이유 · ${esc(p._recommendationReason)}</p>` : ''}
             ${renderTeam(p.teamMembers, p)}
             <div class="meta"><span class="card-status">${esc(stage)}</span> · ${esc(p.teamSize || '')} · ${esc(p.roles)}${p.neededRoles ? ` · 필요:${esc(p.neededRoles)}` : ''}${p.neededAgeGroup ? ` · ${esc(p.neededAgeGroup)}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
             <div class="card-bottom-row">
@@ -665,19 +667,24 @@
       } else if (sortMode === 'oldest') {
         items = items.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
       } else if (sortMode === 'mixed') {
-        const newest = items.slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
-        const oldest = items.slice().sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
-        const popular = items.slice().sort((a,b)=>(b.likes||0)-(a.likes||0));
-        const mixed = [];
-        const seen = new Set();
-        let i = 0;
-        while (mixed.length < items.length && i < items.length + 4) {
-          [newest[i], popular[i], oldest[i]].forEach(p => {
-            if (p && !seen.has(p.id)) { seen.add(p.id); mixed.push(p); }
+        const personalized = WETHUS.getRecommendedProjects ? WETHUS.getRecommendedProjects(Math.max(items.length, 24)) : [];
+        const recMap = new Map(personalized.map((project, index) => [String(project.id), {
+          rank: index,
+          reason: String(project._recommendationReason || '').trim()
+        }]));
+        items = items
+          .map((project) => {
+            const rec = recMap.get(String(project.id));
+            return rec ? { ...project, _recommendationReason: rec.reason, _themeRecRank: rec.rank } : { ...project, _themeRecRank: null };
+          })
+          .sort((a, b) => {
+            const ar = Number.isFinite(a._themeRecRank) ? a._themeRecRank : Number.POSITIVE_INFINITY;
+            const br = Number.isFinite(b._themeRecRank) ? b._themeRecRank : Number.POSITIVE_INFINITY;
+            if (ar !== br) return ar - br;
+            const likeGap = (Number(b.likes || 0) - Number(a.likes || 0));
+            if (likeGap) return likeGap;
+            return new Date(b.createdAt) - new Date(a.createdAt);
           });
-          i++;
-        }
-        items = mixed;
       } else {
         items = items.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
       }
