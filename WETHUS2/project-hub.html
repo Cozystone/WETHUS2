@@ -17,6 +17,9 @@
     .hub-list{display:grid;gap:10px}
     .hub-item{border:1px solid #2a2a2a;border-radius:12px;background:#121212;padding:12px;cursor:pointer}
     .hub-item:hover{border-color:#3a3a3a;background:#151515}
+    .hub-item--project{display:flex;gap:10px;align-items:flex-start;min-width:0}
+    .hub-item-copy{min-width:0;flex:1 1 auto}
+    .hub-item-summary{margin:0;color:#d4d4d4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .hub-header{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start;border:1px solid #2a2a2a;border-radius:14px;background:linear-gradient(180deg,#141414,#111);padding:14px}
     .hub-head-left{display:flex;gap:12px;align-items:flex-start}
     .hub-thumb{width:84px;height:84px;border-radius:12px;object-fit:cover;border:1px solid #2f2f2f;background:#1b1b1b}
@@ -75,6 +78,12 @@
     .slash-item:last-child{border-bottom:0}
     .slash-item:hover{background:#1a1a1a}
     @media (max-width:960px){.hub-grid{grid-template-columns:1fr}.hub-header{grid-template-columns:1fr}.hub-actions{grid-template-columns:repeat(2,minmax(0,1fr));}.hub-tabs-wrap{grid-template-columns:1fr}}
+    @media (max-width:640px){
+      .hub-item--project{flex-direction:column}
+      .hub-item--project .hub-thumb,
+      .hub-item--project img{width:100%;max-width:100%;height:180px}
+      .hub-item-summary{white-space:normal;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+    }
   </style>
 </head>
 <body>
@@ -353,7 +362,7 @@
     function renderProjectList(){
       const list = WETHUS.myProjects();
       if(!list.length){ hubProjectList.innerHTML='<article class="hub-item"><h3 style="margin:0 0 6px;">프로젝트가 없습니다.</h3><p class="meta" style="margin:0;">먼저 프로젝트를 시작하면 허브를 사용할 수 있어요.</p><div style="margin-top:10px;"><a href="founder.html" class="btn btn--primary">프로젝트 시작하기</a></div></article>'; return; }
-      hubProjectList.innerHTML = list.map(p=>`<article class="hub-item" data-id="${esc(p.id)}" style="display:flex;gap:10px;align-items:flex-start;"><img src="${esc(safeUrl(p.image||'https://picsum.photos/seed/hub-list/84/84'))}" alt="project" style="width:44px;height:44px;border-radius:10px;object-fit:cover;border:1px solid #2a2a2a;flex:0 0 auto;"/><div style="min-width:0;"><h3 style="margin:0 0 6px;">${esc(p.title)}</h3><p class="meta" style="margin:0 0 4px;">${esc(p.category||'')} · ${esc(p.status||'')}</p><p style="margin:0;color:#d4d4d4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.summary||'')}</p></div></article>`).join('');
+      hubProjectList.innerHTML = list.map(p=>`<article class="hub-item hub-item--project" data-id="${esc(p.id)}"><img src="${esc(safeUrl(p.image||'https://picsum.photos/seed/hub-list/84/84'))}" alt="project" class="hub-thumb" style="width:44px;height:44px;border-radius:10px;flex:0 0 auto;"/><div class="hub-item-copy"><h3 style="margin:0 0 6px;">${esc(p.title)}</h3><p class="meta" style="margin:0 0 4px;">${esc(p.category||'')} · ${esc(p.status||'')}</p><p class="hub-item-summary">${esc(p.summary||'')}</p></div></article>`).join('');
       hubProjectList.querySelectorAll('[data-id]').forEach(el=>el.addEventListener('click',()=>openProject(el.getAttribute('data-id'))));
     }
 
