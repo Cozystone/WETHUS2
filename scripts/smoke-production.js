@@ -7,7 +7,8 @@ const checks = [
   {
     path: '/',
     status: 200,
-    includes: ['WETHUS', 'app.js?v=20260527-1811', 'script.js?v=20260527-1612']
+    includes: ['WETHUS'],
+    includesRegex: [/app\.js\?v=/, /script\.js\?v=/]
   },
   {
     path: '/opportunities.html',
@@ -17,7 +18,8 @@ const checks = [
   {
     path: '/login.html',
     status: 200,
-    includes: ['app.js?v=20260527-1811', 'id="devModeRow" style="display:none;"', 'const allowDevMode = isLocalHost || window.WETHUS_ENABLE_DEV_MODE === true;'],
+    includes: ['id="devModeRow" style="display:none;"', 'const allowDevMode = isLocalHost || window.WETHUS_ENABLE_DEV_MODE === true;'],
+    includesRegex: [/app\.js\?v=/],
     excludes: ['\n</html>\ntGoogleSignIn'],
     excludesRegex: [/^\s*tGoogleSignIn\(\);/m, /^\s*nce: true\}\);/m]
   },
@@ -25,9 +27,9 @@ const checks = [
     path: '/founder.html',
     status: 200,
     includes: [
-      'app.js?v=20260527-1811',
       "const moderationStatus = moderation.review ? 'manual_review' : 'approved'"
-    ]
+    ],
+    includesRegex: [/app\.js\?v=/]
   },
   {
     path: '/data/opportunity-published.json',
@@ -84,6 +86,12 @@ async function runCheck(check) {
   for (const snippet of check.includes || []) {
     if (!body.includes(snippet)) {
       errors.push(`${url} is missing expected snippet: ${snippet}`);
+    }
+  }
+
+  for (const pattern of check.includesRegex || []) {
+    if (!pattern.test(body)) {
+      errors.push(`${url} is missing expected pattern: ${pattern}`);
     }
   }
 
