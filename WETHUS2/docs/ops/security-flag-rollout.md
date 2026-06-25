@@ -208,6 +208,7 @@ Use `.github/workflows/launch-readiness.yml` as the recurring strict proof for l
 - daily schedule: catches silent production drift without waiting for a manual check
 - uploaded artifact: preserves the latest commercialization summary and rollout status outputs for ops review
 - JSON artifacts: allow future dashboards or monitors to consume the latest launch-readiness evidence without parsing prose
+- GitHub step summary: shows the latest launch verdict and main blockers directly in the Actions UI
 
 If this workflow fails, treat it as a launch blocker until:
 

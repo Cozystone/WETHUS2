@@ -9,7 +9,10 @@ const errors = [];
 const IGNORE_PATTERNS = [
   /^\.tmp-backend-.*\.log$/,
   /^\.tmp-wethus-backend.*\.pid$/,
-  /^WETHUS2\/backend\/\.tmp-wethus-backend.*\.pid$/
+  /^WETHUS2\/backend\/\.tmp-wethus-backend.*\.pid$/,
+  /^commercialization-readiness-summary\.(json|txt)$/,
+  /^production-rollout-status\.(json|txt)$/,
+  /^launch-readiness-step-summary\.md$/
 ];
 
 function runGit(args) {

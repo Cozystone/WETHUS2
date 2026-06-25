@@ -43,6 +43,10 @@ jobs:
           REQUIRE_WETHUS_FRONTEND_HUB_CONTRACTS: 'true'
         run: node scripts/run-commercial-gate.js
 
+      - name: Publish launch-readiness workflow summary
+        if: always()
+        run: node scripts/write-launch-readiness-step-summary.js
+
       - name: Upload launch-readiness evidence
         if: always()
         uses: actions/upload-artifact@v4
