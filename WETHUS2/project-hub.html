@@ -163,7 +163,23 @@
 
           <div id="tab-progress" class="hidden">
             <article class="hub-card"><h3>진행 로그</h3><ul id="pgLogs" class="meta-bullet"></ul></article>
-            <article class="hub-card"><h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">프로젝트 운영 AI 요약 <button id="pgAiSummBtn" class="btn btn--secondary" type="button">허브 문맥 기반 요약 생성</button></h3><p id="pgAiSummary" style="margin:10px 0 0;"></p><p id="pgAiPriority" class="meta" style="margin:8px 0 0;"></p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;"><div><strong style="display:block;margin-bottom:6px;">지금 막는 점</strong><ul id="pgAiBlockers" class="meta-bullet"></ul></div><div><strong style="display:block;margin-bottom:6px;">근거 빈칸</strong><ul id="pgAiEvidenceGaps" class="meta-bullet"></ul></div></div><ul id="pgAiGrounding" class="meta-bullet" style="margin-top:8px;"></ul><p id="pgAiChangeLog" class="meta" style="margin:8px 0 0;"></p></article>
+            <article class="hub-card">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+                <div style="min-width:220px;flex:1 1 260px;">
+                  <h3 style="margin:0;">프로젝트 운영 AI 요약</h3>
+                  <p class="meta" style="margin:6px 0 0;">허브 문맥을 바탕으로 지금의 우선순위와 실행 공백을 빠르게 정리합니다.</p>
+                </div>
+                <button id="pgAiSummBtn" class="btn btn--secondary" type="button">허브 문맥 기반 요약 생성</button>
+              </div>
+              <p id="pgAiSummary" style="margin:10px 0 0;"></p>
+              <p id="pgAiPriority" class="meta" style="margin:8px 0 0;"></p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+                <div><strong style="display:block;margin-bottom:6px;">지금 막는 점</strong><ul id="pgAiBlockers" class="meta-bullet"></ul></div>
+                <div><strong style="display:block;margin-bottom:6px;">근거 빈칸</strong><ul id="pgAiEvidenceGaps" class="meta-bullet"></ul></div>
+              </div>
+              <ul id="pgAiGrounding" class="meta-bullet" style="margin-top:8px;"></ul>
+              <p id="pgAiChangeLog" class="meta" style="margin:8px 0 0;"></p>
+            </article>
             <article class="hub-card"><h3>AI 멘토 히스토리</h3><div id="pgAiRuns" class="list-grid" style="margin-top:8px;"></div></article>
           </div>
 
