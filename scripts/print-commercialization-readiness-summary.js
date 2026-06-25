@@ -44,6 +44,8 @@ const frontendChecks = [
       'id="pgAiEvidenceGaps"',
       'id="pgAiRuns"',
       'function renderMentorRunHistory(hub) {',
+      'data-mentor-run-use',
+      'requestMentorFollowupFromRun',
       'id="sdBlockers"',
       'id="sdEvidence"',
       'executionBlocker',

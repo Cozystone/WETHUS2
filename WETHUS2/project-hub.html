@@ -506,14 +506,68 @@
         const blocker = String(run?.executionBlocker || '').trim();
         const summary = String(run?.summary || '').trim();
         const priority = String(run?.priority || '').trim();
+        const actionCount = Array.isArray(run?.nextActions) ? run.nextActions.filter(Boolean).length : 0;
+        const gapCount = Array.isArray(run?.evidenceGaps) ? run.evidenceGaps.filter(Boolean).length : 0;
         return `<article class="list-item">
           <h3 style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><span>${esc(mode)}</span><span class="meta" style="white-space:nowrap;">${esc(reviewedAt)}</span></h3>
           <p class="meta" style="margin:6px 0 0;">실행 방식: ${esc(trigger)}${prompt ? ` · 요청: ${esc(prompt)}` : ''}</p>
           <p style="margin:8px 0 0;">${esc(summary || '요약 없음')}</p>
           ${priority ? `<p class="meta" style="margin:8px 0 0;">우선순위: ${esc(priority)}</p>` : ''}
           ${blocker ? `<p class="meta" style="margin:6px 0 0;">막는 점: ${esc(blocker)}</p>` : ''}
+          <p class="meta" style="margin:6px 0 0;">실행 액션 ${actionCount}건 · 근거 빈칸 ${gapCount}건</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+            <button class="btn btn--secondary" type="button" data-mentor-run-use="${esc(run.id || '')}">현재 패널로 보기</button>
+            <button class="btn btn--secondary" type="button" data-mentor-run-followup="${esc(run.id || '')}">이 판단 기준으로 후속 요청</button>
+          </div>
         </article>`;
       }).join('');
+    }
+    function mentorRunById(hub, runId) {
+      return (Array.isArray(hub?.mentorRuns) ? hub.mentorRuns : []).find((run) => String(run?.id || '') === String(runId || '')) || null;
+    }
+    function applyMentorRunSnapshot(runId) {
+      if (!currentProject) return;
+      const hub = WETHUS.getProjectHub(currentProject.id);
+      const run = mentorRunById(hub, runId);
+      if (!run) return;
+      const nextHub = WETHUS.upsertProjectHub(currentProject.id, {
+        mentorSummary: String(run.summary || '').trim(),
+        mentorPriority: String(run.priority || '').trim(),
+        mentorMode: String(run.mentorMode || '').trim(),
+        mentorInput: String(run.prompt || '').trim(),
+        mentorChangeLog: `저장된 멘토 히스토리(${String(run.trigger || 'manual')})를 다시 현재 패널로 불러왔습니다.`,
+        mentorBlockers: Array.isArray(run.blockers) ? run.blockers.slice(0, 2) : ((run.executionBlocker ? [run.executionBlocker] : []).filter(Boolean)),
+        mentorNextActions: Array.isArray(run.nextActions) ? run.nextActions.slice(0, 3) : [],
+        mentorQuestions: Array.isArray(run.questions) ? run.questions.slice(0, 2) : [],
+        mentorToolActions: Array.isArray(run.toolActions) ? run.toolActions.slice(0, 2) : [],
+        mentorEvidenceGaps: Array.isArray(run.evidenceGaps) ? run.evidenceGaps.slice(0, 3) : [],
+        mentorGrounding: Array.isArray(run.grounding) ? run.grounding.slice(0, 4) : []
+      });
+      renderMentorPanels(nextHub);
+      const summaryEl = document.getElementById('pgAiSummary');
+      if (summaryEl && typeof summaryEl.scrollIntoView === 'function') {
+        summaryEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+    async function requestMentorFollowupFromRun(runId) {
+      if (!currentProject) return;
+      const hub = WETHUS.getProjectHub(currentProject.id);
+      const run = mentorRunById(hub, runId);
+      if (!run) return;
+      const followupPrompt = [
+        '직전 멘토 판단을 이어서 업데이트해줘.',
+        run.executionBlocker ? `현재 막는 점: ${run.executionBlocker}` : '',
+        Array.isArray(run.evidenceGaps) && run.evidenceGaps.length ? `근거 빈칸: ${run.evidenceGaps.join(' | ')}` : '',
+        Array.isArray(run.nextActions) && run.nextActions.length ? `직전 액션: ${run.nextActions.join(' | ')}` : ''
+      ].filter(Boolean).join(' ');
+      const result = await requestProjectMentor('mentor-history-followup', followupPrompt, {
+        hub,
+        insights: cachedIntegrationInsights,
+        events: remoteActivityEvents,
+        statusSnapshot: remoteStatusSnapshot
+      });
+      const savedHub = persistProjectMentorResult(result, 'mentor-history-followup', followupPrompt);
+      renderMentorPanels(savedHub);
     }
     function renderMentorPanels(hub, defaults = {}) {
       const summaryEl = document.getElementById('pgAiSummary');
@@ -576,6 +630,12 @@
         summary: String(result.summary || '').trim(),
         priority: String(result.priority || '').trim(),
         executionBlocker: String(result.executionBlocker || '').trim(),
+        blockers: (result.executionBlocker ? [result.executionBlocker] : []).map((item) => String(item || '').trim()).filter(Boolean).slice(0, 2),
+        nextActions: Array.isArray(result.nextActions) ? result.nextActions.slice(0, 3) : [],
+        questions: Array.isArray(result.questions) ? result.questions.slice(0, 2) : [],
+        toolActions: Array.isArray(result.toolActions) ? result.toolActions.slice(0, 2) : [],
+        evidenceGaps: Array.isArray(result.evidenceGaps) ? result.evidenceGaps.slice(0, 3) : [],
+        grounding: Array.isArray(result.grounding) ? result.grounding.slice(0, 4) : [],
         reviewedAt: result.reviewedAt || new Date().toISOString()
       });
       return WETHUS.upsertProjectHub(currentProject.id, {
@@ -2517,6 +2577,21 @@ function logManualUpdate() {
         document.getElementById('pgAiSummary').textContent='AI 요약에 실패했습니다. API 설정을 확인해주세요.';
       }
       refreshHubInsights('ai-summary');
+    });
+    document.getElementById('pgAiRuns').addEventListener('click', async (event) => {
+      const useBtn = event.target.closest('[data-mentor-run-use]');
+      if (useBtn) {
+        applyMentorRunSnapshot(useBtn.getAttribute('data-mentor-run-use') || '');
+        return;
+      }
+      const followupBtn = event.target.closest('[data-mentor-run-followup]');
+      if (followupBtn) {
+        try {
+          await requestMentorFollowupFromRun(followupBtn.getAttribute('data-mentor-run-followup') || '');
+        } catch (_) {
+          alert('멘토 후속 요청에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        }
+      }
     });
 
     document.getElementById('mtAddBtn').addEventListener('click', async () => {

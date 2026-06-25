@@ -9,6 +9,7 @@
   - priority
   - execution blocker
 - Extended the frontend drift and commercialization audit scripts so this new mentor-history UI is included in release parity checks.
+- Added mentor-history actions so a saved run can be re-applied to the current mentor panels or used as the basis for a follow-up mentor request.
 
 ### Why
 
