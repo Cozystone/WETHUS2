@@ -1543,6 +1543,7 @@ app.post('/integrations/:id/webhook-config', (req, res) => {
   const access = requireProjectAccess(req, res, actorId, String(rows[idx].project_id || ''), { manage: true });
   if (!access) return;
 
+  const wasEnabled = !!rows[idx]?.webhook_enabled;
   const secret = crypto.randomBytes(24).toString('hex');
   const now = new Date().toISOString();
   rows[idx] = {
@@ -1560,7 +1561,15 @@ app.post('/integrations/:id/webhook-config', (req, res) => {
 
   const base = String(req.protocol && req.get('host') ? `${req.protocol}://${req.get('host')}` : INTEGRATION_APP_URL || '').replace(/\/$/, '');
   const webhook_url = `${base}/webhooks/${encodeURIComponent(rows[idx].provider)}/${encodeURIComponent(id)}`;
-  return res.json({ ok: true, integration_id: id, provider: rows[idx].provider, webhook_url, webhook_secret: secret, webhook_header: 'x-webhook-secret' });
+  return res.json({
+    ok: true,
+    integration_id: id,
+    provider: rows[idx].provider,
+    webhook_url,
+    webhook_secret: secret,
+    webhook_header: 'x-webhook-secret',
+    reissued: wasEnabled
+  });
 });
 
 app.post('/webhooks/:provider/:integrationId', (req, res) => {

@@ -238,6 +238,7 @@ async function auditFrontendFlows() {
         'mergedProjectTimeline(80)',
         'id="hubWebhookModal"',
         'function integrationWebhookStatus(integration, providerMeta) {',
+        'Webhook을 재발급하면 기존 secret은 즉시 무효화됩니다.',
         'function sendWebhookTestEvent()',
         'data-tool-webhook'
       ]

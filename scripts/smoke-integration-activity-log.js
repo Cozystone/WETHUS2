@@ -145,6 +145,9 @@ async function expectLifecycleEvents() {
     fail(`POST /integrations/:id/webhook-config should return a secret and URL, got ${configureWebhook.status}`);
     return;
   }
+  if (webhookPayload?.reissued !== false) {
+    fail(`first webhook issue should return reissued=false, got ${String(webhookPayload?.reissued)}`);
+  }
 
   const webhookResponse = await fetch(webhookPayload.webhook_url, {
     method: 'POST',
@@ -162,6 +165,57 @@ async function expectLifecycleEvents() {
   const webhookEventPayload = await webhookResponse.json().catch(() => ({}));
   if (!webhookResponse.ok || !webhookEventPayload?.accepted) {
     fail(`POST webhook should be accepted, got ${webhookResponse.status}`);
+  }
+
+  const reissueWebhook = await fetch(`${baseUrl}/integrations/${integrationId}/webhook-config`, {
+    method: 'POST',
+    headers: actorHeaders('actor-a')
+  });
+  const reissuePayload = await reissueWebhook.json().catch(() => ({}));
+  if (!reissueWebhook.ok || !reissuePayload?.webhook_secret || !reissuePayload?.webhook_url) {
+    fail(`second POST /integrations/:id/webhook-config should also return a secret and URL, got ${reissueWebhook.status}`);
+    return;
+  }
+  if (reissuePayload?.reissued !== true) {
+    fail(`second webhook issue should return reissued=true, got ${String(reissuePayload?.reissued)}`);
+  }
+  if (String(reissuePayload?.webhook_secret || '') === String(webhookPayload?.webhook_secret || '')) {
+    fail('reissued webhook secret should differ from the previous secret');
+  }
+
+  const staleSecretResponse = await fetch(reissuePayload.webhook_url, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-webhook-secret': webhookPayload.webhook_secret
+    },
+    body: JSON.stringify({
+      event_type: 'task_updated',
+      item_id: 'task-stale',
+      item_name: 'Stale Secret Attempt',
+      actor_name: 'Stale Bot'
+    })
+  });
+  if (staleSecretResponse.status !== 401) {
+    fail(`old webhook secret should be rejected after reissue, got ${staleSecretResponse.status}`);
+  }
+
+  const reissuedWebhookResponse = await fetch(reissuePayload.webhook_url, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-webhook-secret': reissuePayload.webhook_secret
+    },
+    body: JSON.stringify({
+      event_type: 'task_updated',
+      item_id: 'task-2',
+      item_name: 'Reissued Secret Plan',
+      actor_name: 'Notion Bot'
+    })
+  });
+  const reissuedWebhookEventPayload = await reissuedWebhookResponse.json().catch(() => ({}));
+  if (!reissuedWebhookResponse.ok || !reissuedWebhookEventPayload?.accepted) {
+    fail(`POST webhook with reissued secret should be accepted, got ${reissuedWebhookResponse.status}`);
   }
 
   const disconnectResponse = await fetch(`${baseUrl}/integrations/${integrationId}`, {
@@ -200,8 +254,8 @@ async function expectLifecycleEvents() {
   if (String(recreated?.webhook_last_event_type || '') !== 'task_updated') {
     fail(`integration webhook state should retain the last external event type, got ${recreated?.webhook_last_event_type || 'missing'}`);
   }
-  if (String(recreated?.webhook_last_item_name || '') !== 'Sprint Plan') {
-    fail('integration webhook state should retain the last external item name');
+  if (String(recreated?.webhook_last_item_name || '') !== 'Reissued Secret Plan') {
+    fail(`integration webhook state should retain the last external item name from the active secret, got ${recreated?.webhook_last_item_name || 'missing'}`);
   }
   if (Number(recreated?.webhook_delivery_count || 0) < 1) {
     fail('integration webhook state should increment delivery count after a webhook event');
@@ -229,8 +283,14 @@ async function expectLifecycleEvents() {
   }
 
   const webhookEvent = events.find(event => String(event?.event_type || '') === 'task_updated');
-  if (String(webhookEvent?.source_item_name || '') !== 'Sprint Plan') {
-    fail('webhook event should preserve the external item name in activity-events');
+  if (!events.some(event => String(event?.source_item_name || '') === 'Sprint Plan')) {
+    fail('webhook events should preserve the original external item name in activity-events');
+  }
+  if (!events.some(event => String(event?.source_item_name || '') === 'Reissued Secret Plan')) {
+    fail('webhook events should preserve the reissued-secret external item name in activity-events');
+  }
+  if (!webhookEvent) {
+    fail('activity log should contain at least one task_updated event');
   }
 }
 
