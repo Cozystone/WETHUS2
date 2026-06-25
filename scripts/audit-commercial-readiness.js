@@ -257,11 +257,42 @@ async function auditFrontendFlows() {
   addNote(`Frontend contract pages checked: ${Array.from(checkedPaths).join(', ')}`);
 }
 
+async function auditOpportunityFreshness() {
+  const { res, json } = await fetchJson(`${BASE_URL}/data/opportunity-published.json`);
+  if (res.status !== 200 || !json) {
+    addWarning('Opportunity feed freshness could not be audited from production.');
+    return;
+  }
+
+  const updatedAt = String(json.updatedAt || '').trim();
+  if (!updatedAt) {
+    addWarning('Opportunity feed is missing updatedAt metadata.');
+    addAction('Opportunity ops: publish the feed with an updatedAt timestamp so freshness can be audited.');
+    return;
+  }
+
+  const updatedDate = new Date(updatedAt);
+  if (Number.isNaN(updatedDate.getTime())) {
+    addWarning(`Opportunity feed updatedAt is invalid: ${updatedAt}`);
+    addAction('Opportunity ops: fix opportunity-published.json updatedAt format.');
+    return;
+  }
+
+  const ageDays = Math.floor((Date.now() - updatedDate.getTime()) / 86400000);
+  addNote(`Opportunity feed updatedAt: ${updatedDate.toISOString()} (${ageDays} days old)`);
+
+  if (ageDays > 14) {
+    addWarning(`Opportunity feed is stale at ${ageDays} days old.`);
+    addAction('Opportunity ops: refresh opportunity-published.json so the public opportunity surface reflects current deadlines.');
+  }
+}
+
 (async () => {
   await auditSite();
   await auditHealth();
   await auditProviders();
   await auditFrontendFlows();
+  await auditOpportunityFreshness();
 
   if (notes.length) {
     console.log(notes.map((note) => `- NOTE: ${note}`).join('\n'));
