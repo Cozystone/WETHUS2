@@ -200,6 +200,20 @@ Treat the platform as commercialization-ready only when all of the following are
 6. Founder submission moderation and admin manual review both work in production.
 7. No blocking warnings remain in the commercialization audit except intentional provider setup gaps.
 
+## GitHub Automation
+
+Use `.github/workflows/launch-readiness.yml` as the recurring strict proof for launch state.
+
+- `workflow_dispatch`: on-demand launch-grade verification before a release decision
+- daily schedule: catches silent production drift without waiting for a manual check
+- uploaded artifact: preserves the latest commercialization summary and rollout status outputs for ops review
+
+If this workflow fails, treat it as a launch blocker until:
+
+1. `node scripts/print-commercialization-readiness-summary.js` is clean
+2. `node scripts/print-production-rollout-status.js` is clean
+3. `REQUIRE_WETHUS_BACKEND_CONTRACTS=true WETHUS_GATE_STRICT_PRODUCTION=true node scripts/run-commercial-gate.js` passes again
+
 ## Known Non-Blocking Warnings
 
 These can remain warnings if they are intentionally not part of the current launch scope:

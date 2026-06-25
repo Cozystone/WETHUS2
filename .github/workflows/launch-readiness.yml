@@ -1,0 +1,47 @@
+name: Launch readiness
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '45 1 * * *'
+
+jobs:
+  launch-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install backend dependencies
+        working-directory: WETHUS2/backend
+        run: npm ci
+
+      - name: Capture commercialization readiness summary
+        run: node scripts/print-commercialization-readiness-summary.js > commercialization-readiness-summary.txt
+
+      - name: Capture production rollout status
+        run: node scripts/print-production-rollout-status.js > production-rollout-status.txt
+
+      - name: Run strict launch-grade commercialization gate
+        env:
+          WETHUS_GATE_STRICT_PRODUCTION: 'true'
+          REQUIRE_WETHUS_API_SECURITY_HEADERS: 'true'
+          REQUIRE_WETHUS_API_HEALTH_METADATA: 'true'
+          REQUIRE_WETHUS_API_SECURITY_FLAGS: 'true'
+          REQUIRE_WETHUS_BACKEND_CONTRACTS: 'true'
+          REQUIRE_WETHUS_FRONTEND_HUB_CONTRACTS: 'true'
+        run: node scripts/run-commercial-gate.js
+
+      - name: Upload launch-readiness evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: launch-readiness-evidence
+          path: |
+            commercialization-readiness-summary.txt
+            production-rollout-status.txt
