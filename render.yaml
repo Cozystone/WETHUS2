@@ -62,14 +62,14 @@ services:
       - key: WETHUS_DEFERRED_PROVIDERS
         value: notion,slack,figma
       - key: CLOUD_STATE_REQUIRE_SESSION
-        value: "false"
+        value: "true"
       - key: INTEGRATIONS_REQUIRE_ACTOR
-        value: "false"
+        value: "true"
       - key: INTEGRATIONS_REQUIRE_SESSION
-        value: "false"
+        value: "true"
       - key: INTEGRATIONS_ENFORCE_LAUNCH_SCOPE
-        value: "false"
+        value: "true"
       - key: PROJECT_INTERACTIONS_REQUIRE_SESSION
-        value: "false"
+        value: "true"
       - key: PROJECT_ACCESS_REQUIRE_MEMBERSHIP
-        value: "false"
+        value: "true"

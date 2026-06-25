@@ -7,10 +7,11 @@ Date: 2026-06-25
 This runbook describes how to turn the current optional backend guards into real production behavior without breaking the live WETHUS user flows.
 
 Use this after the current hardening bundle is deployed to Render.
+The repository blueprint in `render.yaml` now declares all six launch-grade guards as `true`; if the live service still shows `false`, the Render service has not yet synced the latest blueprint env values.
 
 ## Target Production Flags
 
-These backend environment variables should eventually be `true` in production:
+These backend environment variables are now intended to be `true` in production:
 
 - `CLOUD_STATE_REQUIRE_SESSION`
 - `INTEGRATIONS_REQUIRE_ACTOR`
@@ -30,15 +31,16 @@ These verification variables should be used for strict launch-grade checks:
 ## Before You Start
 
 1. Confirm the latest backend deploy contains the current hardening work.
-2. Run:
+2. Confirm the Render service has synced the latest `render.yaml` env values instead of older saved service values.
+3. Run:
    - `node scripts/validate-static.js`
    - `node scripts/smoke-backend-security.js`
    - `node scripts/run-commercial-gate.js`
-3. Confirm production `/health` returns:
+4. Confirm production `/health` returns:
    - `service: "wethus-backend"`
    - `build`
    - `security`
-4. Prepare at least these browser test identities:
+5. Prepare at least these browser test identities:
    - founder account
    - leader account
    - member account
@@ -47,7 +49,7 @@ These verification variables should be used for strict launch-grade checks:
 
 ## Rollout Order
 
-Apply one flag at a time. After each change, redeploy and run the verification steps before moving on.
+If the service is still carrying older saved env values, apply the latest blueprint settings first. After that, treat the rollout order below as the verification sequence for the now-enabled flags.
 
 ### Phase 1. `CLOUD_STATE_REQUIRE_SESSION=true`
 
@@ -190,7 +192,7 @@ Rollback:
 
 Treat the platform as commercialization-ready only when all of the following are true:
 
-1. All six production flags are enabled.
+1. All six production flags are enabled, whether through synced blueprint values or explicit service env overrides.
 2. `REQUIRE_WETHUS_BACKEND_CONTRACTS=true WETHUS_GATE_STRICT_PRODUCTION=true node scripts/run-commercial-gate.js` passes.
 3. Live `index.html`, `login.html`, `project-hub.html`, `profile.html`, and `explore_theme.html` match the current local interaction contracts.
 4. Live Render backend `/health` and `/integrations/providers` expose the current hardened contract surface.

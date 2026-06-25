@@ -60,6 +60,9 @@ Optional local LLM configuration:
 
 Assumption: a hosted Render service cannot reach a developer laptop's `127.0.0.1`; use Ollama only when the model server is reachable from the backend runtime.
 
+Important: the repository `render.yaml` now declares all six commercialization guard env vars as `true`.
+If the live service still reports those flags as `false`, the service is running older saved env values and needs a Render settings sync or manual env update.
+
 ## Redeploy Procedure
 
 1. Confirm the latest GitHub `main` commit has green `Static checks` and `Production smoke`.
