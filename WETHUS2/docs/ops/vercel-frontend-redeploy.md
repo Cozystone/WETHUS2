@@ -21,11 +21,14 @@ The common production drift signature is:
 Run these from the repo root:
 
 ```powershell
+node scripts\deploy-vercel-frontend-production.js
 node scripts\print-post-deploy-verification.js
 node scripts\check-live-frontend-drift.js
 node scripts\smoke-production.js
 node scripts\audit-commercial-readiness.js
 ```
+
+If Git-based auto deploy does not pick up the latest `main` commit, prefer the helper above. It links the repo root to the known Vercel project, deploys production from the correct root, reruns live frontend drift verification, and cleans temporary local `.vercel` artifacts afterward.
 
 For launch-grade verification:
 
@@ -57,7 +60,7 @@ Interpretation:
 
 1. Confirm the latest GitHub `main` commit contains the intended `WETHUS2/*.html` changes.
 2. Confirm the production domain is served by the intended Vercel project.
-3. Trigger a Vercel redeploy from the latest `main` commit.
+3. Prefer `node scripts\deploy-vercel-frontend-production.js` from the repo root.
 4. If Vercel offers cache invalidation or rebuild options, prefer a fresh rebuild over a metadata-only promote.
 5. After deploy, rerun `node scripts/check-live-frontend-drift.js`.
 6. Rerun:

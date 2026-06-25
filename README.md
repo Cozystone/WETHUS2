@@ -52,6 +52,14 @@ The validator currently checks for:
 
 After pushing to `main`, confirm GitHub Actions `Static checks` is green.
 
+If the live frontend on Vercel lags behind the latest `main` commit, redeploy from the repo root with:
+
+```bash
+node scripts/deploy-vercel-frontend-production.js
+```
+
+This uses the Vercel CLI against the correct repo root, verifies live frontend drift after deploy, and cleans temporary local `.vercel` link artifacts.
+
 ## Current Operational Risks
 
 - Opportunity data still needs a true freshness refresh. The UI hides expired listings by default, but the underlying feed has many expired records.
