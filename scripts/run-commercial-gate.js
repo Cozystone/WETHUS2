@@ -63,6 +63,11 @@ const steps = [
     args: ['scripts/smoke-integration-activity-log.js']
   },
   {
+    label: 'Google relay template smoke',
+    command: process.execPath,
+    args: ['scripts/smoke-google-relay-template.js']
+  },
+  {
     label: 'Discovery visibility smoke',
     command: process.execPath,
     args: ['scripts/smoke-discovery-visibility.js']

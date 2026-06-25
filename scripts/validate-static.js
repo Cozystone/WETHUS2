@@ -115,9 +115,77 @@ function validateOpsRunbooks() {
   for (const snippet of requiredSnippets) {
     if (!text.includes(snippet)) fail(`Render redeploy runbook must include: ${snippet}`);
   }
+
+  const relayRunbook = path.join(appRoot, 'docs', 'ops', 'google-apps-script-relay.md');
+  if (!fs.existsSync(relayRunbook)) {
+    fail('WETHUS2/docs/ops/google-apps-script-relay.md must document the Google Apps Script relay setup');
+    return;
+  }
+  const relayText = read(relayRunbook);
+  const relaySnippets = [
+    'Google Apps Script Relay Runbook',
+    '`POST /integrations/:id/webhook-config`',
+    '`POST /webhooks/:provider/:integrationId`',
+    'Google Sheets can emit richer activity through `onEdit` and `onChange` installable triggers.',
+    'Google Docs does not expose a fine-grained edit trigger equivalent to Sheets.',
+    'createSheetInstallableTriggers();',
+    'createDocsHeartbeatTrigger();'
+  ];
+  for (const snippet of relaySnippets) {
+    if (!relayText.includes(snippet)) fail(`Google relay runbook must include: ${snippet}`);
+  }
 }
 
 validateOpsRunbooks();
+
+function validateGoogleRelayPackage() {
+  const relayDir = path.join(appRoot, 'integrations', 'google-apps-script-relay');
+  const codeFile = path.join(relayDir, 'Code.js');
+  const manifestFile = path.join(relayDir, 'appsscript.json');
+
+  if (!fs.existsSync(codeFile)) {
+    fail('WETHUS2/integrations/google-apps-script-relay/Code.js must exist');
+    return;
+  }
+  if (!fs.existsSync(manifestFile)) {
+    fail('WETHUS2/integrations/google-apps-script-relay/appsscript.json must exist');
+    return;
+  }
+
+  const codeText = read(codeFile);
+  const manifestText = read(manifestFile);
+  const requiredCodeSnippets = [
+    "const WETHUS_WEBHOOK_URL = '__WETHUS_WEBHOOK_URL__';",
+    "const WETHUS_WEBHOOK_SECRET = '__WETHUS_WEBHOOK_SECRET__';",
+    "const WETHUS_PROVIDER = '__WETHUS_PROVIDER__';",
+    'function notifyWethus(eventType, extra) {',
+    'UrlFetchApp.fetch(WETHUS_WEBHOOK_URL',
+    "'x-webhook-secret': WETHUS_WEBHOOK_SECRET",
+    'function onOpen(e) {',
+    'function onEdit(e) {',
+    'function onChange(e) {',
+    'function logManualUpdate() {',
+    'function sendRelayHeartbeat() {',
+    'function createSheetInstallableTriggers() {',
+    'function createDocsHeartbeatTrigger() {'
+  ];
+  for (const snippet of requiredCodeSnippets) {
+    if (!codeText.includes(snippet)) fail(`Google relay package must include: ${snippet}`);
+  }
+
+  const requiredManifestSnippets = [
+    '"runtimeVersion": "V8"',
+    '"https://www.googleapis.com/auth/script.external_request"',
+    '"https://www.googleapis.com/auth/script.scriptapp"',
+    '"https://www.googleapis.com/auth/spreadsheets.currentonly"',
+    '"https://www.googleapis.com/auth/documents.currentonly"'
+  ];
+  for (const snippet of requiredManifestSnippets) {
+    if (!manifestText.includes(snippet)) fail(`Google relay manifest must include: ${snippet}`);
+  }
+}
+
+validateGoogleRelayPackage();
 
 function validateProjectHubContracts() {
   const file = path.join(appRoot, 'project-hub.html');

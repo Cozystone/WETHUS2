@@ -52,6 +52,9 @@ jobs:
       - name: Integration activity log smoke
         run: node scripts/smoke-integration-activity-log.js
 
+      - name: Google relay template smoke
+        run: node scripts/smoke-google-relay-template.js
+
       - name: Discovery visibility smoke
         run: node scripts/smoke-discovery-visibility.js
 
