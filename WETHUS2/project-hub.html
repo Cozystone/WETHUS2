@@ -1239,10 +1239,13 @@
             const status = btn.getAttribute('data-app-status');
             if (!applicationId || !status || !currentProject) return;
             try {
-              await hubApi(`/projects/${encodeURIComponent(currentProject.id)}/applications/${encodeURIComponent(applicationId)}/status`, {
+              const result = await hubApi(`/projects/${encodeURIComponent(currentProject.id)}/applications/${encodeURIComponent(applicationId)}/status`, {
                 method: 'POST',
                 body: JSON.stringify({ status })
               });
+              if (result?.project && WETHUS.mergeRemoteProject) {
+                currentProject = WETHUS.mergeRemoteProject(result.project) || currentProject;
+              }
               await loadTeamApplicationsForCurrentProject();
               currentProject = WETHUS.getProjectById?.(currentProject.id, { preferCloud: true }) || currentProject;
               await renderHub();
@@ -1358,10 +1361,13 @@
             const status = btn.getAttribute('data-app-status');
             if (!applicationId || !status || !currentProject) return;
             try {
-              await hubApi(`/projects/${encodeURIComponent(currentProject.id)}/applications/${encodeURIComponent(applicationId)}/status`, {
+              const result = await hubApi(`/projects/${encodeURIComponent(currentProject.id)}/applications/${encodeURIComponent(applicationId)}/status`, {
                 method: 'POST',
                 body: JSON.stringify({ status })
               });
+              if (result?.project && WETHUS.mergeRemoteProject) {
+                currentProject = WETHUS.mergeRemoteProject(result.project) || currentProject;
+              }
               await loadTeamApplicationsForCurrentProject();
               currentProject = WETHUS.getProjectById?.(currentProject.id, { preferCloud: true }) || currentProject;
               await renderHub();

@@ -1372,6 +1372,29 @@
     };
   }
 
+  function mergeRemoteProject(project) {
+    if (!project || typeof project !== 'object') return null;
+    const projectId = String(project.id || '').trim();
+    if (!projectId) return null;
+    const merged = mutateProjectCaches(projectId, (current) => ({ ...current, ...project }));
+    if (merged?.project) return merged.project;
+
+    const s = load();
+    s.projects = Array.isArray(s.projects) ? [...s.projects, { ...project }] : [{ ...project }];
+    save(s);
+
+    try {
+      const globals = JSON.parse(localStorage.getItem(GLOBAL_PROJECTS_KEY) || '[]');
+      const nextGlobals = Array.isArray(globals) ? [...globals] : [];
+      if (!nextGlobals.some((row) => String(row?.id || '') === projectId)) {
+        nextGlobals.push({ ...project });
+        localStorage.setItem(GLOBAL_PROJECTS_KEY, JSON.stringify(nextGlobals));
+      }
+    } catch (_) {}
+
+    return { ...project };
+  }
+
   function currentCloudApiBase() {
     return Array.from(new Set(CLOUD_BASE_CANDIDATES))[0] || '';
   }
@@ -3206,6 +3229,7 @@
     uiAlert,
     hasApplied,
     mergeProjectApplications,
+    mergeRemoteProject,
     reviewProjectRemote,
     applyToProject,
     cancelApplication,

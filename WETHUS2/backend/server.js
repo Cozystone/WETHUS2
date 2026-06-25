@@ -3601,7 +3601,8 @@ app.get('/projects/:projectId/applications', (req, res) => {
     const isManager = canManageProjectRole(role);
     const rows = readProjectApplications()
       .filter(item => String(item.projectId) === projectId)
-      .map(normalizeProjectApplicationRow);
+      .map(normalizeProjectApplicationRow)
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
     const applications = isManager ? rows : rows.filter(item => String(item.userId) === actorId);
     return res.json({ ok: true, applications, isManager, role: role || 'applicant' });
   } catch (e) {
@@ -3685,8 +3686,9 @@ app.post('/projects/:projectId/applications/:applicationId/status', (req, res) =
       sourceItemId: applicationId,
       sourceItemName: project.title || ''
     });
+    let updatedProject = project;
     if (status === 'accepted') {
-      upsertGlobalProject(projectId, (current) => {
+      updatedProject = upsertGlobalProject(projectId, (current) => {
         const teamMembers = Array.isArray(current.teamMembers) ? [...current.teamMembers] : [];
         if (!teamMembers.some(member => String(member?.id || '') === String(rows[idx].userId))) {
           teamMembers.push({
@@ -3698,9 +3700,12 @@ app.post('/projects/:projectId/applications/:applicationId/status', (req, res) =
           });
         }
         return { teamMembers };
-      });
+      }) || project;
     }
-    return res.json({ ok: true, application: normalizeProjectApplicationRow(rows[idx]) });
+    if (status !== 'accepted') {
+      updatedProject = getGlobalProjectById(projectId) || project;
+    }
+    return res.json({ ok: true, application: normalizeProjectApplicationRow(rows[idx]), project: updatedProject });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'application update failed' });
   }

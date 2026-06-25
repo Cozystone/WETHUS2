@@ -135,7 +135,9 @@ function validateProjectHubContracts() {
     'id="hubWebhookModal"',
     'function sendWebhookTestEvent()',
     'data-tool-webhook',
-    '서버기록'
+    '서버기록',
+    'WETHUS.mergeRemoteProject',
+    'result?.project'
   ];
   for (const snippet of requiredSnippets) {
     if (!text.includes(snippet)) fail(`project-hub.html must include: ${snippet}`);

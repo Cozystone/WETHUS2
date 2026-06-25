@@ -174,6 +174,8 @@ async function expectApplyLifecycle() {
     fail(`founder accept should succeed, got ${acceptResponse.status}`);
   } else if (String(acceptPayload?.application?.status || '') !== 'accepted') {
     fail(`accepted application should return accepted status, got ${acceptPayload?.application?.status || 'missing'}`);
+  } else if (String(acceptPayload?.project?.id || '') !== 'smoke-project') {
+    fail(`accepted application response should include updated project context, got ${acceptPayload?.project?.id || 'missing'}`);
   }
 
   const projects = readJson('cloud-projects.json').projects || [];
