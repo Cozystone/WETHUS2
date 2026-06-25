@@ -23,6 +23,7 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_I
 const GOOGLE_CLIENT_IDS = Array.from(new Set([
   GOOGLE_CLIENT_ID,
   DEFAULT_GOOGLE_CLIENT_ID,
+  ...(process.env.GOOGLE_OAUTH_CLIENT_ID ? [String(process.env.GOOGLE_OAUTH_CLIENT_ID).trim()] : []),
   ...(process.env.GOOGLE_CLIENT_IDS || '').split(',').map(s => s.trim()).filter(Boolean)
 ]));
 const RAW_JWT_SECRET = String(process.env.JWT_SECRET || '').trim();
@@ -56,9 +57,18 @@ const INTEGRATION_APP_URL = process.env.INTEGRATION_APP_URL || 'https://wethus-a
 const GOOGLE_OAUTH_CLIENT_ID = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || '';
 const GOOGLE_OAUTH_REDIRECT_URI = process.env.GOOGLE_OAUTH_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/google/callback`;
+const PUBLIC_APP_URL = String(process.env.PUBLIC_APP_URL || 'https://www.wethus.co.kr').trim();
+const GOOGLE_LOGIN_REDIRECT_URI = process.env.GOOGLE_LOGIN_REDIRECT_URI || `${INTEGRATION_APP_URL}/auth/google/callback`;
 const GOOGLE_OAUTH_REDIRECT_URIS = Array.from(new Set([
   GOOGLE_OAUTH_REDIRECT_URI,
   ...(process.env.GOOGLE_OAUTH_REDIRECT_URIS || process.env.GOOGLE_REDIRECT_URIS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+]));
+const GOOGLE_LOGIN_REDIRECT_URIS = Array.from(new Set([
+  GOOGLE_LOGIN_REDIRECT_URI,
+  ...(process.env.GOOGLE_LOGIN_REDIRECT_URIS || '')
     .split(',')
     .map(s => s.trim())
     .filter(Boolean)
@@ -210,6 +220,58 @@ function requestedGoogleOAuthRedirectUri(req) {
   const raw = String(req.query?.redirect_uri || '').trim();
   if (!raw) return '';
   return GOOGLE_OAUTH_REDIRECT_URIS.includes(raw) ? raw : '';
+}
+
+function resolveGoogleLoginRedirectUri(req, fallback = GOOGLE_LOGIN_REDIRECT_URI) {
+  const candidates = GOOGLE_LOGIN_REDIRECT_URIS
+    .map(uri => ({ uri, parsed: safeUrl(uri) }))
+    .filter(entry => !!entry.parsed);
+  if (!candidates.length) return String(fallback || '').trim();
+
+  const hostHint = requestHostHint(req);
+  const localHosts = new Set(['localhost', '127.0.0.1']);
+  const exact = candidates.find(entry => entry.parsed.hostname === hostHint);
+  if (exact) return exact.uri;
+
+  if (localHosts.has(hostHint)) {
+    const local = candidates.find(entry => localHosts.has(entry.parsed.hostname));
+    if (local) return local.uri;
+  }
+
+  const render = candidates.find(entry => entry.parsed.hostname === 'wethus-api.onrender.com');
+  if (render && !localHosts.has(hostHint)) return render.uri;
+
+  return candidates[0]?.uri || String(fallback || '').trim();
+}
+
+function resolveAllowedAppOrigin(rawOrigin = '') {
+  const parsed = safeUrl(rawOrigin);
+  if (parsed) {
+    const origin = parsed.origin;
+    if (ALLOWED_ORIGINS.includes(origin)) return origin;
+  }
+  const fallback = safeUrl(PUBLIC_APP_URL);
+  return fallback?.origin || 'https://www.wethus.co.kr';
+}
+
+function sanitizeReturnPath(rawPath = '') {
+  const value = String(rawPath || '').trim();
+  if (!value) return '';
+  if (/^https?:/i.test(value) || value.startsWith('//')) return '';
+  if (value.startsWith('/')) return value;
+  return `/${value.replace(/^\/+/, '')}`;
+}
+
+function buildPostAuthRedirectUrl({ appOrigin, nextPath, onboardingComplete }) {
+  const origin = resolveAllowedAppOrigin(appOrigin);
+  const safeNextPath = sanitizeReturnPath(nextPath);
+  if (onboardingComplete) {
+    return new URL(safeNextPath || '/index.html', origin).toString();
+  }
+  const redirect = new URL('/profile.html', origin);
+  redirect.searchParams.set('onboarding', '1');
+  if (safeNextPath) redirect.searchParams.set('next', safeNextPath);
+  return redirect.toString();
 }
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -2947,6 +3009,118 @@ app.post('/auth/login', (req, res) => {
 
 app.get('/auth/google/config', (req, res) => {
   return res.json({ ok: true, clientId: GOOGLE_CLIENT_ID || '', fallbackClientIds: GOOGLE_CLIENT_IDS });
+});
+
+app.get('/auth/google/start', (req, res) => {
+  try {
+    if (!GOOGLE_OAUTH_CLIENT_ID || !GOOGLE_OAUTH_CLIENT_SECRET) {
+      return res.status(500).json({ ok: false, error: 'GOOGLE_OAUTH_CLIENT_ID/SECRET not configured' });
+    }
+    const redirectUri = resolveGoogleLoginRedirectUri(req);
+    if (!redirectUri) {
+      return res.status(500).json({ ok: false, error: 'GOOGLE_LOGIN_REDIRECT_URI not configured' });
+    }
+    const nextPath = sanitizeReturnPath(String(req.query?.next || '').trim());
+    const appOrigin = resolveAllowedAppOrigin(String(req.query?.origin || req.get('origin') || req.get('referer') || '').trim());
+    const state = encodeState({
+      ts: Date.now(),
+      next_path: nextPath,
+      app_origin: appOrigin,
+      redirect_uri: redirectUri
+    });
+    const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    authUrl.searchParams.set('client_id', GOOGLE_OAUTH_CLIENT_ID);
+    authUrl.searchParams.set('redirect_uri', redirectUri);
+    authUrl.searchParams.set('response_type', 'code');
+    authUrl.searchParams.set('scope', 'openid email profile');
+    authUrl.searchParams.set('prompt', 'select_account');
+    authUrl.searchParams.set('state', state);
+    return res.redirect(authUrl.toString());
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'google oauth start failed' });
+  }
+});
+
+app.get('/auth/google/callback', async (req, res) => {
+  const code = String(req.query?.code || '').trim();
+  const state = decodeState(req.query?.state);
+  const redirectUri = String(state?.redirect_uri || resolveGoogleLoginRedirectUri(req)).trim();
+  const appOrigin = resolveAllowedAppOrigin(String(state?.app_origin || '').trim());
+  const nextPath = sanitizeReturnPath(String(state?.next_path || '').trim());
+
+  if (!code) return res.status(400).send('code missing');
+  if (!GOOGLE_OAUTH_CLIENT_ID || !GOOGLE_OAUTH_CLIENT_SECRET || !redirectUri) {
+    return res.status(500).send('google oauth env missing');
+  }
+
+  try {
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: GOOGLE_OAUTH_CLIENT_ID,
+        client_secret: GOOGLE_OAUTH_CLIENT_SECRET,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code'
+      })
+    });
+    const tokenJson = await tokenRes.json().catch(() => ({}));
+    if (!tokenRes.ok || !tokenJson?.id_token) {
+      return res.status(500).send(tokenJson?.error_description || 'google token exchange failed');
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: tokenJson.id_token,
+      audience: GOOGLE_CLIENT_IDS
+    });
+    const payload = ticket.getPayload();
+    if (!payload?.sub || !payload?.email) {
+      return res.status(401).send('invalid google token payload');
+    }
+
+    const email = normEmail(payload.email);
+    const users = readUsers();
+    let user = users.find(u => (u.googleSub && u.googleSub === payload.sub) || normEmail(u.email) === email);
+    const now = new Date().toISOString();
+    if (!user) {
+      user = {
+        id: crypto.randomUUID(),
+        name: payload.name || email,
+        nickname: String(payload.name || email.split('@')[0] || 'google_user').replace(/\s+/g, ''),
+        email,
+        passwordHash: '',
+        plan: 'free',
+        founderVerified: false,
+        profileImage: payload.picture || '',
+        bio: '',
+        onboardingComplete: false,
+        school: '',
+        careerRaw: '',
+        careerSummary: '',
+        interestTags: [],
+        googleSub: payload.sub,
+        createdAt: now,
+        updatedAt: now
+      };
+      users.push(user);
+    } else {
+      user.googleSub = payload.sub;
+      user.name = payload.name || user.name;
+      user.profileImage = payload.picture || user.profileImage || '';
+      user.updatedAt = now;
+    }
+    writeUsers(users);
+    setSessionCookie(req, res, createSessionToken(user));
+    return res.redirect(buildPostAuthRedirectUrl({
+      appOrigin,
+      nextPath,
+      onboardingComplete: !!user.onboardingComplete
+    }));
+  } catch (err) {
+    console.error('[auth/google/callback] failed:', err?.message || err);
+    return res.status(500).send(err?.message || 'google oauth callback failed');
+  }
 });
 
 app.post('/auth/google', async (req, res) => {
