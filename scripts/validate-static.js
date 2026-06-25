@@ -179,6 +179,7 @@ function validateInteractionContracts() {
     'async function refreshServerBookmarks()',
     'function mergeServerLikedProjects(',
     'async function refreshServerLikes()',
+    'function mergeRemoteProject(',
     'function toggleBookmark(projectId)',
     'function myBookmarkedProjects()',
     'function myLikedProjects()',
