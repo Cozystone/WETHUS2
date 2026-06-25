@@ -11,4 +11,5 @@
 - Clarified the current launch truth for Google Docs and Google Sheets:
   - connection/disconnection/sync logs are recorded automatically
   - external document change events still require a relay such as Apps Script or another webhook forwarder
+- Tightened the provider-catalog copy so deferred-provider launch messages and the Google Sheets description read more naturally in Korean.
 - Extended commercialization diagnostics and smoke coverage so provider metadata now fails fast when the activity-log contract is missing.

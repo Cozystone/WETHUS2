@@ -1404,8 +1404,8 @@ app.get('/integrations/providers', (req, res) => {
   const providerMessage = (key, configured, readyMessage, setupMessage) => {
     if (deferredSet.has(key)) {
       return configured
-        ? '운영 설정은 준비됐지만 아직 상용 런칭 범위에는 포함되지 않습니다.'
-        : '로드맵 연동으로 보류 중입니다. 상용 런칭 범위에 포함될 때 운영 설정을 마무리합니다.';
+        ? '운영 설정은 준비됐지만 아직 상용 런칭 범위에는 포함되지 않았습니다.'
+        : '로드맵 연동으로 보류 중입니다. 상용 런칭 범위에 포함하기 전에 운영 설정을 마쳐야 합니다.';
     }
     return configured ? readyMessage : setupMessage;
   };
@@ -1435,7 +1435,7 @@ app.get('/integrations/providers', (req, res) => {
     {
       key: 'google_sheets',
       label: 'Google Sheets',
-      description: '일정/지표 시트 연결',
+      description: '일정과 지표 시트 연결',
       status: providerStatus('google_sheets', googleReady),
       oauthConfigured: googleReady,
       setupRequired: providerSetupRequired('google_sheets', googleReady),
