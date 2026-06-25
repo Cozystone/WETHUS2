@@ -1303,6 +1303,39 @@ app.get('/integrations/providers', (req, res) => {
   const launchScope = currentLaunchScope();
   const launchSet = new Set(launchScope.launchProviders);
   const deferredSet = new Set(launchScope.deferredProviders);
+  const providerActivityMeta = (key) => {
+    const deferred = deferredSet.has(key);
+    const launchIncluded = launchSet.has(key);
+    const base = {
+      lifecycleEvents: true,
+      manualTestEvents: true,
+      webhookIngress: true,
+      externalPushReady: false,
+      relayRequired: true
+    };
+    if (deferred) {
+      return {
+        ...base,
+        activityLogMode: 'roadmap',
+        activityLogSummary: 'Lifecycle events can be stored after connection, but provider-side push logging remains roadmap work until this integration is launched.',
+        activityLogShort: '로드맵 단계 · 외부 푸시 로그 자동수집은 아직 미출시'
+      };
+    }
+    if (launchIncluded) {
+      return {
+        ...base,
+        activityLogMode: 'relay_required',
+        activityLogSummary: 'Connection, disconnection, and sync events are recorded automatically. External document activity requires a relay such as Apps Script or another webhook forwarder.',
+        activityLogShort: '연결/동기화 로그 자동 기록 · 외부 변경은 relay 필요'
+      };
+    }
+    return {
+      ...base,
+      activityLogMode: 'unknown',
+      activityLogSummary: 'Activity log policy has not been finalized for this provider.',
+      activityLogShort: '로그 정책 미정'
+    };
+  };
   const providerLaunchMeta = (key) => {
     if (launchSet.has(key)) {
       return {
@@ -1349,6 +1382,7 @@ app.get('/integrations/providers', (req, res) => {
       oauthConfigured: notionReady,
       setupRequired: providerSetupRequired('notion', notionReady),
       ...providerLaunchMeta('notion'),
+      ...providerActivityMeta('notion'),
       message: providerMessage('notion', notionReady, '바로 연결할 수 있습니다.', '관리자 OAuth 설정이 아직 완료되지 않았습니다.')
     },
     {
@@ -1359,6 +1393,7 @@ app.get('/integrations/providers', (req, res) => {
       oauthConfigured: googleReady,
       setupRequired: providerSetupRequired('google_docs', googleReady),
       ...providerLaunchMeta('google_docs'),
+      ...providerActivityMeta('google_docs'),
       message: providerMessage('google_docs', googleReady, 'Google 계정 연결 후 문서나 폴더를 선택할 수 있습니다.', 'Google OAuth 설정이 아직 완료되지 않았습니다.')
     },
     {
@@ -1369,6 +1404,7 @@ app.get('/integrations/providers', (req, res) => {
       oauthConfigured: googleReady,
       setupRequired: providerSetupRequired('google_sheets', googleReady),
       ...providerLaunchMeta('google_sheets'),
+      ...providerActivityMeta('google_sheets'),
       message: providerMessage('google_sheets', googleReady, 'Google 계정 연결 후 시트를 선택할 수 있습니다.', 'Google OAuth 설정이 아직 완료되지 않았습니다.')
     },
     {
@@ -1379,6 +1415,7 @@ app.get('/integrations/providers', (req, res) => {
       oauthConfigured: slackReady,
       setupRequired: providerSetupRequired('slack', slackReady),
       ...providerLaunchMeta('slack'),
+      ...providerActivityMeta('slack'),
       message: providerMessage('slack', slackReady, '워크스페이스 연결 후 채널을 선택할 수 있습니다.', 'Slack OAuth 설정이 아직 완료되지 않았습니다.')
     },
     {
@@ -1389,6 +1426,7 @@ app.get('/integrations/providers', (req, res) => {
       oauthConfigured: figmaReady,
       setupRequired: providerSetupRequired('figma', figmaReady),
       ...providerLaunchMeta('figma'),
+      ...providerActivityMeta('figma'),
       message: providerMessage('figma', figmaReady, '계정 연결 후 파일 상태를 가져올 수 있습니다.', 'Figma OAuth 설정이 아직 완료되지 않았습니다.')
     }
   ];

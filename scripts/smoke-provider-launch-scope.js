@@ -90,6 +90,28 @@ function expectLaunchScopePayload(payload) {
     if (!String(row?.launchNote || '').trim()) {
       fail(`${key} should include a non-empty launchNote`);
     }
+    if (!String(row?.activityLogMode || '').trim()) {
+      fail(`${key} should include activityLogMode`);
+    }
+    if (!String(row?.activityLogSummary || '').trim()) {
+      fail(`${key} should include activityLogSummary`);
+    }
+    if (row?.lifecycleEvents !== true) {
+      fail(`${key} should expose lifecycleEvents=true`);
+    }
+    if (row?.manualTestEvents !== true) {
+      fail(`${key} should expose manualTestEvents=true`);
+    }
+    if (row?.webhookIngress !== true) {
+      fail(`${key} should expose webhookIngress=true`);
+    }
+  }
+
+  if (googleDocs?.relayRequired !== true || googleDocs?.externalPushReady !== false) {
+    fail('google_docs should declare relayRequired=true and externalPushReady=false');
+  }
+  if (googleSheets?.relayRequired !== true || googleSheets?.externalPushReady !== false) {
+    fail('google_sheets should declare relayRequired=true and externalPushReady=false');
   }
 }
 

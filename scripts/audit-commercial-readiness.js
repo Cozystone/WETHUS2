@@ -141,6 +141,21 @@ async function auditProviders() {
       addBackendContractFinding(`${key} provider should expose a non-empty launchNote.`);
       addAction('Backend deploy: redeploy the Render backend so /integrations/providers matches the local launch-scope contract.');
     }
+    if (!String(provider.activityLogMode || '').trim()) {
+      addBackendContractFinding(`${key} provider should expose activityLogMode.`);
+      addAction('Backend deploy: redeploy the Render backend so /integrations/providers exposes activity log contract fields.');
+    }
+    if (!String(provider.activityLogSummary || '').trim()) {
+      addBackendContractFinding(`${key} provider should expose activityLogSummary.`);
+      addAction('Backend deploy: redeploy the Render backend so /integrations/providers exposes activity log contract fields.');
+    }
+    if (provider.lifecycleEvents !== true || provider.webhookIngress !== true || provider.manualTestEvents !== true) {
+      addBackendContractFinding(`${key} provider should expose lifecycleEvents/webhookIngress/manualTestEvents=true.`);
+      addAction('Backend deploy: redeploy the Render backend so /integrations/providers exposes activity log capability fields.');
+    }
+    if (provider.relayRequired === true) {
+      addNote(`${provider.label || key} external activity logs still require a relay/webhook forwarder beyond the built-in lifecycle logging.`);
+    }
   }
 
   for (const key of LAUNCH_SCOPE.deferredProviders) {
@@ -176,6 +191,14 @@ async function auditProviders() {
     if (!String(provider.launchNote || '').trim()) {
       addBackendContractFinding(`${key} provider should expose a non-empty launchNote.`);
       addAction('Backend deploy: redeploy the Render backend so /integrations/providers matches the local launch-scope contract.');
+    }
+    if (!String(provider.activityLogMode || '').trim()) {
+      addBackendContractFinding(`${key} provider should expose activityLogMode.`);
+      addAction('Backend deploy: redeploy the Render backend so /integrations/providers exposes activity log contract fields.');
+    }
+    if (!String(provider.activityLogSummary || '').trim()) {
+      addBackendContractFinding(`${key} provider should expose activityLogSummary.`);
+      addAction('Backend deploy: redeploy the Render backend so /integrations/providers exposes activity log contract fields.');
     }
   }
 
