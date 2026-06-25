@@ -41,6 +41,20 @@
     .tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
     .tool-card{border:1px solid #333;border-radius:10px;padding:10px;background:#151515}
     .tool-card .btn{min-height:38px;display:inline-flex;align-items:center;justify-content:center;}
+    .status-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0}
+    .status-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;border:1px solid #303030;background:#111;font-size:.78rem;color:#d7d7d7;line-height:1.2}
+    .status-chip--launch{border-color:#3b2b12;background:#1d1409;color:#ffbf73}
+    .status-chip--roadmap{border-color:#38314a;background:#1b1730;color:#c7b7ff}
+    .status-chip--connected{border-color:#214332;background:#10271e;color:#7be3af}
+    .status-chip--disconnected{border-color:#4a3525;background:#24170f;color:#ffc289}
+    .status-chip--setup{border-color:#4a3e23;background:#261d0d;color:#ffd36b}
+    .status-chip--healthy{border-color:#1f4b42;background:#0f2522;color:#7fe7d5}
+    .status-chip--pending{border-color:#4a3e23;background:#261d0d;color:#ffd36b}
+    .status-chip--stale{border-color:#5a2f25;background:#2b140f;color:#ff9c82}
+    .status-chip--muted{border-color:#353535;background:#171717;color:#a9adb4}
+    .tool-card-title{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+    .tool-card-main{display:grid;gap:6px}
+    .tool-card-actions{display:grid;gap:6px;margin-top:10px}
     .side-stack{display:grid;gap:10px}
     .meta-bullet{margin:0;padding-left:17px;color:#d6d6d6}
     .meta-bullet li{margin:4px 0}
@@ -1200,6 +1214,69 @@
       return String(meta?.activityLogShort || meta?.activityLogSummary || fallback || '').trim();
     }
 
+    function toolConnectionStatusLabel(tool, state, setupRequired) {
+      if (setupRequired) return '설정 필요';
+      if (!tool.ready) return '준비중';
+      if (state?.connected) return '연결됨';
+      if (state?.everConnected) return '연결해제됨';
+      return '미연결';
+    }
+
+    function toolLogStatusChip(integration) {
+      if (!integration?.id) {
+        return { label:'로그 미설정', className:'status-chip--muted' };
+      }
+      if (!integration.webhook_enabled) {
+        return { label:'로그 미설정', className:'status-chip--muted' };
+      }
+      const health = String(integration.webhook_health || '').trim();
+      if (health === 'healthy') return { label:'로그 확인됨', className:'status-chip--healthy' };
+      if (health === 'stale') return { label:'로그 오래됨', className:'status-chip--stale' };
+      return { label:'로그 대기중', className:'status-chip--pending' };
+    }
+
+    function toolCardStatusChips(tool, state, integration, meta, setupRequired) {
+      const launchPhase = currentToolLaunchPhase(tool);
+      const chips = [];
+      chips.push({
+        label: launchPhase === 'deferred' ? '로드맵' : '런칭 범위',
+        className: launchPhase === 'deferred' ? 'status-chip--roadmap' : 'status-chip--launch'
+      });
+      const connectionLabel = toolConnectionStatusLabel(tool, state, setupRequired);
+      chips.push({
+        label: connectionLabel,
+        className: state?.connected ? 'status-chip--connected' : (setupRequired ? 'status-chip--setup' : 'status-chip--disconnected')
+      });
+      chips.push(toolLogStatusChip(integration));
+      if (meta?.relayRequired) {
+        chips.push({ label:'relay 필요', className:'status-chip--pending' });
+      }
+      return chips;
+    }
+
+    function toolCardOpsHint(tool, integration, meta, canManage) {
+      if (!canManage) return '대표/리더만 변경 가능';
+      if (isDeferredTool(tool)) return '추후 오픈 예정';
+      if (meta?.setupRequired) return '운영 설정 필요';
+      if (!integration?.id) return '먼저 리소스를 연결하세요';
+      if (meta?.relayRequired && !integration.webhook_enabled) return 'Webhook 발급 후 relay 연결';
+      if (meta?.relayRequired && String(integration.webhook_health || '').trim() === 'pending') return 'relay 첫 이벤트 대기중';
+      if (String(integration?.webhook_health || '').trim() === 'stale') return 'relay 재확인 필요';
+      return '바로 사용 가능';
+    }
+
+    function toolCardLogSummary(integration, meta) {
+      if (!integration?.id) return '로그 상태는 연결 후 확인됩니다.';
+      const status = integrationWebhookStatus(integration, meta);
+      const compact = status
+        .replace('현재는 연결/동기화 이벤트만 자동 기록됩니다. · ', '')
+        .replace('외부 푸시 확인됨 · ', '')
+        .replace('외부 푸시 오래됨 · ', '')
+        .replace('Webhook 수집 준비됨 · ', '')
+        .replace('Webhook 미설정 · ', '');
+      return compact;
+    }
+
     function currentToolLaunchPhase(tool) {
       const meta = currentToolProviderMeta(tool);
       return String(meta?.launchPhase || tool?.launchPhase || '').trim();
@@ -1872,40 +1949,39 @@ function logManualUpdate() {
           : (setupRequired ? '설정 필요' : (t.ready ? (st?.connected ? '연결됨' : (st?.everConnected ? '연결해제됨' : '미연결')) : '준비중'));
         const actionLabel = st?.connected ? '동기화' : connectLabel;
         const integration = currentToolIntegration(t);
-        const hasLogs = !!integration?.webhook_enabled;
-        const activitySummary = activityLogSummaryForMeta(meta, '');
-        const logSummary = integration?.id
-          ? `${integrationWebhookStatus(integration, meta)} · ${integrationEventSummary(integration.id)}`
-          : '연결 후 로그 수집 상태를 확인할 수 있습니다.';
-        const hint = !canManage
-          ? '대표/리더만 연결을 변경할 수 있습니다.'
-          : (deferred ? currentToolLaunchNote(t) : (meta?.message || currentToolLaunchNote(t) || ''));
+        const statusChips = toolCardStatusChips(t, st, integration, meta, setupRequired);
+        const logSummary = toolCardLogSummary(integration, meta);
+        const eventSummary = integration?.id ? integrationEventSummary(integration.id) : '이벤트 없음';
+        const hint = toolCardOpsHint(t, integration, meta, canManage);
         const actionDisabled = !canManage || !t.ready || setupRequired || deferred;
         const logButton = integration?.id
           ? `<button class="btn btn--secondary" data-tool-webhook="${esc(t.name)}" type="button">${canManage ? '로그 설정' : '로그 보기'}</button>`
           : '';
         const actionColumns = logButton ? 'grid-template-columns:1fr 1fr 1fr;' : 'grid-template-columns:1fr 1fr;';
         return `<article class="tool-card" data-tool="${esc(t.name)}">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-            <div>
-              <strong style="font-size:1.15rem;">${esc(t.logo)} ${esc(t.name)}</strong>
-              <p class="meta" style="margin:4px 0 0;">${esc(t.desc)}</p>
-              <p class="meta" style="margin:4px 0 0;">${esc(statusLabel)} ${st?.lastSynced ? '· 마지막 반영 ' + esc(new Date(st.lastSynced).toLocaleString('ko-KR')) : ''}</p>
-              ${hint ? `<p class="meta" style="margin:4px 0 0;color:${(setupRequired || deferred || !canManage) ? '#ffb36b' : '#9ca3af'};">${esc(hint)}</p>` : ''}
-              ${activitySummary ? `<p class="meta" style="margin:4px 0 0;">${esc(activitySummary)}</p>` : ''}
-              <p class="meta" style="margin:4px 0 0;">${esc(logSummary)}</p>
+          <div class="tool-card-main">
+            <div class="tool-card-title">
+              <div>
+                <strong style="font-size:1.15rem;">${esc(t.logo)} ${esc(t.name)}</strong>
+                <p class="meta" style="margin:4px 0 0;">${esc(t.desc)}</p>
+              </div>
             </div>
+            <div class="status-row">${statusChips.map((chip) => `<span class="status-chip ${esc(chip.className)}">${esc(chip.label)}</span>`).join('')}</div>
+            <p class="meta" style="margin:0;">${esc(statusLabel)}${st?.lastSynced ? ` · 마지막 반영 ${esc(new Date(st.lastSynced).toLocaleString('ko-KR'))}` : ''}</p>
+            <p class="meta" style="margin:0;">${esc(hint)}</p>
+            <p class="meta" style="margin:0;">로그 ${esc(logSummary)}</p>
+            <p class="meta" style="margin:0;">이벤트 ${esc(eventSummary)}</p>
           </div>
-          <div style="display:grid;${actionColumns}gap:6px;margin-top:8px;">
+          <div class="tool-card-actions" style="${actionColumns}">
             <button class="btn btn--primary" data-tool-connect="${esc(t.name)}" type="button" ${actionDisabled ? 'disabled' : ''}>${esc(actionLabel)}</button>
             <button class="btn btn--secondary" data-tool-disconnect="${esc(t.name)}" type="button" ${actionDisabled ? 'disabled' : ''}>해제</button>
             ${logButton}
           </div>
         </article>`;
       };
-      const launchHeader = `<article class="hub-card" style="grid-column:1 / -1;padding:10px;"><strong style="display:block;margin-bottom:4px;">지금 연결 가능</strong><p class="meta" style="margin:0;">현재 상용 런칭 범위에 포함된 연동만 바로 연결할 수 있습니다.</p></article>`;
+      const launchHeader = `<article class="hub-card" style="grid-column:1 / -1;padding:10px;"><strong style="display:block;margin-bottom:4px;">지금 연결 가능</strong><p class="meta" style="margin:0;">Google Docs, Google Sheets</p></article>`;
       const roadmapHeader = roadmapTools.length
-        ? `<article class="hub-card" style="grid-column:1 / -1;padding:10px;"><strong style="display:block;margin-bottom:4px;">로드맵 연동</strong><p class="meta" style="margin:0;">Notion, Slack, Figma는 운영 설정이 완료되면 순차적으로 열립니다.</p></article>`
+        ? `<article class="hub-card" style="grid-column:1 / -1;padding:10px;"><strong style="display:block;margin-bottom:4px;">준비 중</strong><p class="meta" style="margin:0;">Notion, Slack, Figma</p></article>`
         : '';
       toolLogoGrid.innerHTML = `${launchHeader}${launchTools.map(renderToolCard).join('')}${roadmapHeader}${roadmapTools.map(renderToolCard).join('')}`;
 
