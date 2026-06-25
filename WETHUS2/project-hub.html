@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
@@ -692,7 +692,6 @@
       const type = String(event?.event_type || '').trim();
       const actorName = String(event?.actor_name || '').trim() || '사용자';
       const sourceName = String(event?.source_item_name || '').trim();
-      const payload = event?.raw_payload && typeof event.raw_payload === 'object' ? event.raw_payload : {};
       if (type === 'project_like_added') return `${actorName}님이 프로젝트에 좋아요를 남겼습니다.`;
       if (type === 'project_like_removed') return `${actorName}님이 프로젝트 좋아요를 취소했습니다.`;
       if (type === 'project_bookmark_added') return `${actorName}님이 프로젝트를 북마크했습니다.`;
@@ -702,10 +701,15 @@
       if (type === 'project_application_cancelled') return `${actorName}님이 지원을 취소했습니다.`;
       if (type === 'project_application_accepted') return `${actorName}님이 지원서를 수락했습니다.`;
       if (type === 'project_application_rejected') return `${actorName}님이 지원서를 반려했습니다.`;
-      if (type === 'webhook_event') return `${sourceName || '외부 툴'}에서 새 활동이 감지되었습니다.`;
+      if (type === 'integration_connected') return `${actorName}님이 ${sourceName || '외부 도구'} 연동을 연결했습니다.`;
+      if (type === 'integration_reconnected') return `${actorName}님이 ${sourceName || '외부 도구'} 연동을 다시 연결했습니다.`;
+      if (type === 'integration_synced') return `${actorName}님이 ${sourceName || '외부 도구'} 연동을 동기화했습니다.`;
+      if (type === 'integration_disconnected') return `${actorName}님이 ${sourceName || '외부 도구'} 연동을 해제했습니다.`;
+      if (type === 'integration_deleted') return `${actorName}님이 ${sourceName || '외부 도구'} 연동 기록을 삭제했습니다.`;
+      if (type === 'resource_seen') return `${sourceName || '외부 문서'} 변경 항목이 감지되었습니다.`;
+      if (type === 'webhook_event') return `${sourceName || '외부 도구'}에서 새 활동이 감지되었습니다.`;
       return sourceName ? `${sourceName}: ${type || 'activity'}` : (type || 'activity');
     }
-
     function normalizedRemoteActivityEvents(limit = 50) {
       return (remoteActivityEvents || [])
         .map((event) => ({

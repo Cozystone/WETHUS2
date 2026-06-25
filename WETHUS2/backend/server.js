@@ -653,13 +653,17 @@ function upsertGlobalProject(projectId, updater) {
   return rows[idx];
 }
 
-function recordProjectAuditEvent({
+function recordActivityEvent({
   projectId,
+  integrationId = '',
+  sourceType = 'wethus_core',
+  sourceItemId = '',
+  sourceItemName = '',
   actorId = '',
+  actorName = '',
   eventType = '',
   payload = {},
-  sourceItemId = '',
-  sourceItemName = ''
+  occurredAt = ''
 } = {}) {
   const normalizedProjectId = String(projectId || '').trim();
   const normalizedEventType = String(eventType || '').trim();
@@ -669,20 +673,40 @@ function recordProjectAuditEvent({
   const event = {
     id: crypto.randomUUID(),
     project_id: normalizedProjectId,
-    integration_id: '',
-    source_type: 'wethus_core',
+    integration_id: String(integrationId || '').trim(),
+    source_type: String(sourceType || 'wethus_core').trim() || 'wethus_core',
     source_item_id: String(sourceItemId || '').trim(),
     source_item_name: String(sourceItemName || '').trim(),
     actor_external_id: String(actorId || '').trim(),
-    actor_name: actorId ? getUserNameById(actorId) : 'System',
+    actor_name: String(actorName || '').trim() || (actorId ? getUserNameById(actorId) : 'System'),
     event_type: normalizedEventType,
     raw_payload: payload && typeof payload === 'object' ? payload : {},
-    occurred_at: now,
+    occurred_at: String(occurredAt || now),
     created_at: now
   };
   events.push(event);
   writeActivityEvents(events.slice(-4000));
   return event;
+}
+
+function recordProjectAuditEvent({
+  projectId,
+  actorId = '',
+  eventType = '',
+  payload = {},
+  sourceItemId = '',
+  sourceItemName = ''
+} = {}) {
+  return recordActivityEvent({
+    projectId,
+    actorId,
+    actorName: actorId ? getUserNameById(actorId) : 'System',
+    eventType,
+    payload,
+    sourceItemId,
+    sourceItemName,
+    sourceType: 'wethus_core'
+  });
 }
 
 function normalizeProjectApplicationStatus(status) {
@@ -949,6 +973,21 @@ app.post('/integrations', (req, res) => {
   if (idx >= 0) rows[idx] = { ...rows[idx], ...base };
   else rows.push(base);
   writeIntegrations(rows);
+  recordActivityEvent({
+    projectId,
+    integrationId: base.id,
+    sourceType: provider,
+    sourceItemId: resourceId,
+    sourceItemName: base.external_resource_name,
+    actorId,
+    eventType: idx >= 0 ? 'integration_reconnected' : 'integration_connected',
+    payload: {
+      provider,
+      integration_type: integrationType,
+      status: base.status,
+      external_resource_url: base.external_resource_url || ''
+    }
+  });
   return res.json({ ok: true, integration: base });
 });
 
@@ -967,6 +1006,20 @@ app.delete('/integrations/:id', (req, res) => {
   if (hard) {
     const next = rows.filter(r => r.id !== id);
     writeIntegrations(next);
+    recordActivityEvent({
+      projectId: rows[idx].project_id,
+      integrationId: rows[idx].id,
+      sourceType: rows[idx].provider,
+      sourceItemId: rows[idx].external_resource_id,
+      sourceItemName: rows[idx].external_resource_name,
+      actorId,
+      eventType: 'integration_deleted',
+      payload: {
+        provider: rows[idx].provider,
+        integration_type: rows[idx].integration_type,
+        mode: 'hard'
+      }
+    });
     return res.json({ ok: true, removed: rows.length - next.length, mode: 'hard' });
   }
 
@@ -976,6 +1029,20 @@ app.delete('/integrations/:id', (req, res) => {
     updated_at: new Date().toISOString()
   };
   writeIntegrations(rows);
+  recordActivityEvent({
+    projectId: rows[idx].project_id,
+    integrationId: rows[idx].id,
+    sourceType: rows[idx].provider,
+    sourceItemId: rows[idx].external_resource_id,
+    sourceItemName: rows[idx].external_resource_name,
+    actorId,
+    eventType: 'integration_disconnected',
+    payload: {
+      provider: rows[idx].provider,
+      integration_type: rows[idx].integration_type,
+      mode: 'soft'
+    }
+  });
   return res.json({ ok: true, removed: 1, mode: 'soft', integration: rows[idx] });
 });
 
@@ -1034,6 +1101,17 @@ app.post('/integrations/:id/sync', async (req, res) => {
 
     rows[idx] = { ...rows[idx], last_synced_at: now, updated_at: now };
     writeIntegrations(rows);
+    recordActivityEvent({
+      projectId: integration.project_id,
+      integrationId: integration.id,
+      sourceType: integration.provider,
+      sourceItemId: integration.external_resource_id,
+      sourceItemName: integration.external_resource_name,
+      actorId,
+      eventType: 'integration_synced',
+      payload: summary,
+      occurredAt: now
+    });
     return res.json({ ok: true, integration: rows[idx], summary });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'sync failed' });
@@ -1264,23 +1342,18 @@ app.post('/webhooks/:provider/:integrationId', (req, res) => {
   const itemName = String(payload.item_name || payload.title || payload.name || 'Webhook Item');
   const actorName = String(payload.actor_name || payload.user || provider);
 
-  const events = readActivityEvents();
-  const event = {
-    id: crypto.randomUUID(),
-    project_id: integration.project_id,
-    integration_id: integration.id,
-    source_type: provider,
-    source_item_id: itemId,
-    source_item_name: itemName,
-    actor_external_id: String(payload.actor_external_id || ''),
-    actor_name: actorName,
-    event_type: eventType,
-    raw_payload: payload,
-    occurred_at: String(payload.occurred_at || now),
-    created_at: now
-  };
-  events.push(event);
-  writeActivityEvents(events.slice(-2000));
+  const event = recordActivityEvent({
+    projectId: integration.project_id,
+    integrationId: integration.id,
+    sourceType: provider,
+    sourceItemId: itemId,
+    sourceItemName: itemName,
+    actorId: String(payload.actor_external_id || ''),
+    actorName,
+    eventType,
+    payload,
+    occurredAt: String(payload.occurred_at || now)
+  });
 
   const i = rows.findIndex(r => r.id === integration.id);
   if (i >= 0) {
@@ -1758,6 +1831,16 @@ app.get('/oauth/:provider/callback', async (req, res) => {
       };
       if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
       writeIntegrations(rows);
+      recordActivityEvent({
+        projectId,
+        integrationId: row.id,
+        sourceType: 'google',
+        sourceItemId: row.external_resource_id,
+        sourceItemName: row.external_resource_name,
+        actorId: userId,
+        eventType: idx >= 0 ? 'integration_reconnected' : 'integration_connected',
+        payload: { provider: 'google', integration_type: row.integration_type, oauth: true }
+      });
 
       return res.send(`<!doctype html><meta charset="utf-8"><title>Connected</title><body style="font-family:sans-serif;padding:24px;">Google 연결 완료. 이 창은 자동으로 닫힙니다.<script>try{window.opener&&window.opener.postMessage({type:'wethus-oauth-connected',provider:'google',projectId:${JSON.stringify(projectId)}},'*')}catch(e){};setTimeout(()=>window.close(),400);</script></body>`);
     }
@@ -1801,6 +1884,16 @@ app.get('/oauth/:provider/callback', async (req, res) => {
       };
       if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
       writeIntegrations(rows);
+      recordActivityEvent({
+        projectId,
+        integrationId: row.id,
+        sourceType: 'slack',
+        sourceItemId: row.external_resource_id,
+        sourceItemName: row.external_resource_name,
+        actorId: userId,
+        eventType: idx >= 0 ? 'integration_reconnected' : 'integration_connected',
+        payload: { provider: 'slack', integration_type: row.integration_type, oauth: true }
+      });
       return res.send(`<!doctype html><meta charset="utf-8"><title>Connected</title><body style="font-family:sans-serif;padding:24px;">Slack 연결 완료. 이 창은 자동으로 닫힙니다.<script>try{window.opener&&window.opener.postMessage({type:'wethus-oauth-connected',provider:'slack',projectId:${JSON.stringify(projectId)}},'*')}catch(e){};setTimeout(()=>window.close(),400);</script></body>`);
     }
 
@@ -1846,6 +1939,16 @@ app.get('/oauth/:provider/callback', async (req, res) => {
       };
       if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
       writeIntegrations(rows);
+      recordActivityEvent({
+        projectId,
+        integrationId: row.id,
+        sourceType: 'figma',
+        sourceItemId: row.external_resource_id,
+        sourceItemName: row.external_resource_name,
+        actorId: userId,
+        eventType: idx >= 0 ? 'integration_reconnected' : 'integration_connected',
+        payload: { provider: 'figma', integration_type: row.integration_type, oauth: true }
+      });
       return res.send(`<!doctype html><meta charset="utf-8"><title>Connected</title><body style="font-family:sans-serif;padding:24px;">Figma 연결 완료. 이 창은 자동으로 닫힙니다.<script>try{window.opener&&window.opener.postMessage({type:'wethus-oauth-connected',provider:'figma',projectId:${JSON.stringify(projectId)}},'*')}catch(e){};setTimeout(()=>window.close(),400);</script></body>`);
     }
 
@@ -1978,6 +2081,16 @@ app.get('/oauth/:provider/callback', async (req, res) => {
     };
     if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
     writeIntegrations(rows);
+    recordActivityEvent({
+      projectId,
+      integrationId: row.id,
+      sourceType: 'notion',
+      sourceItemId: row.external_resource_id,
+      sourceItemName: row.external_resource_name,
+      actorId: userId,
+      eventType: idx >= 0 ? 'integration_reconnected' : 'integration_connected',
+      payload: { provider: 'notion', integration_type: row.integration_type, oauth: true }
+    });
 
     return res.send(`<!doctype html><meta charset="utf-8"><title>Connected</title><body style="font-family:sans-serif;padding:24px;">Notion 연결 완료. 이 창은 자동으로 닫힙니다.<script>try{window.opener&&window.opener.postMessage({type:'wethus-oauth-connected',provider:'notion',projectId:${JSON.stringify(projectId)}},'*')}catch(e){};setTimeout(()=>window.close(),400);</script></body>`);
   } catch (e) {
@@ -2026,23 +2139,17 @@ async function runNotionSyncForIntegration(integration, projectId) {
 
   const results = Array.isArray(notionJson.results) ? notionJson.results : [];
   const now = new Date().toISOString();
-  const events = readActivityEvents();
-  const newEvents = results.slice(0, 10).map(item => ({
-    id: crypto.randomUUID(),
-    project_id: projectId,
-    integration_id: integration.id,
-    source_type: 'notion',
-    source_item_id: String(item?.id || ''),
-    source_item_name: String(item?.url || item?.id || 'Notion item'),
-    actor_external_id: '',
-    actor_name: 'Notion',
-    event_type: 'resource_seen',
-    raw_payload: item,
-    occurred_at: now,
-    created_at: now
-  }));
-  events.push(...newEvents);
-  writeActivityEvents(events.slice(-2000));
+  const newEvents = results.slice(0, 10).map(item => recordActivityEvent({
+    projectId,
+    integrationId: integration.id,
+    sourceType: 'notion',
+    sourceItemId: String(item?.id || ''),
+    sourceItemName: String(item?.url || item?.id || 'Notion item'),
+    actorName: 'Notion',
+    eventType: 'resource_seen',
+    payload: item,
+    occurredAt: now
+  })).filter(Boolean);
 
   const rows = readIntegrations();
   const i = rows.findIndex(r => r.id === integration.id);

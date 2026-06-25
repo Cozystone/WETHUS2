@@ -48,6 +48,11 @@ const steps = [
     args: ['scripts/smoke-project-interactions.js']
   },
   {
+    label: 'Integration activity log smoke',
+    command: process.execPath,
+    args: ['scripts/smoke-integration-activity-log.js']
+  },
+  {
     label: 'Discovery visibility smoke',
     command: process.execPath,
     args: ['scripts/smoke-discovery-visibility.js']
