@@ -77,8 +77,18 @@ async function run() {
     const checks = [
       ['launchPhase', row.launchPhase === expectedPhase, `expected=${expectedPhase} actual=${row.launchPhase || 'missing'}`],
       ['launchIncluded', row.launchIncluded === expectedIncluded, `expected=${expectedIncluded} actual=${String(row.launchIncluded)}`],
-      ['launchNote', !!String(row.launchNote || '').trim(), `actual=${String(row.launchNote || '').trim() ? 'present' : 'missing'}`]
+      ['launchNote', !!String(row.launchNote || '').trim(), `actual=${String(row.launchNote || '').trim() ? 'present' : 'missing'}`],
+      ['activityLogMode', !!String(row.activityLogMode || '').trim(), `actual=${row.activityLogMode || 'missing'}`],
+      ['activityLogSummary', !!String(row.activityLogSummary || '').trim(), `actual=${String(row.activityLogSummary || '').trim() ? 'present' : 'missing'}`],
+      ['lifecycleEvents', row.lifecycleEvents === true, `actual=${String(row.lifecycleEvents)}`],
+      ['manualTestEvents', row.manualTestEvents === true, `actual=${String(row.manualTestEvents)}`],
+      ['webhookIngress', row.webhookIngress === true, `actual=${String(row.webhookIngress)}`]
     ];
+
+    if (expectedPhase === 'launch') {
+      checks.push(['relayRequired', row.relayRequired === true, `actual=${String(row.relayRequired)}`]);
+      checks.push(['externalPushReady', row.externalPushReady === false, `actual=${String(row.externalPushReady)}`]);
+    }
 
     for (const [label, ok, detail] of checks) {
       console.log(`- ${ok ? 'OK' : 'DRIFT'}: ${key}.${label} (${detail})`);

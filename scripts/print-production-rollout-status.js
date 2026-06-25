@@ -143,6 +143,13 @@ async function summarizeBackendContractDrift() {
     if (provider.launchPhase !== expectedPhase) providerDrift.push(`${key}.launchPhase`);
     if (provider.launchIncluded !== expectedIncluded) providerDrift.push(`${key}.launchIncluded`);
     if (!String(provider.launchNote || '').trim()) providerDrift.push(`${key}.launchNote`);
+    if (!String(provider.activityLogMode || '').trim()) providerDrift.push(`${key}.activityLogMode`);
+    if (!String(provider.activityLogSummary || '').trim()) providerDrift.push(`${key}.activityLogSummary`);
+    if (provider.lifecycleEvents !== true) providerDrift.push(`${key}.lifecycleEvents`);
+    if (provider.manualTestEvents !== true) providerDrift.push(`${key}.manualTestEvents`);
+    if (provider.webhookIngress !== true) providerDrift.push(`${key}.webhookIngress`);
+    if (expectedIncluded && provider.relayRequired !== true) providerDrift.push(`${key}.relayRequired`);
+    if (expectedIncluded && provider.externalPushReady !== false) providerDrift.push(`${key}.externalPushReady`);
   }
   rows.push({ surface: '/integrations/providers', status: providerRes.status, drift: providerDrift });
 

@@ -5,10 +5,10 @@
 - Current local hardening work is ahead of the last fully deployed production guard settings.
 - Production site smoke passes for `https://www.wethus.co.kr`.
 - Production API now exposes backend health metadata at `https://wethus-api.onrender.com/health`.
-- Current production blockers now include three separate drift classes:
+- Current production blockers now center on Render backend lag rather than frontend drift:
   - optional security flags are still disabled in production
-  - the live frontend is still missing the latest commercialization contracts
-  - the live backend is still missing parts of the hardened `/health` and `/integrations/providers` contract
+  - the live backend build is behind `origin/main`
+  - the live backend still misses the latest activity-log metadata fields on `/integrations/providers`
 
 ## Completed Work
 - Opportunity data rationale documented in `WETHUS2/docs/change-log/2026-05-27-opportunity-data-rationale.md`.
@@ -44,12 +44,11 @@
 - Current guards are MVP safety rails. Full protection still needs DB-backed sessions, projects, memberships, review queue, audit logs, and per-project authorization.
 - `x-user-id` is still present in current frontend requests, but the backend can now derive the actor from the session subject when the header is omitted.
 - Production security and launch-scope enforcement flags are still disabled and are the primary commercialization blocker found by `scripts/audit-commercial-readiness.js`.
-- Live `project-hub.html` is still missing the latest stable render/activity/status contract snippets, and live `login.html` is also missing the current auth-return contract, so strict production smoke should keep treating frontend drift as a launch blocker.
+- Live frontend drift for `index.html`, `login.html`, `project-hub.html`, `profile.html`, and `explore_theme.html` is now cleared; current commercialization drift is backend-only.
 - `scripts/check-live-frontend-drift.js` is now part of the commercialization gate, even in non-strict mode as an optional warning step, so live page drift is harder to miss before deploy.
 - `scripts/check-live-backend-contract-drift.js` is now part of the commercialization gate, even in non-strict mode as an optional warning step, so Render contract lag is harder to miss before deploy.
-- Live response headers show `www.wethus.co.kr` is currently served by Vercel, and the drift pattern is page-level: `index.html`, `login.html`, `project-hub.html`, `profile.html`, and `explore_theme.html` are still behind the current local commercialization bundle.
-- Live Render responses also show backend contract lag: `/health` still misses some hardened security keys, and `/integrations/providers` still misses launch-scope metadata fields.
-- Vercel production for `wethus-2` currently serves commit `560e541`, which matches `origin/main`; the remaining repo-vs-live drift is therefore primarily due to the current local uncommitted commercialization work not being deployed yet.
+- Live Render responses now pass the hardened `/health` security-key checks, but `/integrations/providers` still lags the newest activity-log capability contract.
+- The current live backend build reported by `/health` still trails local `origin/main`, so Render redeploy remains required after backend contract changes.
 - Notion, Slack, and Figma integrations are still `setup_required` in production.
 
 ## Working Rules
