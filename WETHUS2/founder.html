@@ -701,7 +701,7 @@
       }, 900);
     }
 
-    function renderFounderIdeaInsight() {
+    function renderFounderIdeaInsightLegacy() {
       if (!founderInsightStatus || !founderInsightBody || !WETHUS.analyzeProjectIdea) return;
       const payload = founderIdeaPayload();
       if (payload.title.length < 4 || payload.fullDescription.length < 40) {
@@ -754,7 +754,7 @@
       `;
     }
 
-    function scheduleFounderInsightRender() {
+    function scheduleFounderInsightRenderLegacy() {
       window.clearTimeout(founderInsightTimer);
       founderInsightTimer = window.setTimeout(renderFounderIdeaInsight, 180);
     }

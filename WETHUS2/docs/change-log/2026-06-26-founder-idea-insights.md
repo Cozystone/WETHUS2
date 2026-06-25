@@ -14,6 +14,7 @@
   - key questions
   - grounding
   - suggested change-log phrasing
+- Removed the active function-name collision inside `founder.html` by demoting the older local-only insight helpers to legacy names, so the live founder draft mentor flow now has a single active implementation path.
 - Added a lightweight manual refresh action so founders can re-run the draft analysis after editing.
 - Kept the existing founder submit, draft, preview, and moderation flow unchanged while improving idea-shaping quality before submission.
 
