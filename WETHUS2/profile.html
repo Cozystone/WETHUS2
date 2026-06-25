@@ -808,6 +808,14 @@
         location.href = `explore_theme.html?cat=${encodeURIComponent(cat)}&open=${encodeURIComponent(pid)}`;
       });
 
+      window.addEventListener('wethus:project-ui-sync', () => {
+        try {
+          if (openedActivityTab && activityList.style.display !== 'none') renderActivity(openedActivityTab);
+          renderCurrentPane();
+          if (currentMyProjectId) openMyProjectModal(currentMyProjectId);
+        } catch (_) {}
+      });
+
       let myProjectView = localStorage.getItem('wethus_profile_my_view') || 'album';
       const myProjectViewAlbum = document.getElementById('myProjectViewAlbum');
       const myProjectViewList = document.getElementById('myProjectViewList');

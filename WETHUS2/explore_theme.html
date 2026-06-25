@@ -984,6 +984,21 @@
       if (e.target && e.target.getAttribute('data-close') === 'true') closeModal();
     });
 
+    window.addEventListener('wethus:project-ui-sync', (event) => {
+      try {
+        applyFilters();
+        const detailProjectId = String(event?.detail?.projectId || '').trim();
+        const targetId = detailProjectId || currentProjectId;
+        if (!targetId) return;
+        const fresh = sourceProjects().find((project) => String(project?.id || '') === targetId);
+        if (!fresh) return;
+        if (currentProjectId && String(currentProjectId) === String(targetId)) {
+          const idx = Math.max(0, (currentItems || []).findIndex((project) => String(project?.id || '') === String(targetId)));
+          openModal({ ...fresh, image: imageFor(fresh, idx), status: normalizeStage(fresh.status) });
+        }
+      } catch (_) {}
+    });
+
     modalLikeBtn.addEventListener('click', () => {
       if (!currentProjectId) return;
       const result = WETHUS.toggleLike(currentProjectId);

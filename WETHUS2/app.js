@@ -1153,6 +1153,19 @@
     return true;
   }
 
+  function emitProjectUiSync(detail = {}) {
+    try {
+      if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function' || typeof CustomEvent !== 'function') return;
+      window.dispatchEvent(new CustomEvent('wethus:project-ui-sync', {
+        detail: {
+          scope: 'projects',
+          ...detail,
+          emittedAt: new Date().toISOString()
+        }
+      }));
+    } catch (_) {}
+  }
+
   function toggleLike(projectId) {
     const target = getProjectById(projectId);
     if (!target) return null;
@@ -1180,6 +1193,7 @@
       likes: likedBy.length,
       _liked: liked
     }));
+    emitProjectUiSync({ reason: 'like_toggled', projectId, liked, likes: result.project?.likes || likedBy.length });
     postProjectInteraction(`/projects/${encodeURIComponent(projectId)}/likes/toggle`)
       .then(() => {
         refreshServerLikes().catch(() => {});
@@ -1228,6 +1242,7 @@
     });
     s.bookmarks = Array.from(byId.values());
     save(s);
+    emitProjectUiSync({ reason: 'bookmarks_synced' });
     return s.bookmarks;
   }
 
@@ -1274,6 +1289,7 @@
       }
     } catch (_) {}
     save(s);
+    emitProjectUiSync({ reason: 'likes_synced' });
     return listProjects({ includePending: true, includeRejected: true }).filter((project) => likedIds.has(String(project?.id || '')));
   }
 
@@ -1310,6 +1326,7 @@
       bookmarked = false;
     }
     save(s);
+    emitProjectUiSync({ reason: 'bookmark_toggled', projectId, bookmarked });
     postProjectInteraction(`/projects/${encodeURIComponent(projectId)}/bookmarks/toggle`)
       .then((payload) => {
         if (payload?.bookmark) {
@@ -1377,11 +1394,13 @@
     const projectId = String(project.id || '').trim();
     if (!projectId) return null;
     const merged = mutateProjectCaches(projectId, (current) => ({ ...current, ...project }));
+    emitProjectUiSync({ reason: 'project_merged', projectId });
     if (merged?.project) return merged.project;
 
     const s = load();
     s.projects = Array.isArray(s.projects) ? [...s.projects, { ...project }] : [{ ...project }];
     save(s);
+    emitProjectUiSync({ reason: 'project_merged', projectId });
 
     try {
       const globals = JSON.parse(localStorage.getItem(GLOBAL_PROJECTS_KEY) || '[]');
@@ -1680,6 +1699,7 @@
     const comments = Array.isArray(target.comments) ? [...target.comments] : [];
     comments.push({ id: uid(), author, userId: currentActorId(), text, createdAt: new Date().toISOString() });
     mutateProjectCaches(projectId, (project) => ({ ...project, comments }));
+    emitProjectUiSync({ reason: 'comment_added', projectId, commentCount: comments.length });
     postProjectInteraction(`/projects/${encodeURIComponent(projectId)}/comments`, { body: { text } })
       .then((payload) => {
         if (payload?.project) {

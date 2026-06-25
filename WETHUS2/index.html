@@ -309,6 +309,36 @@
       const applyMotivation = document.getElementById('applyMotivation');
       let applyProjectId = null;
 
+      function syncFeaturedInteractionState() {
+        try {
+          el.querySelectorAll('.card').forEach((card) => {
+            const raw = card.getAttribute('data-project');
+            if (!raw) return;
+            let parsed = null;
+            try { parsed = JSON.parse(raw); } catch (_) { parsed = null; }
+            const projectId = String(parsed?.id || '').trim();
+            if (!projectId) return;
+            const fresh = WETHUS.getProjectById?.(projectId, { preferCloud: true }) || parsed;
+            const bookmarkBtn = card.querySelector(`.bookmark-btn[data-bm="${projectId}"]`);
+            if (bookmarkBtn) bookmarkBtn.classList.toggle('active', !!WETHUS.isBookmarked(projectId));
+            const social = card.querySelector('.card-social');
+            if (social) {
+              social.innerHTML = `<span>♡ ${(fresh?.likes || 0)}</span><span>💬 ${Array.isArray(fresh?.comments) ? fresh.comments.length : 0}</span>`;
+            }
+            const applyBtn = card.querySelector('.apply-btn[data-apply]');
+            if (applyBtn && !applyBtn.classList.contains('mine')) {
+              const applied = !!WETHUS.hasApplied(projectId);
+              applyBtn.classList.toggle('applied', applied);
+              applyBtn.textContent = applied ? '지원완료' : '지원하기';
+            }
+          });
+        } catch (_) {}
+      }
+
+      window.addEventListener('wethus:project-ui-sync', () => {
+        syncFeaturedInteractionState();
+      });
+
       el.addEventListener('click', async (e) => {
         const bmBtn = e.target.closest('.bookmark-btn');
         if (bmBtn) {
