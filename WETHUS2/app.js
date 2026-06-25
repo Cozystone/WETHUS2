@@ -1109,9 +1109,11 @@
       mentorMode: base.mentorMode || '',
       mentorInput: base.mentorInput || '',
       mentorChangeLog: base.mentorChangeLog || '',
+      mentorBlockers: Array.isArray(base.mentorBlockers) ? base.mentorBlockers : [],
       mentorNextActions: Array.isArray(base.mentorNextActions) ? base.mentorNextActions : [],
       mentorQuestions: Array.isArray(base.mentorQuestions) ? base.mentorQuestions : [],
       mentorToolActions: Array.isArray(base.mentorToolActions) ? base.mentorToolActions : [],
+      mentorEvidenceGaps: Array.isArray(base.mentorEvidenceGaps) ? base.mentorEvidenceGaps : [],
       mentorGrounding: Array.isArray(base.mentorGrounding) ? base.mentorGrounding : [],
       mentorRuns: Array.isArray(base.mentorRuns) ? base.mentorRuns : [],
       updatedAt: base.updatedAt || ''

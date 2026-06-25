@@ -1059,6 +1059,9 @@ function buildProjectMentorFallback(payload = {}, errorMessage = '') {
     reviewedAt: new Date().toISOString(),
     summary,
     priority,
+    executionBlocker: firstTodo
+      ? `Execution is still slowed down because the top todo has not been pinned to one owner and one proof point: ${firstTodo}`
+      : 'Execution is slowed down because this week has no single pinned validation task yet.',
     nextActions: [
       firstTodo ? `${firstTodo}의 완료 기준과 담당자를 한 줄로 확정하세요.` : '이번 주 가장 중요한 실행 1개를 일정과 담당자까지 포함해 확정하세요.',
       secondAction,
@@ -1071,6 +1074,11 @@ function buildProjectMentorFallback(payload = {}, errorMessage = '') {
     toolActions: [
       connectedTool ? `${connectedTool}에서 최신 문서 또는 리소스를 다시 동기화해 변화 로그를 남기세요.` : 'Google Docs 또는 Sheets 중 하나를 먼저 연결해 변화 로그가 쌓이게 하세요.'
     ],
+    evidenceGaps: [
+      goal ? '' : 'Goal is missing or too weak, so the team lacks a hard validation target.',
+      firstMaterial ? '' : 'There is no material artifact yet anchoring the mentor feedback.',
+      recentActivity ? '' : 'Recent execution evidence is too thin to prove forward movement.'
+    ].map((item) => String(item || '').trim()).filter(Boolean).slice(0, 3),
     grounding: [
       goal ? `목표 근거: ${goal.slice(0, 90)}` : '목표 근거가 부족해 목표 입력값을 우선 보강해야 합니다.',
       firstTodo ? `할 일 근거: ${firstTodo}` : '이번 주 할 일 근거가 부족합니다.',
@@ -2918,15 +2926,17 @@ app.post('/ai/project-mentor', async (req, res) => {
 Respond in Korean and return JSON only.
 
 Return exactly this shape:
-{"summary":"...","priority":"...","nextActions":["..."],"questions":["..."],"toolActions":["..."],"grounding":["..."],"changeLog":"...","mentorMode":"${mentorMode}"}
+{"summary":"...","priority":"...","executionBlocker":"...","nextActions":["..."],"questions":["..."],"toolActions":["..."],"evidenceGaps":["..."],"grounding":["..."],"changeLog":"...","mentorMode":"${mentorMode}"}
 
 Rules:
 - Be concrete, practical, and execution-first.
 - Use evidence from the provided project context whenever possible.
 - If evidence is weak or missing, say so explicitly in grounding instead of inventing facts.
+- executionBlocker should name the single biggest thing slowing progress right now.
 - nextActions should be 3 items max.
 - questions should be 2 items max.
 - toolActions should be 2 items max.
+- evidenceGaps should be 3 items max.
 - grounding should mention specific evidence snippets, events, or clearly say evidence is insufficient.
 
 Trigger: ${payload.trigger}
@@ -2959,9 +2969,11 @@ ${eventLines || '- 없음'}`;
         mentorMode,
         summary: String(parsed.summary || '').trim(),
         priority: String(parsed.priority || '').trim(),
+        executionBlocker: String(parsed.executionBlocker || '').trim(),
         nextActions: Array.isArray(parsed.nextActions) ? parsed.nextActions.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 3) : [],
         questions: Array.isArray(parsed.questions) ? parsed.questions.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 2) : [],
         toolActions: Array.isArray(parsed.toolActions) ? parsed.toolActions.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 2) : [],
+        evidenceGaps: Array.isArray(parsed.evidenceGaps) ? parsed.evidenceGaps.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 3) : [],
         grounding: Array.isArray(parsed.grounding) ? parsed.grounding.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 4) : [],
         changeLog: String(parsed.changeLog || '').trim(),
         reviewedAt: new Date().toISOString()

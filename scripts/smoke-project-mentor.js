@@ -128,6 +128,9 @@ function expectList(name, value, maxLength) {
     if (!String(payload?.priority || '').trim()) {
       fail('project mentor response should include a priority');
     }
+    if (!String(payload?.executionBlocker || '').trim()) {
+      fail('project mentor response should include executionBlocker');
+    }
     if (!String(payload?.mentorMode || '').trim()) {
       fail('project mentor response should include mentorMode');
     }
@@ -137,6 +140,7 @@ function expectList(name, value, maxLength) {
     expectList('nextActions', payload?.nextActions, 3);
     expectList('questions', payload?.questions, 2);
     expectList('toolActions', payload?.toolActions, 2);
+    expectList('evidenceGaps', payload?.evidenceGaps, 3);
     expectList('grounding', payload?.grounding, 4);
     if (Array.isArray(payload?.questions) && payload.questions.some((item) => String(item || '').includes('문서 0건과 최근 활동을 반영해'))) {
       fail('project mentor fallback should not leak internal auto-refresh prompts into user-facing questions');

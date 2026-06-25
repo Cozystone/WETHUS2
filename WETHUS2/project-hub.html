@@ -163,7 +163,7 @@
 
           <div id="tab-progress" class="hidden">
             <article class="hub-card"><h3>진행 로그</h3><ul id="pgLogs" class="meta-bullet"></ul></article>
-            <article class="hub-card"><h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">프로젝트 운영 AI 요약 <button id="pgAiSummBtn" class="btn btn--secondary" type="button">허브 문맥 기반 요약 생성</button></h3><p id="pgAiSummary" style="margin:10px 0 0;"></p><p id="pgAiPriority" class="meta" style="margin:8px 0 0;"></p><ul id="pgAiGrounding" class="meta-bullet" style="margin-top:8px;"></ul><p id="pgAiChangeLog" class="meta" style="margin:8px 0 0;"></p></article>
+            <article class="hub-card"><h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">프로젝트 운영 AI 요약 <button id="pgAiSummBtn" class="btn btn--secondary" type="button">허브 문맥 기반 요약 생성</button></h3><p id="pgAiSummary" style="margin:10px 0 0;"></p><p id="pgAiPriority" class="meta" style="margin:8px 0 0;"></p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;"><div><strong style="display:block;margin-bottom:6px;">지금 막는 점</strong><ul id="pgAiBlockers" class="meta-bullet"></ul></div><div><strong style="display:block;margin-bottom:6px;">근거 빈칸</strong><ul id="pgAiEvidenceGaps" class="meta-bullet"></ul></div></div><ul id="pgAiGrounding" class="meta-bullet" style="margin-top:8px;"></ul><p id="pgAiChangeLog" class="meta" style="margin:8px 0 0;"></p></article>
           </div>
 
           <div id="tab-materials" class="hidden">
@@ -206,7 +206,9 @@
         <aside class="side-stack">
           <article class="hub-card"><h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">프로젝트 상태 <button id="sdRefreshBtn" class="btn btn--secondary" type="button" style="padding:4px 8px;min-height:auto;line-height:1;">↻</button></h3><ul id="sdStatus" class="meta-bullet"></ul></article>
           <article class="hub-card"><h3>진행 조언</h3><ul id="sdAdvice" class="meta-bullet"></ul></article>
+          <article class="hub-card"><h3>지금 막는 점</h3><ul id="sdBlockers" class="meta-bullet"></ul></article>
           <article class="hub-card"><h3>AI 실행 액션</h3><ul id="sdToolActions" class="meta-bullet"></ul></article>
+          <article class="hub-card"><h3>근거 부족 / 추가 확인</h3><ul id="sdEvidence" class="meta-bullet"></ul></article>
           <article class="hub-card"><h3>AI 체크 질문</h3><ul id="sdQuestions" class="meta-bullet"></ul></article>
           <article class="hub-card"><h3>멘토 또는 AI에게 요청하기</h3><div style="display:grid;gap:8px;"><button id="sdAiBtn" class="btn btn--primary" type="button">AI 멘토 요청</button><button id="sdHumanBtn" class="btn btn--secondary" type="button">인간 멘토 요청</button></div></article>
         </aside>
@@ -505,6 +507,8 @@
           ? `${mode} 우선순위 · ${priority}${input ? ` · 최근 요청: ${input}` : ''}`
           : `${mode} 실행 우선순위가 아직 없습니다.`;
       }
+      renderBulletList('pgAiBlockers', hub?.mentorBlockers, '지금 막는 점이 아직 정리되지 않았습니다.');
+      renderBulletList('pgAiEvidenceGaps', hub?.mentorEvidenceGaps, '추가 확인이 필요한 근거 빈칸이 아직 없습니다.');
       renderBulletList('pgAiGrounding', hub?.mentorGrounding, '근거가 아직 없습니다.');
       if (changeLogEl) {
         changeLogEl.textContent = changeLog || 'AI 변경 로그가 아직 없습니다.';
@@ -514,13 +518,16 @@
       const adviceRows = Array.isArray(defaults.adviceRows) ? defaults.adviceRows : [];
       renderBulletList('sdStatus', summary ? [summary, ...(priority ? [`우선순위: ${priority}`] : []), ...statusRows.slice(0, 2)] : statusRows, '상태 정보가 아직 없습니다.');
       renderBulletList('sdAdvice', (hub?.mentorNextActions || []).length ? hub.mentorNextActions : adviceRows, 'AI 실행 조언이 아직 없습니다.');
+      renderBulletList('sdBlockers', hub?.mentorBlockers, '지금 막는 점이 아직 없습니다.');
       renderBulletList('sdToolActions', hub?.mentorToolActions, '연동 도구 기반 액션이 아직 없습니다.');
+      renderBulletList('sdEvidence', hub?.mentorEvidenceGaps, '추가 확인이 필요한 근거 빈칸이 아직 없습니다.');
       renderBulletList('sdQuestions', hub?.mentorQuestions, '팀이 답해야 할 질문이 아직 없습니다.');
     }
     function buildProjectMentorChatReply(result = {}) {
       const lines = [];
       if (result.summary) lines.push(result.summary);
       if (result.priority) lines.push(`우선순위: ${result.priority}`);
+      if (result.executionBlocker) lines.push(`막는 점: ${result.executionBlocker}`);
       (Array.isArray(result.nextActions) ? result.nextActions : []).slice(0, 3).forEach((item, index) => {
         lines.push(`${index + 1}. ${item}`);
       });
@@ -549,9 +556,11 @@
         mentorMode: String(result.mentorMode || '').trim(),
         mentorInput: String(userPrompt || '').trim(),
         mentorChangeLog: String(result.changeLog || '').trim(),
+        mentorBlockers: (result.executionBlocker ? [result.executionBlocker] : []).map((item) => String(item || '').trim()).filter(Boolean).slice(0, 2),
         mentorNextActions: Array.isArray(result.nextActions) ? result.nextActions.slice(0, 3) : [],
         mentorQuestions: Array.isArray(result.questions) ? result.questions.slice(0, 2) : [],
         mentorToolActions: Array.isArray(result.toolActions) ? result.toolActions.slice(0, 2) : [],
+        mentorEvidenceGaps: Array.isArray(result.evidenceGaps) ? result.evidenceGaps.slice(0, 3) : [],
         mentorGrounding: Array.isArray(result.grounding) ? result.grounding.slice(0, 4) : [],
         mentorRuns: runs
       });
