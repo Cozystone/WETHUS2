@@ -3,12 +3,34 @@ const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '..');
 const defaultFeedPath = path.join(repoRoot, 'WETHUS2', 'data', 'opportunity-published.json');
+const KST_TIME_ZONE = 'Asia/Seoul';
+
+function formatKstIso(date) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: KST_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).formatToParts(date).reduce((acc, part) => {
+    if (part.type !== 'literal') acc[part.type] = part.value;
+    return acc;
+  }, {});
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}+09:00`;
+}
+
+function kstToday() {
+  return formatKstIso(new Date()).slice(0, 10);
+}
 
 function parseArgs(argv) {
   const out = {
     input: defaultFeedPath,
     output: defaultFeedPath,
-    updatedAt: new Date().toISOString(),
+    updatedAt: formatKstIso(new Date()),
     today: null,
     includeExpired: false,
     max: 0
@@ -151,7 +173,7 @@ function validItem(item) {
 
 function publish() {
   const args = parseArgs(process.argv.slice(2));
-  const today = normalizeDate(args.today) || new Date().toISOString().slice(0, 10);
+  const today = normalizeDate(args.today) || kstToday();
   const updatedAt = new Date(args.updatedAt);
   if (Number.isNaN(updatedAt.getTime())) {
     throw new Error(`Invalid --updated-at value: ${args.updatedAt}`);
@@ -190,7 +212,7 @@ function publish() {
 
   const out = {
     version: Number(source.version || 1),
-    updatedAt: updatedAt.toISOString(),
+    updatedAt: formatKstIso(updatedAt),
     items: published
   };
 

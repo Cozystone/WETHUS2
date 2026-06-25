@@ -278,7 +278,7 @@ async function auditOpportunityFreshness() {
     return;
   }
 
-  const ageDays = Math.floor((Date.now() - updatedDate.getTime()) / 86400000);
+  const ageDays = Math.max(0, Math.floor((Date.now() - updatedDate.getTime()) / 86400000));
   addNote(`Opportunity feed updatedAt: ${updatedDate.toISOString()} (${ageDays} days old)`);
 
   if (ageDays > 14) {

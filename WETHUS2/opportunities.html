@@ -298,7 +298,7 @@
     const daysSince = (value) => {
       const date = new Date(value);
       if (!value || Number.isNaN(date.getTime())) return null;
-      return Math.floor((Date.now() - date.getTime()) / 86400000);
+      return Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
     };
 
     const formatMonthDay = (value) => {
@@ -348,7 +348,7 @@
       const updatedLabel = updatedDate && !Number.isNaN(updatedDate.getTime())
         ? updatedDate.toLocaleString('ko-KR')
         : '확인 필요';
-      const ageDays = Number.isFinite(opportunityFeedMeta.ageDays) ? opportunityFeedMeta.ageDays : null;
+      const ageDays = Number.isFinite(opportunityFeedMeta.ageDays) ? Math.max(0, opportunityFeedMeta.ageDays) : null;
       const stale = !!opportunityFeedMeta.stale;
 
       card.classList.toggle('is-stale', stale);
