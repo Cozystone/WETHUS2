@@ -24,8 +24,14 @@ jobs:
       - name: Capture commercialization readiness summary
         run: node scripts/print-commercialization-readiness-summary.js > commercialization-readiness-summary.txt
 
+      - name: Capture commercialization readiness summary JSON
+        run: node scripts/print-commercialization-readiness-summary.js --json > commercialization-readiness-summary.json
+
       - name: Capture production rollout status
         run: node scripts/print-production-rollout-status.js > production-rollout-status.txt
+
+      - name: Capture production rollout status JSON
+        run: node scripts/print-production-rollout-status.js --json > production-rollout-status.json
 
       - name: Run strict launch-grade commercialization gate
         env:
@@ -44,4 +50,6 @@ jobs:
           name: launch-readiness-evidence
           path: |
             commercialization-readiness-summary.txt
+            commercialization-readiness-summary.json
             production-rollout-status.txt
+            production-rollout-status.json

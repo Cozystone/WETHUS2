@@ -207,6 +207,7 @@ Use `.github/workflows/launch-readiness.yml` as the recurring strict proof for l
 - `workflow_dispatch`: on-demand launch-grade verification before a release decision
 - daily schedule: catches silent production drift without waiting for a manual check
 - uploaded artifact: preserves the latest commercialization summary and rollout status outputs for ops review
+- JSON artifacts: allow future dashboards or monitors to consume the latest launch-readiness evidence without parsing prose
 
 If this workflow fails, treat it as a launch blocker until:
 

@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { getLaunchScope } = require('./lib/launch-scope');
 const { analyzeRenderEnvSync, backendSourceHead } = require('./lib/render-env-sync');
+const JSON_MODE = process.argv.includes('--json');
 
 const LAUNCH_SCOPE = getLaunchScope();
 const securityFlags = [
@@ -155,6 +156,40 @@ async function main() {
   const backendContractDrift = await summarizeBackendContractDrift();
   const sourceHead = backendSourceHead();
   const renderEnvSync = analyzeRenderEnvSync(health?.security || {}, health?.build?.commit || '', sourceHead);
+  const rolloutNeeded = securityFlags
+    .filter(([healthKey]) => health?.security?.[healthKey] !== true)
+    .map(([, envKey]) => envKey);
+  const driftNeeded = frontendDrift.filter((row) => row.status !== 200 || row.driftCount > 0);
+  const backendDriftNeeded = backendContractDrift.filter((row) => row.status !== 200 || row.drift.length > 0);
+  const providerStatuses = {
+    launch: Object.fromEntries(LAUNCH_SCOPE.launchProviders.map((key) => [key, providerMap[key]?.status || 'missing'])),
+    deferred: Object.fromEntries(LAUNCH_SCOPE.deferredProviders.map((key) => [key, providerMap[key]?.status || 'missing']))
+  };
+
+  if (JSON_MODE) {
+    console.log(JSON.stringify({
+      generatedAt: new Date().toISOString(),
+      baseUrl: BASE_URL,
+      apiBaseUrl: API_BASE_URL,
+      backendBuild: {
+        ref: health?.build?.ref || '-',
+        commit: health?.build?.commit || '-'
+      },
+      securityFlags: Object.fromEntries(
+        securityFlags.map(([healthKey, envKey]) => [envKey, health?.security?.[healthKey] === true])
+      ),
+      providerStatuses,
+      frontendDrift,
+      backendContractDrift,
+      renderEnvSync,
+      blockers: {
+        renderEnvUpdates: rolloutNeeded,
+        frontendDrift: driftNeeded,
+        backendContractDrift: backendDriftNeeded
+      }
+    }, null, 2));
+    return;
+  }
 
   console.log(`Production rollout status for ${BASE_URL}`);
   console.log(`Backend build: ${health?.build?.ref || '-'} ${health?.build?.commit || '-'}`);
@@ -222,7 +257,6 @@ async function main() {
     }
   }
 
-  const rolloutNeeded = securityFlags.filter(([healthKey]) => health?.security?.[healthKey] !== true);
   if (rolloutNeeded.length) {
     console.log('');
     console.log('Next Render env updates:');
@@ -237,7 +271,6 @@ async function main() {
     }
   }
 
-  const driftNeeded = frontendDrift.filter((row) => row.status !== 200 || row.driftCount > 0);
   if (driftNeeded.length) {
     console.log('');
     console.log('Next frontend deploy actions:');
@@ -246,7 +279,6 @@ async function main() {
     console.log('- helper: node scripts/print-post-deploy-verification.js');
   }
 
-  const backendDriftNeeded = backendContractDrift.filter((row) => row.status !== 200 || row.drift.length > 0);
   if (backendDriftNeeded.length) {
     console.log('');
     console.log('Next backend contract actions:');
