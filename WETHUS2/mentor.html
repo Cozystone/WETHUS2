@@ -319,7 +319,7 @@
         card.addEventListener('click', () => {
           const m = humanMentors.find(x => x.id === card.getAttribute('data-open-human'));
           if (!m) return;
-          location.href = `member.html?name=${encodeURIComponent(m.name)}&role=${encodeURIComponent(m.title)}&bio=${encodeURIComponent(m.role)}&founder=0&mentor=1`;
+          location.href = `member.html?name=${encodeURIComponent(m.name)}&userId=${encodeURIComponent(m.id || '')}&role=${encodeURIComponent(m.title)}&bio=${encodeURIComponent(m.role)}&founder=0&mentor=1`;
         });
       });
 

@@ -529,7 +529,11 @@
         if (next.school === undefined) next.school = '';
         if (next.careerRaw === undefined) next.careerRaw = '';
         if (next.careerSummary === undefined) next.careerSummary = '';
+        if (next.headline === undefined) next.headline = '';
+        if (next.lookingFor === undefined) next.lookingFor = '';
+        if (next.portfolioHighlights === undefined) next.portfolioHighlights = '';
         next.interestTags = normalizeInterestTags(next.interestTags || next.interests || []);
+        Object.assign(next, normalizeProfileLinks(next));
         return next;
       });
     }
@@ -642,6 +646,26 @@
 
   function save(state) {
     localStorage.setItem(KEY, JSON.stringify(state));
+  }
+
+  function normalizeProfileText(value) {
+    return String(value || '').trim();
+  }
+
+  function normalizeProfileLinks(raw = {}) {
+    const normalize = (value) => {
+      const text = String(value || '').trim();
+      if (!text) return '';
+      if (/^https?:\/\//i.test(text)) return text;
+      if (/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(text)) return `https://${text}`;
+      return '';
+    };
+    return {
+      instagramUrl: normalize(raw.instagramUrl),
+      githubUrl: normalize(raw.githubUrl),
+      linkedinUrl: normalize(raw.linkedinUrl),
+      portfolioUrl: normalize(raw.portfolioUrl)
+    };
   }
 
   function getState() {
@@ -830,7 +854,14 @@
         school: '',
         careerRaw: '',
         careerSummary: '',
+        headline: '',
+        lookingFor: '',
+        portfolioHighlights: '',
         interestTags: [],
+        instagramUrl: '',
+        githubUrl: '',
+        linkedinUrl: '',
+        portfolioUrl: '',
         onboardingComplete: false,
         createdAt: new Date().toISOString()
       };
@@ -875,7 +906,14 @@
       school: '',
       careerRaw: '',
       careerSummary: '',
+      headline: '',
+      lookingFor: '',
+      portfolioHighlights: '',
       interestTags: normalizeInterestTags(interestTags),
+      instagramUrl: '',
+      githubUrl: '',
+      linkedinUrl: '',
+      portfolioUrl: '',
       onboardingComplete: false,
       createdAt: new Date().toISOString()
     };
@@ -1805,6 +1843,10 @@
     const u = s.users.find(x => x.id === s.currentUserId);
     if (!u) return null;
     Object.assign(u, patch || {});
+    Object.assign(u, normalizeProfileLinks(u));
+    u.headline = normalizeProfileText(u.headline);
+    u.lookingFor = normalizeProfileText(u.lookingFor);
+    u.portfolioHighlights = normalizeProfileText(u.portfolioHighlights);
     u.interestTags = normalizeInterestTags(u.interestTags || []);
     u.youthTag = normalizeYouthTag(u);
     u.userTrack = getUserTrack(u);
@@ -1834,7 +1876,14 @@
         school: user?.school || '',
         careerRaw: user?.careerRaw || '',
         careerSummary: user?.careerSummary || '',
+        headline: user?.headline || '',
+        lookingFor: user?.lookingFor || '',
+        portfolioHighlights: user?.portfolioHighlights || '',
         interestTags: normalizeInterestTags(user?.interestTags || user?.interests || []),
+        instagramUrl: normalizeProfileLinks(user).instagramUrl,
+        githubUrl: normalizeProfileLinks(user).githubUrl,
+        linkedinUrl: normalizeProfileLinks(user).linkedinUrl,
+        portfolioUrl: normalizeProfileLinks(user).portfolioUrl,
         onboardingComplete: user?.onboardingComplete === undefined ? true : !!user?.onboardingComplete,
         createdAt: user?.createdAt || new Date().toISOString(),
         googleSub: user?.googleSub || ''
@@ -1857,7 +1906,14 @@
         school: user?.school ?? target.school,
         careerRaw: user?.careerRaw ?? target.careerRaw,
         careerSummary: user?.careerSummary ?? target.careerSummary,
+        headline: user?.headline ?? target.headline,
+        lookingFor: user?.lookingFor ?? target.lookingFor,
+        portfolioHighlights: user?.portfolioHighlights ?? target.portfolioHighlights,
         interestTags: normalizeInterestTags(user?.interestTags ?? target.interestTags ?? []),
+        instagramUrl: normalizeProfileLinks({ instagramUrl: user?.instagramUrl ?? target.instagramUrl }).instagramUrl,
+        githubUrl: normalizeProfileLinks({ githubUrl: user?.githubUrl ?? target.githubUrl }).githubUrl,
+        linkedinUrl: normalizeProfileLinks({ linkedinUrl: user?.linkedinUrl ?? target.linkedinUrl }).linkedinUrl,
+        portfolioUrl: normalizeProfileLinks({ portfolioUrl: user?.portfolioUrl ?? target.portfolioUrl }).portfolioUrl,
         onboardingComplete: user?.onboardingComplete === undefined ? target.onboardingComplete : !!user.onboardingComplete,
         googleSub: user?.googleSub ?? target.googleSub
       });

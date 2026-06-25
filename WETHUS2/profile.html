@@ -104,7 +104,11 @@
           </label>
           <label>이름 <input name="name" required /></label>
           <label>별명 <input name="nickname" required /></label>
+          <label>한 줄 소개 <input name="headline" placeholder="예: 교육 문제를 데이터로 푸는 10대 창업자" /></label>
           <label>자기소개 <textarea name="bio" placeholder="어떤 프로젝트를 왜 하는지 간단히 소개해보세요."></textarea></label>
+          <label>지금 찾는 것
+            <textarea name="lookingFor" placeholder="예: 디자인 리드 1명, 학교 실험 파트너 2팀, 파일럿 인터뷰 20명"></textarea>
+          </label>
           <fieldset class="interest-picker" aria-label="관심 분야 선택">
             <legend>관심 분야</legend>
             <p>탐색탭 추천과 프로젝트 아이디어 분석에 반영됩니다.</p>
@@ -135,6 +139,15 @@
               <button id="careerAiBtn" class="btn btn--secondary" type="button">AI 정리</button>
             </div>
           </label>
+          <label>포트폴리오 하이라이트
+            <textarea name="portfolioHighlights" placeholder="줄바꿈으로 입력하세요.&#10;예: 교내 창업대회 본선 진출&#10;MVP 2회 배포&#10;사용자 인터뷰 53건 진행"></textarea>
+          </label>
+          <div class="profile-link-grid">
+            <label>Instagram <input name="instagramUrl" placeholder="instagram.com/username" /></label>
+            <label>GitHub <input name="githubUrl" placeholder="github.com/username" /></label>
+            <label>LinkedIn <input name="linkedinUrl" placeholder="linkedin.com/in/username" /></label>
+            <label>Portfolio / Website <input name="portfolioUrl" placeholder="your-site.com" /></label>
+          </div>
           <label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input type="checkbox" id="under22Confirm" name="under22Confirm" style="width:auto;"/> 만 22세 미만 학생임을 확인합니다. 추후 본인확인 정책에 따라 추가 확인이 필요할 수 있습니다.</label>
           <div style="display:flex;justify-content:flex-end;gap:8px;">
             <button class="btn btn--secondary" type="button" id="profileEditCancel">취소</button>
@@ -253,7 +266,7 @@
           sessionStorage.setItem('wethus_auth_return_state', JSON.stringify(state));
         } catch (_) {}
       };
-      const fallbackUser = { name: '개발자 모드', nickname: 'dev_mode', email: 'dev@local', bio: '임시 세션으로 로그인됨', founderVerified: false, profileImage: '', age: 17, school: '', careerRaw: '', careerSummary: '', onboardingComplete: true };
+      const fallbackUser = { name: '개발자 모드', nickname: 'dev_mode', email: 'dev@local', bio: '임시 세션으로 로그인됨', founderVerified: false, profileImage: '', age: 17, school: '', careerRaw: '', careerSummary: '', headline: '', lookingFor: '', portfolioHighlights: '', instagramUrl: '', githubUrl: '', linkedinUrl: '', portfolioUrl: '', onboardingComplete: true };
       const user = u || fallbackUser;
       const founderBadge = user.founderVerified ? '<span class="verify-badge">Founder 인증</span>' : '';
       const youthBadge = user.youthTag ? '<span class="verify-badge" style="background:#e8f7ee;color:#0f8a47;border-color:#bde8cc;">Youth</span>' : '';
@@ -335,6 +348,82 @@
           <div id="profilePlanStatus">${planStatusMarkup}</div>
         </div>
       `;
+
+      const renderPortfolioHero = () => {
+        const normalizedCareerLines = String(user.careerSummary || '').split('\n').map(line => line.replace(/^[•\-]\s*/, '').trim()).filter(Boolean);
+        const highlightLines = String(user.portfolioHighlights || '').split('\n').map(line => line.replace(/^[•\-]\s*/, '').trim()).filter(Boolean);
+        const previewHighlights = (highlightLines.length ? highlightLines : normalizedCareerLines).slice(0, 4);
+        const normalizedAvatar = user.profileImage ? `<img src="${esc(safeUrl(user.profileImage))}" alt="프로필" class="profile-mini-avatar"/>` : `<span class="profile-avatar-fallback">${esc((user.name || 'U').slice(0,1))}</span>`;
+        const normalizedInterestTags = WETHUS.normalizeInterestTags ? WETHUS.normalizeInterestTags(user.interestTags || []) : (user.interestTags || []);
+        const normalizedInterestMarkup = normalizedInterestTags.length
+          ? `<div class="hero-tags profile-tag-row">${normalizedInterestTags.map(tag => `<span class="chip">${esc(tag)}</span>`).join('')}</div>`
+          : '<p class="meta" style="margin:10px 0 0;">관심 분야를 설정하면 탐색 추천 정확도가 올라갑니다.</p>';
+        const profileLinks = [
+          { label: 'Instagram', href: user.instagramUrl },
+          { label: 'GitHub', href: user.githubUrl },
+          { label: 'LinkedIn', href: user.linkedinUrl },
+          { label: 'Portfolio', href: user.portfolioUrl }
+        ].filter(link => safeUrl(link.href));
+        const profileLinksMarkup = profileLinks.length
+          ? `<div class="profile-link-row">${profileLinks.map(link => `<a class="profile-link-pill" href="${esc(safeUrl(link.href))}" target="_blank" rel="noreferrer">${esc(link.label)}</a>`).join('')}</div>`
+          : '<p class="meta" style="margin:12px 0 0;">Instagram, GitHub, LinkedIn, 포트폴리오 링크를 추가하면 팀원과 멘토가 신뢰도를 더 쉽게 판단할 수 있어요.</p>';
+        const portfolioMarkup = previewHighlights.length
+          ? `<ul class="profile-proof-list">${previewHighlights.map(line => `<li>${esc(line)}</li>`).join('')}</ul>`
+          : '<p class="meta" style="margin:0;">작은 실행 이력도 좋아요. 대회, 배포, 인터뷰, 리서치, 운영 경험을 적어두면 훨씬 강한 프로필이 됩니다.</p>';
+        const schoolAndAge = [user.school, user.age ? `만 ${user.age}세` : '', user.userTrack === 'Youth' ? 'Youth Track' : 'Open Track'].filter(Boolean);
+        const lookingForMarkup = user.lookingFor
+          ? `<p class="profile-ask-copy">${esc(user.lookingFor)}</p>`
+          : '<p class="meta" style="margin:0;">지금 필요한 팀원, 파일럿, 조언, 파트너를 적어두면 적합한 사람이 더 빨리 연결됩니다.</p>';
+
+        hero.innerHTML = `
+          <div class="profile-main profile-main--portfolio">
+            <div class="profile-topline profile-topline--portfolio">
+              <div class="profile-identity-block">
+                <div class="profile-identity-head">
+                  ${normalizedAvatar}
+                  <div>
+                    <h2 style="margin:0;">${esc(user.name)}</h2>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                      <span class="profile-nickname">@${esc(user.nickname || (user.name || '').replace(/\s+/g,'').toLowerCase())}</span>
+                      ${founderBadge}
+                      ${youthBadge}
+                    </div>
+                  </div>
+                </div>
+                <p class="profile-headline">${esc(user.headline || '프로젝트로 실력을 증명하는 학생 창업자')}</p>
+                <p class="profile-bio">${esc(user.bio || '아직 소개가 없습니다. 어떤 문제를 왜 풀고 싶은지 적어보면 협업 연결이 훨씬 좋아집니다.')}</p>
+                ${normalizedInterestMarkup}
+                ${profileLinksMarkup}
+              </div>
+              <div class="profile-hero-actions">
+                ${u ? '<button id="profileEditOpen" class="btn btn--secondary profile-edit-btn" style="display:inline-flex;align-items:center;gap:6px;">프로필 수정</button>' : ''}
+                <div class="profile-proof-card">
+                  <span class="profile-proof-kicker">Founder Snapshot</span>
+                  <div class="profile-stats profile-stats--portfolio">
+                    <span><strong>${WETHUS.myProjects().length}</strong> 프로젝트</span>
+                    <span><strong>${WETHUS.listProjects().filter(p => p.founderId === (u ? u.id : 'dev-temp')).length}</strong> 등록</span>
+                    <span><strong>${esc(currentPlanLabel)}</strong> 플랜</span>
+                  </div>
+                  <p class="meta" style="margin:10px 0 0;">${esc(schoolAndAge.join(' · '))}</p>
+                </div>
+              </div>
+            </div>
+            <div class="profile-portfolio-grid">
+              <section class="profile-portfolio-card">
+                <h3>포트폴리오 하이라이트</h3>
+                ${portfolioMarkup}
+              </section>
+              <section class="profile-portfolio-card">
+                <h3>지금 찾는 것</h3>
+                ${lookingForMarkup}
+              </section>
+            </div>
+            <div id="profilePlanStatus">${planStatusMarkup}</div>
+          </div>
+        `;
+      };
+
+      renderPortfolioHero();
 
       function renderIdeaRecommendations() {
         if (!ideaRecommendations) return;
@@ -442,11 +531,18 @@
         function fillProfileForm(force = false) {
           profileForm.elements.name.value = u.name || '';
           profileForm.elements.nickname.value = u.nickname || '';
+          profileForm.elements.headline.value = u.headline || '';
           profileForm.elements.bio.value = u.bio || '';
+          profileForm.elements.lookingFor.value = u.lookingFor || '';
           profileForm.elements.age.value = u.age || '';
           profileForm.elements.school.value = u.school || '';
           profileForm.elements.careerRaw.value = u.careerRaw || '';
           profileForm.elements.careerSummary.value = u.careerSummary || '';
+          profileForm.elements.portfolioHighlights.value = u.portfolioHighlights || '';
+          profileForm.elements.instagramUrl.value = u.instagramUrl || '';
+          profileForm.elements.githubUrl.value = u.githubUrl || '';
+          profileForm.elements.linkedinUrl.value = u.linkedinUrl || '';
+          profileForm.elements.portfolioUrl.value = u.portfolioUrl || '';
           const interestSet = new Set(WETHUS.normalizeInterestTags ? WETHUS.normalizeInterestTags(u.interestTags || []) : (u.interestTags || []));
           profileForm.querySelectorAll('input[name="interestTags"]').forEach(el => { el.checked = interestSet.has(el.value); });
           if (profileImagePreview) profileImagePreview.src = stagedProfileImage || u.profileImage || '';
@@ -748,12 +844,19 @@
           WETHUS.updateCurrentUserProfile({
             name: fd.get('name'),
             nickname: fd.get('nickname'),
+            headline: fd.get('headline'),
             bio: fd.get('bio'),
+            lookingFor: fd.get('lookingFor'),
             age,
             school: fd.get('school'),
             careerRaw,
             careerSummary,
+            portfolioHighlights: fd.get('portfolioHighlights'),
             interestTags: fd.getAll('interestTags'),
+            instagramUrl: fd.get('instagramUrl'),
+            githubUrl: fd.get('githubUrl'),
+            linkedinUrl: fd.get('linkedinUrl'),
+            portfolioUrl: fd.get('portfolioUrl'),
             profileImage: stagedProfileImage || u.profileImage || '',
             onboardingComplete: true
           });

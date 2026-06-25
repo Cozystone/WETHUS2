@@ -85,6 +85,37 @@
       '"': '&quot;',
       "'": '&#39;'
     }[ch]));
+    const safeUrl = (value) => {
+      const raw = String(value || '').trim();
+      if (!raw) return '';
+      if (/^https?:/i.test(raw)) return raw;
+      if (/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(raw)) return `https://${raw}`;
+      return '';
+    };
+    const stateUsers = Array.isArray(WETHUS.getState()?.users) ? WETHUS.getState().users : [];
+    const matchedUser = stateUsers.find((candidate) => {
+      if (!candidate) return false;
+      return [candidate.name, candidate.nickname].some((value) => String(value || '').trim() === String(member.name || '').trim());
+    }) || null;
+    const resolvedMember = matchedUser ? {
+      ...member,
+      name: matchedUser.name || member.name,
+      nickname: matchedUser.nickname || member.name,
+      bio: matchedUser.bio || member.bio,
+      founder: !!matchedUser.founderVerified || member.founder,
+      headline: matchedUser.headline || member.role || '',
+      lookingFor: matchedUser.lookingFor || '',
+      school: matchedUser.school || '',
+      age: matchedUser.age ?? null,
+      interestTags: matchedUser.interestTags || [],
+      portfolioHighlights: matchedUser.portfolioHighlights || matchedUser.careerSummary || '',
+      instagramUrl: matchedUser.instagramUrl || '',
+      githubUrl: matchedUser.githubUrl || '',
+      linkedinUrl: matchedUser.linkedinUrl || '',
+      portfolioUrl: matchedUser.portfolioUrl || '',
+      profileImage: matchedUser.profileImage || '',
+      userId: matchedUser.id || ''
+    } : { ...member, nickname: member.name.replace(/\s+/g,'').toLowerCase() };
 
     const me = WETHUS.currentUser();
     const plan = String(me?.plan || 'free').toLowerCase();
@@ -112,17 +143,82 @@
       </div>
     `;
 
+    const renderMemberPortfolio = () => {
+      const detailMember = resolvedMember;
+      const displayName = detailMember.name || member.name;
+      const detailAllowed = paid || myTeamNames.has(displayName) || me?.name === displayName || me?.nickname === displayName;
+      const socialLinks = [
+        { label: 'Instagram', href: detailMember.instagramUrl },
+        { label: 'GitHub', href: detailMember.githubUrl },
+        { label: 'LinkedIn', href: detailMember.linkedinUrl },
+        { label: 'Portfolio', href: detailMember.portfolioUrl }
+      ].filter((item) => detailAllowed && safeUrl(item.href));
+      const highlightLines = String(detailMember.portfolioHighlights || '').split('\n').map((line) => line.replace(/^[•\-]\s*/, '').trim()).filter(Boolean).slice(0, 4);
+      const avatarMarkup = detailMember.profileImage
+        ? `<img src="${esc(safeUrl(detailMember.profileImage))}" alt="프로필" class="profile-mini-avatar" style="width:64px;height:64px;"/>`
+        : `<div class="profile-avatar" style="width:64px;height:64px;font-size:1.45rem;">${esc(displayName.slice(0,1))}</div>`;
+      const interestMarkup = detailAllowed && Array.isArray(detailMember.interestTags) && detailMember.interestTags.length
+        ? `<div class="hero-tags profile-tag-row">${detailMember.interestTags.map((tag) => `<span class="chip">${esc(tag)}</span>`).join('')}</div>`
+        : '';
+
+      document.getElementById('memberHero').innerHTML = `
+        <div class="profile-main profile-main--portfolio">
+          <div class="profile-topline profile-topline--portfolio">
+            <div class="profile-identity-block">
+              <div class="profile-identity-head">
+                ${avatarMarkup}
+                <div>
+                  <h2>${esc(displayName)}</h2>
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <span class="profile-nickname">@${esc(detailMember.nickname || displayName.replace(/\s+/g,'').toLowerCase())}</span>
+                    ${detailMember.founder ? '<span class="verify-badge">Founder 인증</span>' : ''}
+                    ${detailMember.mentor ? '<span class="verify-badge" style="background:#6d28d9;color:#f5f3ff;border-color:#8b5cf6;">Mentor 인증</span>' : ''}
+                  </div>
+                </div>
+              </div>
+              <p class="profile-headline">${esc(detailMember.headline || detailMember.role || '프로젝트 참여자')}</p>
+              <p class="profile-bio">${detailAllowed ? esc(detailMember.bio) : '상세 프로필은 Premium/Pro 플랜에서 확인할 수 있습니다. (본인 / 팀원 예외)'}</p>
+              ${interestMarkup}
+              ${socialLinks.length ? `<div class="profile-link-row">${socialLinks.map((item) => `<a class="profile-link-pill" href="${esc(safeUrl(item.href))}" target="_blank" rel="noreferrer">${esc(item.label)}</a>`).join('')}</div>` : ''}
+              ${detailAllowed ? '' : '<p class="meta" style="margin-top:6px;">업그레이드하면 경력, 링크, 포트폴리오 정보를 더 자세히 볼 수 있어요.</p>'}
+            </div>
+            <div class="profile-hero-actions">
+              <button id="memberDmBtn" class="btn btn--primary" type="button">DM 보내기</button>
+              <div class="profile-proof-card">
+                <span class="profile-proof-kicker">Profile Snapshot</span>
+                <p class="meta" style="margin:0;">${esc([detailMember.school, detailMember.age ? `만 ${detailMember.age}세` : '', detailMember.role].filter(Boolean).join(' · '))}</p>
+              </div>
+            </div>
+          </div>
+          ${detailAllowed ? `
+            <div class="profile-portfolio-grid">
+              <section class="profile-portfolio-card">
+                <h3>포트폴리오 하이라이트</h3>
+                ${highlightLines.length ? `<ul class="profile-proof-list">${highlightLines.map((line) => `<li>${esc(line)}</li>`).join('')}</ul>` : '<p class="meta" style="margin:0;">아직 등록된 실행 이력이 없습니다.</p>'}
+              </section>
+              <section class="profile-portfolio-card">
+                <h3>지금 찾는 것</h3>
+                <p class="profile-ask-copy">${esc(detailMember.lookingFor || '공개된 모집/협업 요청이 아직 없습니다.')}</p>
+              </section>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    };
+
+    renderMemberPortfolio();
+
     const memberDmBtn = document.getElementById('memberDmBtn');
     memberDmBtn?.addEventListener('click', async () => {
       try {
-        const thread = await WETHUS.createDmThread({ targetName: member.name });
+        const thread = await WETHUS.createDmThread({ targetName: resolvedMember.name || member.name, targetUserId: resolvedMember.userId || undefined, targetAvatar: resolvedMember.profileImage || '' });
         location.href = `dm.html?threadId=${encodeURIComponent(thread?.id || '')}`;
       } catch (e) {
         alert(e?.message || 'DM 대화방 생성에 실패했습니다.');
       }
     });
 
-    const projects = WETHUS.projectsByMemberName(member.name);
+    const projects = WETHUS.projectsByMemberName(resolvedMember.name || member.name);
     const wrap = document.createElement('section');
     wrap.innerHTML = `
       <section class="projects-head-row" style="margin-top:16px;">
