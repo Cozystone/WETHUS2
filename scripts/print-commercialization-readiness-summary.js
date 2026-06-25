@@ -1,8 +1,8 @@
-const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { getLaunchScope } = require('./lib/launch-scope');
 const { analyzeRenderEnvSync, backendSourceHead } = require('./lib/render-env-sync');
+const { runGit, resolveRemoteMain } = require('./lib/source-alignment');
 
 const repoRoot = path.resolve(__dirname, '..');
 const appRoot = path.join(repoRoot, 'WETHUS2');
@@ -93,19 +93,6 @@ const frontendChecks = [
 ];
 const JSON_MODE = process.argv.includes('--json');
 
-function runGit(args) {
-  const result = spawnSync('git', args, {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-    shell: false
-  });
-  if (result.status !== 0) {
-    throw new Error((result.stderr || result.stdout || `git ${args.join(' ')} failed`).trim());
-  }
-  return String(result.stdout || '').trim();
-}
-
 async function fetchJson(url) {
   const res = await fetch(url, { redirect: 'follow' });
   const text = await res.text();
@@ -125,16 +112,17 @@ async function fetchText(url) {
 }
 
 async function localSourceStatus() {
-  const head = runGit(['rev-parse', 'HEAD']);
+  const { head, remoteMain, aligned } = resolveRemoteMain(repoRoot, {
+    attempts: 8,
+    retryDelayMs: 500
+  });
   const backendHead = backendSourceHead();
-  const remoteMainLine = runGit(['ls-remote', 'origin', 'refs/heads/main']);
-  const remoteMain = remoteMainLine.split(/\s+/)[0] || '';
-  const status = runGit(['status', '--short']);
+  const status = runGit(repoRoot, ['status', '--short']);
   return {
     head,
     backendHead,
     remoteMain,
-    aligned: !!remoteMain && head === remoteMain,
+    aligned,
     dirty: !!status,
     dirtyCount: status ? status.split(/\r?\n/).filter(Boolean).length : 0
   };

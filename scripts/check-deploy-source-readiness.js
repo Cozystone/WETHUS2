@@ -1,5 +1,5 @@
-const { spawnSync } = require('child_process');
 const path = require('path');
+const { runGit, resolveRemoteMain } = require('./lib/source-alignment');
 
 const repoRoot = path.resolve(__dirname, '..');
 const STRICT = String(process.env.WETHUS_DEPLOY_SOURCE_STRICT || 'false').toLowerCase() === 'true';
@@ -16,19 +16,6 @@ const IGNORE_PATTERNS = [
   /^launch-readiness-snapshot\.(md|json)$/
 ];
 
-function runGit(args) {
-  const result = spawnSync('git', args, {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-    shell: false
-  });
-  if (result.status !== 0) {
-    throw new Error((result.stderr || result.stdout || `git ${args.join(' ')} failed`).trim());
-  }
-  return String(result.stdout || '').trim();
-}
-
 function warn(message) {
   warnings.push(message);
 }
@@ -43,10 +30,11 @@ function shouldIgnoreStatusFile(file) {
 }
 
 try {
-  const head = runGit(['rev-parse', 'HEAD']);
-  const remoteMainLine = runGit(['ls-remote', 'origin', 'refs/heads/main']);
-  const remoteMain = remoteMainLine.split(/\s+/)[0] || '';
-  const rawStatus = runGit(['status', '--short']);
+  const { head, remoteMain } = resolveRemoteMain(repoRoot, {
+    attempts: 8,
+    retryDelayMs: 500
+  });
+  const rawStatus = runGit(repoRoot, ['status', '--short']);
   const status = rawStatus
     .split(/\r?\n/)
     .filter(Boolean)
