@@ -2,6 +2,7 @@ const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { getLaunchScope } = require('./lib/launch-scope');
+const { analyzeRenderEnvSync } = require('./lib/render-env-sync');
 
 const repoRoot = path.resolve(__dirname, '..');
 const appRoot = path.join(repoRoot, 'WETHUS2');
@@ -200,6 +201,7 @@ function printSection(title) {
 async function buildSummary() {
   const source = await localSourceStatus();
   const runtime = await productionRuntimeStatus();
+  const renderEnvSync = analyzeRenderEnvSync(runtime.security || {}, runtime.buildCommit || '', source.head);
   const frontend = await frontendDriftStatus();
   const backendContract = await backendContractDriftStatus();
 
@@ -221,6 +223,7 @@ async function buildSummary() {
     productionLaunchReady: productionReady,
     source,
     runtime,
+    renderEnvSync,
     frontend,
     backendContract,
     blockers: {
@@ -229,6 +232,7 @@ async function buildSummary() {
         ...(source.dirty ? ['local worktree still has uncommitted changes'] : [])
       ],
       disabledFlags: disabledFlags.map(([, envKey]) => envKey),
+      renderEnvSync: renderEnvSync.mismatches,
       providers: providerWarnings.map(([provider, status]) => ({ provider, status })),
       frontend: frontendWarnings.map((row) => ({ file: row.file, driftCount: row.snippetDrift.length, status: row.status })),
       backendContract: backendContractWarnings.map((row) => ({ surface: row.surface, driftCount: row.drift.length, status: row.status }))
@@ -236,6 +240,7 @@ async function buildSummary() {
     nextActions: [
       ...((!source.aligned || source.dirty) ? ['commit and push the current commercialization bundle'] : []),
       ...disabledFlags.map(([, envKey]) => `set Render env ${envKey}=true`),
+      ...(renderEnvSync.envSyncPending ? ['sync Render saved env values with the current render.yaml blueprint or update them manually in the Render dashboard'] : []),
       ...(disabledFlags.length ? ['redeploy Render backend'] : []),
       ...(backendContractWarnings.length ? ['rerun node scripts/check-live-backend-contract-drift.js after backend deploys'] : []),
       ...(frontendWarnings.length ? ['redeploy Vercel frontend', 'rerun node scripts/check-live-frontend-drift.js'] : []),
@@ -254,6 +259,7 @@ function printSummary(summary) {
     frontend,
     backendContract,
     blockers,
+    renderEnvSync,
     nextActions
   } = summary;
 
@@ -269,6 +275,19 @@ function printSummary(summary) {
   printSection('Production backend flags');
   for (const [healthKey, envKey] of securityFlags) {
     console.log(`- ${envKey}: ${runtime.security?.[healthKey] === true ? 'true' : 'false'}`);
+  }
+
+  printSection('Render env sync');
+  if (!renderEnvSync.mismatches.length) {
+    console.log('- render.yaml security defaults match live /health flags');
+  } else {
+    console.log(`- build matches source: ${renderEnvSync.buildMatchesSource ? 'yes' : 'no'}`);
+    renderEnvSync.mismatches.forEach((item) => {
+      console.log(`- ${item.envKey}: desired=${item.desired} actual=${item.actual}`);
+    });
+    if (renderEnvSync.envSyncPending) {
+      console.log('- live backend source is current; remaining rollout work is saved Render env synchronization');
+    }
   }
 
   printSection('Production provider scope');
@@ -296,6 +315,9 @@ function printSummary(summary) {
   for (const envKey of blockers.disabledFlags) {
     console.log(`- production flag disabled: ${envKey}`);
   }
+  for (const item of blockers.renderEnvSync) {
+    console.log(`- render env sync mismatch: ${item.envKey}`);
+  }
   for (const { provider, status } of blockers.providers) {
     console.log(`- provider not ready: ${provider} (${status})`);
   }
@@ -305,7 +327,7 @@ function printSummary(summary) {
   for (const row of blockers.backendContract) {
     console.log(`- backend contract drift: ${row.surface}`);
   }
-  if (!blockers.source.length && !blockers.disabledFlags.length && !blockers.providers.length && !blockers.frontend.length) {
+  if (!blockers.source.length && !blockers.disabledFlags.length && !blockers.renderEnvSync.length && !blockers.providers.length && !blockers.frontend.length) {
     console.log('- none');
   }
 

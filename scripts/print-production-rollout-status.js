@@ -3,6 +3,7 @@ const API_BASE_URL = (process.env.WETHUS_API_BASE_URL || 'https://wethus-api.onr
 const fs = require('fs');
 const path = require('path');
 const { getLaunchScope } = require('./lib/launch-scope');
+const { analyzeRenderEnvSync } = require('./lib/render-env-sync');
 
 const LAUNCH_SCOPE = getLaunchScope();
 const securityFlags = [
@@ -149,6 +150,11 @@ async function main() {
   const providerMap = Object.fromEntries(providers.map((provider) => [String(provider?.key || ''), provider]));
   const frontendDrift = await summarizeFrontendDrift();
   const backendContractDrift = await summarizeBackendContractDrift();
+  const sourceHead = require('child_process')
+    .spawnSync('git', ['rev-parse', 'HEAD'], { cwd: path.resolve(__dirname, '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], shell: false })
+    .stdout
+    .trim();
+  const renderEnvSync = analyzeRenderEnvSync(health?.security || {}, health?.build?.commit || '', sourceHead);
 
   console.log(`Production rollout status for ${BASE_URL}`);
   console.log(`Backend build: ${health?.build?.ref || '-'} ${health?.build?.commit || '-'}`);
@@ -202,6 +208,20 @@ async function main() {
     }
   }
 
+  console.log('');
+  console.log('Render env sync:');
+  if (!renderEnvSync.mismatches.length) {
+    console.log('- render.yaml security defaults match live /health flags');
+  } else {
+    console.log(`- build matches source: ${renderEnvSync.buildMatchesSource ? 'yes' : 'no'}`);
+    renderEnvSync.mismatches.forEach((item) => {
+      console.log(`- ${item.envKey}: desired=${item.desired} actual=${item.actual}`);
+    });
+    if (renderEnvSync.envSyncPending) {
+      console.log('- live backend code is current, but Render saved env values are still older than the blueprint defaults');
+    }
+  }
+
   const rolloutNeeded = securityFlags.filter(([healthKey]) => health?.security?.[healthKey] !== true);
   if (rolloutNeeded.length) {
     console.log('');
@@ -212,6 +232,9 @@ async function main() {
     console.log('- redeploy Render backend');
     console.log('- rerun: REQUIRE_WETHUS_BACKEND_CONTRACTS=true WETHUS_GATE_STRICT_PRODUCTION=true node scripts/run-commercial-gate.js');
     console.log('- helper: node scripts/print-post-deploy-verification.js');
+    if (renderEnvSync.envSyncPending) {
+      console.log('- note: Render backend code is already current; this is now an env sync/settings problem rather than a source deploy problem');
+    }
   }
 
   const driftNeeded = frontendDrift.filter((row) => row.status !== 200 || row.driftCount > 0);

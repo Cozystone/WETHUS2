@@ -79,6 +79,12 @@ const steps = [
     optional: !strictProduction
   },
   {
+    label: 'Render env sync drift',
+    command: process.execPath,
+    args: ['scripts/check-render-env-sync.js'],
+    optional: !strictProduction
+  },
+  {
     label: 'Live frontend drift',
     command: process.execPath,
     args: ['scripts/check-live-frontend-drift.js'],
