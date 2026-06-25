@@ -210,6 +210,7 @@ Use `.github/workflows/launch-readiness.yml` as the recurring strict proof for l
 - JSON artifacts: allow future dashboards or monitors to consume the latest launch-readiness evidence without parsing prose
 - GitHub step summary: shows the latest launch verdict and main blockers directly in the Actions UI
 - launch snapshot artifact: gives operators one shareable markdown/JSON snapshot instead of piecing together multiple raw outputs
+- summary artifact: preserves the same launch summary shown in the Actions UI for later sharing or audit trails
 
 If this workflow fails, treat it as a launch blocker until:
 

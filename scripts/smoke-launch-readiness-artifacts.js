@@ -4,6 +4,7 @@ const { spawnSync } = require('child_process');
 
 const repoRoot = path.resolve(__dirname, '..');
 const tempSummaryPath = path.join(repoRoot, '.tmp-launch-readiness-step-summary.md');
+const tempSummaryArtifactPath = path.join(repoRoot, '.tmp-launch-readiness-summary-artifact.md');
 const generatedArtifactPaths = [
   'commercialization-readiness-summary.txt',
   'commercialization-readiness-summary.json',
@@ -86,20 +87,28 @@ function main() {
     }
 
     runNode(['scripts/write-launch-readiness-step-summary.js'], {
-      GITHUB_STEP_SUMMARY: tempSummaryPath
+      GITHUB_STEP_SUMMARY: tempSummaryPath,
+      LAUNCH_READINESS_SUMMARY_FILE: tempSummaryArtifactPath
     });
     const stepSummary = fs.readFileSync(tempSummaryPath, 'utf8');
+    const stepSummaryArtifact = fs.readFileSync(tempSummaryArtifactPath, 'utf8');
     if (!stepSummary.includes('# WETHUS Launch Readiness')) {
       throw new Error('step summary is missing the expected heading');
     }
     if (!stepSummary.includes('## Current Blockers')) {
       throw new Error('step summary is missing the current blockers section');
     }
+    if (!stepSummaryArtifact.includes('# WETHUS Launch Readiness')) {
+      throw new Error('summary artifact is missing the expected heading');
+    }
 
     console.log('Launch readiness artifact smoke passed.');
   } finally {
     try {
       fs.rmSync(tempSummaryPath, { force: true });
+    } catch (_) {}
+    try {
+      fs.rmSync(tempSummaryArtifactPath, { force: true });
     } catch (_) {}
     for (const file of generatedArtifactPaths) {
       try {

@@ -5,6 +5,9 @@ const repoRoot = path.resolve(__dirname, '..');
 const readinessPath = path.join(repoRoot, 'commercialization-readiness-summary.json');
 const rolloutPath = path.join(repoRoot, 'production-rollout-status.json');
 const summaryFile = process.env.GITHUB_STEP_SUMMARY || '';
+const summaryArtifactFile = process.env.LAUNCH_READINESS_SUMMARY_FILE
+  ? path.resolve(repoRoot, process.env.LAUNCH_READINESS_SUMMARY_FILE)
+  : '';
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, ''));
@@ -49,8 +52,8 @@ function renderNextActions(lines, actions) {
 }
 
 function main() {
-  if (!summaryFile) {
-    console.error('GITHUB_STEP_SUMMARY is not set');
+  if (!summaryFile && !summaryArtifactFile) {
+    console.error('GITHUB_STEP_SUMMARY or LAUNCH_READINESS_SUMMARY_FILE must be set');
     process.exit(1);
   }
   if (!fs.existsSync(readinessPath)) {
@@ -109,8 +112,15 @@ function main() {
   renderNextActions(lines, readiness.nextActions || []);
   lines.push('');
 
-  fs.writeFileSync(summaryFile, `${lines.join('\n')}\n`, 'utf8');
-  console.log(`Wrote launch readiness step summary to ${summaryFile}`);
+  const output = `${lines.join('\n')}\n`;
+  if (summaryFile) {
+    fs.writeFileSync(summaryFile, output, 'utf8');
+    console.log(`Wrote launch readiness step summary to ${summaryFile}`);
+  }
+  if (summaryArtifactFile) {
+    fs.writeFileSync(summaryArtifactFile, output, 'utf8');
+    console.log(`Wrote launch readiness summary artifact to ${summaryArtifactFile}`);
+  }
 }
 
 main();

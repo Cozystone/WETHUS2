@@ -36,6 +36,8 @@ jobs:
 
       - name: Publish launch-readiness workflow summary
         if: always()
+        env:
+          LAUNCH_READINESS_SUMMARY_FILE: launch-readiness-step-summary.md
         run: node scripts/write-launch-readiness-step-summary.js
 
       - name: Upload launch-readiness evidence
@@ -50,3 +52,4 @@ jobs:
             production-rollout-status.json
             launch-readiness-snapshot.md
             launch-readiness-snapshot.json
+            launch-readiness-step-summary.md
