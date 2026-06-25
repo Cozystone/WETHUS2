@@ -1,16 +1,14 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
   <script>
-   window.dataLayer = window.dataLayer || [];
-   function gtag(){dataLayer.push(arguments);}
-   gtag('js', new Date());
-  
-   gtag('config', 'G-PKF58GJC08');
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-PKF58GJC08');
   </script>
-  
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WETHUS | 알림</title>
@@ -36,9 +34,14 @@
     <section class="projects-head-row" style="padding-top:28px;">
       <div>
         <h1 class="page-title" style="margin:0;">알림</h1>
-        <p class="page-sub">Founder 신청/승인, 팀 참여요청, 메시지 등 주요 업데이트</p>
+        <p class="page-sub">플랜 요청, 프로젝트 검토, 지원서와 주요 상태 변화를 한곳에서 확인합니다.</p>
       </div>
-      <button id="markAllRead" class="btn btn--secondary">모두 읽음 처리</button>
+      <button id="markAllRead" class="btn btn--secondary" type="button">모두 읽음 처리</button>
+    </section>
+
+    <section style="display:grid;gap:12px;margin-bottom:14px;">
+      <div id="notifySummary" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;"></div>
+      <div id="notifyFilters" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
     </section>
 
     <section id="notifyList" class="list-grid"></section>
@@ -80,19 +83,58 @@
     const listEl = document.getElementById('notifyList');
     const markAllBtn = document.getElementById('markAllRead');
     const detailModal = document.getElementById('notifyDetailModal');
+    const summaryEl = document.getElementById('notifySummary');
+    const filtersEl = document.getElementById('notifyFilters');
+    let activeFilter = 'all';
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
+    }
 
     function timeText(iso) {
       const d = new Date(iso);
-      return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     }
 
-    function openDetail(n) {
-      if (!n) return;
-      document.getElementById('notifyDetailType').textContent = (n.type || 'notification').toUpperCase();
-      document.getElementById('notifyDetailTitle').textContent = n.title || '';
-      document.getElementById('notifyDetailSender').textContent = n.sender || 'WETHUS';
-      document.getElementById('notifyDetailTime').textContent = timeText(n.createdAt);
-      document.getElementById('notifyDetailBody').textContent = n.body || '';
+    function categoryForNotification(item) {
+      const type = String(item?.type || '').toLowerCase();
+      if (type.startsWith('plan_request')) return 'plan';
+      if (type === 'review_result' || type === 'founder_submitted') return 'project';
+      if (type.includes('application')) return 'team';
+      return 'general';
+    }
+
+    function categoryLabel(category) {
+      if (category === 'plan') return '플랜';
+      if (category === 'project') return '프로젝트';
+      if (category === 'team') return '팀';
+      return '일반';
+    }
+
+    function typeLabel(item) {
+      const type = String(item?.type || '').toLowerCase();
+      if (type === 'plan_request_submitted') return '요청 접수';
+      if (type === 'plan_request_approved') return '승인';
+      if (type === 'plan_request_rejected') return '반려';
+      if (type === 'plan_request_admin') return '운영 검토';
+      if (type === 'review_result') return '검수 결과';
+      if (type === 'founder_submitted') return '검수 접수';
+      return '업데이트';
+    }
+
+    function openDetail(item) {
+      if (!item) return;
+      document.getElementById('notifyDetailType').textContent = `${categoryLabel(categoryForNotification(item)).toUpperCase()} · ${typeLabel(item).toUpperCase()}`;
+      document.getElementById('notifyDetailTitle').textContent = item.title || '';
+      document.getElementById('notifyDetailSender').textContent = item.sender || 'WETHUS';
+      document.getElementById('notifyDetailTime').textContent = timeText(item.createdAt);
+      document.getElementById('notifyDetailBody').textContent = item.body || '';
       detailModal.classList.add('open');
       detailModal.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
@@ -103,37 +145,102 @@
       detailModal.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
     }
-    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    }[ch]));
 
-    function render(focusId) {
-      const items = WETHUS.listNotifications(200);
-      if (!items.length) {
-        listEl.innerHTML = '<article class="list-item"><p class="page-sub">표시할 알림이 없습니다.</p></article>';
-        return;
-      }
-      listEl.innerHTML = items.map(n => `
-        <article class="list-item" data-id="${esc(n.id)}" style="border-color:${n.unread ? '#ff6a00' : '#2a2a2a'};">
-          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
-            <div>
-              <h3 style="margin:0 0 2px;">${esc(n.title)}</h3>
-              <p style="margin:0 0 4px;color:var(--orange);font-size:.82rem;font-weight:700;">${esc(n.sender || 'WETHUS')}</p>
-              <p style="margin:0 0 6px;">${esc(n.body || '')}</p>
-              <div class="meta">${esc(timeText(n.createdAt))}</div>
-            </div>
-            <div style="display:flex;gap:6px;align-items:center;">
-              ${n.unread ? '<span class="verify-badge" style="padding:2px 7px;">NEW</span>' : '<button class="btn btn--secondary notify-delete" data-del="'+esc(n.id)+'" style="padding:3px 8px;font-size:.72rem;">삭제</button>'}
-            </div>
-          </div>
+    function renderSummary(items) {
+      const unread = items.filter((item) => item.unread).length;
+      const plan = items.filter((item) => categoryForNotification(item) === 'plan').length;
+      const project = items.filter((item) => categoryForNotification(item) === 'project').length;
+      const cards = [
+        { label: '읽지 않은 알림', value: unread, tone: '#ffb36b' },
+        { label: '플랜 관련', value: plan, tone: '#7dc4ff' },
+        { label: '프로젝트 검토', value: project, tone: '#6fdc8c' }
+      ];
+      summaryEl.innerHTML = cards.map((card) => `
+        <article class="list-item" style="padding:14px;border-color:${card.tone};background:rgba(255,255,255,.03);">
+          <p class="meta" style="margin:0 0 6px;">${esc(card.label)}</p>
+          <strong style="font-size:1.35rem;">${esc(card.value)}</strong>
         </article>
       `).join('');
+    }
 
-      listEl.querySelectorAll('.list-item[data-id]').forEach(el => {
+    function renderFilters(items) {
+      const counts = {
+        all: items.length,
+        unread: items.filter((item) => item.unread).length,
+        plan: items.filter((item) => categoryForNotification(item) === 'plan').length,
+        project: items.filter((item) => categoryForNotification(item) === 'project').length,
+        team: items.filter((item) => categoryForNotification(item) === 'team').length
+      };
+      const defs = [
+        { key: 'all', label: '전체' },
+        { key: 'unread', label: '읽지 않음' },
+        { key: 'plan', label: '플랜' },
+        { key: 'project', label: '프로젝트' },
+        { key: 'team', label: '팀' }
+      ];
+      filtersEl.innerHTML = defs.map((def) => `
+        <button class="btn ${activeFilter === def.key ? 'btn--primary' : 'btn--secondary'} js-filter" type="button" data-filter="${esc(def.key)}" style="padding:6px 10px;">
+          ${esc(def.label)} · ${esc(counts[def.key] || 0)}
+        </button>
+      `).join('');
+      filtersEl.querySelectorAll('.js-filter').forEach((button) => {
+        button.addEventListener('click', () => {
+          activeFilter = button.getAttribute('data-filter') || 'all';
+          render();
+        });
+      });
+    }
+
+    function matchesFilter(item) {
+      if (activeFilter === 'all') return true;
+      if (activeFilter === 'unread') return !!item.unread;
+      return categoryForNotification(item) === activeFilter;
+    }
+
+    function actionLink(item) {
+      const href = String(item?.href || '').trim();
+      if (!href) return '';
+      const label = categoryForNotification(item) === 'plan' ? '플랜 보기' : '바로 이동';
+      return `<a class="btn btn--secondary" href="${esc(href)}" style="padding:5px 10px;font-size:.75rem;">${label}</a>`;
+    }
+
+    function render(focusId) {
+      const allItems = WETHUS.listNotifications(200);
+      renderSummary(allItems);
+      renderFilters(allItems);
+
+      const items = allItems.filter(matchesFilter);
+      if (!items.length) {
+        listEl.innerHTML = '<article class="list-item"><p class="page-sub">선택한 조건에 맞는 알림이 없습니다.</p></article>';
+        return;
+      }
+
+      listEl.innerHTML = items.map((item) => {
+        const category = categoryForNotification(item);
+        const badgeColor = category === 'plan' ? '#7dc4ff' : (category === 'project' ? '#6fdc8c' : '#ffb36b');
+        return `
+          <article class="list-item" data-id="${esc(item.id)}" style="border-color:${item.unread ? '#ff6a00' : '#2a2a2a'};">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+              <div>
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:4px;">
+                  <span class="verify-badge" style="padding:2px 7px;background:${badgeColor};border-color:${badgeColor};color:#111;">${esc(categoryLabel(category))}</span>
+                  <span class="meta">${esc(typeLabel(item))}</span>
+                </div>
+                <h3 style="margin:0 0 2px;">${esc(item.title)}</h3>
+                <p style="margin:0 0 4px;color:var(--orange);font-size:.82rem;font-weight:700;">${esc(item.sender || 'WETHUS')}</p>
+                <p style="margin:0 0 6px;">${esc(item.body || '')}</p>
+                <div class="meta">${esc(timeText(item.createdAt))}</div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+                ${item.unread ? '<span class="verify-badge" style="padding:2px 7px;">NEW</span>' : '<button class="btn btn--secondary notify-delete" data-del="' + esc(item.id) + '" style="padding:3px 8px;font-size:.72rem;">삭제</button>'}
+                ${actionLink(item)}
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      listEl.querySelectorAll('.list-item[data-id]').forEach((el) => {
         el.addEventListener('click', (e) => {
           const delBtn = e.target.closest('.notify-delete');
           if (delBtn) {
@@ -143,10 +250,11 @@
             render();
             return;
           }
+          if (e.target.closest('a')) return;
           const id = el.getAttribute('data-id');
           WETHUS.markNotificationRead(id);
           WETHUS.refreshNavBadges?.();
-          const picked = WETHUS.listNotifications(200).find(x => x.id === id);
+          const picked = WETHUS.listNotifications(200).find((item) => item.id === id);
           render(id);
           openDetail(picked);
         });
@@ -176,7 +284,7 @@
     const qid = new URLSearchParams(location.search).get('n');
     render(qid || undefined);
     if (qid) {
-      const hit = WETHUS.listNotifications(200).find(x => x.id === qid);
+      const hit = WETHUS.listNotifications(200).find((item) => item.id === qid);
       if (hit) {
         WETHUS.markNotificationRead(qid);
         WETHUS.refreshNavBadges?.();
