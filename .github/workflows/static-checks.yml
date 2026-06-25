@@ -43,11 +43,17 @@ jobs:
       - name: Project interactions smoke
         run: node scripts/smoke-project-interactions.js
 
+      - name: Integration activity log smoke
+        run: node scripts/smoke-integration-activity-log.js
+
       - name: Discovery visibility smoke
         run: node scripts/smoke-discovery-visibility.js
 
       - name: Project application smoke
         run: node scripts/smoke-project-applications.js
+
+      - name: Google OAuth login smoke
+        run: node scripts/smoke-google-oauth-login.js
 
       - name: Provider launch-scope smoke
         run: node scripts/smoke-provider-launch-scope.js
