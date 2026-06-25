@@ -212,7 +212,10 @@ async function auditFrontendFlows() {
         'renderHub = async function renderHubStable()',
         'loadRemoteActivityEventsForCurrentProject()',
         'loadRemoteStatusSnapshotForCurrentProject()',
-        'mergedProjectTimeline(80)'
+        'mergedProjectTimeline(80)',
+        'id="hubWebhookModal"',
+        'function sendWebhookTestEvent()',
+        'data-tool-webhook'
       ]
     },
     {
