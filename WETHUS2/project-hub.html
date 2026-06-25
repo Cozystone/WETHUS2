@@ -202,7 +202,7 @@
 
   <div id="hubEditModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-edit="true"></div><article class="modal-panel" style="max-width:760px;"><button class="modal-close" id="hubEditClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">프로젝트 수정</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><input id="hubEditTitle" placeholder="제목" /><input id="hubEditSummary" placeholder="요약" /></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><select id="hubEditStatus"><option>모집 중</option><option>기획 중</option><option>진행 중</option><option>피보팅</option><option>완료</option></select><select id="hubEditTeamSize"><option>1인</option><option>2인</option><option>3인</option><option>4인이상</option></select></div><input id="hubEditRoles" placeholder="역할" style="margin-bottom:8px;" /><textarea id="hubEditDesc" style="width:100%;min-height:110px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;" placeholder="프로젝트 설명"></textarea><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="hubEditSave" class="btn btn--primary" type="button">저장</button></div></div></article></div>
   <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 툴 연결</h3><p id="hubToolModalDesc" class="meta" style="margin:0 0 10px;">OAuth로 계정을 연결한 뒤, 프로젝트에 연결할 문서·시트 리소스를 선택하세요.</p><article id="hubToolModalScope" class="hub-card" style="padding:10px;margin:0 0 10px;"><strong style="display:block;margin-bottom:4px;">연동 구조</strong><p class="meta" style="margin:0;">1) 제공자 선택 → 2) OAuth 인증 → 3) 문서/시트 선택 → 4) 프로젝트 허브에 연결 반영</p></article><div id="toolLogoGrid" class="tool-grid"></div></div></article></div>
-  <div id="hubWebhookModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-webhook="true"></div><article class="modal-panel" style="max-width:720px;"><button class="modal-close" id="hubWebhookClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">활동 로그 수집</h3><p id="hubWebhookDesc" class="meta" style="margin:0 0 10px;">외부 툴의 활동 로그를 프로젝트 타임라인에 반영할 수 있도록 수집 상태를 관리합니다.</p><article class="hub-card" style="padding:12px;margin:0 0 10px;"><strong id="hubWebhookName" style="display:block;margin-bottom:6px;">연결된 툴 선택 필요</strong><p id="hubWebhookStatus" class="meta" style="margin:0 0 8px;">연결/동기화 이벤트는 자동 기록되고, webhook을 발급하면 외부 푸시 이벤트도 수집할 수 있습니다.</p><p id="hubWebhookEvents" class="meta" style="margin:0 0 8px;"></p><p id="hubWebhookTestStatus" class="meta" style="margin:0;color:#ffb36d;">리더는 여기서 테스트 이벤트를 바로 남겨 실제 적재 여부를 확인할 수 있습니다.</p></article><article class="hub-card" style="padding:12px;margin:0 0 10px;"><strong style="display:block;margin-bottom:6px;">수집 엔드포인트</strong><p class="meta" style="margin:0 0 8px;">외부 서비스나 relay가 이 URL로 이벤트를 보내면 프로젝트 허브 활동 로그에 누적됩니다.</p><input id="hubWebhookUrl" readonly style="width:100%;margin:0 0 8px;" value="" /><input id="hubWebhookHeader" readonly style="width:100%;margin:0 0 8px;" value="x-webhook-secret: (발급 후 표시)" /><input id="hubWebhookSecret" readonly style="width:100%;" value="" /></article><div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;"><button id="hubWebhookTest" class="btn btn--secondary" type="button">테스트 이벤트 보내기</button><button id="hubWebhookIssue" class="btn btn--primary" type="button">Webhook 발급</button><button id="hubWebhookDone" class="btn btn--secondary" type="button">닫기</button></div></div></article></div>
+  <div id="hubWebhookModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-webhook="true"></div><article class="modal-panel" style="max-width:720px;"><button class="modal-close" id="hubWebhookClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">활동 로그 수집</h3><p id="hubWebhookDesc" class="meta" style="margin:0 0 10px;">외부 툴의 활동 로그를 프로젝트 타임라인에 반영할 수 있도록 수집 상태를 관리합니다.</p><article class="hub-card" style="padding:12px;margin:0 0 10px;"><strong id="hubWebhookName" style="display:block;margin-bottom:6px;">연결된 툴 선택 필요</strong><p id="hubWebhookStatus" class="meta" style="margin:0 0 8px;">연결/동기화 이벤트는 자동 기록되고, webhook을 발급하면 외부 푸시 이벤트도 수집할 수 있습니다.</p><p id="hubWebhookEvents" class="meta" style="margin:0 0 8px;"></p><p id="hubWebhookTestStatus" class="meta" style="margin:0;color:#ffb36d;">리더는 여기서 테스트 이벤트를 바로 남겨 실제 적재 여부를 확인할 수 있습니다.</p></article><article class="hub-card" style="padding:12px;margin:0 0 10px;"><strong style="display:block;margin-bottom:6px;">수집 엔드포인트</strong><p class="meta" style="margin:0 0 8px;">외부 서비스나 relay가 이 URL로 이벤트를 보내면 프로젝트 허브 활동 로그에 누적됩니다.</p><input id="hubWebhookUrl" readonly style="width:100%;margin:0 0 8px;" value="" /><input id="hubWebhookHeader" readonly style="width:100%;margin:0 0 8px;" value="x-webhook-secret: (발급 후 표시)" /><input id="hubWebhookSecret" readonly style="width:100%;margin:0 0 8px;" value="" /><div style="display:flex;gap:8px;flex-wrap:wrap;"><button id="hubWebhookCopyUrl" class="btn btn--secondary" type="button">URL 복사</button><button id="hubWebhookCopyHeader" class="btn btn--secondary" type="button">Header 복사</button><button id="hubWebhookCopySecret" class="btn btn--secondary" type="button">Secret 복사</button></div></article><article id="hubWebhookRelayCard" class="hub-card" style="padding:12px;margin:0 0 10px;"><strong style="display:block;margin-bottom:6px;">Relay 빠른 설정</strong><p id="hubWebhookRelayDesc" class="meta" style="margin:0 0 8px;">Google Docs/Sheets의 실제 변경 이벤트를 모으려면 Apps Script 같은 relay가 이 endpoint로 webhook payload를 보내야 합니다.</p><textarea id="hubWebhookRelayTemplate" readonly style="width:100%;min-height:220px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;margin:0 0 8px;"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap;"><button id="hubWebhookCopyTemplate" class="btn btn--secondary" type="button">템플릿 복사</button><button id="hubWebhookCopyCurl" class="btn btn--secondary" type="button">cURL 예시 복사</button></div></article><div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;"><button id="hubWebhookTest" class="btn btn--secondary" type="button">테스트 이벤트 보내기</button><button id="hubWebhookIssue" class="btn btn--primary" type="button">Webhook 발급</button><button id="hubWebhookDone" class="btn btn--secondary" type="button">닫기</button></div></div></article></div>
   <div id="hubChatModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-chat="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubChatClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">팀채팅</h3><p class="meta" style="margin:0 0 8px;">프로젝트 지원 AI는 프로젝트 정보/최근 활동/팀 채팅 문맥을 함께 참고합니다.</p><div id="chatList" style="max-height:320px;overflow:auto;display:grid;gap:8px;"></div><div class="slash-suggest" style="display:flex;gap:8px;margin-top:10px;"><input id="chatInput" style="flex:1;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px;" placeholder="메시지를 입력하세요 (/ai 질문 형태 지원)"/><button id="chatSend" class="btn btn--primary">보내기</button><div id="slashList" class="slash-list"></div></div></div></article></div>
   <div id="worklogModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-worklog="true"></div><article class="modal-panel" style="max-width:620px;"><button class="modal-close" id="worklogClose">×</button><div class="modal-content"><h3 id="worklogTitle" style="margin:0 0 8px;">업무기록</h3><ul id="worklogList" class="meta-bullet"></ul></div></article></div>
   <div id="recentModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-recent="true"></div><article class="modal-panel" style="max-width:680px;"><button class="modal-close" id="recentClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">최근 활동 전체</h3><ul id="recentList" class="meta-bullet"></ul></div></article></div>
@@ -1530,6 +1530,91 @@
       return currentToolIntegration(tool);
     }
 
+    function escapeJsString(value) {
+      return String(value || '').replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+    }
+
+    function webhookCurlSample(url, secret, provider, resourceName) {
+      if (!url || !secret) return '';
+      const payload = {
+        event_type: 'document_updated',
+        item_id: 'sample-doc-id',
+        item_name: resourceName || 'Project Document',
+        actor_name: 'Apps Script Relay',
+        provider: provider || 'google',
+        occurred_at: new Date().toISOString()
+      };
+      return `curl -X POST "${url}" \\\n  -H "Content-Type: application/json" \\\n  -H "x-webhook-secret: ${secret}" \\\n  -d '${JSON.stringify(payload, null, 2)}'`;
+    }
+
+    function webhookRelayTemplate(url, secret, provider, resourceName) {
+      if (!url || !secret) return 'Webhook을 먼저 발급하면 Apps Script relay 템플릿이 여기에 채워집니다.';
+      const safeUrl = escapeJsString(url);
+      const safeSecret = escapeJsString(secret);
+      const safeProvider = escapeJsString(provider || 'google');
+      const safeName = escapeJsString(resourceName || 'Project Document');
+      return `const WETHUS_WEBHOOK_URL = "${safeUrl}";
+const WETHUS_WEBHOOK_SECRET = "${safeSecret}";
+
+function notifyWethus(eventType, itemId, itemName, extra = {}) {
+  const payload = {
+    event_type: eventType,
+    item_id: itemId,
+    item_name: itemName,
+    actor_name: "Apps Script Relay",
+    provider: "${safeProvider}",
+    occurred_at: new Date().toISOString(),
+    ...extra
+  };
+
+  UrlFetchApp.fetch(WETHUS_WEBHOOK_URL, {
+    method: "post",
+    contentType: "application/json",
+    headers: { "x-webhook-secret": WETHUS_WEBHOOK_SECRET },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+}
+
+function onOpen() {
+  notifyWethus("document_opened", "${safeProvider}-open", "${safeName}");
+}
+
+function logManualUpdate() {
+  notifyWethus("document_updated", "${safeProvider}-manual", "${safeName}", {
+    summary: "Manual relay test from Apps Script"
+  });
+}`;
+    }
+
+    async function copyTextValue(value, successMessage, failureMessage) {
+      const text = String(value || '');
+      if (!text.trim()) {
+        alert(failureMessage || '복사할 내용이 없습니다.');
+        return false;
+      }
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const el = document.createElement('textarea');
+          el.value = text;
+          el.setAttribute('readonly', 'readonly');
+          el.style.position = 'fixed';
+          el.style.opacity = '0';
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+        }
+        alert(successMessage || '복사되었습니다.');
+        return true;
+      } catch (_) {
+        alert(failureMessage || '복사에 실패했습니다.');
+        return false;
+      }
+    }
+
     function renderWebhookModal() {
       const nameEl = document.getElementById('hubWebhookName');
       const statusEl = document.getElementById('hubWebhookStatus');
@@ -1540,6 +1625,9 @@
       const issueBtn = document.getElementById('hubWebhookIssue');
       const testStatusEl = document.getElementById('hubWebhookTestStatus');
       const testBtn = document.getElementById('hubWebhookTest');
+      const relayCard = document.getElementById('hubWebhookRelayCard');
+      const relayDescEl = document.getElementById('hubWebhookRelayDesc');
+      const relayTemplateEl = document.getElementById('hubWebhookRelayTemplate');
       const integration = integrationForToolName(activeWebhookToolName);
       const providerMeta = providerMetaForIntegration(integration);
       const canManage = isCurrentLeader();
@@ -1551,6 +1639,9 @@
         urlEl.value = '';
         headerEl.value = 'x-webhook-secret: (발급 후 표시)';
         secretEl.value = '';
+        relayTemplateEl.value = 'Webhook을 먼저 발급하면 Apps Script relay 템플릿이 여기에 채워집니다.';
+        relayDescEl.textContent = 'Google Docs/Sheets의 실제 변경 이벤트를 모으려면 Apps Script 같은 relay가 이 endpoint로 webhook payload를 보내야 합니다.';
+        relayCard.style.display = '';
         issueBtn.disabled = true;
         issueBtn.textContent = 'Webhook 발급';
         testBtn.disabled = true;
@@ -1562,6 +1653,9 @@
       const webhookReady = !!integration.webhook_enabled;
       const issuedSecret = activeWebhookIntegrationId === integration.id ? lastIssuedWebhookConfig?.webhook_secret || '' : '';
       const collectionPolicy = activityLogSummaryForMeta(providerMeta, '');
+      const providerLabel = String(activeWebhookToolName || integration.provider || '').trim();
+      const revealSecret = issuedSecret || '';
+      const relayNeeded = providerMeta?.relayRequired === true;
       nameEl.textContent = `${activeWebhookToolName || integration.provider} · ${integration.external_resource_name || integration.external_resource_id || '연결 리소스'}`;
       statusEl.textContent = webhookReady
         ? `Webhook 수집 준비됨${integration.webhook_updated_at ? ` · ${new Date(integration.webhook_updated_at).toLocaleString('ko-KR')}` : ''}${collectionPolicy ? ` · ${collectionPolicy}` : ''}`
@@ -1572,6 +1666,11 @@
       secretEl.value = issuedSecret
         ? issuedSecret
         : (integration.webhook_enabled ? `저장된 secret 미리보기: ${integration.webhook_secret_preview || '발급됨'}` : '아직 발급되지 않았습니다.');
+      relayCard.style.display = relayNeeded ? '' : 'none';
+      relayDescEl.textContent = relayNeeded
+        ? `${providerLabel}의 실제 변경 이벤트를 자동 반영하려면 Apps Script나 별도 relay가 이 endpoint로 payload를 보내야 합니다. 아래 템플릿을 그대로 시작점으로 쓸 수 있습니다.`
+        : '현재 이 연동은 별도 relay 안내가 필요하지 않습니다.';
+      relayTemplateEl.value = webhookRelayTemplate(urlEl.value, revealSecret, integration.provider, integration.external_resource_name || integration.external_resource_id || providerLabel);
       issueBtn.disabled = !canManage;
       issueBtn.textContent = webhookReady ? 'Webhook 재발급' : 'Webhook 발급';
       testBtn.disabled = !canManage;
@@ -1878,6 +1977,30 @@
     document.getElementById('hubWebhookClose').addEventListener('click',()=>closeModal('hubWebhookModal'));
     document.getElementById('hubWebhookDone').addEventListener('click',()=>closeModal('hubWebhookModal'));
     document.querySelector('[data-close-webhook]').addEventListener('click',()=>closeModal('hubWebhookModal'));
+    document.getElementById('hubWebhookCopyUrl').addEventListener('click', async () => {
+      await copyTextValue(document.getElementById('hubWebhookUrl').value, 'Webhook URL을 복사했습니다.');
+    });
+    document.getElementById('hubWebhookCopyHeader').addEventListener('click', async () => {
+      await copyTextValue(document.getElementById('hubWebhookHeader').value, 'Webhook header를 복사했습니다.');
+    });
+    document.getElementById('hubWebhookCopySecret').addEventListener('click', async () => {
+      const value = document.getElementById('hubWebhookSecret').value;
+      await copyTextValue(value.startsWith('저장된 secret 미리보기:') ? '' : value, 'Webhook secret을 복사했습니다.', '복사 가능한 secret이 아직 없습니다. 발급 직후 값을 복사해주세요.');
+    });
+    document.getElementById('hubWebhookCopyTemplate').addEventListener('click', async () => {
+      await copyTextValue(document.getElementById('hubWebhookRelayTemplate').value, 'Apps Script relay 템플릿을 복사했습니다.');
+    });
+    document.getElementById('hubWebhookCopyCurl').addEventListener('click', async () => {
+      const integration = integrationForToolName(activeWebhookToolName);
+      const secret = activeWebhookIntegrationId === String(integration?.id || '') ? (lastIssuedWebhookConfig?.webhook_secret || '') : '';
+      const sample = webhookCurlSample(
+        document.getElementById('hubWebhookUrl').value,
+        secret,
+        integration?.provider || '',
+        integration?.external_resource_name || integration?.external_resource_id || ''
+      );
+      await copyTextValue(sample, 'cURL 예시를 복사했습니다.', '복사 가능한 cURL 예시가 아직 없습니다. 먼저 Webhook을 발급해주세요.');
+    });
     document.getElementById('hubWebhookTest').addEventListener('click', async () => {
       await sendWebhookTestEvent();
     });
