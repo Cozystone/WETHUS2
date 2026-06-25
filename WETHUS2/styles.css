@@ -907,15 +907,17 @@ a { color: inherit; text-decoration: none; }
     width: 100%;
     margin-left: 0;
     gap: 12px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 2px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    row-gap: 10px;
+    flex-wrap: wrap;
+    overflow: visible;
+    padding-bottom: 0;
   }
-  .nav-links::-webkit-scrollbar { display: none; }
   .nav-link { white-space: nowrap; flex: 0 0 auto; }
+  .nav-links .js-profile-chip,
+  .nav-links .js-side-menu {
+    margin-left: 0;
+    margin-right: 0;
+  }
   .manifesto-copy { font-size: .92rem; }
   .search-row {
     flex-direction: column;
