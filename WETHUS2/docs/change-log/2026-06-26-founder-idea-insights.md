@@ -15,6 +15,13 @@
   - grounding
   - suggested change-log phrasing
 - Removed the active function-name collision inside `founder.html` by demoting the older local-only insight helpers to legacy names, so the live founder draft mentor flow now has a single active implementation path.
+- Cleaned major user-facing founder page copy back to readable Korean across:
+  - navigation labels
+  - page title/subtitle
+  - media upload guidance
+  - form labels/placeholders
+  - opportunity/idea prefill messaging
+  - validation field labels
 - Added a lightweight manual refresh action so founders can re-run the draft analysis after editing.
 - Kept the existing founder submit, draft, preview, and moderation flow unchanged while improving idea-shaping quality before submission.
 
