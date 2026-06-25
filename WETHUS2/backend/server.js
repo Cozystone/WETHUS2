@@ -544,6 +544,37 @@ function readProjectApplications() { return readCollection(PROJECT_APPLICATIONS_
 function writeProjectApplications(rows) { writeCollection(PROJECT_APPLICATIONS_DB, 'applications', rows); }
 function readProjectBookmarks() { return readCollection(PROJECT_BOOKMARKS_DB, 'bookmarks'); }
 function writeProjectBookmarks(rows) { writeCollection(PROJECT_BOOKMARKS_DB, 'bookmarks', rows); }
+const WEBHOOK_VERIFICATION_STALE_HOURS = 24 * 7;
+function webhookVerificationMeta(row = {}, nowMs = Date.now()) {
+  if (!row?.webhook_enabled) {
+    return {
+      webhook_verified: false,
+      webhook_health: 'disabled',
+      webhook_verified_age_hours: null,
+      webhook_stale_after_hours: WEBHOOK_VERIFICATION_STALE_HOURS
+    };
+  }
+  const verifiedAt = String(row?.webhook_last_event_at || '').trim();
+  if (!verifiedAt) {
+    return {
+      webhook_verified: false,
+      webhook_health: 'pending',
+      webhook_verified_age_hours: null,
+      webhook_stale_after_hours: WEBHOOK_VERIFICATION_STALE_HOURS
+    };
+  }
+  const verifiedMs = new Date(verifiedAt).getTime();
+  const ageHours = Number.isFinite(verifiedMs)
+    ? Math.max(0, Math.round(((nowMs - verifiedMs) / (1000 * 60 * 60)) * 10) / 10)
+    : null;
+  const stale = ageHours !== null && ageHours >= WEBHOOK_VERIFICATION_STALE_HOURS;
+  return {
+    webhook_verified: true,
+    webhook_health: stale ? 'stale' : 'healthy',
+    webhook_verified_age_hours: ageHours,
+    webhook_stale_after_hours: WEBHOOK_VERIFICATION_STALE_HOURS
+  };
+}
 function sanitizeIntegrationForClient(row = {}, options = {}) {
   const includeWebhookSecret = options.includeWebhookSecret === true;
   const {
@@ -560,8 +591,8 @@ function sanitizeIntegrationForClient(row = {}, options = {}) {
     webhook_last_event_type: row?.webhook_last_event_type || '',
     webhook_last_item_name: row?.webhook_last_item_name || '',
     webhook_delivery_count: Number(row?.webhook_delivery_count || 0),
-    webhook_verified: !!row?.webhook_last_event_at,
     webhook_secret_preview: row?.webhook_secret ? `${String(row.webhook_secret).slice(0, 6)}...` : '',
+    ...webhookVerificationMeta(row),
     ...(includeWebhookSecret ? { webhook_secret: row?.webhook_secret || '' } : {})
   };
 }

@@ -936,13 +936,19 @@
       const deliveryCount = Number(integration.webhook_delivery_count || 0);
       const lastType = String(integration.webhook_last_event_type || '').trim();
       const lastItem = String(integration.webhook_last_item_name || '').trim();
+      const health = String(integration.webhook_health || '').trim();
+      const ageHours = Number.isFinite(Number(integration.webhook_verified_age_hours)) ? Number(integration.webhook_verified_age_hours) : null;
+      const staleAfterHours = Number.isFinite(Number(integration.webhook_stale_after_hours)) ? Number(integration.webhook_stale_after_hours) : 168;
       if (!integration.webhook_enabled) {
         return `Webhook 미설정 · 현재는 연결/동기화 이벤트만 자동 기록됩니다.${collectionPolicy ? ` · ${collectionPolicy}` : ''}`;
       }
       if (verifiedAt) {
+        if (health === 'stale') {
+          return `외부 푸시 오래됨 · 마지막 ${new Date(verifiedAt).toLocaleString('ko-KR')}${ageHours !== null ? ` · 약 ${ageHours}시간 경과` : ''}${deliveryCount ? ` · 누적 ${deliveryCount}건` : ''}${lastType ? ` · ${friendlyEventLabel(lastType)}` : ''}${lastItem ? ` · ${lastItem}` : ''}${collectionPolicy ? ` · ${collectionPolicy}` : ''}`;
+        }
         return `외부 푸시 확인됨 · 마지막 ${new Date(verifiedAt).toLocaleString('ko-KR')}${deliveryCount ? ` · 누적 ${deliveryCount}건` : ''}${lastType ? ` · ${friendlyEventLabel(lastType)}` : ''}${lastItem ? ` · ${lastItem}` : ''}`;
       }
-      return `Webhook 수집 준비됨${integration.webhook_updated_at ? ` · ${new Date(integration.webhook_updated_at).toLocaleString('ko-KR')}` : ''}${collectionPolicy ? ` · ${collectionPolicy}` : ''}`;
+      return `Webhook 수집 준비됨${integration.webhook_updated_at ? ` · ${new Date(integration.webhook_updated_at).toLocaleString('ko-KR')}` : ''}${staleAfterHours ? ` · ${staleAfterHours}시간 내 첫 검증 권장` : ''}${collectionPolicy ? ` · ${collectionPolicy}` : ''}`;
     }
 
     function integrationWebhookUrl(integration) {

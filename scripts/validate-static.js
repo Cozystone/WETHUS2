@@ -136,6 +136,7 @@ function validateProjectHubContracts() {
     'id="hubWebhookOpsStatus"',
     'function integrationWebhookStatus(integration, providerMeta) {',
     'Webhook을 재발급하면 기존 secret은 즉시 무효화됩니다.',
+    '외부 푸시 오래됨',
     'function sendWebhookTestEvent()',
     'data-tool-webhook',
     '서버기록',

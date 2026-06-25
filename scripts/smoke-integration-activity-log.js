@@ -218,6 +218,39 @@ async function expectLifecycleEvents() {
     fail(`POST webhook with reissued secret should be accepted, got ${reissuedWebhookResponse.status}`);
   }
 
+  let integrations = await getProjectIntegrations();
+  let recreated = integrations.find((item) => String(item?.id || '') === String(createPayload?.integration?.id || ''));
+  if (!recreated) {
+    fail('integration should still be listed after webhook verification');
+    return;
+  }
+  if (String(recreated?.webhook_health || '') !== 'healthy') {
+    fail(`recent webhook verification should report webhook_health=healthy, got ${recreated?.webhook_health || 'missing'}`);
+  }
+  if (recreated?.webhook_verified !== true) {
+    fail(`recent webhook verification should set webhook_verified=true, got ${String(recreated?.webhook_verified)}`);
+  }
+
+  const staleOccurredAt = new Date(Date.now() - (9 * 24 * 60 * 60 * 1000)).toISOString();
+  const staleWebhookResponse = await fetch(reissuePayload.webhook_url, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-webhook-secret': reissuePayload.webhook_secret
+    },
+    body: JSON.stringify({
+      event_type: 'task_updated',
+      item_id: 'task-old',
+      item_name: 'Old Relay Ping',
+      actor_name: 'Notion Bot',
+      occurred_at: staleOccurredAt
+    })
+  });
+  const staleWebhookPayload = await staleWebhookResponse.json().catch(() => ({}));
+  if (!staleWebhookResponse.ok || !staleWebhookPayload?.accepted) {
+    fail(`POST webhook with stale occurred_at should still be accepted, got ${staleWebhookResponse.status}`);
+  }
+
   const disconnectResponse = await fetch(`${baseUrl}/integrations/${integrationId}`, {
     method: 'DELETE',
     headers: actorHeaders('actor-a')
@@ -242,8 +275,8 @@ async function expectLifecycleEvents() {
     fail(`reconnecting an integration should succeed, got ${recreateResponse.status}`);
   }
 
-  const integrations = await getProjectIntegrations();
-  const recreated = integrations.find((item) => String(item?.id || '') === String(recreatePayload?.integration?.id || ''));
+  integrations = await getProjectIntegrations();
+  recreated = integrations.find((item) => String(item?.id || '') === String(recreatePayload?.integration?.id || ''));
   if (!recreated) {
     fail('reconnected integration should still be listed before hard delete');
     return;
@@ -254,11 +287,17 @@ async function expectLifecycleEvents() {
   if (String(recreated?.webhook_last_event_type || '') !== 'task_updated') {
     fail(`integration webhook state should retain the last external event type, got ${recreated?.webhook_last_event_type || 'missing'}`);
   }
-  if (String(recreated?.webhook_last_item_name || '') !== 'Reissued Secret Plan') {
-    fail(`integration webhook state should retain the last external item name from the active secret, got ${recreated?.webhook_last_item_name || 'missing'}`);
+  if (String(recreated?.webhook_last_item_name || '') !== 'Old Relay Ping') {
+    fail(`integration webhook state should retain the latest external item name, got ${recreated?.webhook_last_item_name || 'missing'}`);
   }
   if (Number(recreated?.webhook_delivery_count || 0) < 1) {
     fail('integration webhook state should increment delivery count after a webhook event');
+  }
+  if (String(recreated?.webhook_health || '') !== 'stale') {
+    fail(`old webhook verification should report webhook_health=stale, got ${recreated?.webhook_health || 'missing'}`);
+  }
+  if (Number(recreated?.webhook_verified_age_hours || 0) < 24 * 7) {
+    fail(`stale webhook verification should expose an age above the stale threshold, got ${recreated?.webhook_verified_age_hours || 'missing'}`);
   }
 
   const hardDeleteResponse = await fetch(`${baseUrl}/integrations/${integrationId}?hard=1`, {
@@ -288,6 +327,9 @@ async function expectLifecycleEvents() {
   }
   if (!events.some(event => String(event?.source_item_name || '') === 'Reissued Secret Plan')) {
     fail('webhook events should preserve the reissued-secret external item name in activity-events');
+  }
+  if (!events.some(event => String(event?.source_item_name || '') === 'Old Relay Ping')) {
+    fail('webhook events should preserve the stale external item name in activity-events');
   }
   if (!webhookEvent) {
     fail('activity log should contain at least one task_updated event');
