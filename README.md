@@ -9,6 +9,7 @@ This repository contains multiple historical projects and backups. Treat the pat
 - `WETHUS2/data/` contains opportunity feed data.
 - `WETHUS2/docs/change-log/` contains decision and audit notes.
 - `scripts/validate-static.js` is the local static validation gate.
+- `scripts/publish-opportunity-feed.js` rebuilds the public opportunity feed after editorial updates.
 - `.github/workflows/static-checks.yml` runs the same validation on GitHub Actions.
 
 ## Reference-Only Paths
@@ -62,9 +63,9 @@ This uses the Vercel CLI against the correct repo root, verifies live frontend d
 
 ## Current Operational Risks
 
-- Opportunity data still needs a true freshness refresh. The UI hides expired listings by default, but the underlying feed has many expired records.
 - Google OAuth has not been verified end-to-end with a real account in this audit.
 - The app is a static HTML/JS surface with some inline scripts; keep validation tight before deploys.
+- Opportunity feed freshness now depends on editorial upkeep. Re-run `node scripts/publish-opportunity-feed.js` after updating opportunity rows so `updatedAt` and expired filtering stay correct.
 
 ## Rollback
 

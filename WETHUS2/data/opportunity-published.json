@@ -1,8 +1,9 @@
 {
   "version": 1,
-  "updatedAt": "2026-06-26T10:15:00+09:00",
+  "updatedAt": "2026-06-25T16:07:46.828Z",
   "items": [
     {
+      "id": "스파크랩-에이전틱-ai-시대-1인-소규모-팀-창업가를-위한-프로그램-sparkclaw-1기-모집-스파크랩-2026-06-28",
       "title": "[스파크랩] 에이전틱 AI 시대, 1인·소규모 팀 창업가를 위한 프로그램 SparkClaw 1기 모집",
       "organizer": "스파크랩",
       "deadline": "2026-06-28",
@@ -32,93 +33,7 @@
       "resultDate": null
     },
     {
-      "title": "2026년 해양수산 창업 콘테스트 참가자 모집 공고",
-      "organizer": "해양수산부",
-      "deadline": "2026-07-16",
-      "type": "contest",
-      "eligibility": "예비창업자 및 창업기업",
-      "teamRequirement": "개인 또는 팀 가능",
-      "tags": [
-        "해양수산",
-        "창업콘테스트",
-        "공공"
-      ],
-      "benefits": [
-        "창업 콘테스트 참가 기회",
-        "후속 지원 연계 가능",
-        "공공기관 노출"
-      ],
-      "official_url": "https://www.kimst.re.kr/",
-      "source_name": "해양수산과학기술진흥원 공지",
-      "source_url": "https://www.kimst.re.kr/",
-      "summary": "해양수산과학기술진흥원 메인 공지와 공식 안내 기준으로 현재 모집중인 창업 콘테스트입니다.",
-      "status": "open",
-      "dedupe_key": "2026년 해양수산 창업 콘테스트 참가자 모집 공고|해양수산부|2026-07-16",
-      "applyStart": "2026-06-10",
-      "applyEnd": "2026-07-16",
-      "judgeStart": null,
-      "judgeEnd": null,
-      "resultDate": null
-    },
-    {
-      "title": "2026년 KAMCO Startup TechBlaze 모집 공고 ((예비)창업기업 및 전 국민 대상)",
-      "organizer": "서울창조경제혁신센터",
-      "deadline": "2026-07-09",
-      "type": "contest",
-      "eligibility": "예비창업자, 초기 창업기업, 일반 참가자",
-      "teamRequirement": "개인 또는 팀 가능",
-      "tags": [
-        "공공데이터",
-        "AI",
-        "아이디어"
-      ],
-      "benefits": [
-        "공공데이터 기반 아이디어 발굴",
-        "후속 사업 연계",
-        "공공기관 협업 기회"
-      ],
-      "official_url": "https://www.kamco.or.kr/portal/bbs/view.do?bIdx=27606&mId=0701010000&ptIdx=380",
-      "source_name": "KAMCO 공식 공고",
-      "source_url": "https://www.kamco.or.kr/portal/bbs/view.do?bIdx=27606&mId=0701010000&ptIdx=380",
-      "summary": "한국자산관리공사 공식 공고 기준으로 2026년 7월 9일 15시까지 신청 가능한 AI·공공데이터 활용 모집입니다.",
-      "status": "open",
-      "dedupe_key": "2026년 KAMCO Startup TechBlaze 모집 공고 ((예비)창업기업 및 전 국민 대상)|서울창조경제혁신센터|2026-07-09",
-      "applyStart": "2026-06-10",
-      "applyEnd": "2026-07-09",
-      "judgeStart": null,
-      "judgeEnd": null,
-      "resultDate": null
-    },
-    {
-      "title": "2026년 경기북동부권역 청년 창업 챌린지",
-      "organizer": "경기도경제과학진흥원",
-      "deadline": "2026-07-09",
-      "type": "startup-support",
-      "eligibility": "청년 예비창업자 및 초기 창업팀",
-      "teamRequirement": "개인 또는 팀 가능",
-      "tags": [
-        "청년창업",
-        "경기",
-        "챌린지"
-      ],
-      "benefits": [
-        "지역 창업 지원",
-        "멘토링",
-        "실행 검증"
-      ],
-      "official_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
-      "source_name": "K-Startup 신규 사업 공고",
-      "source_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
-      "summary": "K-Startup 공개 모집 목록에서 2026년 6월 26일 기준 모집중으로 보인 청년 창업 챌린지입니다.",
-      "status": "open",
-      "dedupe_key": "2026년 경기북동부권역 청년 창업 챌린지|경기도경제과학진흥원|2026-07-09",
-      "applyStart": null,
-      "applyEnd": "2026-07-09",
-      "judgeStart": null,
-      "judgeEnd": null,
-      "resultDate": null
-    },
-    {
+      "id": "2026년-하반기-k-global-창업멘토링-지원사업-참여-멘티-28기-모집-공고-창업진흥원-2026-06-30",
       "title": "2026년 하반기 K-Global 창업멘토링 지원사업 참여 멘티(28기) 모집 공고",
       "organizer": "창업진흥원",
       "deadline": "2026-06-30",
@@ -148,122 +63,7 @@
       "resultDate": null
     },
     {
-      "title": "2026년도 딥테크 특화 창업중심대학 창업기업 모집공고",
-      "organizer": "창업중심대학",
-      "deadline": "2026-07-08",
-      "type": "startup-support",
-      "eligibility": "딥테크 분야 창업기업",
-      "teamRequirement": "창업기업 중심",
-      "tags": [
-        "딥테크",
-        "창업중심대학",
-        "사업화"
-      ],
-      "benefits": [
-        "사업화 지원",
-        "대학 연계 자원",
-        "성장 프로그램"
-      ],
-      "official_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
-      "source_name": "K-Startup 신규 사업 공고",
-      "source_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
-      "summary": "K-Startup 공개 모집 목록에서 2026년 6월 26일 기준 마감 12일 전으로 노출된 딥테크 창업기업 모집입니다.",
-      "status": "open",
-      "dedupe_key": "2026년도 딥테크 특화 창업중심대학 창업기업 모집공고|창업중심대학|2026-07-08",
-      "applyStart": null,
-      "applyEnd": "2026-07-08",
-      "judgeStart": null,
-      "judgeEnd": null,
-      "resultDate": null
-    },
-    {
-      "title": "소셜창업트랙:임팩트비즈니스 분야 청년 창업자를 위한 실전 창업 교육",
-      "organizer": "K-Startup 연계 운영기관",
-      "deadline": "2026-07-12",
-      "type": "education",
-      "eligibility": "청년 예비창업자 및 초기 창업자",
-      "teamRequirement": "개인 또는 팀 가능",
-      "tags": [
-        "청년창업",
-        "임팩트",
-        "교육"
-      ],
-      "benefits": [
-        "실전 창업 교육",
-        "문제정의·검증 지원",
-        "기초 실행 역량 강화"
-      ],
-      "official_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
-      "source_name": "K-Startup 신규 사업 공고",
-      "source_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
-      "summary": "K-Startup 공개 모집 목록에서 2026년 6월 26일 기준 마감 16일 전으로 노출된 청년 창업 교육입니다.",
-      "status": "open",
-      "dedupe_key": "소셜창업트랙:임팩트비즈니스 분야 청년 창업자를 위한 실전 창업 교육|K-Startup 연계 운영기관|2026-07-12",
-      "applyStart": null,
-      "applyEnd": "2026-07-12",
-      "judgeStart": null,
-      "judgeEnd": null,
-      "resultDate": null
-    },
-    {
-      "title": "성장창업트랙:청년창업자를 위한 창업 실전 역량 강화 프로그램",
-      "organizer": "K-Startup 연계 운영기관",
-      "deadline": "2026-07-19",
-      "type": "education",
-      "eligibility": "청년 예비창업자 및 초기 창업자",
-      "teamRequirement": "개인 또는 팀 가능",
-      "tags": [
-        "청년창업",
-        "교육",
-        "역량강화"
-      ],
-      "benefits": [
-        "실전 창업 교육",
-        "초기 성장 전략 수립",
-        "실행 피드백"
-      ],
-      "official_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
-      "source_name": "K-Startup 신규 사업 공고",
-      "source_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
-      "summary": "K-Startup 공개 모집 목록에서 2026년 6월 26일 기준 마감 23일 전으로 노출된 청년 창업 역량 강화 프로그램입니다.",
-      "status": "open",
-      "dedupe_key": "성장창업트랙:청년창업자를 위한 창업 실전 역량 강화 프로그램|K-Startup 연계 운영기관|2026-07-19",
-      "applyStart": null,
-      "applyEnd": "2026-07-19",
-      "judgeStart": null,
-      "judgeEnd": null,
-      "resultDate": null
-    },
-    {
-      "title": "2026년 로봇기반공간컴퓨팅 창업지원사업 예비창업팀 모집 재공고",
-      "organizer": "K-Startup 연계 운영기관",
-      "deadline": "2026-07-10",
-      "type": "startup-support",
-      "eligibility": "예비창업팀",
-      "teamRequirement": "팀 단위 권장",
-      "tags": [
-        "로봇",
-        "공간컴퓨팅",
-        "예비창업"
-      ],
-      "benefits": [
-        "예비창업팀 지원",
-        "기술 분야 특화",
-        "사업화 준비"
-      ],
-      "official_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
-      "source_name": "K-Startup 신규 사업 공고",
-      "source_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
-      "summary": "K-Startup 공개 모집 목록에서 2026년 6월 26일 기준 마감 14일 전으로 노출된 기술기반 예비창업팀 모집입니다.",
-      "status": "open",
-      "dedupe_key": "2026년 로봇기반공간컴퓨팅 창업지원사업 예비창업팀 모집 재공고|K-Startup 연계 운영기관|2026-07-10",
-      "applyStart": null,
-      "applyEnd": "2026-07-10",
-      "judgeStart": null,
-      "judgeEnd": null,
-      "resultDate": null
-    },
-    {
+      "id": "2026년-창업도시-조성-프로젝트-창업기업-모집-통합공고-투자연계형-창업패키지-지역창업패키지-k-startup-연계-운영기관-2026-07-07",
       "title": "2026년 창업도시 조성 프로젝트 창업기업 모집 통합공고(투자연계형 창업패키지, 지역창업패키지)",
       "organizer": "K-Startup 연계 운영기관",
       "deadline": "2026-07-07",
@@ -293,6 +93,127 @@
       "resultDate": null
     },
     {
+      "id": "2026년도-딥테크-특화-창업중심대학-창업기업-모집공고-창업중심대학-2026-07-08",
+      "title": "2026년도 딥테크 특화 창업중심대학 창업기업 모집공고",
+      "organizer": "창업중심대학",
+      "deadline": "2026-07-08",
+      "type": "startup-support",
+      "eligibility": "딥테크 분야 창업기업",
+      "teamRequirement": "창업기업 중심",
+      "tags": [
+        "딥테크",
+        "창업중심대학",
+        "사업화"
+      ],
+      "benefits": [
+        "사업화 지원",
+        "대학 연계 자원",
+        "성장 프로그램"
+      ],
+      "official_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
+      "source_name": "K-Startup 신규 사업 공고",
+      "source_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
+      "summary": "K-Startup 공개 모집 목록에서 2026년 6월 26일 기준 마감 12일 전으로 노출된 딥테크 창업기업 모집입니다.",
+      "status": "open",
+      "dedupe_key": "2026년도 딥테크 특화 창업중심대학 창업기업 모집공고|창업중심대학|2026-07-08",
+      "applyStart": null,
+      "applyEnd": "2026-07-08",
+      "judgeStart": null,
+      "judgeEnd": null,
+      "resultDate": null
+    },
+    {
+      "id": "2026년-경기북동부권역-청년-창업-챌린지-경기도경제과학진흥원-2026-07-09",
+      "title": "2026년 경기북동부권역 청년 창업 챌린지",
+      "organizer": "경기도경제과학진흥원",
+      "deadline": "2026-07-09",
+      "type": "startup-support",
+      "eligibility": "청년 예비창업자 및 초기 창업팀",
+      "teamRequirement": "개인 또는 팀 가능",
+      "tags": [
+        "청년창업",
+        "경기",
+        "챌린지"
+      ],
+      "benefits": [
+        "지역 창업 지원",
+        "멘토링",
+        "실행 검증"
+      ],
+      "official_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
+      "source_name": "K-Startup 신규 사업 공고",
+      "source_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
+      "summary": "K-Startup 공개 모집 목록에서 2026년 6월 26일 기준 모집중으로 보인 청년 창업 챌린지입니다.",
+      "status": "open",
+      "dedupe_key": "2026년 경기북동부권역 청년 창업 챌린지|경기도경제과학진흥원|2026-07-09",
+      "applyStart": null,
+      "applyEnd": "2026-07-09",
+      "judgeStart": null,
+      "judgeEnd": null,
+      "resultDate": null
+    },
+    {
+      "id": "2026년-kamco-startup-techblaze-모집-공고-예비-창업기업-및-전-국민-대상-서울창조경제혁신센터-2026-07-09",
+      "title": "2026년 KAMCO Startup TechBlaze 모집 공고 ((예비)창업기업 및 전 국민 대상)",
+      "organizer": "서울창조경제혁신센터",
+      "deadline": "2026-07-09",
+      "type": "contest",
+      "eligibility": "예비창업자, 초기 창업기업, 일반 참가자",
+      "teamRequirement": "개인 또는 팀 가능",
+      "tags": [
+        "공공데이터",
+        "AI",
+        "아이디어"
+      ],
+      "benefits": [
+        "공공데이터 기반 아이디어 발굴",
+        "후속 사업 연계",
+        "공공기관 협업 기회"
+      ],
+      "official_url": "https://www.kamco.or.kr/portal/bbs/view.do?bIdx=27606&mId=0701010000&ptIdx=380",
+      "source_name": "KAMCO 공식 공고",
+      "source_url": "https://www.kamco.or.kr/portal/bbs/view.do?bIdx=27606&mId=0701010000&ptIdx=380",
+      "summary": "한국자산관리공사 공식 공고 기준으로 2026년 7월 9일 15시까지 신청 가능한 AI·공공데이터 활용 모집입니다.",
+      "status": "open",
+      "dedupe_key": "2026년 KAMCO Startup TechBlaze 모집 공고 ((예비)창업기업 및 전 국민 대상)|서울창조경제혁신센터|2026-07-09",
+      "applyStart": "2026-06-10",
+      "applyEnd": "2026-07-09",
+      "judgeStart": null,
+      "judgeEnd": null,
+      "resultDate": null
+    },
+    {
+      "id": "2026년-로봇기반공간컴퓨팅-창업지원사업-예비창업팀-모집-재공고-k-startup-연계-운영기관-2026-07-10",
+      "title": "2026년 로봇기반공간컴퓨팅 창업지원사업 예비창업팀 모집 재공고",
+      "organizer": "K-Startup 연계 운영기관",
+      "deadline": "2026-07-10",
+      "type": "startup-support",
+      "eligibility": "예비창업팀",
+      "teamRequirement": "팀 단위 권장",
+      "tags": [
+        "로봇",
+        "공간컴퓨팅",
+        "예비창업"
+      ],
+      "benefits": [
+        "예비창업팀 지원",
+        "기술 분야 특화",
+        "사업화 준비"
+      ],
+      "official_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
+      "source_name": "K-Startup 신규 사업 공고",
+      "source_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
+      "summary": "K-Startup 공개 모집 목록에서 2026년 6월 26일 기준 마감 14일 전으로 노출된 기술기반 예비창업팀 모집입니다.",
+      "status": "open",
+      "dedupe_key": "2026년 로봇기반공간컴퓨팅 창업지원사업 예비창업팀 모집 재공고|K-Startup 연계 운영기관|2026-07-10",
+      "applyStart": null,
+      "applyEnd": "2026-07-10",
+      "judgeStart": null,
+      "judgeEnd": null,
+      "resultDate": null
+    },
+    {
+      "id": "2026년-민관협력-오픈이노베이션-모두의-챌린지-기후테크-창업기업-모집공고-k-startup-연계-운영기관-2026-07-10",
       "title": "2026년 민관협력 오픈이노베이션 (모두의 챌린지 기후테크) 창업기업 모집공고",
       "organizer": "K-Startup 연계 운영기관",
       "deadline": "2026-07-10",
@@ -317,6 +238,96 @@
       "dedupe_key": "2026년 민관협력 오픈이노베이션 (모두의 챌린지 기후테크) 창업기업 모집공고|K-Startup 연계 운영기관|2026-07-10",
       "applyStart": null,
       "applyEnd": "2026-07-10",
+      "judgeStart": null,
+      "judgeEnd": null,
+      "resultDate": null
+    },
+    {
+      "id": "소셜창업트랙-임팩트비즈니스-분야-청년-창업자를-위한-실전-창업-교육-k-startup-연계-운영기관-2026-07-12",
+      "title": "소셜창업트랙:임팩트비즈니스 분야 청년 창업자를 위한 실전 창업 교육",
+      "organizer": "K-Startup 연계 운영기관",
+      "deadline": "2026-07-12",
+      "type": "education",
+      "eligibility": "청년 예비창업자 및 초기 창업자",
+      "teamRequirement": "개인 또는 팀 가능",
+      "tags": [
+        "청년창업",
+        "임팩트",
+        "교육"
+      ],
+      "benefits": [
+        "실전 창업 교육",
+        "문제정의·검증 지원",
+        "기초 실행 역량 강화"
+      ],
+      "official_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
+      "source_name": "K-Startup 신규 사업 공고",
+      "source_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
+      "summary": "K-Startup 공개 모집 목록에서 2026년 6월 26일 기준 마감 16일 전으로 노출된 청년 창업 교육입니다.",
+      "status": "open",
+      "dedupe_key": "소셜창업트랙:임팩트비즈니스 분야 청년 창업자를 위한 실전 창업 교육|K-Startup 연계 운영기관|2026-07-12",
+      "applyStart": null,
+      "applyEnd": "2026-07-12",
+      "judgeStart": null,
+      "judgeEnd": null,
+      "resultDate": null
+    },
+    {
+      "id": "2026년-해양수산-창업-콘테스트-참가자-모집-공고-해양수산부-2026-07-16",
+      "title": "2026년 해양수산 창업 콘테스트 참가자 모집 공고",
+      "organizer": "해양수산부",
+      "deadline": "2026-07-16",
+      "type": "contest",
+      "eligibility": "예비창업자 및 창업기업",
+      "teamRequirement": "개인 또는 팀 가능",
+      "tags": [
+        "해양수산",
+        "창업콘테스트",
+        "공공"
+      ],
+      "benefits": [
+        "창업 콘테스트 참가 기회",
+        "후속 지원 연계 가능",
+        "공공기관 노출"
+      ],
+      "official_url": "https://www.kimst.re.kr/",
+      "source_name": "해양수산과학기술진흥원 공지",
+      "source_url": "https://www.kimst.re.kr/",
+      "summary": "해양수산과학기술진흥원 메인 공지와 공식 안내 기준으로 현재 모집중인 창업 콘테스트입니다.",
+      "status": "open",
+      "dedupe_key": "2026년 해양수산 창업 콘테스트 참가자 모집 공고|해양수산부|2026-07-16",
+      "applyStart": "2026-06-10",
+      "applyEnd": "2026-07-16",
+      "judgeStart": null,
+      "judgeEnd": null,
+      "resultDate": null
+    },
+    {
+      "id": "성장창업트랙-청년창업자를-위한-창업-실전-역량-강화-프로그램-k-startup-연계-운영기관-2026-07-19",
+      "title": "성장창업트랙:청년창업자를 위한 창업 실전 역량 강화 프로그램",
+      "organizer": "K-Startup 연계 운영기관",
+      "deadline": "2026-07-19",
+      "type": "education",
+      "eligibility": "청년 예비창업자 및 초기 창업자",
+      "teamRequirement": "개인 또는 팀 가능",
+      "tags": [
+        "청년창업",
+        "교육",
+        "역량강화"
+      ],
+      "benefits": [
+        "실전 창업 교육",
+        "초기 성장 전략 수립",
+        "실행 피드백"
+      ],
+      "official_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
+      "source_name": "K-Startup 신규 사업 공고",
+      "source_url": "https://www.k-startup.go.kr/web/main/mainSectionChNaviList.do",
+      "summary": "K-Startup 공개 모집 목록에서 2026년 6월 26일 기준 마감 23일 전으로 노출된 청년 창업 역량 강화 프로그램입니다.",
+      "status": "open",
+      "dedupe_key": "성장창업트랙:청년창업자를 위한 창업 실전 역량 강화 프로그램|K-Startup 연계 운영기관|2026-07-19",
+      "applyStart": null,
+      "applyEnd": "2026-07-19",
       "judgeStart": null,
       "judgeEnd": null,
       "resultDate": null
