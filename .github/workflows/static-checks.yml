@@ -55,6 +55,11 @@ jobs:
       - name: Google OAuth login smoke
         run: node scripts/smoke-google-oauth-login.js
 
+      - name: Launch readiness artifact smoke
+        run: |
+          node scripts/generate-launch-readiness-artifacts.js
+          GITHUB_STEP_SUMMARY=launch-readiness-step-summary.md node scripts/write-launch-readiness-step-summary.js
+
       - name: Provider launch-scope smoke
         run: node scripts/smoke-provider-launch-scope.js
 

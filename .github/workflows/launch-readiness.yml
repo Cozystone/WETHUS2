@@ -21,23 +21,8 @@ jobs:
         working-directory: WETHUS2/backend
         run: npm ci
 
-      - name: Capture commercialization readiness summary
-        run: node scripts/print-commercialization-readiness-summary.js > commercialization-readiness-summary.txt
-
-      - name: Capture commercialization readiness summary JSON
-        run: node scripts/print-commercialization-readiness-summary.js --json > commercialization-readiness-summary.json
-
-      - name: Capture production rollout status
-        run: node scripts/print-production-rollout-status.js > production-rollout-status.txt
-
-      - name: Capture production rollout status JSON
-        run: node scripts/print-production-rollout-status.js --json > production-rollout-status.json
-
-      - name: Capture launch-readiness snapshot
-        run: node scripts/print-launch-readiness-snapshot.js > launch-readiness-snapshot.md
-
-      - name: Capture launch-readiness snapshot JSON
-        run: node scripts/print-launch-readiness-snapshot.js --json > launch-readiness-snapshot.json
+      - name: Generate launch-readiness evidence files
+        run: node scripts/generate-launch-readiness-artifacts.js
 
       - name: Run strict launch-grade commercialization gate
         env:
