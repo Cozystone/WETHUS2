@@ -211,6 +211,7 @@ Use `.github/workflows/launch-readiness.yml` as the recurring strict proof for l
 - GitHub step summary: shows the latest launch verdict and main blockers directly in the Actions UI
 - launch snapshot artifact: gives operators one shareable markdown/JSON snapshot instead of piecing together multiple raw outputs
 - summary artifact: preserves the same launch summary shown in the Actions UI for later sharing or audit trails
+- local export bundle: lets operators create a timestamped launch evidence folder from the current machine without relying on GitHub Actions artifacts
 
 If this workflow fails, treat it as a launch blocker until:
 

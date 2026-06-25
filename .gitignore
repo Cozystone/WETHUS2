@@ -8,3 +8,4 @@ WETHUS2/**/*.bak_*
 .tmp-backend-*.log
 .tmp-wethus-backend*.pid
 WETHUS2/backend/.tmp-wethus-backend*.pid
+launch-readiness-bundles/
