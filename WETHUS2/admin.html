@@ -11,29 +11,52 @@
 
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WETHUS | 관리자 검토</title>
+  <title>WETHUS | 관리자 운영 검토</title>
   <link rel="stylesheet" href="styles.css?v=20260419-25" />
 </head>
 <body>
   <header class="nav">
     <div class="nav-inner">
       <a href="index.html" class="wordmark">WETHUS</a>
-      <nav class="nav-links"><a href="index.html" class="nav-link">홈</a></nav>
+      <nav class="nav-links">
+        <a href="index.html" class="nav-link">홈</a>
+        <a href="notifications.html" class="nav-link">알림</a>
+      </nav>
     </div>
   </header>
 
   <main class="container page-main page-main--standard">
     <section class="page-header">
-      <h1 class="page-title">관리자 수동 검토</h1>
-      <p class="page-sub">AI가 검토를 요청한 프로젝트를 승인하거나 반려하세요.</p>
+      <h1 class="page-title">관리자 운영 검토</h1>
+      <p class="page-sub">프로젝트 수동 검토와 플랜 업그레이드 요청을 한 화면에서 처리합니다.</p>
     </section>
-    <section id="reviewList" class="list-grid"></section>
+
+    <section style="margin-bottom:24px;">
+      <div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+        <div>
+          <h2 style="margin:0 0 4px;">플랜 업그레이드 요청</h2>
+          <p class="page-sub" style="margin:0;">Premium, Pro, Master 요청을 검토하고 사용자 계정 상태를 반영합니다.</p>
+        </div>
+      </div>
+      <section id="planRequestList" class="list-grid"></section>
+    </section>
+
+    <section>
+      <div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+        <div>
+          <h2 style="margin:0 0 4px;">프로젝트 수동 검토</h2>
+          <p class="page-sub" style="margin:0;">AI가 추가 검토를 요청한 프로젝트를 승인 또는 반려합니다.</p>
+        </div>
+      </div>
+      <section id="reviewList" class="list-grid"></section>
+    </section>
   </main>
 
-  <script src="app.js?v=20260625-admin-review-api"></script>
+  <script src="app.js?v=20260625-admin-ops-review"></script>
   <script>
     (function(){
-      const list = document.getElementById('reviewList');
+      const projectList = document.getElementById('reviewList');
+      const planList = document.getElementById('planRequestList');
       const st = WETHUS.getState();
       const actor = st.currentUserId || (st.devMode ? 'dev-temp' : null);
       let remoteMode = true;
@@ -52,11 +75,13 @@
       }
 
       if (!WETHUS.isAdminActor()) {
-        list.innerHTML = '<article class="list-item"><h3>권한 없음</h3><p>관리자 계정에서만 접근할 수 있습니다.</p></article>';
+        const denied = '<article class="list-item"><h3>권한 없음</h3><p>관리자 계정에서만 접근할 수 있습니다.</p></article>';
+        projectList.innerHTML = denied;
+        planList.innerHTML = denied;
         return;
       }
 
-      async function loadItems() {
+      async function loadProjectReviewItems() {
         if (remoteMode && WETHUS.listRemoteReviewProjects) {
           try {
             return await WETHUS.listRemoteReviewProjects();
@@ -67,28 +92,76 @@
         return WETHUS.listReviewProjects();
       }
 
-      async function render() {
-        const items = await loadItems();
-        if (!items.length) {
-          list.innerHTML = '<article class="list-item"><h3>검토 대기 없음</h3><p>현재 수동 검토가 필요한 프로젝트가 없습니다.</p></article>';
+      function renderPlanRequests() {
+        const requests = WETHUS.listPlanRequests({ mineOnly: false }).slice(0, 40);
+        requests.sort((a, b) => {
+          const aPending = String(a?.status || '') === 'pending' ? 0 : 1;
+          const bPending = String(b?.status || '') === 'pending' ? 0 : 1;
+          if (aPending !== bPending) return aPending - bPending;
+          return new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0);
+        });
+
+        if (!requests.length) {
+          planList.innerHTML = '<article class="list-item"><h3>요청 없음</h3><p>아직 접수된 플랜 업그레이드 요청이 없습니다.</p></article>';
           return;
         }
 
-        list.innerHTML = items.map((project) => `
-          <article class="list-item" data-id="${esc(project.id)}">
+        planList.innerHTML = requests.map((request) => {
+          const pending = String(request?.status || '') === 'pending';
+          const statusLabel = pending ? '검토 대기' : (request.status === 'approved' ? '승인됨' : '반려됨');
+          const reviewMeta = request.reviewedAt
+            ? ` · 처리: ${new Date(request.reviewedAt).toLocaleString('ko-KR')}${request.reviewedBy ? ` · ${esc(request.reviewedBy)}` : ''}`
+            : '';
+          const noteLine = request.note ? `<p style="white-space:pre-wrap;color:#bdbdbd;">요청 메모: ${esc(request.note)}</p>` : '';
+          const reviewLine = request.reviewNote ? `<p class="meta">검토 메모: ${esc(request.reviewNote)}</p>` : '';
+          const appliedLine = request.appliedPlan ? `<p class="meta">반영 플랜: ${esc(String(request.appliedPlan || '').toUpperCase())}</p>` : '';
+          const actions = pending
+            ? `<div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button class="btn btn--secondary js-plan-reject" type="button">반려</button>
+                <button class="btn btn--primary js-plan-approve" type="button">승인</button>
+              </div>`
+            : '';
+          return `
+            <article class="list-item" data-plan-request-id="${esc(request.id)}">
+              <h3>${esc(String(request.requestedPlan || '').toUpperCase())} 요청</h3>
+              <p>${esc(request.userName || '사용자')} · ${esc(request.userEmail || '이메일 없음')}</p>
+              <p class="meta">현재 플랜: ${esc(String(request.currentPlan || 'free').toUpperCase())} · 상태: ${esc(statusLabel)} · 접수: ${esc(new Date(request.createdAt).toLocaleString('ko-KR'))}${reviewMeta}</p>
+              ${noteLine}
+              ${reviewLine}
+              ${appliedLine}
+              ${actions}
+            </article>
+          `;
+        }).join('');
+      }
+
+      async function renderProjects() {
+        const items = await loadProjectReviewItems();
+        if (!items.length) {
+          projectList.innerHTML = '<article class="list-item"><h3>검토 대기 없음</h3><p>현재 수동 검토가 필요한 프로젝트가 없습니다.</p></article>';
+          return;
+        }
+
+        projectList.innerHTML = items.map((project) => `
+          <article class="list-item" data-project-id="${esc(project.id)}">
             <h3>${esc(project.title)}</h3>
             <p>${esc(project.summary || '')}</p>
-            <p class="meta">카테고리: ${esc(project.category || '-')} · 상태: ${esc(project.moderationStatus || project.status || '-')} · 신청자: ${esc(project.founderId || '-')}</p>
+            <p class="meta">카테고리: ${esc(project.category || '-')} · 상태: ${esc(project.moderationStatus || project.status || '-')} · 요청자: ${esc(project.founderId || '-')}</p>
             <p style="white-space:pre-wrap;color:#bdbdbd;">${esc((project.fullDescription || '').slice(0, 400))}</p>
             <div style="display:flex;gap:8px;justify-content:flex-end;">
-              <button class="btn btn--secondary js-reject">반려</button>
-              <button class="btn btn--primary js-approve">승인</button>
+              <button class="btn btn--secondary js-project-reject" type="button">반려</button>
+              <button class="btn btn--primary js-project-approve" type="button">승인</button>
             </div>
           </article>
         `).join('');
       }
 
-      async function applyDecision(projectId, decision, note) {
+      async function renderAll() {
+        renderPlanRequests();
+        await renderProjects();
+      }
+
+      async function applyProjectDecision(projectId, decision, note) {
         if (remoteMode && WETHUS.reviewProjectRemote) {
           try {
             await WETHUS.reviewProjectRemote(projectId, decision, note);
@@ -100,32 +173,53 @@
         WETHUS.reviewProject(projectId, decision, note);
       }
 
-      list.addEventListener('click', async (event) => {
-        const card = event.target.closest('[data-id]');
+      projectList.addEventListener('click', async (event) => {
+        const card = event.target.closest('[data-project-id]');
         if (!card) return;
-        const id = card.getAttribute('data-id');
+        const id = card.getAttribute('data-project-id');
 
-        if (event.target.closest('.js-approve')) {
-          await applyDecision(id, 'approve', '운영자 승인');
-          render();
+        if (event.target.closest('.js-project-approve')) {
+          await applyProjectDecision(id, 'approve', '운영팀 승인');
+          renderAll();
           return;
         }
 
-        if (event.target.closest('.js-reject')) {
-          const reason = prompt('반려 사유를 입력하세요.', '운영자 검토 결과 반려');
+        if (event.target.closest('.js-project-reject')) {
+          const reason = prompt('반려 사유를 입력하세요.', '운영 검토 결과 반려');
           if (reason == null) return;
-          await applyDecision(id, 'reject', reason);
-          render();
+          await applyProjectDecision(id, 'reject', reason);
+          renderAll();
+        }
+      });
+
+      planList.addEventListener('click', async (event) => {
+        const card = event.target.closest('[data-plan-request-id]');
+        if (!card) return;
+        const id = card.getAttribute('data-plan-request-id');
+
+        if (event.target.closest('.js-plan-approve')) {
+          const note = prompt('승인 메모를 입력하세요.', '운영 검토 후 승인');
+          if (note == null) return;
+          WETHUS.reviewPlanRequest(id, 'approve', note);
+          renderAll();
+          return;
+        }
+
+        if (event.target.closest('.js-plan-reject')) {
+          const reason = prompt('반려 사유를 입력하세요.', '현재 운영 기준과 맞지 않아 반려합니다.');
+          if (reason == null) return;
+          WETHUS.reviewPlanRequest(id, 'reject', reason);
+          renderAll();
         }
       });
 
       const me = WETHUS.currentUser && WETHUS.currentUser();
       if (me?.email && WETHUS.syncCloudState) {
-        WETHUS.syncCloudState(me.email).catch(() => {}).finally(() => render());
-        setTimeout(() => render(), 1200);
+        WETHUS.syncCloudState(me.email).catch(() => {}).finally(() => renderAll());
+        setTimeout(() => renderAll(), 1200);
       }
 
-      render();
+      renderAll();
     })();
   </script>
 </body>

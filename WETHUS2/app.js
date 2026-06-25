@@ -1813,6 +1813,77 @@
     return Array.from(map.values()).filter(p => p.moderationStatus === 'manual_review');
   }
 
+  function reviewPlanRequest(requestId, decision, note = '') {
+    const s = load();
+    if (!isAdminActor()) throw new Error('관리자 권한이 필요합니다.');
+    s.planRequests = Array.isArray(s.planRequests) ? s.planRequests : [];
+    const target = s.planRequests.find((request) => String(request?.id || '') === String(requestId || ''));
+    if (!target) throw new Error('플랜 요청을 찾을 수 없습니다.');
+
+    const now = new Date().toISOString();
+    const normalizedDecision = String(decision || '').trim().toLowerCase();
+    const reviewer = currentUser();
+    const reviewerName = reviewer?.nickname || reviewer?.name || 'WETHUS 운영팀';
+    const requestedPlan = String(target.requestedPlan || '').trim().toLowerCase();
+    const appliedPlan = requestedPlan === 'master' ? 'pro' : requestedPlan;
+    const user = (s.users || []).find((item) =>
+      item?.id === target.userId ||
+      (target.userEmail && String(item?.email || '').trim().toLowerCase() === String(target.userEmail || '').trim().toLowerCase())
+    );
+
+    if (normalizedDecision === 'approve') {
+      target.status = 'approved';
+      target.reviewedAt = now;
+      target.reviewedBy = reviewerName;
+      target.reviewNote = String(note || '').trim();
+      target.appliedPlan = appliedPlan;
+      target.updatedAt = now;
+      if (user) user.plan = appliedPlan;
+      s.notifications = s.notifications || [];
+      s.notifications.unshift({
+        id: uid(),
+        type: 'plan_request_approved',
+        title: `${requestedPlan.toUpperCase()} 플랜 승인`,
+        body: requestedPlan === 'master'
+          ? 'Master 요청이 승인되어 계정에는 Pro 권한이 우선 반영되었습니다. 운영팀이 별도 안내를 이어갑니다.'
+          : `${requestedPlan.toUpperCase()} 플랜이 계정에 반영되었습니다.`,
+        href: 'pricing.html',
+        sender: reviewerName,
+        unread: true,
+        createdAt: now,
+        userId: target.userId
+      });
+      save(s);
+      if (target.userEmail) syncCloudState(target.userEmail).catch(() => {});
+      return target;
+    }
+
+    if (normalizedDecision === 'reject') {
+      target.status = 'rejected';
+      target.reviewedAt = now;
+      target.reviewedBy = reviewerName;
+      target.reviewNote = String(note || '').trim() || '운영 검토 결과 반려되었습니다.';
+      target.updatedAt = now;
+      s.notifications = s.notifications || [];
+      s.notifications.unshift({
+        id: uid(),
+        type: 'plan_request_rejected',
+        title: `${requestedPlan.toUpperCase()} 플랜 반려`,
+        body: `검토 결과: ${target.reviewNote}`,
+        href: 'pricing.html',
+        sender: reviewerName,
+        unread: true,
+        createdAt: now,
+        userId: target.userId
+      });
+      save(s);
+      if (target.userEmail) syncCloudState(target.userEmail).catch(() => {});
+      return target;
+    }
+
+    throw new Error('지원하지 않는 처리 방식입니다.');
+  }
+
   function listNotifications(limit = 30) {
     const s = load();
     const actor = currentActorId();
@@ -3020,6 +3091,7 @@
     deleteProject,
     reviewProject,
     listReviewProjects,
+    reviewPlanRequest,
     listRemoteReviewProjects,
     isAdminActor,
     updateCurrentUserProfile,
