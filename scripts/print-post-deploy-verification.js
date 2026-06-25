@@ -41,6 +41,7 @@ printHeader('3. Commercialization audit');
 printLines([
   'node scripts/audit-commercial-readiness.js',
   'node scripts/print-production-rollout-status.js',
+  'node scripts/print-launch-readiness-snapshot.js',
   'Pass condition: no blockers remain, and rollout status no longer recommends missing deploys or disabled flags.'
 ]);
 

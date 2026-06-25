@@ -33,6 +33,12 @@ jobs:
       - name: Capture production rollout status JSON
         run: node scripts/print-production-rollout-status.js --json > production-rollout-status.json
 
+      - name: Capture launch-readiness snapshot
+        run: node scripts/print-launch-readiness-snapshot.js > launch-readiness-snapshot.md
+
+      - name: Capture launch-readiness snapshot JSON
+        run: node scripts/print-launch-readiness-snapshot.js --json > launch-readiness-snapshot.json
+
       - name: Run strict launch-grade commercialization gate
         env:
           WETHUS_GATE_STRICT_PRODUCTION: 'true'
@@ -57,3 +63,5 @@ jobs:
             commercialization-readiness-summary.json
             production-rollout-status.txt
             production-rollout-status.json
+            launch-readiness-snapshot.md
+            launch-readiness-snapshot.json
