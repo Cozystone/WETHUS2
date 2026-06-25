@@ -279,7 +279,7 @@ async function runCheck(check) {
             reportBackendContract(`${url} provider ${key} is missing launch contract metadata`);
             continue;
           }
-          if (provider.status !== 'ready') {
+          if (!['deferred', 'ready'].includes(String(provider.status || ''))) {
             warnings.push(`${url} deferred provider ${key} is still ${provider.status}`);
           }
           if (provider.launchPhase !== expectedProviderPhase(key)) {

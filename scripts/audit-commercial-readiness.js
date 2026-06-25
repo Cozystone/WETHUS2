@@ -152,7 +152,7 @@ async function auditProviders() {
       addAction('Backend deploy: redeploy the Render backend so /integrations/providers exposes the launch-scope contract fields.');
       continue;
     }
-    if (provider.status !== 'ready') {
+    if (!['deferred', 'ready'].includes(String(provider.status || ''))) {
       const message = `${provider.label || key} provider is still ${provider.status || 'unknown'}.`;
       if (REQUIRE_PROVIDER_READINESS) addBlocker(message);
       else addWarning(message);
@@ -162,6 +162,8 @@ async function auditProviders() {
         figma: 'FIGMA_CLIENT_ID / FIGMA_CLIENT_SECRET / FIGMA_REDIRECT_URI'
       };
       if (envKeys[key]) addAction(`Provider setup: configure ${envKeys[key]} in Render before marketing ${key} as a live integration.`);
+    } else if (provider.status === 'deferred') {
+      addNote(`${provider.label || key} remains intentionally deferred outside the current launch scope.`);
     }
     if (provider.launchPhase !== expectedProviderPhase(key)) {
       addBackendContractFinding(`${key} provider launchPhase should be ${expectedProviderPhase(key)}, got ${provider.launchPhase || 'missing'}.`);

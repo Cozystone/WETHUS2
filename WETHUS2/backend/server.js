@@ -1147,56 +1147,72 @@ app.get('/integrations/providers', (req, res) => {
       launchNote: '런칭 범위가 아직 확정되지 않았습니다.'
     };
   };
+  const providerStatus = (key, configured) => {
+    if (deferredSet.has(key)) return 'deferred';
+    return configured ? 'ready' : 'setup_required';
+  };
+  const providerSetupRequired = (key, configured) => {
+    if (deferredSet.has(key)) return false;
+    return !configured;
+  };
+  const providerMessage = (key, configured, readyMessage, setupMessage) => {
+    if (deferredSet.has(key)) {
+      return configured
+        ? '운영 설정은 준비됐지만 아직 상용 런칭 범위에는 포함되지 않습니다.'
+        : '로드맵 연동으로 보류 중입니다. 상용 런칭 범위에 포함될 때 운영 설정을 마무리합니다.';
+    }
+    return configured ? readyMessage : setupMessage;
+  };
   const providers = [
     {
       key: 'notion',
       label: 'Notion',
       description: '문서와 체크리스트 연결',
-      status: notionReady ? 'ready' : 'setup_required',
+      status: providerStatus('notion', notionReady),
       oauthConfigured: notionReady,
-      setupRequired: !notionReady,
+      setupRequired: providerSetupRequired('notion', notionReady),
       ...providerLaunchMeta('notion'),
-      message: notionReady ? '바로 연결할 수 있습니다.' : '관리자 OAuth 설정이 아직 완료되지 않았습니다.'
+      message: providerMessage('notion', notionReady, '바로 연결할 수 있습니다.', '관리자 OAuth 설정이 아직 완료되지 않았습니다.')
     },
     {
       key: 'google_docs',
       label: 'Google Docs',
       description: '프로젝트 문서 연결',
-      status: googleReady ? 'ready' : 'setup_required',
+      status: providerStatus('google_docs', googleReady),
       oauthConfigured: googleReady,
-      setupRequired: !googleReady,
+      setupRequired: providerSetupRequired('google_docs', googleReady),
       ...providerLaunchMeta('google_docs'),
-      message: googleReady ? 'Google 계정 연결 후 문서나 폴더를 선택할 수 있습니다.' : 'Google OAuth 설정이 아직 완료되지 않았습니다.'
+      message: providerMessage('google_docs', googleReady, 'Google 계정 연결 후 문서나 폴더를 선택할 수 있습니다.', 'Google OAuth 설정이 아직 완료되지 않았습니다.')
     },
     {
       key: 'google_sheets',
       label: 'Google Sheets',
       description: '일정/지표 시트 연결',
-      status: googleReady ? 'ready' : 'setup_required',
+      status: providerStatus('google_sheets', googleReady),
       oauthConfigured: googleReady,
-      setupRequired: !googleReady,
+      setupRequired: providerSetupRequired('google_sheets', googleReady),
       ...providerLaunchMeta('google_sheets'),
-      message: googleReady ? 'Google 계정 연결 후 시트를 선택할 수 있습니다.' : 'Google OAuth 설정이 아직 완료되지 않았습니다.'
+      message: providerMessage('google_sheets', googleReady, 'Google 계정 연결 후 시트를 선택할 수 있습니다.', 'Google OAuth 설정이 아직 완료되지 않았습니다.')
     },
     {
       key: 'slack',
       label: 'Slack',
       description: '프로젝트 채널 활동 연결',
-      status: slackReady ? 'ready' : 'setup_required',
+      status: providerStatus('slack', slackReady),
       oauthConfigured: slackReady,
-      setupRequired: !slackReady,
+      setupRequired: providerSetupRequired('slack', slackReady),
       ...providerLaunchMeta('slack'),
-      message: slackReady ? '워크스페이스 연결 후 채널을 선택할 수 있습니다.' : 'Slack OAuth 설정이 아직 완료되지 않았습니다.'
+      message: providerMessage('slack', slackReady, '워크스페이스 연결 후 채널을 선택할 수 있습니다.', 'Slack OAuth 설정이 아직 완료되지 않았습니다.')
     },
     {
       key: 'figma',
       label: 'Figma',
       description: '디자인 파일 상태 연결',
-      status: figmaReady ? 'ready' : 'setup_required',
+      status: providerStatus('figma', figmaReady),
       oauthConfigured: figmaReady,
-      setupRequired: !figmaReady,
+      setupRequired: providerSetupRequired('figma', figmaReady),
       ...providerLaunchMeta('figma'),
-      message: figmaReady ? '계정 연결 후 파일 상태를 가져올 수 있습니다.' : 'Figma OAuth 설정이 아직 완료되지 않았습니다.'
+      message: providerMessage('figma', figmaReady, '계정 연결 후 파일 상태를 가져올 수 있습니다.', 'Figma OAuth 설정이 아직 완료되지 않았습니다.')
     }
   ];
   return res.json({ ok: true, providers, launchScope });
