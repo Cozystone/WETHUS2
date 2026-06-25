@@ -149,7 +149,7 @@
 
           <div id="tab-progress" class="hidden">
             <article class="hub-card"><h3>진행 로그</h3><ul id="pgLogs" class="meta-bullet"></ul></article>
-            <article class="hub-card"><h3>로컬 프로젝트 매니지먼트 AI 요약</h3><button id="pgAiSummBtn" class="btn btn--secondary" type="button">외부 툴 기반 요약 생성</button><p id="pgAiSummary" style="margin:10px 0 0;"></p></article>
+            <article class="hub-card"><h3>프로젝트 운영 AI 요약</h3><button id="pgAiSummBtn" class="btn btn--secondary" type="button">허브 문맥 기반 요약 생성</button><p id="pgAiSummary" style="margin:10px 0 0;"></p></article>
           </div>
 
           <div id="tab-materials" class="hidden">
@@ -1677,7 +1677,7 @@
       let out='';
       try { out = await WETHUS.askGemini(prompt); } catch { out = 'AI 요약에 실패했습니다. API 설정을 확인해주세요.'; }
       document.getElementById('pgAiSummary').textContent=out;
-      WETHUS.addHubActivity(currentProject.id,'로컬 PM AI 요약 생성');
+      WETHUS.addHubActivity(currentProject.id,'프로젝트 운영 AI 요약 생성');
       refreshHubInsights('ai-summary');
     });
 

@@ -66,8 +66,8 @@
   <main class="container page-main page-main--standard">
     <section class="pricing-wrap">
       <div class="pricing-head">
-        <h1>Choose the plan that’s right for you</h1>
-        <p>요금제는 언제든 변경 가능하며 결제 연동은 곧 추가됩니다.</p>
+        <h1>WETHUS 이용 플랜</h1>
+        <p>현재는 플랜 안내와 이용 권한 활성화 기준을 먼저 운영하고 있습니다.</p>
       </div>
       <div class="pricing-grid">
         <article class="plan-card plan-free">
@@ -80,7 +80,7 @@
             <li>기본 알림 기능</li>
             <li>타 사용자 상세 프로필(경력/나이 등) 일부 제한</li>
           </ul>
-          <button class="btn btn--secondary" data-plan="free">Subscribe to Free</button>
+          <button class="btn btn--secondary" data-plan="free">Free로 이용하기</button>
         </article>
 
         <article class="plan-card plan-premium">
@@ -93,7 +93,7 @@
             <li>우선 노출/확장 탐색 기능(예정)</li>
             <li>고급 알림/정리 기능(예정)</li>
           </ul>
-          <button class="btn btn--primary" data-plan="premium">Subscribe to Premium</button>
+          <button class="btn btn--primary" data-plan="premium">Premium으로 설정</button>
         </article>
 
         <article class="plan-card plan-pro">
@@ -106,7 +106,7 @@
             <li>Founder 운영 확장 권한</li>
             <li>우선 지원 채널</li>
           </ul>
-          <button class="btn btn--primary" data-plan="pro">Subscribe to Pro</button>
+          <button class="btn btn--primary" data-plan="pro">Pro로 설정</button>
         </article>
 
         <article class="plan-card plan-master">
@@ -119,7 +119,7 @@
             <li>성과 중심 밀착 운영(성공까지 동반)</li>
             <li>단, 결제만으로 즉시 시작되지 않으며 프로젝트 심사 후 시작</li>
           </ul>
-          <button class="btn btn--secondary" data-plan="master">Subscribe to Master (준비중)</button>
+          <button class="btn btn--secondary" data-plan="master">Master 도입 문의</button>
         </article>
       </div>
     </section>
@@ -149,11 +149,11 @@
       btn.addEventListener('click', async () => {
         const plan = btn.getAttribute('data-plan');
         if (plan === 'master') {
-          await WETHUS.uiAlert('MASTER 플랜은 현재 준비중입니다.\n프로젝트 심사 기반 맞춤형 지원 프로그램으로 곧 오픈됩니다.');
+          await WETHUS.uiAlert('MASTER 플랜은 상담형 맞춤 지원 프로그램입니다.\n도입이 필요하면 운영팀에 문의해주세요.');
           return;
         }
         WETHUS.setCurrentUserPlan(plan);
-        await WETHUS.uiAlert(`${plan.toUpperCase()} 플랜이 적용되었습니다.`);
+        await WETHUS.uiAlert(`${plan.toUpperCase()} 플랜 기준이 계정에 반영되었습니다.`);
         location.reload();
       });
     });
