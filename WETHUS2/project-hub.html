@@ -79,6 +79,11 @@
     .slash-item:hover{background:#1a1a1a}
     @media (max-width:960px){.hub-grid{grid-template-columns:1fr}.hub-header{grid-template-columns:1fr}.hub-actions{grid-template-columns:repeat(2,minmax(0,1fr));}.hub-tabs-wrap{grid-template-columns:1fr}}
     @media (max-width:640px){
+      .hub-header{padding:12px}
+      .hub-head-left{flex-direction:column;align-items:stretch;min-width:0}
+      .hub-head-left > div{min-width:0}
+      .hub-head-left .hub-thumb{width:100%;max-width:100%;height:180px}
+      .hub-actions{grid-template-columns:1fr}
       .hub-item--project{flex-direction:column}
       .hub-item--project .hub-thumb,
       .hub-item--project img{width:100%;max-width:100%;height:180px}
