@@ -3,7 +3,7 @@ const API_BASE_URL = (process.env.WETHUS_API_BASE_URL || 'https://wethus-api.onr
 const fs = require('fs');
 const path = require('path');
 const { getLaunchScope } = require('./lib/launch-scope');
-const { analyzeRenderEnvSync } = require('./lib/render-env-sync');
+const { analyzeRenderEnvSync, backendSourceHead } = require('./lib/render-env-sync');
 
 const LAUNCH_SCOPE = getLaunchScope();
 const securityFlags = [
@@ -150,10 +150,7 @@ async function main() {
   const providerMap = Object.fromEntries(providers.map((provider) => [String(provider?.key || ''), provider]));
   const frontendDrift = await summarizeFrontendDrift();
   const backendContractDrift = await summarizeBackendContractDrift();
-  const sourceHead = require('child_process')
-    .spawnSync('git', ['rev-parse', 'HEAD'], { cwd: path.resolve(__dirname, '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], shell: false })
-    .stdout
-    .trim();
+  const sourceHead = backendSourceHead();
   const renderEnvSync = analyzeRenderEnvSync(health?.security || {}, health?.build?.commit || '', sourceHead);
 
   console.log(`Production rollout status for ${BASE_URL}`);
@@ -213,7 +210,7 @@ async function main() {
   if (!renderEnvSync.mismatches.length) {
     console.log('- render.yaml security defaults match live /health flags');
   } else {
-    console.log(`- build matches source: ${renderEnvSync.buildMatchesSource ? 'yes' : 'no'}`);
+    console.log(`- build matches backend source: ${renderEnvSync.buildMatchesSource ? 'yes' : 'no'}`);
     renderEnvSync.mismatches.forEach((item) => {
       console.log(`- ${item.envKey}: desired=${item.desired} actual=${item.actual}`);
     });

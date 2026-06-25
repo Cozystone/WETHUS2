@@ -2,7 +2,7 @@ const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { getLaunchScope } = require('./lib/launch-scope');
-const { analyzeRenderEnvSync } = require('./lib/render-env-sync');
+const { analyzeRenderEnvSync, backendSourceHead } = require('./lib/render-env-sync');
 
 const repoRoot = path.resolve(__dirname, '..');
 const appRoot = path.join(repoRoot, 'WETHUS2');
@@ -102,11 +102,13 @@ async function fetchText(url) {
 
 async function localSourceStatus() {
   const head = runGit(['rev-parse', 'HEAD']);
+  const backendHead = backendSourceHead();
   const remoteMainLine = runGit(['ls-remote', 'origin', 'refs/heads/main']);
   const remoteMain = remoteMainLine.split(/\s+/)[0] || '';
   const status = runGit(['status', '--short']);
   return {
     head,
+    backendHead,
     remoteMain,
     aligned: !!remoteMain && head === remoteMain,
     dirty: !!status,
@@ -201,7 +203,7 @@ function printSection(title) {
 async function buildSummary() {
   const source = await localSourceStatus();
   const runtime = await productionRuntimeStatus();
-  const renderEnvSync = analyzeRenderEnvSync(runtime.security || {}, runtime.buildCommit || '', source.head);
+  const renderEnvSync = analyzeRenderEnvSync(runtime.security || {}, runtime.buildCommit || '', source.backendHead);
   const frontend = await frontendDriftStatus();
   const backendContract = await backendContractDriftStatus();
 
@@ -281,7 +283,7 @@ function printSummary(summary) {
   if (!renderEnvSync.mismatches.length) {
     console.log('- render.yaml security defaults match live /health flags');
   } else {
-    console.log(`- build matches source: ${renderEnvSync.buildMatchesSource ? 'yes' : 'no'}`);
+    console.log(`- build matches backend source: ${renderEnvSync.buildMatchesSource ? 'yes' : 'no'}`);
     renderEnvSync.mismatches.forEach((item) => {
       console.log(`- ${item.envKey}: desired=${item.desired} actual=${item.actual}`);
     });

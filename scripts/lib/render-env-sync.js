@@ -1,8 +1,14 @@
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 const renderYamlPath = path.join(repoRoot, 'render.yaml');
+const backendSourcePaths = [
+  'render.yaml',
+  'WETHUS2/backend',
+  'WETHUS2/config/launch-scope.json'
+];
 
 const securityFlags = [
   ['cloudStateRequireSession', 'CLOUD_STATE_REQUIRE_SESSION'],
@@ -28,6 +34,24 @@ function desiredSecurityFlagsFromRender() {
   return Object.fromEntries(
     securityFlags.map(([, envKey]) => [envKey, parseRenderEnvValue(envKey, text)])
   );
+}
+
+function runGit(args) {
+  const result = spawnSync('git', args, {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    shell: false
+  });
+  if (result.status !== 0) {
+    throw new Error((result.stderr || result.stdout || `git ${args.join(' ')} failed`).trim());
+  }
+  return String(result.stdout || '').trim();
+}
+
+function backendSourceHead() {
+  const commit = runGit(['log', '-n', '1', '--format=%H', 'HEAD', '--', ...backendSourcePaths]);
+  return commit || runGit(['rev-parse', 'HEAD']);
 }
 
 function analyzeRenderEnvSync(runtimeSecurity = {}, buildCommit = '', sourceHead = '') {
@@ -60,6 +84,8 @@ function analyzeRenderEnvSync(runtimeSecurity = {}, buildCommit = '', sourceHead
 }
 
 module.exports = {
+  backendSourcePaths,
+  backendSourceHead,
   securityFlags,
   desiredSecurityFlagsFromRender,
   analyzeRenderEnvSync

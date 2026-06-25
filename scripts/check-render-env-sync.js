@@ -1,20 +1,6 @@
-const { spawnSync } = require('child_process');
-const { analyzeRenderEnvSync } = require('./lib/render-env-sync');
+const { analyzeRenderEnvSync, backendSourceHead } = require('./lib/render-env-sync');
 
 const API_BASE_URL = (process.env.WETHUS_API_BASE_URL || 'https://wethus-api.onrender.com').replace(/\/$/, '');
-
-function runGit(args) {
-  const result = spawnSync('git', args, {
-    cwd: require('path').resolve(__dirname, '..'),
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-    shell: false
-  });
-  if (result.status !== 0) {
-    throw new Error((result.stderr || result.stdout || `git ${args.join(' ')} failed`).trim());
-  }
-  return String(result.stdout || '').trim();
-}
 
 async function fetchJson(url) {
   const res = await fetch(url, { redirect: 'follow' });
@@ -29,7 +15,7 @@ async function fetchJson(url) {
 }
 
 (async () => {
-  const sourceHead = runGit(['rev-parse', 'HEAD']);
+  const sourceHead = backendSourceHead();
   const { res, json } = await fetchJson(`${API_BASE_URL}/health`);
   if (!res.ok || !json?.ok) {
     console.error(`- unable to read ${API_BASE_URL}/health`);
@@ -39,9 +25,9 @@ async function fetchJson(url) {
   const analysis = analyzeRenderEnvSync(json.security || {}, json?.build?.commit || '', sourceHead);
 
   console.log(`Render env sync check for ${API_BASE_URL}`);
-  console.log(`- source HEAD: ${sourceHead}`);
+  console.log(`- backend source ref: ${sourceHead}`);
   console.log(`- live build: ${json?.build?.ref || '-'} ${json?.build?.commit || '-'}`);
-  console.log(`- build matches source: ${analysis.buildMatchesSource ? 'yes' : 'no'}`);
+  console.log(`- build matches backend source: ${analysis.buildMatchesSource ? 'yes' : 'no'}`);
 
   if (!analysis.mismatches.length) {
     console.log('- render.yaml security defaults match live /health flags');
