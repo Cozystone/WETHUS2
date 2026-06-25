@@ -63,6 +63,11 @@ const steps = [
     args: ['scripts/smoke-project-applications.js']
   },
   {
+    label: 'Google OAuth login smoke',
+    command: process.execPath,
+    args: ['scripts/smoke-google-oauth-login.js']
+  },
+  {
     label: 'Provider launch-scope smoke',
     command: process.execPath,
     args: ['scripts/smoke-provider-launch-scope.js']
