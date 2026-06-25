@@ -13,6 +13,7 @@
   
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1" />
   <title>WETHUS | Founder 신청</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260419-25" />
@@ -536,6 +537,28 @@
     }
 
     function validateStrict(showMessage = false) {
+      const fieldLabels = {
+        title: '?꾨줈?앺듃 ?쒕ぉ',
+        category: '移댄뀒怨좊━',
+        description: '?꾨줈?앺듃 ?ㅻ챸',
+        motivation: '?숆린',
+        output: '?덉긽 ?곗텧臾?',
+        plan: '泥?2二??ㅽ뻾 怨꾪쉷',
+        roles: '? 援ъ꽦????븷',
+        status: '?④퀎',
+        duration: '?덉긽 湲곌컙'
+      };
+      const focusField = (el) => {
+        if (!el || typeof el.focus !== 'function') return;
+        try {
+          el.focus({ preventScroll: true });
+        } catch (_) {
+          try { el.focus(); } catch (_) {}
+        }
+        if (typeof el.scrollIntoView === 'function') {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      };
       setImageError('');
       if (!imageData && !aiImageSelected && showMessage) {
         imageActionMsg.textContent = '메인 사진이 없으면 제출 시 기본 커버 이미지가 자동 적용됩니다.';

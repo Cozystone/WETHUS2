@@ -292,6 +292,19 @@ function validateInteractionConsumers() {
     }
   }
 
+  const founderFile = path.join(appRoot, 'founder.html');
+  if (fs.existsSync(founderFile)) {
+    const text = read(founderFile);
+    const requiredSnippets = [
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
+      'const fieldLabels = {',
+      'const focusField = (el) => {'
+    ];
+    for (const snippet of requiredSnippets) {
+      if (!text.includes(snippet)) fail(`founder.html must include founder validation focus contract: ${snippet}`);
+    }
+  }
+
   const adminFile = path.join(appRoot, 'admin.html');
   if (fs.existsSync(adminFile)) {
     const text = read(adminFile);
@@ -299,6 +312,8 @@ function validateInteractionConsumers() {
       'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       '관리자 운영 검토',
       'class="js-review-note"',
+      'id="opsActionStatus"',
+      'const setCardBusy = (card, busy, message) => {',
       'readReviewNote(card,',
       '이 메모는 승인/반려 사유로 바로 반영됩니다.'
     ];

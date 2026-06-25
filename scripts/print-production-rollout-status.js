@@ -67,11 +67,21 @@ const frontendChecks = [
     ]
   },
   {
+    file: 'founder.html',
+    snippets: [
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
+      'const fieldLabels = {',
+      'const focusField = (el) => {'
+    ]
+  },
+  {
     file: 'admin.html',
     snippets: [
       'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
       '관리자 운영 검토',
       'class="js-review-note"',
+      'id="opsActionStatus"',
+      'const setCardBusy = (card, busy, message) => {',
       '이 메모는 승인/반려 사유로 바로 반영됩니다.'
     ]
   }

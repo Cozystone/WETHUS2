@@ -46,7 +46,10 @@ const checks = [
     path: '/founder.html',
     status: 200,
     includes: [
-      "const moderationStatus = moderation.review ? 'manual_review' : 'approved'"
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
+      "const moderationStatus = moderation.review ? 'manual_review' : 'approved'",
+      'const fieldLabels = {',
+      'const focusField = (el) => {'
     ],
     includesRegex: [/app\.js\?v=/]
   },
@@ -77,6 +80,18 @@ const checks = [
       'data-open-project',
       'const onboardingReturnTarget = (() => {',
       'location.href = onboardingReturnTarget || \'index.html\''
+    ],
+    includesRegex: [/app\.js\?v=/]
+  },
+  {
+    path: '/admin.html',
+    status: 200,
+    frontendContract: true,
+    includes: [
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
+      'class="js-review-note"',
+      'id="opsActionStatus"',
+      'const setCardBusy = (card, busy, message) => {'
     ],
     includesRegex: [/app\.js\?v=/]
   },

@@ -68,6 +68,23 @@ const frontendChecks = [
       'function redirectAfterAuth(user, options = {})',
       'onboardingReturnTo'
     ]
+  },
+  {
+    file: 'founder.html',
+    snippets: [
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
+      'const fieldLabels = {',
+      'const focusField = (el) => {'
+    ]
+  },
+  {
+    file: 'admin.html',
+    snippets: [
+      'meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1"',
+      'class="js-review-note"',
+      'id="opsActionStatus"',
+      'const setCardBusy = (card, busy, message) => {'
+    ]
   }
 ];
 const JSON_MODE = process.argv.includes('--json');
