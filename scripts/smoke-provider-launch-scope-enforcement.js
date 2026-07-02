@@ -81,7 +81,9 @@ function expectGoogleAllowed(result, label) {
         PORT: String(port),
         WETHUS_DATA_DIR: smokeDataDir,
         RATE_LIMIT_DISABLED: 'true',
-        INTEGRATIONS_ENFORCE_LAUNCH_SCOPE: 'true'
+        INTEGRATIONS_ENFORCE_LAUNCH_SCOPE: 'true',
+        WETHUS_LAUNCH_PROVIDERS: 'google_docs,google_sheets,notion',
+        WETHUS_DEFERRED_PROVIDERS: 'slack,figma'
       },
       stdio: ['ignore', 'pipe', 'pipe']
     });
@@ -96,17 +98,17 @@ function expectGoogleAllowed(result, label) {
       fail('health payload should expose integrationsEnforceLaunchScope=true when enforcement is enabled');
     }
 
-    const notionStart = await getJson(`${baseUrl}/oauth/notion/start?project_id=demo&user_id=user-1`);
-    expectDeferredBlocked(notionStart, 'notion oauth start');
-
     const slackStart = await getJson(`${baseUrl}/oauth/slack/start?project_id=demo&user_id=user-1`);
     expectDeferredBlocked(slackStart, 'slack oauth start');
 
     const figmaStart = await getJson(`${baseUrl}/oauth/figma/start?project_id=demo&user_id=user-1`);
     expectDeferredBlocked(figmaStart, 'figma oauth start');
 
-    const notionResources = await getJson(`${baseUrl}/integrations/resources?provider=notion&projectId=demo`);
-    expectDeferredBlocked(notionResources, 'notion resources');
+    const slackResources = await getJson(`${baseUrl}/integrations/resources?provider=slack&projectId=demo`);
+    expectDeferredBlocked(slackResources, 'slack resources');
+
+    const notionStart = await getJson(`${baseUrl}/oauth/notion/start?project_id=demo&user_id=user-1`);
+    expectGoogleAllowed(notionStart, 'notion oauth start');
 
     const googleStart = await getJson(`${baseUrl}/oauth/google/start?project_id=demo&user_id=user-1`);
     expectGoogleAllowed(googleStart, 'google oauth start');

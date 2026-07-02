@@ -7,8 +7,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260419-25" />
   <style>
-    .opp-shell { margin-top: 24px; }
-    .opp-top { display: grid; gap: 8px; margin-bottom: 14px; }
+    .opp-shell { margin-top: 22px; }
+    .opp-top { display: grid; gap: 8px; margin-bottom: 10px; }
     .opp-search-wrap {
       display: flex;
       align-items: center;
@@ -19,7 +19,12 @@
       background: linear-gradient(180deg, #141414, #101010);
     }
     .opp-search { width: 100%; border: 0; background: transparent; color: #f4f4f4; outline: none; }
-    .opp-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+    .opp-row { display: flex; gap: 7px; flex-wrap: wrap; margin: 5px 0; }
+    .opp-row--tight { margin: 0; }
+    .opp-toolbar {
+      justify-content: space-between;
+      align-items: center;
+    }
     .opp-chip {
       padding: 7px 11px;
       border-radius: 999px;
@@ -36,15 +41,20 @@
       font-weight: 700;
     }
     .opp-sort { background: #111; border: 1px solid #333; color: #f5f5f5; border-radius: 9px; padding: 8px 10px; }
+    .opp-filter-stack { display: grid; gap: 8px; }
+    .opp-advanced { display: grid; gap: 8px; }
+    .opp-advanced.open { display: grid; }
+    .opp-mobile-only { display: none; }
     .opp-feed-status {
       display: grid;
-      gap: 4px;
-      padding: 12px 14px;
+      gap: 3px;
+      padding: 11px 13px;
       border: 1px solid #2d2d2d;
       border-radius: 12px;
       background: linear-gradient(180deg, #141414, #101010);
     }
-    .opp-feed-status strong { font-size: .86rem; }
+    .opp-feed-status strong { font-size: .84rem; line-height: 1.38; }
+    .opp-feed-status p { line-height: 1.45; }
     .opp-feed-status.is-stale {
       border-color: rgba(255, 154, 47, .45);
       box-shadow: inset 0 0 0 1px rgba(255, 154, 47, .12);
@@ -55,21 +65,33 @@
     .opp-table { display: grid; gap: 8px; }
     .opp-item {
       border: 1px solid #262626;
-      border-radius: 10px;
+      border-radius: 12px;
       background: #101010;
-      padding: 12px;
+      padding: 10px 11px;
       display: grid;
-      grid-template-columns: 1fr 280px;
-      gap: 12px;
+      grid-template-columns: 1fr 196px;
+      gap: 10px;
       align-items: start;
       cursor: pointer;
     }
     .opp-main { min-width: 0; }
-    .opp-title { font-weight: 700; font-size: .98rem; }
-    .opp-sub { color: #bdbdbd; font-size: .8rem; margin-top: 4px; }
-    .opp-meta { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
-    .opp-right { display: grid; grid-template-columns: 1fr auto; gap: 8px 10px; align-items: start; }
-    .opp-period { font-size: .78rem; line-height: 1.4; }
+    .opp-title { font-weight: 700; font-size: .94rem; line-height: 1.38; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .opp-sub { color: #bdbdbd; font-size: .79rem; margin-top: 3px; line-height: 1.5; }
+    .opp-main .opp-sub:not(.opp-sub--summary) {
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .opp-meta { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+    .opp-meta .badge-soft {
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .opp-right { display: grid; grid-template-columns: 1fr auto; gap: 7px 10px; align-items: start; }
+    .opp-period { font-size: .77rem; line-height: 1.35; }
     .opp-period .k { font-weight: 700; color: #ff9a2f; display: inline-block; min-width: 32px; }
     .opp-dday { font-size: 40px; line-height: 1; font-weight: 400; color: #ff9a2f; letter-spacing: -.02em; text-align: right; }
     .opp-status {
@@ -83,18 +105,18 @@
     }
     .opp-card-actions {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
       grid-column: 1 / -1;
-      margin-top: 4px;
+      margin-top: 2px;
     }
     .badge-soft {
-      padding: 3px 7px;
+      padding: 3px 6px;
       border-radius: 999px;
       background: #1a1a1a;
       border: 1px solid #2c2c2c;
       color: #d8d8d8;
-      font-size: .69rem;
+      font-size: .66rem;
     }
     .opp-poster {
       width: 100%;
@@ -124,14 +146,74 @@
     .opp-detail-grid .k { color: #9c9c9c; }
     .opp-modal-actions { margin-top: 12px; }
     .opp-related-card { cursor: pointer; }
+    .opp-modal-details { display:block; margin-top:10px; }
+    .opp-modal-details summary {
+      display:none;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      width:100%;
+      margin:0 0 10px;
+      padding:10px 12px;
+      border:1px solid #333;
+      border-radius:12px;
+      background:#151515;
+      color:#ddd;
+      font-weight:700;
+      cursor:pointer;
+      list-style:none;
+    }
     @media (max-width: 860px) {
+      .opp-mobile-only { display: inline-flex; }
+      .opp-advanced { display: none; }
+      .opp-row--tight {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+      }
+      .opp-row--tight::-webkit-scrollbar { display:none; }
+      .opp-chip { padding: 6px 10px; white-space: nowrap; font-size: .78rem; }
+      .opp-toolbar {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-items: stretch;
+        gap: 7px;
+      }
+      .opp-toolbar .meta { order: -1; }
+      .opp-sort { width: 100%; min-height: 40px; }
+      .opp-feed-status { padding: 10px 12px; }
+      .opp-feed-status p {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
       .opp-item { grid-template-columns: 1fr; }
+      .opp-title { font-size: .91rem; }
       .opp-detail-grid { grid-template-columns: 1fr; }
       .opp-right { grid-template-columns: 1fr; }
-      .opp-dday { text-align: left; font-size: 44px; }
+      .opp-dday { text-align: left; font-size: 34px; }
       .opp-status { justify-self: start; }
-      .opp-card-actions { flex-direction: column; }
-      .opp-card-actions .btn { width: 100%; }
+      .opp-meta {
+        max-height: 3.3em;
+        overflow: hidden;
+      }
+      .opp-card-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .opp-card-actions .btn { width: 100%; min-height: 40px; padding: 8px 10px; font-size: .84rem; }
+      .opp-sub--summary {
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .opp-modal-details summary { display:flex; }
+      .opp-modal-details:not([open]) .opp-modal-details-body { display:none; }
+      .opp-modal-details[open] .opp-modal-details-body { display:block; }
     }
   </style>
 </head>
@@ -154,20 +236,27 @@
   <main class="container page-main page-main--standard opp-shell">
     <section class="opp-top">
       <h1 class="page-title" style="margin:0;">기회 찾기</h1>
-      <p class="page-sub" style="margin:0;">학생 창업에 맞는 대회와 공모전을 찾고, 바로 프로젝트로 시작하세요.</p>
+      <p class="page-sub" style="margin:0;">학생 창업에 맞는 공고를 고르고 바로 프로젝트로 연결합니다.</p>
 
       <label class="opp-search-wrap">
         <span style="color:#ff9a2f">⌕</span>
         <input id="searchInput" class="opp-search" placeholder="제목 · 주최 · 키워드 · 카테고리 검색" />
       </label>
 
-      <div class="opp-row" id="typeFilters"></div>
-      <div class="opp-row" id="eligibilityFilters"></div>
-      <div class="opp-row" id="categoryFilters"></div>
-      <div class="opp-row" id="regionFilters"></div>
+      <div class="opp-filter-stack">
+        <div class="opp-row opp-row--tight" id="typeFilters"></div>
+        <div style="display:flex;justify-content:flex-end;">
+          <button id="oppAdvancedToggle" class="btn btn--secondary opp-mobile-only" type="button">상세 필터</button>
+        </div>
+        <div id="oppAdvancedFilters" class="opp-advanced">
+          <div class="opp-row opp-row--tight" id="eligibilityFilters"></div>
+          <div class="opp-row opp-row--tight" id="categoryFilters"></div>
+          <div class="opp-row opp-row--tight" id="regionFilters"></div>
+        </div>
+      </div>
 
-      <div class="opp-row" style="justify-content:space-between;align-items:center;">
-        <span class="meta" id="oppCountText">접수중 공고만 표시</span>
+      <div class="opp-row opp-toolbar">
+        <span class="meta" id="oppCountText">진행 공고만 보고 있습니다.</span>
         <label class="opp-chip" style="display:flex;align-items:center;gap:6px;">
           <input id="includeClosedToggle" type="checkbox" /> 마감 포함
         </label>
@@ -179,8 +268,8 @@
         </select>
       </div>
       <article id="oppFeedStatus" class="opp-feed-status" aria-live="polite">
-        <strong id="oppFeedStatusTitle">공고 데이터 상태를 확인하는 중입니다.</strong>
-        <p id="oppFeedStatusBody" class="meta" style="margin:0;">최신 수집 시각과 만료 상태를 불러오고 있습니다.</p>
+        <strong id="oppFeedStatusTitle">공고 상태를 확인하고 있습니다.</strong>
+        <p id="oppFeedStatusBody" class="meta" style="margin:0;">최신 기준 시각을 불러오는 중입니다.</p>
       </article>
     </section>
 
@@ -195,26 +284,41 @@
       <p id="mSummary" class="page-sub" style="margin:0;"></p>
       <img id="mPoster" class="opp-poster" alt="안내 포스터" />
 
-      <div class="opp-detail-grid">
-        <div class="k">주최</div><div id="mOrg"></div>
-        <div class="k">상태/마감</div><div id="mDeadline"></div>
-        <div class="k">지원대상</div><div id="mEligibility"></div>
-        <div class="k">개인/팀</div><div id="mTeamReq"></div>
-        <div class="k">혜택</div><div id="mBenefits"></div>
-        <div class="k">일정</div><div id="mSchedule"></div>
-        <div class="k">공식 링크</div><div id="mLink"></div>
-      </div>
+      <details id="oppDetailDetails" class="opp-modal-details">
+        <summary id="oppDetailSummary">상세 정보 더보기</summary>
+        <div class="opp-modal-details-body opp-detail-grid">
+          <div class="k">주최</div><div id="mOrg"></div>
+          <div class="k">상태/마감</div><div id="mDeadline"></div>
+          <div class="k">지원대상</div><div id="mEligibility"></div>
+          <div class="k">개인/팀</div><div id="mTeamReq"></div>
+          <div class="k">혜택</div><div id="mBenefits"></div>
+          <div class="k">일정</div><div id="mSchedule"></div>
+          <div class="k">공식 링크</div><div id="mLink"></div>
+        </div>
+      </details>
 
       <div class="opp-row opp-modal-actions">
-        <button id="mStartProject" class="btn btn--primary" type="button">이 기회로 프로젝트 시작하기</button>
-        <button id="mRelated" class="btn btn--secondary" type="button">관련 팀 보기</button>
+        <button id="mStartProject" class="btn btn--primary" type="button">프로젝트 시작</button>
+        <button id="mRelated" class="btn btn--secondary" type="button">관련 팀</button>
         <button id="mInterest" class="btn btn--secondary" type="button">관심 저장</button>
-        <a id="mOfficial" class="btn btn--secondary" href="#" target="_blank" rel="noopener noreferrer">공식 페이지 이동</a>
+        <a id="mOfficial" class="btn btn--secondary" href="#" target="_blank" rel="noopener noreferrer">공식 페이지</a>
       </div>
 
-      <div id="mRelatedList" class="list-grid" style="margin-top:10px;"></div>
+      <details id="oppRelatedDetails" class="opp-modal-details">
+        <summary id="oppRelatedSummary">관련 팀 더보기</summary>
+        <div id="mRelatedList" class="opp-modal-details-body list-grid" style="margin-top:10px;"></div>
+      </details>
     </article>
   </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="wordmark">WETHUS</span>
+        <p class="footer-copy">학생 창업 실행 플랫폼 WETHUS<br/><a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a></p>
+      </div>
+    </div>
+  </footer>
 
   <script src="app.js?v=20260624-integrations-2"></script>
   <script>
@@ -236,6 +340,8 @@
     }[ch]));
 
     const authLink = document.querySelector('.js-auth-link');
+    const oppAdvancedToggle = document.getElementById('oppAdvancedToggle');
+    const oppAdvancedFilters = document.getElementById('oppAdvancedFilters');
     const authState = WETHUS.getState();
     if (authLink && (authState.currentUserId || authState.devMode)) {
       authLink.textContent = '로그아웃';
@@ -355,19 +461,19 @@
       card.classList.toggle('is-fresh', !stale && !!updatedAt);
 
       if (!updatedAt) {
-        title.textContent = '공고 데이터 기준 시각을 확인할 수 없습니다.';
-        body.textContent = '게시 기준 시각이 없는 피드입니다. 운영자가 데이터 갱신 시각을 확인해야 합니다.';
+        title.textContent = '공고 기준 시각을 확인할 수 없습니다.';
+        body.textContent = '피드 기준 시각이 없어 운영 확인이 필요합니다.';
         return;
       }
 
       if (stale) {
         title.textContent = `공고 데이터가 오래되었습니다. 마지막 갱신: ${updatedLabel}`;
-        body.textContent = `현재 피드는 ${ageDays}일 전에 갱신되었고, 접수중 공고 ${activeCount}개만 노출 중입니다. 지원 전 공식 페이지에서 일정 재확인이 필요합니다.`;
+        body.textContent = `${ageDays}일 전 기준입니다. 접수중 공고 ${activeCount}개를 보여주며, 지원 전 공식 일정 재확인이 필요합니다.`;
         return;
       }
 
       title.textContent = `공고 데이터 최신 기준: ${updatedLabel}`;
-      body.textContent = `현재 접수중 공고 ${activeCount}개를 보여주고 있습니다. 데이터 기준 시각은 ${ageDays}일 전입니다.`;
+      body.textContent = `접수중 공고 ${activeCount}개를 보여주고 있습니다. 기준 시각은 ${ageDays}일 전입니다.`;
     }
 
     function renderFilterRow(id, values, activeSet, singleSelect) {
@@ -534,13 +640,16 @@
       const totalOpen = opportunities.filter((item) => !isClosed(item)).length;
       const totalClosed = opportunities.length - totalOpen;
       const countText = document.getElementById('oppCountText');
+      const compactCountLabel = state.includeClosed
+        ? `전체 ${opportunities.length}개 · 진행 ${totalOpen} · 마감 ${totalClosed}`
+        : `진행 ${totalOpen}개 · 마감 ${totalClosed}개 제외`;
 
       if (countText) {
         countText.textContent = state.includeClosed
           ? `전체 ${opportunities.length}개 · 접수중 ${totalOpen}개 · 마감 ${totalClosed}개`
           : `접수중 ${totalOpen}개 표시 · 마감 ${totalClosed}개 숨김`;
       }
-
+      if (countText) countText.textContent = compactCountLabel;
       if (!items.length) {
         list.innerHTML = `
           <article class="opp-item">
@@ -563,7 +672,7 @@
             <div class="opp-main">
               <div class="opp-title">${esc(item.title)}</div>
               <div class="opp-sub">주최 ${esc(item.organizer)} · ${esc(item.type)}</div>
-              <div class="opp-sub">${esc(item.summary)}</div>
+              <div class="opp-sub opp-sub--summary">${esc(item.summary)}</div>
               <div class="opp-meta">
                 <span class="badge-soft">대상 ${item.eligibility.map(esc).join(' · ')}</span>
                 <span class="badge-soft">지역 ${(item.regions || ['전국']).map(esc).join(' · ')}</span>
@@ -721,6 +830,10 @@
       state.includeClosed = event.target.checked;
       render();
     };
+    oppAdvancedToggle?.addEventListener('click', () => {
+      const open = oppAdvancedFilters.classList.toggle('open');
+      oppAdvancedToggle.textContent = open ? '필터 접기' : '상세 필터';
+    });
     document.getElementById('modalClose').onclick = () => document.getElementById('oppModal').classList.remove('open');
     document.querySelector('[data-close="1"]').onclick = () => document.getElementById('oppModal').classList.remove('open');
     document.getElementById('mRelated').onclick = () => document.getElementById('mRelatedList').scrollIntoView({ behavior: 'smooth' });
@@ -733,6 +846,58 @@
     document.getElementById('mStartProject').onclick = () => {
       if (!state.current) return;
       startProjectFromOpportunity(state.current.id);
+    };
+
+    function polishOpportunityUi() {
+      const countText = document.getElementById('oppCountText');
+      const statusTitle = document.getElementById('oppFeedStatusTitle');
+      const statusBody = document.getElementById('oppFeedStatusBody');
+      const activeCount = opportunities.filter((item) => !isClosed(item)).length;
+      const closedCount = Math.max(0, opportunities.length - activeCount);
+      if (countText) {
+        countText.textContent = state.includeClosed
+          ? `전체 ${opportunities.length}개 · 진행 ${activeCount} · 마감 ${closedCount}`
+          : `진행 ${activeCount}개 · 마감 ${closedCount}개 제외`;
+      }
+      if (statusTitle && statusBody) {
+        const updatedAt = String(opportunityFeedMeta.updatedAt || '').trim();
+        const stale = !!opportunityFeedMeta.stale;
+        if (!updatedAt) {
+          statusTitle.textContent = '공고 기준 시각을 아직 확인하지 못했습니다.';
+          statusBody.textContent = '마지막 갱신 시각이 없어 최신 일정은 공식 페이지에서 함께 확인해 주세요.';
+        } else if (stale) {
+          statusTitle.textContent = '공고 데이터가 조금 오래되었습니다.';
+          statusBody.textContent = `진행 중 공고 ${activeCount}개를 보여줍니다. 마감 시각은 공식 페이지에서 다시 확인해 주세요.`;
+        } else {
+          statusTitle.textContent = '최신 공고 데이터를 기준으로 보여주고 있습니다.';
+          statusBody.textContent = `진행 중 공고 ${activeCount}개를 보여줍니다.`;
+        }
+      }
+      document.querySelectorAll('.opp-sub--summary').forEach((node) => {
+        const text = node.textContent.replace(/\s+/g, ' ').trim();
+        if (!text) return;
+        if (text.includes('K-Startup 공개 모집 목록에서')) {
+          node.textContent = '운영 중인 창업 모집입니다. 마감과 지원 조건을 먼저 확인해보세요.';
+          return;
+        }
+        if (text.includes('공식 공고 기준으로')) {
+          node.textContent = '공식 공고 기준으로 운영 중인 모집입니다. 핵심 조건부터 빠르게 확인해보세요.';
+          return;
+        }
+        if (text.length > 64) node.textContent = `${text.slice(0, 64).trim()}...`;
+      });
+      document.querySelectorAll('.opp-item .opp-sub:not(.opp-sub--summary)').forEach((node) => {
+        const text = node.textContent.replace(/\s+/g, ' ').trim();
+        if (text.startsWith('주최 ')) return;
+        node.textContent = text.replace(/^주최\s*/u, '주최 ').replace(/\s*[·|]\s*/u, ' · ');
+      });
+    }
+
+    const originalRender = render;
+    render = function renderWithPolish() {
+      const result = originalRender.apply(this, arguments);
+      polishOpportunityUi();
+      return result;
     };
 
     init();

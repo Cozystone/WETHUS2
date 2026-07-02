@@ -14,7 +14,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1" />
-  <title>WETHUS | Founder 신청</title>
+  <title>WETHUS | 프로젝트 시작</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260419-25" />
   <style>
@@ -145,8 +145,181 @@
       padding: 10px;
       background: rgba(255,255,255,.03);
     }
+    .founder-intro {
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      display: grid;
+      gap: 10px;
+    }
+    .founder-intro-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .founder-intro-card {
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      background: rgba(0,0,0,.18);
+      padding: 11px 12px;
+    }
+    .founder-intro-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: .88rem;
+    }
+    .founder-intro-card p {
+      margin: 0;
+      color: #cfcfcf;
+      font-size: .82rem;
+      line-height: 1.48;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .founder-section {
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.018));
+      padding: 16px;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      display: grid;
+      gap: 14px;
+    }
+    .founder-section-anchor { scroll-margin-top: 110px; }
+    .founder-section + .founder-section { margin-top: 2px; }
+    .founder-section-head { display: grid; gap: 4px; }
+    .founder-section-head h3 { margin: 0; font-size: 1rem; }
+    .founder-section-head p {
+      margin: 0;
+      color: #b9b9b9;
+      font-size: .83rem;
+      line-height: 1.48;
+    }
+    .founder-section-grid { display: grid; gap: 14px; }
+    .founder-grid-2,
+    .founder-grid-3 {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+    .founder-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .founder-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .founder-field-note {
+      margin: -2px 0 0;
+      color: #9f9f9f;
+      font-size: .8rem;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+    .founder-action-bar {
+      position: sticky;
+      bottom: 12px;
+      z-index: 12;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 16px;
+      background: rgba(14,14,14,.92);
+      box-shadow: 0 16px 34px rgba(0,0,0,.26);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .founder-action-copy { min-width: 0; }
+    .founder-action-copy strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: .9rem;
+    }
+    .founder-action-copy p {
+      margin: 0;
+      color: #b7b7b7;
+      font-size: .82rem;
+      line-height: 1.5;
+    }
+    .founder-action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      min-width: 0;
+    }
+    .founder-progress-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 14px;
+    }
+    .founder-progress-btn {
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 999px;
+      background: rgba(255,255,255,.03);
+      color: #e8e8e8;
+      padding: 8px 12px;
+      font-size: .82rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .founder-progress-btn:hover {
+      border-color: rgba(255,106,0,.5);
+      background: rgba(255,106,0,.1);
+      color: #fff3e7;
+    }
     @media (max-width: 960px) {
       .insight-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .founder-intro-grid,
+      .founder-grid-2,
+      .founder-grid-3 { grid-template-columns: 1fr; }
+      .founder-intro { padding: 14px; }
+      .founder-intro-card { padding: 12px; }
+      .founder-progress-nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .founder-progress-btn {
+        width: 100%;
+        text-align: center;
+        min-height: 40px;
+      }
+      .founder-action-bar {
+        bottom: 6px;
+        gap: 8px;
+        padding: 9px 10px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .founder-action-copy strong { font-size: .84rem; }
+      .founder-action-copy p { display: none; }
+      .founder-action-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        justify-content: stretch;
+        gap: 6px;
+      }
+      .founder-action-buttons .btn { width: 100%; min-height: 40px; padding: 9px 8px; font-size: .84rem; }
+    }
+    @media (max-width: 420px) {
+      .founder-progress-nav {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      .founder-action-buttons {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
     }
     @keyframes founderSpin { to { transform: rotate(360deg); } }
   </style>
@@ -170,15 +343,47 @@
   <main class="container">
     <section class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
       <div>
-        <h1 class="page-title" id="founderPageTitle">Founder 신청</h1>
-        <p class="page-sub" id="founderPageSub">Founder 신청이 승인되면 프로젝트가 공개되고, 신청자는 Founder로 인증됩니다.</p>
+        <h1 class="page-title" id="founderPageTitle">프로젝트 시작</h1>
+        <p class="page-sub" id="founderPageSub">핵심만 적으면 검토 후 탐색과 홈에 반영됩니다.</p>
       </div>
       <button id="draftHistoryBtn" class="btn btn--secondary founder-ghost-btn" type="button">임시저장함</button>
     </section>
 
     <section class="founder-form">
+      <article class="founder-intro">
+        <div>
+          <strong style="display:block;font-size:.92rem;">Founder 제출 전 체크</strong>
+          <p class="meta" style="margin:4px 0 0;">길게 쓰기보다 지금 검증할 것을 분명하게 적어주세요.</p>
+        </div>
+        <div class="founder-intro-grid">
+          <div class="founder-intro-card">
+            <strong>핵심 문제</strong>
+            <p>누구의 어떤 문제인지 한 문장으로 적어주세요.</p>
+          </div>
+          <div class="founder-intro-card">
+            <strong>첫 실행</strong>
+            <p>첫 2주 안에 시험할 범위로 잘라 적어주세요.</p>
+          </div>
+          <div class="founder-intro-card">
+            <strong>팀 신호</strong>
+            <p>역할과 산출물이 분명할수록 신뢰가 높아집니다.</p>
+          </div>
+        </div>
+      </article>
+      <div class="founder-progress-nav" aria-label="작성 구역 바로가기">
+        <button class="founder-progress-btn" type="button" data-founder-jump="founder-section-core">1. 문제</button>
+        <button class="founder-progress-btn" type="button" data-founder-jump="founder-section-plan">2. 실행</button>
+        <button class="founder-progress-btn" type="button" data-founder-jump="founder-section-team">3. 팀</button>
+        <button class="founder-progress-btn" type="button" data-founder-jump="founder-section-schedule">4. 일정</button>
+      </div>
       <form class="application-form" id="founderForm">
         <input type="hidden" name="opportunityId" id="opportunityId" />
+        <section id="founder-section-core" class="founder-section founder-section-anchor">
+          <div class="founder-section-head">
+            <h3>1. 기본 정보와 문제 정의</h3>
+            <p>제목, 카테고리, 대표 이미지와 핵심 문제를 먼저 정리합니다.</p>
+          </div>
+          <div class="founder-section-grid">
         <label>메인 사진
           <input id="coverFile" name="coverFile" type="file" accept="image/*" hidden />
           <div id="dropzone" class="dropzone" tabindex="0">
@@ -231,12 +436,21 @@
           <div class="form-row" style="justify-content:space-between;align-items:center;">
             <div>
               <strong style="display:block;">아이디어 인사이트</strong>
-              <span id="founderInsightStatus" class="meta">제목과 설명을 더 쓰면 유사 프로젝트와 실행 포인트를 바로 볼 수 있습니다.</span>
+              <span id="founderInsightStatus" class="meta">제목과 설명을 더 쓰면 유사 프로젝트와 실행 포인트를 볼 수 있습니다.</span>
             </div>
             <button id="founderInsightRefresh" class="btn btn--secondary founder-ghost-btn" type="button">다시 분석</button>
           </div>
-          <div id="founderInsightBody" class="meta">아직 분석할 내용이 충분하지 않습니다.</div>
+          <div id="founderInsightBody" class="meta">아직 분석할 내용이 부족합니다.</div>
         </section>
+          </div>
+        </section>
+
+        <section id="founder-section-plan" class="founder-section founder-section-anchor">
+          <div class="founder-section-head">
+            <h3>2. 실행 이유와 첫 계획</h3>
+            <p>왜 시작하는지, 무엇을 만들지, 첫 2주에 무엇을 실험할지 적어주세요.</p>
+          </div>
+          <div class="founder-section-grid">
 
         <label>동기 (공백 제외 100자 이상)
           <div class="textarea-wrap">
@@ -258,6 +472,15 @@
             <textarea required name="plan" data-min="100" placeholder="1~2주차에 실제로 무엇을, 어떤 순서로, 누가 수행할지 작성해주세요. 일정/산출물/검증 방법까지 포함하면 좋아요."></textarea>
           </div>
         </label>
+          </div>
+        </section>
+
+        <section id="founder-section-team" class="founder-section founder-section-anchor">
+          <div class="founder-section-head">
+            <h3>3. 팀 구성과 모집 정보</h3>
+            <p>현재 팀 상태와 필요한 역할을 분명하게 적으면, 맞는 지원자가 더 쉽게 들어옵니다.</p>
+          </div>
+          <div class="founder-section-grid">
 
         <label>팀 구성원/역할
           <input name="roles" placeholder="예: 대표 1 · 기획 1 · 디자인 1 · 개발 2" required />
@@ -281,6 +504,15 @@
             <input name="currentMembers" type="number" min="1" max="100" placeholder="예: 2" />
           </label>
         </div>
+          </div>
+        </section>
+
+        <section id="founder-section-schedule" class="founder-section founder-section-anchor">
+          <div class="founder-section-head">
+            <h3>4. 일정과 진행 단계</h3>
+            <p>프로젝트가 어느 단계에 있고, 언제부터 언제까지 어떤 호흡으로 갈지 보여주세요.</p>
+          </div>
+          <div class="founder-section-grid">
 
         <label>단계
           <select name="status" style="background:#0d0d0d;color:#f5f5f5;border:1px solid #2a2a2a;padding:12px;">
@@ -312,12 +544,20 @@
         <label>예상 기간
           <input name="duration" placeholder="예: 8주" required />
         </label>
+          </div>
+        </section>
 
-        <div class="form-row" style="justify-content:flex-end;">
-          <button id="resetFormBtn" class="btn btn--secondary founder-ghost-btn" type="button">초기화</button>
-          <button id="draftSaveBtn" class="btn btn--secondary" type="button">임시저장</button>
-          <button id="previewBtn" class="btn preview-trigger" type="button">미리보기</button>
-          <button id="submitBtn" class="btn btn--primary" type="submit">신청하기</button>
+        <div class="founder-action-bar">
+          <div class="founder-action-copy">
+            <strong>제출 전 체크</strong>
+            <p>문제, 첫 실행 계획, 팀 역할이 분명하면 검수와 탐색 반영 흐름이 훨씬 안정적입니다.</p>
+          </div>
+          <div class="founder-action-buttons">
+            <button id="resetFormBtn" class="btn btn--secondary founder-ghost-btn" type="button">초기화</button>
+            <button id="draftSaveBtn" class="btn btn--secondary" type="button">임시저장</button>
+            <button id="previewBtn" class="btn preview-trigger" type="button">미리보기</button>
+            <button id="submitBtn" class="btn btn--primary" type="submit">신청하기</button>
+          </div>
         </div>
       </form>
       <p id="msg" class="form-message"></p>
@@ -328,7 +568,7 @@
     <div class="container">
       <div class="footer-inner">
         <span class="wordmark">WETHUS</span>
-        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
+        <p class="footer-copy">학생 창업 실행 플랫폼 WETHUS<br/><a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a></p>
       </div>
     </div>
   </footer>
@@ -387,11 +627,21 @@
     const me = WETHUS.currentUser();
     const founderPageTitle = document.getElementById('founderPageTitle');
     const founderPageSub = document.getElementById('founderPageSub');
+    const founderActionTitle = document.querySelector('.founder-action-copy strong');
+    const founderActionDesc = document.querySelector('.founder-action-copy p');
     if (me?.founderVerified) {
       founderPageTitle.textContent = '프로젝트 시작하기';
-      founderPageSub.textContent = 'Founder 인증이 완료되어 바로 프로젝트를 등록할 수 있습니다.';
+      founderPageSub.textContent = 'Founder 인증이 완료되어 바로 등록할 수 있습니다.';
       document.title = 'WETHUS | 프로젝트 시작하기';
     }
+    if (founderActionTitle) founderActionTitle.textContent = '제출 전 체크';
+    if (founderActionDesc) founderActionDesc.textContent = '핵심 문제와 첫 실행, 필요한 역할만 선명하면 충분합니다.';
+    document.querySelectorAll('[data-founder-jump]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const target = document.getElementById(button.getAttribute('data-founder-jump'));
+        target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
 
     const form = document.getElementById('founderForm');
     const msg = document.getElementById('msg');
@@ -403,6 +653,7 @@
     const previewBtn = document.getElementById('previewBtn');
     const draftSaveBtn = document.getElementById('draftSaveBtn');
     const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) submitBtn.textContent = '제출하기';
     const genImageBtn = document.getElementById('genImageBtn');
     const regenImageBtn = document.getElementById('regenImageBtn');
     const removeImageBtn = document.getElementById('removeImageBtn');
@@ -763,8 +1014,8 @@
       if (!founderInsightStatus || !founderInsightBody || !WETHUS.analyzeProjectIdea) return;
       const payload = founderIdeaPayload();
       if (payload.title.length < 4 || payload.fullDescription.length < 40) {
-        founderInsightStatus.textContent = '제목과 설명을 조금 더 쓰면 유사 프로젝트와 실행 포인트를 바로 볼 수 있습니다.';
-        founderInsightBody.textContent = '아직 분석할 내용이 충분하지 않습니다.';
+        founderInsightStatus.textContent = '제목과 설명을 조금 더 쓰면 유사 프로젝트와 실행 포인트를 볼 수 있습니다.';
+        founderInsightBody.textContent = '아직 분석할 내용이 부족합니다.';
         return;
       }
       const insight = WETHUS.analyzeProjectIdea(payload);
@@ -1571,7 +1822,7 @@
       } finally {
         founderSubmitting = false;
         submitBtn.disabled = false;
-        submitBtn.textContent = '신청하기';
+        submitBtn.textContent = '제출하기';
       }
     });
   </script>

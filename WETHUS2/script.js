@@ -117,6 +117,35 @@
     });
   }
 
+  function currentActorId() {
+    if (!window.WETHUS) return '';
+    var st = WETHUS.getState ? WETHUS.getState() : {};
+    var me = WETHUS.currentUser ? WETHUS.currentUser() : null;
+    return String((me && me.id) || st.currentUserId || (st.devMode ? 'dev-temp' : '') || '');
+  }
+
+  function currentUserProfile() {
+    if (!window.WETHUS) return null;
+    try { return WETHUS.currentUser ? WETHUS.currentUser() : null; } catch (_) { return null; }
+  }
+
+  function isMineOrJoined(data) {
+    var actor = currentActorId();
+    var me = currentUserProfile();
+    if (!data) return { mine: false, joined: false };
+    var myEmail = String(me?.email || '').toLowerCase();
+    var myNames = [me?.name, me?.nickname].map(function (value) { return String(value || '').trim(); }).filter(Boolean);
+    var mine = !!actor && String(data.founderId || '') === actor;
+    if (!mine && myEmail) mine = String(data.founderEmail || '').toLowerCase() === myEmail;
+    if (!mine && myNames.length) mine = myNames.includes(String(data.founderName || '').trim());
+    var joined = Array.isArray(data.teamMembers) && data.teamMembers.some(function (member) {
+      var memberId = String(member?.id || member?.userId || '').trim();
+      var memberName = String(member?.name || '').trim();
+      return ((actor && memberId === actor) || (memberName && myNames.includes(memberName))) && !member?.isLeader;
+    });
+    return { mine: mine, joined: joined };
+  }
+
   function openModal(data) {
     titleEl.textContent = data.title || '';
     categoryEl.textContent = data.category || '';
@@ -139,9 +168,11 @@
     renderTeamMini(data.teamMembers || []);
     renderComments(data.comments || []);
     if (applyBtn) {
+      var relation = isMineOrJoined(data);
       var applied = window.WETHUS && WETHUS.hasApplied(data.id);
-      applyBtn.classList.toggle('applied', !!applied);
-      applyBtn.textContent = applied ? '지원완료' : '지원하기';
+      applyBtn.classList.toggle('applied', !!applied || relation.mine || relation.joined);
+      applyBtn.classList.toggle('mine', !!relation.mine);
+      applyBtn.textContent = relation.mine ? '프로젝트 허브' : (relation.joined ? '합류 완료' : (applied ? '지원완료' : '지원하기'));
     }
     if (bookmarkBtn && window.WETHUS) {
       var marked = WETHUS.isBookmarked(data.id);
@@ -227,6 +258,17 @@
       if (!(st.currentUserId || st.devMode)) {
         WETHUS.setAuthReturnState?.({ modalProjectId: currentProjectId });
         location.href = 'login.html?next=' + encodeURIComponent(location.pathname + location.search);
+        return;
+      }
+      var currentProject = null;
+      try { currentProject = WETHUS.getProjectById?.(currentProjectId) || WETHUS.listProjects?.().find(function (p) { return p.id === currentProjectId; }); } catch (_) {}
+      var relation = isMineOrJoined(currentProject);
+      if (relation.mine) {
+        location.href = 'project-hub.html?projectId=' + encodeURIComponent(currentProjectId);
+        return;
+      }
+      if (relation.joined) {
+        await WETHUS.uiAlert('이미 합류한 프로젝트입니다.', { title: '지원 불가' });
         return;
       }
       if (WETHUS.hasApplied(currentProjectId)) {

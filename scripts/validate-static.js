@@ -79,8 +79,13 @@ function validateRenderBlueprint() {
 
   const secretKeys = [
     'JWT_SECRET',
+    'TOKEN_ENCRYPTION_KEY',
     'ADMIN_BOOTSTRAP_PASSWORD',
     'GOOGLE_CLIENT_ID',
+    'NAVER_CLIENT_ID',
+    'NAVER_CLIENT_SECRET',
+    'KAKAO_CLIENT_ID',
+    'KAKAO_CLIENT_SECRET',
     'OPENAI_API_KEY'
   ];
   for (const key of secretKeys) {

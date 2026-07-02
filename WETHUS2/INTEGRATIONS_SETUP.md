@@ -1,127 +1,129 @@
-# WETHUS Project Integrations Setup (Phase 1)
+# WETHUS Project Integrations Setup
 
 This document explains how to enable project-level external workspace integrations.
 
-## Implemented in Phase 1
+Related docs:
 
-- ProjectIntegration model (JSON-backed)
-- ActivityEvent model (JSON-backed)
-- ProjectStatusSnapshot model (JSON-backed)
-- ExternalIdentityMap model (JSON-backed)
-- Integration settings UI in Project Hub (connect/disconnect/sync/last sync)
-- OAuth architecture endpoints (Google/Notion/Slack/Figma placeholders)
-- **First wired provider:** Notion (OAuth callback + sync endpoint)
+- `docs/ops/oauth-provider-setup.md`
+- `docs/product/project-hub-ui-reference-notes.md`
 
-## Required Environment Variables (backend/.env)
+## Launch Scope
+
+- Google Docs and Google Sheets are ready when Google OAuth credentials are configured.
+- Notion, Slack, and Figma are also in launch scope now, but each requires its own OAuth Client ID/Secret before users can connect.
+- External change logs are collected through project webhooks or relay setup after a resource is connected.
+
+## Required Environment Variables
 
 ```env
-INTEGRATION_APP_URL=https://www.wethus.co.kr
+INTEGRATION_APP_URL=https://wethus-api.onrender.com
 
-# OpenAI/Gemini (existing AI path)
+# AI
 OPENAI_API_KEY=...
 OPENAI_MODEL=gpt-4o-mini
 GEMINI_API_KEY=...
 
-# Google OAuth placeholders
+# Launch policy
+WETHUS_LAUNCH_PROVIDERS=google_docs,google_sheets,notion,slack,figma,github,discord,google_calendar,airtable
+WETHUS_DEFERRED_PROVIDERS=
+INTEGRATIONS_ENFORCE_LAUNCH_SCOPE=true
+
+# Google OAuth
 GOOGLE_OAUTH_CLIENT_ID=
 GOOGLE_OAUTH_CLIENT_SECRET=
-GOOGLE_OAUTH_REDIRECT_URI=https://www.wethus.co.kr/oauth/google/callback
+GOOGLE_OAUTH_REDIRECT_URI=https://wethus-api.onrender.com/oauth/google/callback
 
-# Notion OAuth (implemented provider)
+# Notion OAuth
 NOTION_CLIENT_ID=
 NOTION_CLIENT_SECRET=
-NOTION_REDIRECT_URI=https://www.wethus.co.kr/oauth/notion/callback
+NOTION_REDIRECT_URI=https://wethus-api.onrender.com/oauth/notion/callback
 
-# Slack OAuth placeholders
+# Slack OAuth
 SLACK_CLIENT_ID=
 SLACK_CLIENT_SECRET=
-SLACK_REDIRECT_URI=https://www.wethus.co.kr/oauth/slack/callback
+SLACK_REDIRECT_URI=https://wethus-api.onrender.com/oauth/slack/callback
 
-# Figma OAuth placeholders
+# Figma OAuth
 FIGMA_CLIENT_ID=
 FIGMA_CLIENT_SECRET=
-FIGMA_REDIRECT_URI=https://www.wethus.co.kr/oauth/figma/callback
+FIGMA_REDIRECT_URI=https://wethus-api.onrender.com/oauth/figma/callback
+
+# GitHub OAuth
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+GITHUB_REDIRECT_URI=https://wethus-api.onrender.com/oauth/github/callback
+
+# Discord OAuth
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=
+DISCORD_REDIRECT_URI=https://wethus-api.onrender.com/oauth/discord/callback
+
+# Google Calendar OAuth
+GOOGLE_CALENDAR_CLIENT_ID=
+GOOGLE_CALENDAR_CLIENT_SECRET=
+GOOGLE_CALENDAR_REDIRECT_URI=https://wethus-api.onrender.com/oauth/google_calendar/callback
+
+# Airtable OAuth
+AIRTABLE_CLIENT_ID=
+AIRTABLE_CLIENT_SECRET=
+AIRTABLE_REDIRECT_URI=https://wethus-api.onrender.com/oauth/airtable/callback
 ```
 
-## Notion OAuth Setup
+## OAuth Setup
 
-1. Create a Notion integration app in Notion developer settings.
-2. Set redirect URI to `NOTION_REDIRECT_URI`.
-3. Set `NOTION_CLIENT_ID` / `NOTION_CLIENT_SECRET` in backend env.
-4. Restart backend.
-5. In Project Hub > 외부 툴 연결 > Notion > 연결, OAuth flow starts.
+1. Create an app in the provider developer console.
+2. Set the matching redirect URI listed above.
+3. Put the Client ID and Client Secret into Render environment variables.
+4. Redeploy or restart the backend.
+5. Confirm `/integrations/providers` returns `status: "ready"` for the provider.
+6. In Project Hub > 연동, click the provider's 연결 button.
 
-### Callback Endpoint
+## Callback Endpoints
 
+- `GET /oauth/google/callback`
 - `GET /oauth/notion/callback`
-- Exchanges code for token (Phase 1 stores demo token in integration row as `_token_demo_only`)
+- `GET /oauth/slack/callback`
+- `GET /oauth/figma/callback`
+- `GET /oauth/github/callback`
+- `GET /oauth/discord/callback`
+- `GET /oauth/google_calendar/callback`
+- `GET /oauth/airtable/callback`
 
-> Production note: replace `_token_demo_only` with encrypted secret manager storage.
+Production note: replace `_token_demo_only` with encrypted secret manager storage before storing real long-lived tokens.
 
-## API Endpoints (Phase 1)
+## API Endpoints
 
 ### Integrations
+
 - `GET /integrations?projectId=...`
 - `POST /integrations`
 - `DELETE /integrations/:id`
-- `POST /integrations/:id/webhook-config` (webhook URL/secret 발급)
+- `POST /integrations/:id/webhook-config`
 
-### Webhook ingest
+### Webhook Ingest
+
 - `POST /webhooks/:provider/:integrationId`
 - Header: `x-webhook-secret: <issued-secret>`
-- Body (권장): `{ event_type, item_id, item_name, actor_name, occurred_at, ... }`
+- Body: `{ event_type, item_id, item_name, actor_name, occurred_at, ... }`
 
-### Activity & Snapshot
+### Activity And Snapshot
+
 - `GET /activity-events?projectId=...&limit=50`
 - `POST /activity-events`
 - `GET /status-snapshot?projectId=...`
 - `POST /status-snapshot`
 
-### Identity map
+### Identity Map
+
 - `GET /external-identities?userId=...`
 - `POST /external-identities`
 
 ### OAuth
+
 - `GET /oauth/:provider/start?project_id=...`
 - `GET /oauth/:provider/callback`
 
-### Sync (implemented provider)
-- `GET /sync/notion/health` (env/OAuth 설정 상태 확인)
+### Sync
+
+- `GET /sync/notion/health`
 - `POST /sync/notion` with `{ project_id, integration_id }`
-- `POST /sync/notion/run-all` (연결된 notion integration 전체 동기화)
-
-## What still requires your manual setup
-
-1. Provider OAuth app credentials (especially Notion in Phase 1)
-2. Backend env injection on deployed server
-3. Optional: secure token vault integration (replace demo token field)
-4. Optional: scheduler/cron for automatic periodic sync
-
-## Sync Strategy (MVP)
-
-Primary MVP strategy is **API-based pull**, not webhook-first.
-
-- OAuth connect provider account
-- List selectable resources via provider API
-- Save resource mapping to project
-- Pull metadata/activity periodically (manual or scheduled sync)
-
-Optional (later): webhook push for near real-time events.
-
-## Auto Sync (recommended)
-
-Use your scheduler/cron to hit:
-
-```bash
-POST /sync/notion/run-all
-```
-
-Suggested interval:
-- MVP: every 10-15 minutes
-- Active projects: every 5 minutes (watch API limits)
-
-## Next recommended steps
-
-- Add per-project sync interval policy
-- Add conflict/permission error handling UI in hub
-- Expand provider implementations: Slack/Figma

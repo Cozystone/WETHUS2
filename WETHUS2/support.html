@@ -6,6 +6,16 @@
   <title>WETHUS · 문의</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260419-25" />
+  <style>
+    .support-wrap { padding-top:24px; padding-bottom:44px; max-width:860px; display:grid; gap:12px; }
+    .support-hero, .support-block { padding:17px; }
+    .support-title { margin:0 0 8px; }
+    .support-copy { margin:0; color:var(--text-secondary); line-height:1.6; max-width:560px; }
+    .support-grid { display:grid; gap:10px; }
+    .support-item strong { display:block; margin-bottom:6px; }
+    .support-email { margin:6px 0 0; font-size:1rem; color:#fff3e5; }
+    @media (max-width: 640px) { .support-wrap { padding-top:18px; padding-bottom:34px; gap:10px; } .support-hero, .support-block { padding:15px; } }
+  </style>
 </head>
 <body>
   <header class="nav">
@@ -22,30 +32,41 @@
     </div>
   </header>
 
-  <main class="container" style="padding-top:24px;padding-bottom:44px;max-width:860px;display:grid;gap:12px;">
-    <section class="hub-card" style="padding:16px;">
+  <main class="container support-wrap">
+    <section class="hub-card support-hero">
       <h1 style="margin:0 0 8px;">문의</h1>
-      <p class="meta" style="margin:0;">서비스 이용 중 불편사항, 버그, 협업 제안은 아래 이메일로 보내주세요.</p>
+      <p class="meta" style="margin:0;">불편사항, 버그, 제안은 아래 이메일로 보내주세요.</p>
     </section>
 
-    <section class="hub-card" style="padding:16px;display:grid;gap:10px;">
-      <article class="list-item">
-        <strong>문의 이메일</strong>
+    <section class="hub-card support-block support-grid">
+      <article class="list-item support-item">
+        <strong>문의 메일</strong>
         <p style="margin:6px 0 0;"><a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a></p>
       </article>
-      <article class="list-item">
-        <strong>보내주시면 좋은 정보</strong>
+      <article class="list-item support-item">
+        <strong>함께 보내주면 좋은 정보</strong>
         <ul class="meta-bullet" style="margin:8px 0 0;">
           <li>문제가 발생한 페이지 URL</li>
           <li>발생 시점과 재현 순서</li>
-          <li>스크린샷/에러 문구</li>
+          <li>스크린샷이나 에러 문구</li>
         </ul>
       </article>
     </section>
   </main>
 
-  <footer class="footer"><div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p></div></div></footer>
+  <footer class="footer"><div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">학생 창업 실행 플랫폼 WETHUS<br/><a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a></p></div></div></footer>
 
   <script src="app.js?v=20260624-integrations-2"></script>
+  <script>
+    const supportHero = document.querySelector('.support-hero');
+    supportHero?.querySelector('h1')?.classList.add('page-title', 'support-title');
+    const supportHeroCopy = supportHero?.querySelector('p');
+    if (supportHeroCopy) {
+      supportHeroCopy.className = 'page-sub support-copy';
+      supportHeroCopy.textContent = '버그나 제안은 아래 메일로 보내주세요. 재현 정보가 있으면 더 빨리 확인할 수 있습니다.';
+    }
+    const supportEmail = document.querySelector('.support-item a[href^="mailto:"]')?.parentElement;
+    if (supportEmail) supportEmail.className = 'support-email';
+  </script>
 </body>
 </html>

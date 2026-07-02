@@ -472,6 +472,7 @@
         applications: [],
         planRequests: [],
         bookmarks: [],
+        profileFollows: [],
         notifications: seedNotifications,
         dmThreads: [
           {
@@ -492,6 +493,7 @@
     if (!Array.isArray(parsed.applications)) parsed.applications = [];
     if (!Array.isArray(parsed.planRequests)) parsed.planRequests = [];
     if (!Array.isArray(parsed.bookmarks)) parsed.bookmarks = [];
+    if (!Array.isArray(parsed.profileFollows)) parsed.profileFollows = [];
     if (!Array.isArray(parsed.notifications)) parsed.notifications = [];
     parsed.notifications = parsed.notifications.filter(n => !(n?.type === 'founder_submitted' && n?.userId == null));
     if (!parsed.notifications.length) {
@@ -532,6 +534,8 @@
         if (next.headline === undefined) next.headline = '';
         if (next.lookingFor === undefined) next.lookingFor = '';
         if (next.portfolioHighlights === undefined) next.portfolioHighlights = '';
+        if (next.startupBelief === undefined) next.startupBelief = '';
+        if (next.profileUpdatedAt === undefined) next.profileUpdatedAt = next.createdAt || null;
         next.interestTags = normalizeInterestTags(next.interestTags || next.interests || []);
         Object.assign(next, normalizeProfileLinks(next));
         return next;
@@ -668,6 +672,85 @@
     };
   }
 
+  function findUserProfile(ref = {}) {
+    const s = load();
+    const users = Array.isArray(s.users) ? s.users : [];
+    const idCandidates = [ref?.userId, ref?.id].map((value) => String(value || '').trim()).filter(Boolean);
+    if (idCandidates.length) {
+      const byId = users.find((user) => idCandidates.includes(String(user?.id || '').trim()));
+      if (byId) return byId;
+    }
+    const nameCandidates = [ref?.name, ref?.nickname].map((value) => String(value || '').trim()).filter(Boolean);
+    if (!nameCandidates.length) return null;
+    return users.find((user) => {
+      const userName = String(user?.name || '').trim();
+      const userNickname = String(user?.nickname || '').trim();
+      return nameCandidates.includes(userName) || nameCandidates.includes(userNickname);
+    }) || null;
+  }
+
+  function getProfileProofSummary(ref = {}) {
+    const user = findUserProfile(ref) || null;
+    const source = user || ref || {};
+    const links = normalizeProfileLinks(source);
+    const externalLinks = [
+      { label: 'Portfolio', href: links.portfolioUrl },
+      { label: 'GitHub', href: links.githubUrl },
+      { label: 'LinkedIn', href: links.linkedinUrl },
+      { label: 'Instagram', href: links.instagramUrl }
+    ].filter((item) => item.href);
+    const proofLines = String(source.portfolioHighlights || source.careerSummary || '')
+      .split('\n')
+      .map((line) => line.replace(/^[•\-]\s*/, '').trim())
+      .filter(Boolean);
+    const publicProjects = user
+      ? listProjects({ includePending: true, includeRejected: false }).filter((project) => {
+          if (!project) return false;
+          const founderMatch = String(project.founderId || '').trim() === String(user.id || '').trim();
+          const founderNameMatch = String(project.founderName || '').trim() === String(user.name || '').trim();
+          const memberMatch = Array.isArray(project.teamMembers) && project.teamMembers.some((member) => {
+            const memberId = String(member?.userId || member?.id || '').trim();
+            const memberName = String(member?.name || '').trim();
+            return memberId === String(user.id || '').trim() || memberName === String(user.name || '').trim();
+          });
+          return founderMatch || founderNameMatch || memberMatch;
+        })
+      : [];
+    const approvedProjects = publicProjects.filter((project) => String(project?.moderationStatus || 'approved') === 'approved');
+    const projectLikes = publicProjects.reduce((sum, project) => sum + Number(project?.likes || 0), 0);
+    const projectComments = publicProjects.reduce((sum, project) => sum + (Array.isArray(project?.comments) ? project.comments.length : 0), 0);
+    const signalChecks = [
+      { key: 'headline', label: '한 줄 소개', ready: !!String(source.headline || source.bio || '').trim() },
+      { key: 'proof', label: '실행 근거', ready: proofLines.length >= 2 },
+      { key: 'links', label: '외부 링크', ready: externalLinks.length >= 1 },
+      { key: 'projects', label: '프로젝트 기록', ready: approvedProjects.length >= 1 },
+      { key: 'school', label: '학교/소속', ready: !!String(source.school || '').trim() },
+      { key: 'response', label: '프로젝트 반응', ready: projectLikes + projectComments > 0 },
+      { key: 'founder', label: 'Founder 인증', ready: !!source.founderVerified }
+    ];
+    const readySignals = signalChecks.filter((item) => item.ready);
+    const suggestedSignals = signalChecks.filter((item) => !item.ready);
+    return {
+      hasProfile: !!user,
+      userId: String(user?.id || ref?.userId || ref?.id || '').trim(),
+      headline: String(source.headline || source.bio || '').trim(),
+      proofCount: proofLines.length,
+      externalLinkCount: externalLinks.length,
+      externalLinkLabels: externalLinks.map((item) => item.label),
+      featuredLinkLabel: externalLinks[0]?.label || '',
+      featuredLinkHref: externalLinks[0]?.href || '',
+      projectCount: publicProjects.length,
+      approvedProjectCount: approvedProjects.length,
+      reactionCount: projectLikes + projectComments,
+      founderVerified: !!source.founderVerified,
+      school: String(source.school || '').trim(),
+      evidenceCount: readySignals.length,
+      evidenceTotal: signalChecks.length,
+      evidenceSignals: signalChecks.map(({ key, label, ready }) => ({ key, label, ready })),
+      suggestedEvidenceLabels: suggestedSignals.map((item) => item.label)
+    };
+  }
+
   function getState() {
     return load();
   }
@@ -677,6 +760,59 @@
     s.currentUserId = userId;
     s.devMode = devMode;
     save(s);
+  }
+
+  function ensureLocalDevUser(options = {}) {
+    const isLocal = typeof location !== 'undefined' && ['localhost', '127.0.0.1'].includes(location.hostname);
+    if (!isLocal && options.force !== true) throw new Error('Local dev login is only available on localhost.');
+    const s = load();
+    const requestedId = String(options.id || 'dev-temp').trim() || 'dev-temp';
+    let user = s.users.find(u => String(u.id || '') === requestedId);
+    if (!user) {
+      user = {
+        id: requestedId,
+        name: options.name || 'WETHUS Local Tester',
+        nickname: options.nickname || 'LocalTester',
+        email: options.email || 'local.tester@wethus.dev',
+        password: '',
+        passwordHash: '',
+        bio: 'Local development account for browser QA.',
+        founderVerified: true,
+        profileImage: '',
+        plan: 'master',
+        age: 19,
+        ageVerifiedAt: new Date().toISOString(),
+        youthTag: true,
+        userTrack: 'Youth',
+        school: 'WETHUS Lab',
+        careerRaw: '',
+        careerSummary: 'Local QA account',
+        headline: 'WETHUS local test founder',
+        startupBelief: '',
+        lookingFor: '',
+        portfolioHighlights: '',
+        interestTags: ['AI/Tech', 'Startup'],
+        instagramUrl: '',
+        githubUrl: '',
+        linkedinUrl: '',
+        portfolioUrl: '',
+        onboardingComplete: true,
+        createdAt: new Date().toISOString()
+      };
+      s.users.push(user);
+    } else {
+      user.onboardingComplete = true;
+      user.plan = user.plan || 'master';
+      user.founderVerified = true;
+      user.email = user.email || options.email || 'local.tester@wethus.dev';
+      user.nickname = user.nickname || options.nickname || 'LocalTester';
+      user.name = user.name || options.name || 'WETHUS Local Tester';
+      user.interestTags = normalizeInterestTags(user.interestTags || ['AI/Tech', 'Startup']);
+    }
+    s.currentUserId = user.id;
+    s.devMode = true;
+    save(s);
+    return user;
   }
 
   function logout() {
@@ -855,6 +991,7 @@
         careerRaw: '',
         careerSummary: '',
         headline: '',
+        startupBelief: '',
         lookingFor: '',
         portfolioHighlights: '',
         interestTags: [],
@@ -882,6 +1019,8 @@
   }
 
   async function registerUser({ name, nickname, email, password, age = null, ageVerifiedAt = null, interestTags = [] }) {
+    const isLocal = typeof location !== 'undefined' && ['localhost', '127.0.0.1'].includes(location.hostname);
+    if (!isLocal) throw new Error('로컬 계정 fallback은 개발 환경에서만 사용할 수 있습니다.');
     const s = load();
     const normalizedEmail = String(email || '').trim().toLowerCase();
     const exists = s.users.find(u => String(u.email || '').toLowerCase() === normalizedEmail);
@@ -907,6 +1046,7 @@
       careerRaw: '',
       careerSummary: '',
       headline: '',
+      startupBelief: '',
       lookingFor: '',
       portfolioHighlights: '',
       interestTags: normalizeInterestTags(interestTags),
@@ -926,6 +1066,8 @@
   }
 
   async function loginUser({ email, password }) {
+    const isLocal = typeof location !== 'undefined' && ['localhost', '127.0.0.1'].includes(location.hostname);
+    if (!isLocal) throw new Error('로컬 계정 fallback은 개발 환경에서만 사용할 수 있습니다.');
     const s = load();
     const normalizedEmail = String(email || '').trim().toLowerCase();
     const user = s.users.find(u => String(u.email || '').toLowerCase() === normalizedEmail);
@@ -1498,6 +1640,124 @@
     return true;
   }
 
+  function getProfileViewerId() {
+    const actor = currentActorId();
+    if (actor) return `user:${actor}`;
+    try {
+      const key = 'wethus_profile_guest_id';
+      let guestId = sessionStorage.getItem(key) || '';
+      if (!guestId) {
+        guestId = `guest:${uid()}`;
+        sessionStorage.setItem(key, guestId);
+      }
+      return guestId;
+    } catch (_) {
+      return `guest:${uid()}`;
+    }
+  }
+
+  function recordProfileView(targetUserId) {
+    const target = String(targetUserId || '').trim();
+    if (!target) return false;
+    const viewerId = getProfileViewerId();
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const dedupeKey = `wethus_profile_view_${target}_${viewerId}_${todayKey}`;
+    try {
+      if (sessionStorage.getItem(dedupeKey)) return false;
+      sessionStorage.setItem(dedupeKey, '1');
+    } catch (_) {}
+    const s = load();
+    s.profileViews = Array.isArray(s.profileViews) ? s.profileViews : [];
+    s.profileViews.push({
+      id: uid(),
+      targetUserId: target,
+      viewerId,
+      createdAt: new Date().toISOString()
+    });
+    s.profileViews = s.profileViews.slice(-3000);
+    save(s);
+    return true;
+  }
+
+  function getProfileViewStats(targetUserId) {
+    const target = String(targetUserId || '').trim();
+    if (!target) return { today: 0, total: 0 };
+    const s = load();
+    const rows = Array.isArray(s.profileViews)
+      ? s.profileViews.filter((entry) => String(entry?.targetUserId || '') === target)
+      : [];
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const todayViewers = new Set();
+    const totalViewers = new Set();
+    rows.forEach((entry) => {
+      const viewerId = String(entry?.viewerId || '').trim();
+      if (!viewerId) return;
+      totalViewers.add(viewerId);
+      const dayKey = String(entry?.createdAt || '').slice(0, 10);
+      if (dayKey === todayKey) todayViewers.add(viewerId);
+    });
+    return {
+      today: todayViewers.size,
+      total: totalViewers.size
+    };
+  }
+
+  function getProfileFollowStats(targetUserId) {
+    const target = String(targetUserId || '').trim();
+    if (!target) return { followers: 0 };
+    const s = load();
+    const rows = Array.isArray(s.profileFollows)
+      ? s.profileFollows.filter((entry) => String(entry?.targetUserId || '') === target)
+      : [];
+    const followers = new Set();
+    rows.forEach((entry) => {
+      const actorId = String(entry?.actorId || '').trim();
+      if (actorId) followers.add(actorId);
+    });
+    return { followers: followers.size };
+  }
+
+  function isFollowingProfile(targetUserId) {
+    const target = String(targetUserId || '').trim();
+    const actor = String(currentActorId() || '').trim();
+    if (!target || !actor || target === actor) return false;
+    const s = load();
+    return Array.isArray(s.profileFollows)
+      ? s.profileFollows.some((entry) => String(entry?.targetUserId || '') === target && String(entry?.actorId || '') === actor)
+      : false;
+  }
+
+  function toggleProfileFollow(targetUserId) {
+    const target = String(targetUserId || '').trim();
+    const actor = String(currentActorId() || '').trim();
+    if (!actor) throw new Error('로그인이 필요합니다.');
+    if (!target) throw new Error('대상 프로필을 찾을 수 없습니다.');
+    if (target === actor) {
+      return { following: false, followers: getProfileFollowStats(target).followers };
+    }
+    const s = load();
+    s.profileFollows = Array.isArray(s.profileFollows) ? s.profileFollows : [];
+    const index = s.profileFollows.findIndex((entry) => String(entry?.targetUserId || '') === target && String(entry?.actorId || '') === actor);
+    let following = false;
+    if (index === -1) {
+      s.profileFollows.push({
+        id: uid(),
+        targetUserId: target,
+        actorId: actor,
+        createdAt: new Date().toISOString()
+      });
+      following = true;
+    } else {
+      s.profileFollows.splice(index, 1);
+      following = false;
+    }
+    save(s);
+    return {
+      following,
+      followers: getProfileFollowStats(target).followers
+    };
+  }
+
   function projectRecommendationBlob(project) {
     return [
       project?.title,
@@ -1845,11 +2105,13 @@
     Object.assign(u, patch || {});
     Object.assign(u, normalizeProfileLinks(u));
     u.headline = normalizeProfileText(u.headline);
+    u.startupBelief = normalizeProfileText(u.startupBelief);
     u.lookingFor = normalizeProfileText(u.lookingFor);
     u.portfolioHighlights = normalizeProfileText(u.portfolioHighlights);
     u.interestTags = normalizeInterestTags(u.interestTags || []);
     u.youthTag = normalizeYouthTag(u);
     u.userTrack = getUserTrack(u);
+    if (u.profileUpdatedAt === undefined) u.profileUpdatedAt = new Date().toISOString();
     save(s);
     return u;
   }
@@ -1877,8 +2139,10 @@
         careerRaw: user?.careerRaw || '',
         careerSummary: user?.careerSummary || '',
         headline: user?.headline || '',
+        startupBelief: user?.startupBelief || '',
         lookingFor: user?.lookingFor || '',
         portfolioHighlights: user?.portfolioHighlights || '',
+        profileUpdatedAt: user?.profileUpdatedAt || user?.createdAt || new Date().toISOString(),
         interestTags: normalizeInterestTags(user?.interestTags || user?.interests || []),
         instagramUrl: normalizeProfileLinks(user).instagramUrl,
         githubUrl: normalizeProfileLinks(user).githubUrl,
@@ -1907,6 +2171,7 @@
         careerRaw: user?.careerRaw ?? target.careerRaw,
         careerSummary: user?.careerSummary ?? target.careerSummary,
         headline: user?.headline ?? target.headline,
+        startupBelief: user?.startupBelief ?? target.startupBelief,
         lookingFor: user?.lookingFor ?? target.lookingFor,
         portfolioHighlights: user?.portfolioHighlights ?? target.portfolioHighlights,
         interestTags: normalizeInterestTags(user?.interestTags ?? target.interestTags ?? []),
@@ -2359,11 +2624,13 @@
     const s = load();
     const actor = currentActorId();
     const u = s.users.find(x => x.id === s.currentUserId);
-    const plan = (u?.plan || 'free').toLowerCase();
-    if (plan === 'free') throw new Error('Free 플랜은 DM 수신만 가능합니다.');
     const t = (s.dmThreads || []).find(x => x.id === threadId);
     if (!t) throw new Error('대화방을 찾을 수 없습니다.');
-    t.messages.push({ id: uid(), from: u?.nickname || u?.name || actor || 'Me', text: text || '', createdAt: new Date().toISOString() });
+    const now = new Date().toISOString();
+    t.messages = Array.isArray(t.messages) ? t.messages : [];
+    t.messages.push({ id: uid(), fromId: actor, from: u?.nickname || u?.name || actor || 'Me', text: text || '', createdAt: now, readBy: [actor] });
+    t.lastMessage = String(text || '');
+    t.updatedAt = now;
     save(s);
     return t.messages;
   }
@@ -2446,10 +2713,6 @@
   }
 
   async function sendDm(threadId, text) {
-    const s = load();
-    const u = s.users.find(x => x.id === s.currentUserId);
-    const plan = (u?.plan || 'free').toLowerCase();
-    if (plan === 'free') throw new Error('Free 플랜은 DM 수신만 가능합니다.');
 
     if (String(threadId || '').startsWith('hubchat:')) {
       const projectId = String(threadId).replace('hubchat:', '');
@@ -2693,11 +2956,30 @@
       });
       throw new Error('로그인이 필요합니다.');
     }
+    const project = s.projects.find(p => p.id === projectId);
+    const me = (s.users || []).find(user => String(user?.id || '') === String(actor)) || null;
+    const myEmail = String(me?.email || '').toLowerCase();
+    const myNames = [me?.name, me?.nickname].map(value => String(value || '').trim()).filter(Boolean);
+    const isMine = !!project && (
+      String(project.founderId || '') === String(actor) ||
+      (myEmail && String(project.founderEmail || '').toLowerCase() === myEmail) ||
+      (myNames.length && myNames.includes(String(project.founderName || '').trim()))
+    );
+    const isJoined = !!project && Array.isArray(project.teamMembers) && project.teamMembers.some(member => {
+      const memberId = String(member?.id || member?.userId || '').trim();
+      const memberName = String(member?.name || '').trim();
+      return ((memberId && memberId === String(actor)) || (memberName && myNames.includes(memberName))) && !member?.isLeader;
+    });
+    if (isMine) {
+      throw new Error('내 프로젝트에는 지원할 수 없습니다.');
+    }
+    if (isJoined) {
+      throw new Error('이미 합류한 프로젝트입니다.');
+    }
     const exists = s.applications.find(a => a.projectId === projectId && a.userId === actor && isActiveApplicationStatus(a.status));
     if (exists) return exists;
     const app = { id: uid(), projectId, userId: actor, motivation: motivation || '', status: 'applied', createdAt: new Date().toISOString() };
     s.applications.push(app);
-    const project = s.projects.find(p => p.id === projectId);
     if (project) {
       s.notifications = s.notifications || [];
       const applicant = s.users.find(u => u.id === actor);
@@ -3323,6 +3605,7 @@
     registerOrLogin,
     oauthLoginGoogle,
     setCurrentUser,
+    ensureLocalDevUser,
     logout,
     addProject,
     listProjects,
@@ -3337,6 +3620,12 @@
     myBookmarkedProjects,
     myLikedProjects,
     recordProjectView,
+    recordProfileView,
+    getProfileViewStats,
+    getProfileFollowStats,
+    isFollowingProfile,
+    toggleProfileFollow,
+    getProfileProofSummary,
     getRecommendedProjects,
     getStartupIdeaRecommendations,
     analyzeProjectIdea,

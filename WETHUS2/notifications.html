@@ -14,6 +14,40 @@
   <title>WETHUS | 알림</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260419-25" />
+  <style>
+    .notify-summary-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .notify-summary-card { padding:12px; background:rgba(255,255,255,.03); border-radius:14px; }
+    .notify-card { cursor:pointer; }
+    .notify-card-body { margin:0 0 4px; color:#d8d8d8; line-height:1.5; font-size:.86rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .notify-empty-card { display:grid; gap:6px; }
+    .notify-filter-meta { margin:2px 0 0; color:#9f9f9f; font-size:.84rem; line-height:1.5; }
+    .notify-filter-grid { display:flex; gap:8px; flex-wrap:wrap; }
+    .notify-filter-chip { min-height:36px; padding:6px 11px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.035); color:#e8e8e8; font-size:.82rem; font-weight:700; cursor:pointer; }
+    .notify-filter-chip.active { border-color:rgba(255,106,0,.58); background:rgba(255,106,0,.12); color:#fff1e3; }
+    .notify-card-shell { gap:8px !important; }
+    .notify-card-title { margin:0 0 2px; font-size:1rem; line-height:1.32; }
+    .notify-card-meta { margin:0 0 6px; color:var(--orange); font-size:.8rem; font-weight:700; }
+    .notify-card-time { font-size:.78rem; }
+    .notify-card-actions .btn,
+    .notify-card-actions .verify-badge { min-height:32px; }
+    @media (max-width: 720px) {
+      .notify-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .notify-summary-card { padding:12px; }
+      .notify-summary-card strong { font-size:1.15rem !important; }
+      .notify-card-top { flex-direction:column; }
+      .notify-card-actions { width:100%; justify-content:flex-start !important; }
+      .notify-filter-grid { gap:7px; }
+      .notify-filter-chip { min-height:34px; padding:6px 10px; font-size:.8rem; }
+      .notify-card-body { -webkit-line-clamp:2; font-size:.84rem; }
+    }
+    @media (max-width: 520px) {
+      .notify-summary-grid { grid-template-columns:1fr; gap:8px; }
+      .notify-summary-card { padding:11px 12px; }
+      .notify-filter-grid { gap:6px; }
+      .notify-filter-chip { min-height:33px; font-size:.78rem; }
+      #markAllRead { width:100%; justify-content:center; }
+    }
+  </style>
 </head>
 <body>
   <header class="nav">
@@ -34,14 +68,15 @@
     <section class="projects-head-row" style="padding-top:28px;">
       <div>
         <h1 class="page-title" style="margin:0;">알림</h1>
-        <p class="page-sub">플랜 요청, 프로젝트 검토, 지원서와 주요 상태 변화를 한곳에서 확인합니다.</p>
+        <p class="page-sub">플랜, 검토, 팀 상태 변화를 빠르게 봅니다.</p>
       </div>
       <button id="markAllRead" class="btn btn--secondary" type="button">모두 읽음 처리</button>
     </section>
 
     <section style="display:grid;gap:12px;margin-bottom:14px;">
-      <div id="notifySummary" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;"></div>
-      <div id="notifyFilters" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      <div id="notifySummary" class="notify-summary-grid"></div>
+      <p id="notifyFilterMeta" class="notify-filter-meta"></p>
+      <div id="notifyFilters" class="notify-filter-grid"></div>
     </section>
 
     <section id="notifyList" class="list-grid"></section>
@@ -65,7 +100,7 @@
     <div class="container">
       <div class="footer-inner">
         <span class="wordmark">WETHUS</span>
-        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
+        <p class="footer-copy">학생 창업 실행 플랫폼 WETHUS<br/><a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a></p>
       </div>
     </div>
   </footer>
@@ -84,6 +119,7 @@
     const markAllBtn = document.getElementById('markAllRead');
     const detailModal = document.getElementById('notifyDetailModal');
     const summaryEl = document.getElementById('notifySummary');
+    const filterMetaEl = document.getElementById('notifyFilterMeta');
     const filtersEl = document.getElementById('notifyFilters');
     let activeFilter = 'all';
 
@@ -146,21 +182,37 @@
       document.body.style.overflow = '';
     }
 
+    function previewBody(item) {
+      const body = String(item?.body || '').replace(/\s+/g, ' ').trim();
+      if (!body) return '';
+      return body.length > 110 ? `${body.slice(0, 110)}…` : body;
+    }
+
+    function compactPreviewBody(item) {
+      const body = String(item?.body || '').replace(/\s+/g, ' ').trim();
+      if (!body) return '';
+      if (body.includes('AI 검토 중입니다.')) {
+        return 'AI 검토 중입니다. 잠시 뒤 반영 여부를 확인해보세요.';
+      }
+      if (body.includes('프로젝트 지원서를 확인해보세요.')) {
+        return '새 팀 참여 요청이 도착했습니다. 지원서를 열어 확인해보세요.';
+      }
+      return body.length > 72 ? `${body.slice(0, 72)}...` : body;
+    }
+
     function renderSummary(items) {
       const unread = items.filter((item) => item.unread).length;
       const plan = items.filter((item) => categoryForNotification(item) === 'plan').length;
       const project = items.filter((item) => categoryForNotification(item) === 'project').length;
       const cards = [
-        { label: '읽지 않은 알림', value: unread, tone: '#ffb36b' },
-        { label: '플랜 관련', value: plan, tone: '#7dc4ff' },
-        { label: '프로젝트 검토', value: project, tone: '#6fdc8c' }
+        { label: '읽지 않음', value: unread, tone: '#ffb36b', copy: unread ? '먼저 볼 항목' : '새 알림 없음' },
+        { label: '플랜/검토', value: plan + project, tone: '#7dc4ff', copy: plan + project ? '결정 필요 항목' : '대기 항목 없음' }
       ];
-      summaryEl.innerHTML = cards.map((card) => `
-        <article class="list-item" style="padding:14px;border-color:${card.tone};background:rgba(255,255,255,.03);">
-          <p class="meta" style="margin:0 0 6px;">${esc(card.label)}</p>
-          <strong style="font-size:1.35rem;">${esc(card.value)}</strong>
-        </article>
-      `).join('');
+      summaryEl.innerHTML = cards.map((card) =>         '<article class="list-item notify-summary-card" style="border-color:' + card.tone + ';">' +
+          '<p class="meta" style="margin:0 0 6px;">' + esc(card.label) + '</p>' +
+          '<strong style="font-size:1.35rem;">' + esc(card.value) + '</strong>' +
+          '<p class="meta" style="margin:6px 0 0;">' + esc(card.copy) + '</p>' +
+        '</article>'      ).join('');
     }
 
     function renderFilters(items) {
@@ -175,14 +227,13 @@
         { key: 'all', label: '전체' },
         { key: 'unread', label: '읽지 않음' },
         { key: 'plan', label: '플랜' },
-        { key: 'project', label: '프로젝트' },
+        { key: 'project', label: '검토' },
         { key: 'team', label: '팀' }
       ];
-      filtersEl.innerHTML = defs.map((def) => `
-        <button class="btn ${activeFilter === def.key ? 'btn--primary' : 'btn--secondary'} js-filter" type="button" data-filter="${esc(def.key)}" style="padding:6px 10px;">
-          ${esc(def.label)} · ${esc(counts[def.key] || 0)}
-        </button>
-      `).join('');
+      if (filterMetaEl) {
+        filterMetaEl.textContent = '전체 ' + counts.all + '건 · 읽지 않음 ' + counts.unread + '건 · 플랜 ' + counts.plan + '건 · 검토 ' + counts.project + '건';
+      }
+      filtersEl.innerHTML = defs.map((def) =>         '<button class="notify-filter-chip js-filter ' + (activeFilter === def.key ? 'active' : '') + '" type="button" data-filter="' + esc(def.key) + '">' + esc(def.label) + '</button>'      ).join('');
       filtersEl.querySelectorAll('.js-filter').forEach((button) => {
         button.addEventListener('click', () => {
           activeFilter = button.getAttribute('data-filter') || 'all';
@@ -200,7 +251,7 @@
     function actionLink(item) {
       const href = String(item?.href || '').trim();
       if (!href) return '';
-      const label = categoryForNotification(item) === 'plan' ? '플랜 보기' : '바로 이동';
+      const label = categoryForNotification(item) === 'plan' ? '플랜' : '이동';
       return `<a class="btn btn--secondary" href="${esc(href)}" style="padding:5px 10px;font-size:.75rem;">${label}</a>`;
     }
 
@@ -219,17 +270,17 @@
         const category = categoryForNotification(item);
         const badgeColor = category === 'plan' ? '#7dc4ff' : (category === 'project' ? '#6fdc8c' : '#ffb36b');
         return `
-          <article class="list-item" data-id="${esc(item.id)}" style="border-color:${item.unread ? '#ff6a00' : '#2a2a2a'};">
+          <article class="list-item notify-card-shell" data-id="${esc(item.id)}" style="border-color:${item.unread ? '#ff6a00' : '#2a2a2a'};">
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
               <div>
                 <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:4px;">
                   <span class="verify-badge" style="padding:2px 7px;background:${badgeColor};border-color:${badgeColor};color:#111;">${esc(categoryLabel(category))}</span>
                   <span class="meta">${esc(typeLabel(item))}</span>
                 </div>
-                <h3 style="margin:0 0 2px;">${esc(item.title)}</h3>
-                <p style="margin:0 0 4px;color:var(--orange);font-size:.82rem;font-weight:700;">${esc(item.sender || 'WETHUS')}</p>
+                <h3 class="notify-card-title">${esc(item.title)}</h3>
+                <p class="notify-card-meta">${esc(item.sender || 'WETHUS')}</p>
                 <p style="margin:0 0 6px;">${esc(item.body || '')}</p>
-                <div class="meta">${esc(timeText(item.createdAt))}</div>
+                <div class="meta notify-card-time">${esc(timeText(item.createdAt))}</div>
               </div>
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
                 ${item.unread ? '<span class="verify-badge" style="padding:2px 7px;">NEW</span>' : '<button class="btn btn--secondary notify-delete" data-del="' + esc(item.id) + '" style="padding:3px 8px;font-size:.72rem;">삭제</button>'}
@@ -239,6 +290,18 @@
           </article>
         `;
       }).join('');
+
+      listEl.querySelectorAll('.list-item[data-id]').forEach((card) => {
+        card.classList.add('notify-card');
+        card.querySelector(':scope > div')?.classList.add('notify-card-top');
+        const actions = card.querySelector(':scope > div > div:last-child');
+        if (actions) actions.classList.add('notify-card-actions');
+        const body = card.querySelector('p[style*="margin:0 0 6px;"]');
+        if (body) {
+          body.className = 'notify-card-body';
+          body.textContent = compactPreviewBody({ body: body.textContent || '' });
+        }
+      });
 
       listEl.querySelectorAll('.list-item[data-id]').forEach((el) => {
         el.addEventListener('click', (e) => {

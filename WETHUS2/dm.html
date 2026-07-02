@@ -12,29 +12,45 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260419-25" />
   <style>
-    .dm-shell{margin-top:24px;border:1px solid #2a2a2a;border-radius:16px;overflow:hidden;background:#111;display:grid;grid-template-columns:320px 1fr;min-height:68vh}
-    .dm-left{border-right:1px solid #232323;background:#0f0f0f;display:grid;grid-template-rows:auto 1fr;overflow:hidden}
+    .dm-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 8px}
+    .dm-strip-card{border:1px solid #2a2a2a;border-radius:14px;background:linear-gradient(145deg,#151515,#0f0f0f);padding:10px 11px;display:grid;gap:3px}
+    .dm-strip-card strong{font-size:.82rem;color:#f4f4f4}
+    .dm-strip-card span{font-size:.76rem;color:#9f9f9f;text-transform:uppercase;letter-spacing:.04em}
+    .dm-strip-card p{margin:0;color:#cdc4b8;font-size:.8rem;line-height:1.46;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .dm-shell{margin-top:12px;border:1px solid #2a2a2a;border-radius:16px;overflow:hidden;background:#111;display:grid;grid-template-columns:280px 1fr;min-height:64vh}
+    .dm-left{border-right:1px solid #232323;background:#0f0f0f;display:grid;grid-template-rows:auto auto 1fr;overflow:hidden;min-height:0}
     .dm-search{padding:12px;border-bottom:1px solid #232323}
     .dm-search input{width:100%;background:#171717;border:1px solid #2c2c2c;border-radius:12px;color:#fff;padding:10px 12px}
-    .dm-threads{overflow-y:auto;overflow-x:hidden;padding:6px}
-    .dm-thread{padding:10px 12px;border-radius:12px;cursor:pointer;border:1px solid transparent;display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:center;overflow:hidden}
+    .dm-list-head{padding:10px 12px 8px;border-bottom:1px solid #1f1f1f;display:grid;gap:2px}
+    .dm-list-head strong{font-size:.86rem;color:#f3f3f3}
+    .dm-list-head p{margin:0;font-size:.77rem;color:#9a9a9a;line-height:1.4}
+    .dm-threads{overflow-y:auto;overflow-x:hidden;padding:6px 6px 8px;min-height:0}
+    .dm-thread{padding:9px 11px;border-radius:12px;cursor:pointer;border:1px solid transparent;display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;overflow:hidden}
     .dm-thread:hover{background:#171717}
-    .dm-thread.active{background:#1f1f1f;border-color:#343434}
+    .dm-thread.active{background:#1f1f1f;border-color:#ff8a003d}
+    .dm-thread-unread{min-width:20px;height:20px;border-radius:999px;background:#ff7a00;color:#111;display:grid;place-items:center;font-size:.7rem;font-weight:900;padding:0 6px}
+    .dm-thread-time{font-size:.7rem;color:#777;white-space:nowrap}
     .dm-avatar{width:36px;height:36px;border-radius:999px;display:grid;place-items:center;background:#2a2a2a;color:#fff;font-size:.78rem;font-weight:700;border:1px solid #3a3a3a;overflow:hidden}
     .dm-avatar img{width:100%;height:100%;object-fit:cover;display:block}
     .dm-thread-name{margin:0;font-size:.93rem}
     .dm-thread-last{margin:3px 0 0;color:#9a9a9a;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .dm-main{display:grid;grid-template-rows:auto 1fr auto;background:#141414}
-    .dm-head{padding:14px 16px;border-bottom:1px solid #232323;display:flex;justify-content:space-between;align-items:center}
-    .dm-messages{padding:14px;overflow:auto;display:grid;gap:8px;align-content:start}
-    .dm-bubble{max-width:min(78%,680px);padding:10px 12px;border-radius:14px;line-height:1.45;word-break:break-word}
+    .dm-main{display:grid;grid-template-rows:auto 1fr auto;background:#141414;min-height:0}
+    .dm-head{padding:12px 14px;border-bottom:1px solid #232323;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+    .dm-messages{padding:12px;overflow:auto;display:grid;gap:8px;align-content:start;min-height:280px}
+    .dm-bubble{max-width:min(78%,640px);padding:9px 11px;border-radius:14px;line-height:1.42;word-break:break-word}
     .dm-bubble.me{justify-self:end;background:#ff8a00;color:#111;border-bottom-right-radius:4px}
     .dm-bubble.other{justify-self:start;background:#232323;color:#f5f5f5;border-bottom-left-radius:4px}
     .dm-meta{font-size:.72rem;color:#8c8c8c;margin-top:4px}
-    .dm-compose{padding:12px;border-top:1px solid #232323;display:grid;grid-template-columns:1fr auto;gap:8px}
+    .dm-compose{padding:11px;border-top:1px solid #232323;display:grid;grid-template-columns:1fr auto;gap:8px;background:rgba(10,10,10,.72)}
     .dm-compose textarea{height:44px;min-height:44px;max-height:140px;resize:none;border-radius:12px;padding:10px;background:#101010;border:1px solid #2a2a2a;color:#fff;line-height:1.25;overflow-y:auto}
+    .dm-compose textarea:focus{outline:none;border-color:rgba(255,138,0,.65);box-shadow:0 0 0 3px rgba(255,138,0,.12)}
     .dm-empty{display:grid;place-items:center;color:#8f8f8f}
-    @media (max-width: 960px){.dm-shell{grid-template-columns:1fr;min-height:76vh}.dm-left{max-height:220px;border-right:0;border-bottom:1px solid #232323}}
+    .dm-empty-card{border:1px solid #2b2b2b;border-radius:16px;background:rgba(255,255,255,.03);padding:18px;display:grid;gap:6px;max-width:420px}
+    .dm-empty-card h3{margin:0;font-size:1rem;color:#f3f3f3}
+    .dm-empty-card p{margin:0;color:#a9a9a9;line-height:1.6}
+    @media (max-width: 1160px){.dm-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width: 960px){.dm-strip{grid-template-columns:1fr}.dm-shell{grid-template-columns:1fr;min-height:auto}.dm-left{max-height:260px;border-right:0;border-bottom:1px solid #232323}.dm-messages{min-height:340px}}
+    @media (max-width: 640px){.dm-head{padding:12px}.dm-messages{padding:12px;min-height:260px}.dm-compose{grid-template-columns:1fr}.dm-compose .btn{width:100%;justify-content:center}.dm-list-head{padding:8px 12px 6px}.dm-strip-card{padding:10px 11px}.dm-strip-card p{-webkit-line-clamp:1}.dm-empty-card{padding:16px}.dm-bubble{max-width:88%}.dm-left{max-height:250px}}
   </style>
 </head>
 <body>
@@ -57,14 +73,36 @@
     <section class="projects-head-row" style="padding-top:10px;">
       <div>
         <h1 class="page-title" style="margin:0;">DM</h1>
-        <p class="page-sub" id="dmPlanDesc">사람들과 직접 프로젝트 대화를 나눠보세요.</p>
+        <p class="page-sub" id="dmPlanDesc">팀 대화를 한곳에서 이어갑니다.</p>
       </div>
       <button id="upgradeBtn" class="btn btn--primary" style="display:none;">Premium으로 전환</button>
+    </section>
+
+    <section class="dm-strip" id="dmStrip">
+      <article class="dm-strip-card">
+        <span>현재 권한</span>
+        <strong id="dmStripPlan">Free DM</strong>
+        <p id="dmStripPlanCopy">받은 대화만 확인할 수 있습니다.</p>
+      </article>
+      <article class="dm-strip-card">
+        <span>빠른 시작</span>
+        <strong>멘토·지원자·팀원</strong>
+        <p>프로필과 허브에서 바로 시작할 수 있습니다.</p>
+      </article>
+      <article class="dm-strip-card">
+        <span>대화 성격</span>
+        <strong>프로젝트 기록형</strong>
+        <p>협업 메모와 다음 액션이 남도록 설계했습니다.</p>
+      </article>
     </section>
 
     <section class="dm-shell">
       <aside class="dm-left">
         <div class="dm-search"><input id="dmSearch" placeholder="대화 상대 검색" /></div>
+        <div class="dm-list-head">
+          <strong id="dmListTitle">최근 대화</strong>
+          <p id="dmListMeta">팀원, 지원자, 멘토와 이어진 대화가 여기에 정리됩니다.</p>
+        </div>
         <div id="dmThreads" class="dm-threads"></div>
       </aside>
       <section class="dm-main">
@@ -72,12 +110,12 @@
           <div style="display:flex;align-items:center;gap:10px;">
             <div id="dmHeadAvatar" class="dm-avatar">DM</div>
             <div>
-              <h3 id="dmThreadTitle" style="margin:0;font-size:1rem;">대화를 선택하세요</h3>
-              <p id="dmThreadSub" class="meta" style="margin:2px 0 0;">최근 대화를 이어갈 수 있어요.</p>
+              <h3 id="dmThreadTitle" style="margin:0;font-size:1rem;">대화를 선택해 주세요</h3>
+              <p id="dmThreadSub" class="meta" style="margin:2px 0 0;">팀원이나 지원자와 최근 대화를 이어갑니다.</p>
             </div>
           </div>
         </div>
-        <div id="dmMessages" class="dm-messages"><div class="dm-empty">왼쪽에서 대화를 선택하세요.</div></div>
+        <div id="dmMessages" class="dm-messages"><div class="dm-empty"><div class="dm-empty-card"><h3>대화를 선택해 주세요</h3><p>왼쪽 목록에서 고르면 바로 이어서 볼 수 있습니다.</p></div></div></div>
         <div id="dmComposerWrap" class="dm-compose" style="display:none;">
           <textarea id="dmInput" rows="1" placeholder="메시지를 입력하세요"></textarea>
           <button id="dmSend" class="btn btn--primary">보내기</button>
@@ -89,7 +127,7 @@
   </main>
 
   <footer class="footer">
-    <div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p></div></div>
+    <div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">학생 창업 실행 플랫폼 WETHUS<br/><a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a></p></div></div>
   </footer>
 
   <script src="app.js?v=20260624-integrations-2"></script>
@@ -108,19 +146,22 @@
     const subEl = document.getElementById('dmThreadSub');
     const headAvatarEl = document.getElementById('dmHeadAvatar');
     const planDesc = document.getElementById('dmPlanDesc');
+    const dmStripPlan = document.getElementById('dmStripPlan');
+    const dmStripPlanCopy = document.getElementById('dmStripPlanCopy');
+    const dmListTitle = document.getElementById('dmListTitle');
+    const dmListMeta = document.getElementById('dmListMeta');
     const upgradeBtn = document.getElementById('upgradeBtn');
     const composerWrap = document.getElementById('dmComposerWrap');
     const dmInfo = document.getElementById('dmInfo');
     const dmSearch = document.getElementById('dmSearch');
     const fromHubBack = document.getElementById('fromHubBack');
+    const qs = new URLSearchParams(location.search);
+    const initialThreadId = qs.get('threadId');
+    const fromHub = qs.get('fromHub') === '1';
     if (fromHub && fromHubBack) {
       fromHubBack.style.display = 'inline-flex';
       fromHubBack.addEventListener('click', () => history.back());
     }
-
-    const qs = new URLSearchParams(location.search);
-    const initialThreadId = qs.get('threadId');
-    const fromHub = qs.get('fromHub') === '1';
     let currentThreadId = initialThreadId || null;
     let currentThreads = [];
     let isSending = false;
@@ -151,28 +192,46 @@
     };
     function avatarMarkup(name, avatar) {
       if (avatar) return `<span class="dm-avatar"><img src="${esc(safeUrl(avatar))}" alt="${esc(name||'avatar')}" /></span>`;
+      if (String(name || '').includes('팀채팅')) return '<span class="dm-avatar">팀</span>';
       return `<span class="dm-avatar">${esc(String(name || 'U').trim().slice(0,1).toUpperCase())}</span>`;
     }
 
     function applyPlanUi() {
       const isPremium = WETHUS.currentPlan() === 'premium';
-      composerWrap.style.display = isPremium ? 'grid' : 'none';
+      composerWrap.style.display = 'grid';
       upgradeBtn.style.display = isPremium ? 'none' : 'inline-flex';
-      planDesc.textContent = isPremium ? 'Premium 플랜: DM 수신/발신 가능' : 'Free 플랜: DM 수신만 가능 (발신은 Premium)';
-      dmInfo.textContent = isPremium ? '' : '프리 플랜에서는 메시지 발신이 잠겨 있습니다.';
+      upgradeBtn.textContent = 'Premium 기능 보기';
+      planDesc.textContent = '지원자, 팀원, 멘토와 바로 대화를 이어갑니다.';
+      dmStripPlan.textContent = isPremium ? 'Premium DM' : 'Free DM';
+      dmStripPlanCopy.textContent = isPremium ? '새 대화, 답장, AI 멘토 대화를 모두 사용할 수 있습니다.' : '기본 DM 전송과 답장이 가능합니다.';
+      dmInfo.textContent = isPremium ? '' : '현재는 기본 DM이 열려 있습니다. 대량 발송/자동화 기능은 제공하지 않습니다.';
+    }
+
+    function emptyCard(title, body) {
+      return `<div class="dm-empty"><div class="dm-empty-card"><h3>${esc(title)}</h3><p>${esc(body)}</p></div></div>`;
     }
 
     function renderThreads(list = currentThreads) {
-      if (!list.length) { threadEl.innerHTML = '<div class="dm-empty" style="height:100%;">대화가 없습니다.</div>'; return; }
-      threadEl.innerHTML = list.map(t => `
+      const totalUnread = list.reduce((sum, t) => sum + Number(t.unreadCount || 0), 0);
+      dmListTitle.textContent = `최근 대화 ${list.length}개`;
+      dmListMeta.textContent = list.length ? `최근 메시지 순 · 미읽음 ${totalUnread}개` : '아직 연결된 대화가 없습니다.';
+      if (!list.length) { threadEl.innerHTML = emptyCard('아직 대화가 없습니다.', '프로필, 지원서, 프로젝트 허브에서 DM을 시작하면 여기에 모입니다.'); return; }
+      threadEl.innerHTML = list.map(t => {
+        const unread = Number(t.unreadCount || 0);
+        const time = t.updatedAt ? formatTime(t.updatedAt) : '';
+        return `
         <article class="dm-thread ${currentThreadId === t.id ? 'active' : ''}" data-id="${esc(t.id)}">
           ${avatarMarkup(t.peerName || t.targetName || '대화 상대', t.peerAvatar || t.targetAvatar || '')}
           <div style="min-width:0;">
             <h4 class="dm-thread-name">${esc(t.peerName || t.targetName || '대화 상대')}</h4>
-            <p class="dm-thread-last">${esc(t.lastMessage || '메시지가 없습니다.')}</p>
+            <p class="dm-thread-last">${esc(t.lastMessage || '아직 메시지가 없습니다.')}</p>
+          </div>
+          <div style="display:grid;justify-items:end;gap:5px;">
+            ${unread ? `<span class="dm-thread-unread">${unread > 9 ? '9+' : unread}</span>` : `<span class="dm-thread-time">${esc(time)}</span>`}
           </div>
         </article>
-      `).join('');
+      `;
+      }).join('');
       threadEl.querySelectorAll('.dm-thread').forEach(el => el.addEventListener('click', async () => {
         const id = el.getAttribute('data-id');
         if (String(id).startsWith('new:')) {
@@ -191,25 +250,30 @@
         }
         renderThreads();
         await renderMessages();
+        await refreshThreads();
       }));
     }
 
     async function renderMessages() {
+      const pendingEmptyState = {
+        noThread: emptyCard('대화를 선택해 주세요.', '왼쪽 목록에서 대화를 고르면 바로 이어서 볼 수 있습니다.'),
+        noMessages: emptyCard('아직 메시지가 없습니다.', '첫 메시지를 보내면 이 대화가 협업 기록으로 남습니다.')
+      };
       const thread = currentThreads.find(t => t.id === currentThreadId);
-      if (!thread) { msgEl.innerHTML = '<div class="dm-empty">대화를 선택하세요.</div>'; return; }
+      if (!thread) { msgEl.innerHTML = pendingEmptyState.noThread; return; }
       titleEl.textContent = thread.peerName || thread.targetName || '대화';
-      subEl.textContent = `${thread.messageCount || 0}개 메시지`;
+      subEl.textContent = `${thread.messageCount || 0}개 메시지 · 프로젝트 맥락을 남기는 대화`;
       headAvatarEl.innerHTML = thread.peerAvatar || thread.targetAvatar
         ? `<img src="${esc(safeUrl(thread.peerAvatar || thread.targetAvatar))}" alt="avatar" />`
-        : esc(String(thread.peerName || thread.targetName || 'U').trim().slice(0,1).toUpperCase());
+        : (String(thread.peerName || thread.targetName || '').includes('팀채팅') ? '팀' : esc(String(thread.peerName || thread.targetName || 'U').trim().slice(0,1).toUpperCase()));
       const msgs = await WETHUS.listDmMessages(thread.id);
       const me = WETHUS.currentUser();
       const myName = me?.nickname || me?.name || WETHUS.getState().currentUserId || '';
       const myId = String(WETHUS.getState().currentUserId || '');
       msgEl.innerHTML = msgs.length ? msgs.map(m => {
         const mine = String(m.fromId || '') === myId || String(m.from || '').trim() === String(myName).trim();
-        return `<article class="dm-bubble ${mine ? 'me' : 'other'}"><div>${esc(m.text || '')}</div><div class="dm-meta">${esc(m.from || '')} · ${esc(formatTime(m.createdAt))}</div></article>`;
-      }).join('') : '<div class="dm-empty">아직 메시지가 없습니다.</div>';
+        return `<article class="dm-bubble ${mine ? 'me' : 'other'}"><div>${esc(m.text || '')}</div><div class="dm-meta">${esc(m.from || (mine ? '나' : '상대'))} · ${esc(formatTime(m.createdAt))}</div></article>`;
+      }).join('') : pendingEmptyState.noMessages;
       msgEl.scrollTop = msgEl.scrollHeight;
     }
 
@@ -218,6 +282,18 @@
       if (!currentThreadId && currentThreads[0]) currentThreadId = currentThreads[0].id;
       renderThreads();
       await renderMessages();
+    }
+
+    function normalizeEmptyStates() {
+      if (threadEl.querySelector('.dm-empty') && !threadEl.querySelector('.dm-empty-card')) {
+        threadEl.innerHTML = emptyCard('아직 대화가 없습니다.', '지원자나 팀원에게 먼저 DM을 보내보세요.');
+      }
+      if (msgEl.querySelector('.dm-empty') && !msgEl.querySelector('.dm-empty-card')) {
+        const hasThread = !!currentThreads.find((t) => t.id === currentThreadId);
+        msgEl.innerHTML = hasThread
+          ? emptyCard('아직 메시지가 없습니다.', '첫 메시지를 보내면 이 대화가 협업 기록으로 남습니다.')
+          : emptyCard('대화를 선택해 주세요.', '왼쪽에서 대화를 고르면 바로 이어서 볼 수 있습니다.');
+      }
     }
 
     dmSearch.addEventListener('input', () => {
@@ -267,7 +343,7 @@
       }
     });
 
-    refreshThreads();
+    refreshThreads().then(() => normalizeEmptyStates());
     applyPlanUi();
   </script>
 </body>

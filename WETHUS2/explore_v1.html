@@ -37,7 +37,7 @@
     <section class="page-header">
       <a href="explore.html" class="btn btn--secondary" style="padding:6px 10px;font-size:.78rem;min-width:0;margin-bottom:8px;">← 뒤로</a>
       <h1 class="page-title">프로젝트 탐색</h1>
-      <p class="page-sub">지금 합류 가능한 팀을 빠르게 찾으세요.</p>
+      <p class="page-sub">지금 합류 가능한 팀을 빠르게 찾습니다.</p>
     </section>
 
     <section class="search-wrap">
@@ -52,15 +52,19 @@
         <div class="view-toggle" role="group" aria-label="보기 전환">
           <button id="viewList" class="view-icon-btn" title="리스트형" aria-label="리스트형">
             <span class="icon-list"></span>
+            <span class="view-icon-label">리스트</span>
           </button>
           <button id="viewAlbum" class="view-icon-btn active" title="액자형" aria-label="액자형">
             <span class="icon-grid"></span>
+            <span class="view-icon-label">액자</span>
           </button>
           <button id="shuffleBtn" class="view-icon-btn" title="셔플" aria-label="셔플">
             <span class="icon-shuffle"></span>
+            <span class="view-icon-label">셔플</span>
           </button>
           <button id="filterBtn" class="view-icon-btn view-icon-btn--filter" title="필터" aria-label="필터">
             <span class="icon-filter"></span>
+            <span class="view-icon-label">필터</span>
           </button>
         </div>
       </div>
@@ -94,7 +98,7 @@
     <div class="container">
       <div class="footer-inner">
         <span class="wordmark">WETHUS</span>
-        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
+        <p class="footer-copy">학생 창업 실행 플랫폼 WETHUS<br/><a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a></p>
       </div>
     </div>
   </footer>
@@ -112,7 +116,11 @@
         <p id="modalSummary" style="margin:0 0 12px;color:#f5f5f5;"></p>
         <p id="modalDesc" style="margin:0 0 18px;color:#a3a3a3;line-height:1.7;white-space:pre-line;"></p>
         <div id="modalTeam" class="team-row" style="margin-bottom:12px;"></div>
-        <div class="meta"><span class="badge" id="modalCategoryBadge"></span> · <span id="modalStatus"></span> · <span id="modalRoles"></span> · <span id="modalDuration"></span></div>
+        <div class="modal-meta-strip">
+          <span class="modal-meta-pill"><span class="badge" id="modalCategoryBadge"></span><span id="modalStatus"></span></span>
+          <span class="modal-meta-pill" id="modalRoles"></span>
+          <span class="modal-meta-pill" id="modalDuration"></span>
+        </div>
         <div class="modal-social-row">
           <button id="modalLikeBtn" class="btn btn--secondary">♡ <span id="modalLikeCount">0</span></button>
           <button id="modalCommentBtn" class="btn btn--secondary">💬 <span id="modalCommentCount">0</span></button>
@@ -255,6 +263,13 @@ function renderList(items) {
       listEl.innerHTML = items.map((p, i) => {
         const stage = normalizeStage(p.status);
         const item = { ...p, image: imageFor(p, i), status: stage };
+        const metaBits = [
+          p.teamSize,
+          p.roles,
+          p.neededRoles ? `필요 ${p.neededRoles}` : '',
+          p.neededAgeGroup || '',
+          (p.targetCapacity || p.currentMembers) ? `정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''
+        ].filter(Boolean);
         return `
           <article class="list-item" data-project-id="${esc(item.id)}">
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
@@ -262,7 +277,10 @@ function renderList(items) {
                 <span class="card-chip">${esc(p.category)}</span>
                 <h3 style="margin:4px 0 4px;">${esc(p.title)}</h3>
                 <p style="margin:0 0 6px;">${esc(p.summary)}</p>
-                <div class="meta"><span class="card-status">${esc(stage)}</span> · ${esc(p.teamSize || '')} · ${esc(p.roles)}${p.neededRoles ? ` · 필요:${esc(p.neededRoles)}` : ''}${p.neededAgeGroup ? ` · ${esc(p.neededAgeGroup)}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
+                <div class="card-signal-row">
+                  <span class="card-signal-pill card-signal-pill--accent">${esc(stage)}</span>
+                  ${metaBits.slice(0, 3).map((bit) => `<span class="card-signal-pill">${esc(bit)}</span>`).join('')}
+                </div>
               </div>
               <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${esc(p.id)}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>
             </div>
@@ -278,6 +296,13 @@ function renderList(items) {
       listEl.innerHTML = items.map((p, i) => {
         const stage = normalizeStage(p.status);
         const item = { ...p, image: imageFor(p, i), status: stage };
+        const metaBits = [
+          p.teamSize,
+          p.roles,
+          p.neededRoles ? `필요 ${p.neededRoles}` : '',
+          p.neededAgeGroup || '',
+          (p.targetCapacity || p.currentMembers) ? `정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''
+        ].filter(Boolean);
         return `
           <article class="card" data-project-id="${esc(item.id)}">
             <div class="card-media ${fallbackClass[p.category] || 'card-media--film'}">
@@ -287,7 +312,10 @@ function renderList(items) {
             <h3 class="card-title">${esc(p.title)}</h3>
             <p class="card-summary">${esc(p.summary)}</p>
             ${renderTeam(p.teamMembers)}
-            <div class="meta"><span class="card-status">${esc(stage)}</span> · ${esc(p.teamSize || '')} · ${esc(p.roles)}${p.neededRoles ? ` · 필요:${esc(p.neededRoles)}` : ''}${p.neededAgeGroup ? ` · ${esc(p.neededAgeGroup)}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
+            <div class="card-signal-row">
+              <span class="card-signal-pill card-signal-pill--accent">${esc(stage)}</span>
+              ${metaBits.slice(0, 3).map((bit) => `<span class="card-signal-pill">${esc(bit)}</span>`).join('')}
+            </div>
             <div class="card-bottom-row">
               <div class="card-social"><span>${likedSymbol(p)} ${p.likes || 0}</span><span>💬 ${(p.comments || []).length}</span></div>
               <button class="apply-btn ${WETHUS.hasApplied(p.id)?'applied':''}" data-apply="${esc(p.id)}">${WETHUS.hasApplied(p.id)?'지원완료':'지원하기'}</button>

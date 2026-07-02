@@ -84,7 +84,9 @@ async function auditHealth() {
     ['integrationsRequireSession', 'integration session guard contract key'],
     ['integrationsEnforceLaunchScope', 'integration launch-scope enforcement contract key'],
     ['projectInteractionsRequireSession', 'project interaction guard contract key'],
-    ['projectAccessRequireMembership', 'project membership access guard contract key']
+    ['projectAccessRequireMembership', 'project membership access guard contract key'],
+    ['dmRequireSession', 'DM session guard contract key'],
+    ['tokenEncryptionConfigured', 'OAuth token encryption contract key']
   ];
   for (const [key, label] of requiredSecurityKeys) {
     if (!Object.prototype.hasOwnProperty.call(security, key)) {
@@ -99,13 +101,18 @@ async function auditHealth() {
     ['integrationsRequireSession', 'integration session guard', 'INTEGRATIONS_REQUIRE_SESSION'],
     ['integrationsEnforceLaunchScope', 'integration launch-scope enforcement', 'INTEGRATIONS_ENFORCE_LAUNCH_SCOPE'],
     ['projectInteractionsRequireSession', 'project interaction session guard', 'PROJECT_INTERACTIONS_REQUIRE_SESSION'],
-    ['projectAccessRequireMembership', 'project membership access guard', 'PROJECT_ACCESS_REQUIRE_MEMBERSHIP']
+    ['projectAccessRequireMembership', 'project membership access guard', 'PROJECT_ACCESS_REQUIRE_MEMBERSHIP'],
+    ['dmRequireSession', 'DM session guard', 'DM_REQUIRE_SESSION']
   ];
   for (const [key, label, envKey] of requiredFlags) {
     if (security[key] !== true) {
       addBlocker(`${label} is not enabled in production.`);
       addAction(`Render env: set ${envKey}=true, redeploy the backend, then rerun the strict production gate.`);
     }
+  }
+  if (security.tokenEncryptionConfigured !== true) {
+    addBlocker('OAuth token encryption key is not configured in production.');
+    addAction('Render env: set TOKEN_ENCRYPTION_KEY to a strong random value, redeploy the backend, then rerun the strict production gate.');
   }
 
   addNote(`Backend build: ${json?.build?.ref || '-'} ${json?.build?.commit || '-'}`);

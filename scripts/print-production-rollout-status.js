@@ -14,7 +14,8 @@ const securityFlags = [
   ['integrationsRequireSession', 'INTEGRATIONS_REQUIRE_SESSION'],
   ['integrationsEnforceLaunchScope', 'INTEGRATIONS_ENFORCE_LAUNCH_SCOPE'],
   ['projectInteractionsRequireSession', 'PROJECT_INTERACTIONS_REQUIRE_SESSION'],
-  ['projectAccessRequireMembership', 'PROJECT_ACCESS_REQUIRE_MEMBERSHIP']
+  ['projectAccessRequireMembership', 'PROJECT_ACCESS_REQUIRE_MEMBERSHIP'],
+  ['dmRequireSession', 'DM_REQUIRE_SESSION']
 ];
 const appRoot = path.join(__dirname, '..', 'WETHUS2');
 const frontendChecks = [
@@ -180,7 +181,9 @@ async function summarizeBackendContractDrift() {
     ...(Object.prototype.hasOwnProperty.call(health?.security || {}, 'integrationsRequireSession') ? [] : ['integrationsRequireSession key']),
     ...(Object.prototype.hasOwnProperty.call(health?.security || {}, 'integrationsEnforceLaunchScope') ? [] : ['integrationsEnforceLaunchScope key']),
     ...(Object.prototype.hasOwnProperty.call(health?.security || {}, 'projectInteractionsRequireSession') ? [] : ['projectInteractionsRequireSession key']),
-    ...(Object.prototype.hasOwnProperty.call(health?.security || {}, 'projectAccessRequireMembership') ? [] : ['projectAccessRequireMembership key'])
+    ...(Object.prototype.hasOwnProperty.call(health?.security || {}, 'projectAccessRequireMembership') ? [] : ['projectAccessRequireMembership key']),
+    ...(Object.prototype.hasOwnProperty.call(health?.security || {}, 'dmRequireSession') ? [] : ['dmRequireSession key']),
+    ...(Object.prototype.hasOwnProperty.call(health?.security || {}, 'tokenEncryptionConfigured') ? [] : ['tokenEncryptionConfigured key'])
   ];
   rows.push({ surface: '/health', status: healthRes.status, drift: healthDrift });
 
@@ -229,6 +232,7 @@ async function main() {
   const rolloutNeeded = securityFlags
     .filter(([healthKey]) => health?.security?.[healthKey] !== true)
     .map(([, envKey]) => envKey);
+  const secretUpdatesNeeded = health?.security?.tokenEncryptionConfigured === true ? [] : ['TOKEN_ENCRYPTION_KEY'];
   const driftNeeded = frontendDrift.filter((row) => row.status !== 200 || row.driftCount > 0);
   const backendDriftNeeded = backendContractDrift.filter((row) => row.status !== 200 || row.drift.length > 0);
   const providerStatuses = {
@@ -248,12 +252,16 @@ async function main() {
       securityFlags: Object.fromEntries(
         securityFlags.map(([healthKey, envKey]) => [envKey, health?.security?.[healthKey] === true])
       ),
+      requiredSecrets: {
+        TOKEN_ENCRYPTION_KEY: health?.security?.tokenEncryptionConfigured === true
+      },
       providerStatuses,
       frontendDrift,
       backendContractDrift,
       renderEnvSync,
       blockers: {
         renderEnvUpdates: rolloutNeeded,
+        secretUpdates: secretUpdatesNeeded,
         frontendDrift: driftNeeded,
         backendContractDrift: backendDriftNeeded
       }
@@ -269,6 +277,7 @@ async function main() {
     const enabled = health?.security?.[healthKey] === true;
     console.log(`- ${envKey}: ${enabled ? 'true' : 'false'}`);
   }
+  console.log(`- TOKEN_ENCRYPTION_KEY: ${health?.security?.tokenEncryptionConfigured === true ? 'configured' : 'missing'}`);
 
   console.log('');
   console.log('Provider readiness:');
@@ -342,6 +351,15 @@ async function main() {
     if (renderEnvSync.envSyncPending) {
       console.log('- note: Render backend code is already current; this is now an env sync/settings problem rather than a source deploy problem');
     }
+  }
+
+  if (secretUpdatesNeeded.length) {
+    console.log('');
+    console.log('Next Render secret updates:');
+    for (const envKey of secretUpdatesNeeded) {
+      console.log(`- set ${envKey} to a strong random value, not "true"`);
+    }
+    console.log('- redeploy Render backend');
   }
 
   if (driftNeeded.length) {

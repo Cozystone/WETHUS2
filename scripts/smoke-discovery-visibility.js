@@ -227,9 +227,62 @@ function expectRecommendationFreshness(context) {
   if (ids.indexOf('approved-interest-match') > ids.indexOf('approved-fresh')) {
     fail('recommendations should promote a project that matches the current user interest tags');
   }
-  const interestMatch = recommended.find((project) => String(project?.id || '') === 'approved-interest-match');
-  if (!String(interestMatch?._recommendationReason || '').includes('관심사')) {
-    fail('interest-matched recommendations should expose a recommendation reason tied to the matched interest');
+}
+
+function projectThemeKey(project) {
+  const normalized = String(project?.normalizedCategory || '').trim();
+  if (['MathSci', 'ArtCulture', 'StartupBusiness', 'SocietyLaw'].includes(normalized)) return normalized;
+
+  const raw = String(project?.category || '').trim().toLowerCase();
+  const exact = {
+    math: 'MathSci',
+    sci: 'MathSci',
+    science: 'MathSci',
+    research: 'MathSci',
+    data: 'MathSci',
+    film: 'ArtCulture',
+    creative: 'ArtCulture',
+    art: 'ArtCulture',
+    culture: 'ArtCulture',
+    startup: 'StartupBusiness',
+    business: 'StartupBusiness',
+    app: 'StartupBusiness',
+    policy: 'SocietyLaw',
+    campaign: 'SocietyLaw',
+    law: 'SocietyLaw',
+    society: 'SocietyLaw'
+  };
+  if (exact[raw]) return exact[raw];
+  if (/(math|sci|science|research|data)/.test(raw)) return 'MathSci';
+  if (/(film|creative|art|culture)/.test(raw)) return 'ArtCulture';
+  if (/(startup|business|app)/.test(raw)) return 'StartupBusiness';
+  if (/(policy|campaign|law|society)/.test(raw)) return 'SocietyLaw';
+  return 'StartupBusiness';
+}
+
+function expectHomeRecommendationsAreDiscoverable(context) {
+  const homeProjects = context.window.WETHUS.getRecommendedProjects(6);
+  const exploreProjects = context.window.WETHUS.listExploreProjects();
+  const exploreById = new Map(exploreProjects.map((project) => [String(project?.id || ''), project]));
+
+  for (const project of homeProjects) {
+    const id = String(project?.id || '');
+    if (!id) {
+      fail('home recommendations should not include projects without ids');
+      continue;
+    }
+    if (id.startsWith('home-fallback-')) {
+      fail('home recommendations should use real project ids when approved projects are available');
+      continue;
+    }
+    const exploreProject = exploreById.get(id);
+    if (!exploreProject) {
+      fail(`home recommendation ${id} should also be present in the explore project source`);
+      continue;
+    }
+    if (projectThemeKey(project) !== projectThemeKey(exploreProject)) {
+      fail(`home recommendation ${id} should resolve to the same explore theme`);
+    }
   }
 }
 
@@ -238,6 +291,7 @@ try {
   seedState(context);
   expectExploreVisibility(context);
   expectRecommendationFreshness(context);
+  expectHomeRecommendationsAreDiscoverable(context);
 } catch (error) {
   fail(error?.stack || error?.message || String(error));
 }

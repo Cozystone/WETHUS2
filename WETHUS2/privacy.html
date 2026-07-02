@@ -7,85 +7,111 @@
   <link rel="stylesheet" href="styles.css?v=20260419-25" />
 </head>
 <body style="background:#fff;color:#111;">
-  <main class="container page-main page-main--standard" style="padding-top:28px; padding-left:28px; padding-right:28px; max-width: 900px; line-height:1.85;">
-    <h1 class="page-title">개인정보 처리방침</h1>
-    <p class="page-sub">시행일: 2026년 3월 24일</p>
+  <main class="container page-main page-main--standard" style="padding:28px;max-width:960px;line-height:1.85;">
+    <h1 class="page-title" style="color:#111;">개인정보 처리방침</h1>
+    <p class="page-sub" style="color:#444;">시행일: 2026년 7월 2일</p>
+    <p>WETHUS는 학생 창업 프로젝트 등록, 팀 탐색, 지원, 프로젝트 허브, DM, AI 멘토 및 외부 도구 연동 서비스를 제공하기 위해 필요한 최소한의 개인정보를 처리합니다.</p>
 
-    <section style="margin-top:16px;">
-      <h3>제1조 (수집 항목)</h3>
-      <p>회사는 다음 정보를 수집합니다.</p>
-      <p><strong>필수 항목</strong></p>
+    <section>
+      <h3>1. 개인정보 처리 목적</h3>
       <ul>
-        <li>이메일 주소</li>
-        <li>로그인 정보(Google OAuth 포함)</li>
-        <li>서비스 이용 기록</li>
-      </ul>
-      <p><strong>선택 항목</strong></p>
-      <ul>
-        <li>프로필 정보</li>
-        <li>프로젝트 관련 정보</li>
+        <li>회원 가입, 로그인, 본인 식별 및 계정 관리</li>
+        <li>프로젝트 등록, 검수, 탐색 노출, 팀 지원 및 지원서 관리</li>
+        <li>댓글, 좋아요, 북마크, DM, 알림 등 커뮤니티 기능 제공</li>
+        <li>프로젝트 허브, AI 멘토 피드백, 외부 도구 연동 로그 제공</li>
+        <li>부정 이용 방지, 신고 처리, 보안 점검, 서비스 품질 개선</li>
+        <li>법령상 의무 이행 및 분쟁 대응</li>
       </ul>
     </section>
 
-    <section style="margin-top:12px;">
-      <h3>제2조 (수집 방법)</h3>
+    <section>
+      <h3>2. 처리하는 개인정보 항목</h3>
+      <p><strong>회원가입 및 계정</strong>: 이름, 닉네임, 이메일, 비밀번호 해시, Google 계정 식별값, 프로필 이미지, 가입일, 로그인 세션 정보</p>
+      <p><strong>학생/청소년 확인 및 추천</strong>: 출생연도 또는 나이, 나이 확인 시각, 관심 분야</p>
+      <p><strong>프로필</strong>: 학교, 소개, 경력 요약, 포트폴리오 설명, Instagram/GitHub/LinkedIn/Portfolio 링크, 공개 프로필 조회/팔로우 기록</p>
+      <p><strong>프로젝트 및 팀 활동</strong>: 프로젝트 제목, 설명, 카테고리, 이미지, 팀 구성, 모집 역할, 지원서, 댓글, 좋아요, 북마크, 알림, DM, 허브 활동 로그</p>
+      <p><strong>외부 도구 연동</strong>: 연동 제공자, 외부 계정/문서/채널 식별자, 리소스 이름과 URL, OAuth access/refresh token의 암호화 저장값, webhook secret, 동기화/활동 로그</p>
+      <p><strong>자동 생성 정보</strong>: 접속 일시, IP, User-Agent, 쿠키, 오류 로그, 보안 이벤트, 서비스 이용 기록</p>
+    </section>
+
+    <section>
+      <h3>3. 개인정보 수집 방법</h3>
       <ul>
-        <li>회원가입 및 로그인 과정</li>
-        <li>서비스 이용 중 자동 생성</li>
-        <li>Google OAuth 연동</li>
+        <li>회원가입, 로그인, 프로필 수정, 프로젝트 등록, 지원서 제출 등 이용자가 직접 입력</li>
+        <li>Google 등 OAuth 제공자의 인증 결과 수신</li>
+        <li>외부 도구 연동 또는 webhook/relay를 통한 활동 로그 수신</li>
+        <li>서비스 이용 과정에서 자동 생성</li>
       </ul>
     </section>
 
-    <section style="margin-top:12px;">
-      <h3>제3조 (이용 목적)</h3>
+    <section>
+      <h3>4. 보유 및 이용 기간</h3>
       <ul>
-        <li>서비스 제공 및 운영</li>
-        <li>사용자 인증</li>
-        <li>콘텐츠 관리 및 품질 유지</li>
-        <li>서비스 개선 및 분석</li>
+        <li>회원 정보: 회원 탈퇴 시까지. 단, 분쟁 대응 및 법령상 보관이 필요한 정보는 해당 기간 동안 보관</li>
+        <li>프로젝트/댓글/지원서/DM: 이용자가 삭제하거나 계정 삭제 요청 시까지. 공개 프로젝트의 경우 팀 운영 이력 보존을 위해 비식별 또는 최소 정보 형태로 보존될 수 있음</li>
+        <li>OAuth 토큰 및 webhook secret: 연동 해제, 계정 탈퇴, 또는 토큰 만료/폐기 시까지</li>
+        <li>보안 로그: 부정 이용 방지 및 장애 대응을 위해 최대 1년 보관</li>
+        <li>전자상거래 등 관계 법령상 보존 의무가 발생하는 경우 해당 법정 기간 보관</li>
       </ul>
     </section>
 
-    <section style="margin-top:12px;">
-      <h3>제4조 (보유 및 이용 기간)</h3>
-      <p>개인정보는 서비스 이용 기간 동안 보유하며, 탈퇴 시 지체 없이 파기합니다. 단, 관련 법령에 따라 일정 기간 보관될 수 있습니다.</p>
+    <section>
+      <h3>5. 개인정보 파기</h3>
+      <p>보유 기간이 종료되거나 처리 목적이 달성된 개인정보는 지체 없이 파기합니다. 전자 파일은 복구하기 어렵도록 삭제하고, 출력물은 분쇄 또는 소각합니다. 백업 데이터는 운영 정책에 따라 순차적으로 삭제됩니다.</p>
     </section>
 
-    <section style="margin-top:12px;">
-      <h3>제5조 (제3자 제공)</h3>
-      <p>회사는 이용자의 개인정보를 외부에 제공하지 않습니다. 단, 법령에 따른 경우는 예외로 합니다.</p>
+    <section>
+      <h3>6. 제3자 제공</h3>
+      <p>WETHUS는 이용자의 개인정보를 동의 없이 제3자에게 제공하지 않습니다. 다만 법령에 근거가 있거나 수사기관 등 적법한 절차에 따른 요청이 있는 경우 예외적으로 제공될 수 있습니다.</p>
     </section>
 
-    <section style="margin-top:12px;">
-      <h3>제6조 (처리 위탁 및 국외 이전)</h3>
-      <p>서비스 운영을 위해 다음 외부 서비스를 사용합니다.</p>
+    <section>
+      <h3>7. 처리 위탁 및 국외 이전</h3>
+      <p>서비스 운영 과정에서 다음 외부 서비스를 사용할 수 있습니다. 실제 도입 범위는 운영 환경 설정에 따라 달라질 수 있습니다.</p>
       <ul>
-        <li>Vercel, Render (호스팅)</li>
-        <li>Google Analytics (분석)</li>
-        <li>Google OAuth (인증)</li>
-        <li>OpenAI API (AI 처리)</li>
+        <li>Vercel, Render: 프론트엔드 및 백엔드 호스팅</li>
+        <li>Google: 로그인, Google Docs/Sheets/Calendar 등 연동</li>
+        <li>OpenAI, Google Gemini, Ollama 등: AI 검수와 AI 멘토 응답 생성</li>
+        <li>Notion, Slack, Figma, GitHub, Discord, Airtable: 이용자가 선택한 외부 도구 연동</li>
       </ul>
-      <p>이 과정에서 일부 정보가 국외로 이전될 수 있습니다.</p>
+      <p>국외 사업자의 서비스를 사용하는 경우 개인정보 또는 프로젝트 내용이 국외에서 처리될 수 있습니다. WETHUS는 필요한 범위의 데이터만 전송하고, 외부 연동은 이용자의 명시적 연결 동작을 전제로 합니다.</p>
     </section>
 
-    <section style="margin-top:12px;">
-      <h3>제7조 (이용자의 권리)</h3>
-      <p>이용자는 개인정보 열람, 수정, 삭제, 처리정지를 요청할 수 있습니다.</p>
+    <section>
+      <h3>8. AI 처리 및 자동화된 판단</h3>
+      <p>프로젝트 제출 내용, 설명, 활동 로그, 외부 문서 요약 등은 AI 예비검수와 AI 멘토 피드백에 사용될 수 있습니다. AI 결과는 공개 여부나 제재의 유일한 근거가 아니며, 필요한 경우 운영자가 최종 검토합니다. 이용자는 AI 판단에 대해 이의제기할 수 있습니다.</p>
     </section>
 
-    <section style="margin-top:12px;">
-      <h3>제8조 (아동 및 청소년 보호)</h3>
-      <p>회사는 청소년 이용자를 고려하여 개인정보 보호를 강화하며, 관련 법령을 준수합니다.</p>
+    <section>
+      <h3>9. 만 14세 미만 및 청소년 이용자</h3>
+      <p>WETHUS는 학생 창업 프로젝트 플랫폼으로 청소년 이용 가능성을 고려합니다. 만 14세 미만 아동의 개인정보 처리가 필요한 경우 법정대리인 동의 등 관련 법령상 절차를 갖춘 뒤 처리합니다. 현재 서비스는 상용 배포 전까지 만 14세 미만 단독 가입을 허용하지 않는 방향으로 운영합니다.</p>
     </section>
 
-    <section style="margin-top:12px;">
-      <h3>제9조 (보안 조치)</h3>
-      <p>회사는 개인정보 보호를 위해 기술적 및 관리적 조치를 시행합니다.</p>
+    <section>
+      <h3>10. 이용자의 권리</h3>
+      <p>이용자는 개인정보 열람, 정정, 삭제, 처리정지, 동의 철회, 외부 연동 해제, 계정 탈퇴를 요청할 수 있습니다. 요청은 서비스 내 기능 또는 이메일로 접수할 수 있으며, WETHUS는 본인 확인 후 지체 없이 처리합니다.</p>
+      <p>문의: <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a></p>
     </section>
 
-    <section style="margin-top:12px; margin-bottom:24px;">
-      <h3>제10조 (쿠키 및 로그)</h3>
-      <p>서비스는 쿠키 및 로그 데이터를 활용하여 이용 환경을 개선합니다.</p>
+    <section>
+      <h3>11. 쿠키 및 로컬 저장소</h3>
+      <p>서비스는 로그인 세션 유지, 화면 설정, 인증 복귀 흐름, 로컬 개발 테스트를 위해 쿠키, sessionStorage, localStorage를 사용할 수 있습니다. 운영 환경에서는 비밀번호와 OAuth 토큰을 브라우저 저장소에 저장하지 않습니다.</p>
+    </section>
+
+    <section>
+      <h3>12. 안전성 확보조치</h3>
+      <ul>
+        <li>비밀번호 해시 저장 및 운영 세션의 httpOnly 쿠키 사용</li>
+        <li>OAuth 토큰과 webhook secret 등 민감정보의 서버 측 보호</li>
+        <li>접근 권한 제한, CORS 제한, rate limit, 보안 헤더 적용</li>
+        <li>SSRF 방어, webhook secret 검증, 활동 로그 보관</li>
+        <li>운영 환경에서 로컬 계정 fallback 제한</li>
+      </ul>
+    </section>
+
+    <section style="margin-bottom:24px;">
+      <h3>13. 방침 변경</h3>
+      <p>본 처리방침은 법령, 서비스 기능, 보안 정책 변경에 따라 개정될 수 있습니다. 중요한 변경은 시행 전 서비스 화면 또는 공지로 안내합니다.</p>
     </section>
   </main>
 </body>

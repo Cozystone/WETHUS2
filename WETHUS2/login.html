@@ -16,7 +16,7 @@
   <meta name="wethus-frontend-contract" content="2026-06-26-commercial-interactions-v1" />
   <title>WETHUS | 로그인</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
-  <link rel="stylesheet" href="styles.css?v=20260419-25" />
+  <link rel="stylesheet" href="styles.css?v=20260702-auth-compact" />
   <style>
     .policy-check {
       accent-color: #ffffff;
@@ -82,6 +82,10 @@
       align-items: center;
       padding: 0 14px;
     }
+    .policy-modal-sub {
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
     @media (max-width: 640px) {
       .policy-modal-panel { width: calc(100vw - 20px); }
       .policy-doc-frame { height: 260px; }
@@ -91,10 +95,30 @@
 </head>
 <body>
   <main class="auth-wrap">
-    <section class="auth-card">
+    <section class="auth-stage">
+      <aside class="auth-intro">
+        <p class="auth-kicker">WETHUS ACCESS</p>
+        <h1 class="auth-intro-title">학생 창업 실행을<br/>바로 이어가세요.</h1>
+        <p class="auth-intro-copy">프로젝트 시작, 팀 참여, 허브 협업, AI 멘토 기록까지 한 계정으로 이어집니다.</p>
+        <div class="auth-intro-points">
+          <article class="auth-intro-point">
+            <strong>Start</strong>
+            <span>아이디어를 올리고 첫 프로젝트를 시작합니다.</span>
+          </article>
+          <article class="auth-intro-point">
+            <strong>Team Up</strong>
+            <span>관심사 기반으로 팀을 찾고 지원 흐름을 이어갑니다.</span>
+          </article>
+          <article class="auth-intro-point">
+            <strong>Verify</strong>
+            <span>허브 기록과 포트폴리오로 실행 흔적을 쌓습니다.</span>
+          </article>
+        </div>
+      </aside>
+      <section class="auth-card">
       <a href="#" id="authCloseBtn" class="auth-close" aria-label="닫기">×</a>
       <h1>WETHUS 계정</h1>
-      <p>로그인하거나, 회원가입 후 바로 프로젝트를 시작할 수 있습니다.</p>
+      <p>로그인 후 바로 시작하세요.</p>
 
       <div class="auth-tabs">
         <button id="tabLogin" class="btn btn--secondary auth-tab active" type="button">로그인</button>
@@ -122,14 +146,16 @@
         <input id="signupPwConfirm" name="passwordConfirm" type="password" placeholder="비밀번호 확인" required />
         <small id="pwConfirmHint" class="note"></small>
 
-        <input id="signupBirthYear" name="birthYear" type="number" min="1980" max="2026" placeholder="출생연도 (본인인증)" required />
-        <input id="signupAge" name="age" type="number" placeholder="나이(자동 계산)" readonly />
-        <button id="verifyAgeBtn" class="btn btn--secondary" type="button">본인인증(나이 확인)</button>
+        <div class="auth-inline-grid">
+          <input id="signupBirthYear" name="birthYear" type="number" min="1980" max="2026" placeholder="출생연도" required />
+          <input id="signupAge" name="age" type="number" placeholder="나이(자동 계산)" readonly />
+        </div>
+        <button id="verifyAgeBtn" class="btn btn--secondary" type="button">나이 확인</button>
         <small id="verifyAgeMsg" class="note"></small>
 
         <fieldset class="interest-picker" aria-label="관심 분야 선택">
           <legend>관심 분야</legend>
-          <p>탐색탭에서 초기 창업 아이디어를 추천하는 데 사용합니다.</p>
+          <p>탐색 추천에 반영됩니다.</p>
           <div class="interest-grid">
             <label><input type="checkbox" name="interestTags" value="AI/앱" /> AI/앱</label>
             <label><input type="checkbox" name="interestTags" value="콘텐츠/미디어" /> 콘텐츠/미디어</label>
@@ -144,11 +170,17 @@
         </fieldset>
 
         <div style="display:grid;gap:8px;">
-          <button id="openPolicyModal" class="btn btn--secondary" type="button">약관 확인 및 동의하기</button>
+          <button id="openPolicyModal" class="btn btn--secondary" type="button">약관 확인</button>
           <label style="display:flex;gap:8px;align-items:flex-start;color:#a3a3a3;font-size:.85rem;line-height:1.5;">
             <input id="agreeChk" type="checkbox" style="margin-top:2px;" disabled />
-            <span>[필수] 만 22세 미만 학생임 확인 및 필수 약관 전체 동의</span>
+            <span>[필수] 만 14세 이상, 만 22세 미만 학생임 확인 및 필수 약관 전체 동의</span>
           </label>
+          <p class="note" style="margin:0;font-size:.8rem;">
+            전문 보기:
+            <a href="terms.html" target="_blank" rel="noopener">이용약관</a>
+            · <a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>
+            · <a href="operations-policy.html" target="_blank" rel="noopener">운영정책</a>
+          </p>
         </div>
 
         <button id="signupSubmit" class="btn btn--primary" type="submit">회원가입</button>
@@ -160,15 +192,18 @@
         <span style="flex:1;height:1px;background:#2a2a2a;"></span>
       </div>
 
-      <div id="googleAuthWrap" style="display:grid;gap:8px;margin-bottom:12px;">
+      <div id="socialAuthWrap" style="display:grid;gap:8px;margin-bottom:12px;">
         <button id="googleOauthBtn" class="btn btn--secondary" type="button" style="justify-content:center;">Google로 로그인</button>
-        <p id="googleHint" class="note" style="margin:0;text-align:center;"></p>
+        <button id="naverOauthBtn" class="btn btn--secondary" type="button" style="justify-content:center;">네이버로 로그인</button>
+        <button id="kakaoOauthBtn" class="btn btn--secondary" type="button" style="justify-content:center;">카카오로 로그인</button>
+        <p id="socialHint" class="note" style="margin:0;text-align:center;"></p>
       </div>
 
       <div class="dev-row" id="devModeRow" style="display:none;">
         <button id="devModeBtn" class="btn btn--secondary" type="button">개발자모드</button>
       </div>
       <p id="authMsg" class="form-message"></p>
+      </section>
     </section>
   </main>
 
@@ -178,7 +213,7 @@
       <button class="modal-close" id="policyCloseBtn" aria-label="닫기">×</button>
       <div class="modal-content policy-modal-content">
         <h3 style="margin-top:0;">필수 약관 동의</h3>
-        <p class="page-sub" style="margin-top:0;">한 번에 전체 문서를 확인하고 동의할 수 있습니다.</p>
+        <p class="page-sub" style="margin-top:0;">필수 문서를 한 번에 확인합니다.</p>
 
         <div class="policy-doc-wrap">
           <iframe id="policyAllFrame" class="policy-doc-frame" src="legal-all.html"></iframe>
@@ -211,7 +246,7 @@
     <div class="container">
       <div class="footer-inner">
         <span class="wordmark">WETHUS</span>
-        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
+        <p class="footer-copy">학생 창업 실행 플랫폼 WETHUS<br/><a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a></p>
       </div>
     </div>
   </footer>
@@ -219,8 +254,10 @@
   <script>
     const msg = document.getElementById('authMsg');
     const tabLogin = document.getElementById('tabLogin');
-    const googleHint = document.getElementById('googleHint');
+    const socialHint = document.getElementById('socialHint');
     const googleOauthBtn = document.getElementById('googleOauthBtn');
+    const naverOauthBtn = document.getElementById('naverOauthBtn');
+    const kakaoOauthBtn = document.getElementById('kakaoOauthBtn');
 
     const isLocalHost = ['localhost', '127.0.0.1'].includes(location.hostname);
     const localBases = ['http://127.0.0.1:8787', 'http://localhost:8787'];
@@ -235,7 +272,12 @@
       .filter(Boolean)
       .map(b => b.replace(/\/$/, '').replace(/\/api$/, ''));
     const UNIQUE_AUTH_BASES = Array.from(new Set(AUTH_BASES));
-    const GOOGLE_OAUTH_START_ENDPOINT = `${(UNIQUE_AUTH_BASES[0] || 'https://wethus-api.onrender.com').replace(/\/$/, '')}/auth/google/start`;
+    const PRIMARY_AUTH_BASE = (UNIQUE_AUTH_BASES[0] || 'https://wethus-api.onrender.com').replace(/\/$/, '');
+    const SOCIAL_PROVIDERS = {
+      google: { label: 'Google', button: googleOauthBtn, startEndpoint: `${PRIMARY_AUTH_BASE}/auth/google/start`, configEndpoint: `${PRIMARY_AUTH_BASE}/auth/google/config` },
+      naver: { label: '네이버', button: naverOauthBtn, startEndpoint: `${PRIMARY_AUTH_BASE}/auth/naver/start`, configEndpoint: `${PRIMARY_AUTH_BASE}/auth/naver/config` },
+      kakao: { label: '카카오', button: kakaoOauthBtn, startEndpoint: `${PRIMARY_AUTH_BASE}/auth/kakao/start`, configEndpoint: `${PRIMARY_AUTH_BASE}/auth/kakao/config` }
+    };
     const LOGIN_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/login`);
     const REGISTER_ENDPOINTS = UNIQUE_AUTH_BASES.map(b => `${b}/auth/register`);
     const allowDevMode = isLocalHost || window.WETHUS_ENABLE_DEV_MODE === true;
@@ -263,6 +305,7 @@
     const policyModal = document.getElementById('policyModal');
     const policyCloseBtn = document.getElementById('policyCloseBtn');
     const policyBackBtn = document.getElementById('policyBackBtn');
+    const policyModalSub = policyModal?.querySelector('.page-sub');
     const policyAllChk = document.getElementById('policyAllChk');
     const policyTermsChk = document.getElementById('policyTermsChk');
     const policyOpsChk = document.getElementById('policyOpsChk');
@@ -271,7 +314,15 @@
     const devModeRow = document.getElementById('devModeRow');
     const devModeBtn = document.getElementById('devModeBtn');
 
-    if (devModeRow && allowDevMode) devModeRow.style.display = 'flex';
+    if (policyModalSub) {
+      policyModalSub.classList.remove('page-sub');
+      policyModalSub.classList.add('policy-modal-sub');
+    }
+
+    if (devModeRow && allowDevMode) {
+      devModeRow.style.display = 'flex';
+      if (devModeBtn) devModeBtn.textContent = '로컬 테스트 계정으로 계속';
+    }
 
     if (!window.WETHUS) {
       msg.textContent = '앱 로딩 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.';
@@ -286,6 +337,13 @@
     }
 
     let ageVerifiedAt = '';
+
+    const authError = new URLSearchParams(location.search).get('authError');
+    if (authError) {
+      const [provider, detail] = String(authError).split(':');
+      const providerLabel = SOCIAL_PROVIDERS[provider]?.label || '소셜';
+      msg.textContent = `${providerLabel} 로그인에 실패했습니다. ${decodeURIComponent(detail || '잠시 후 다시 시도해주세요.')}`;
+    }
 
     function readStoredReturnState() {
       try {
@@ -401,9 +459,28 @@
       throw lastErr || new Error('인증 서버 연결 실패');
     }
 
-    function startGoogleOAuthLogin() {
+    async function refreshSocialProviderReadiness() {
+      await Promise.all(Object.entries(SOCIAL_PROVIDERS).map(async ([key, provider]) => {
+        if (!provider.button) return;
+        try {
+          const data = await getWithFallback([provider.configEndpoint]);
+          const ready = key === 'google' ? !!String(data.clientId || '').trim() : data.ready === true;
+          provider.button.disabled = !ready;
+          provider.button.style.opacity = ready ? '1' : '.55';
+          provider.button.title = ready ? `${provider.label} 로그인` : `${provider.label} OAuth 설정이 아직 완료되지 않았습니다.`;
+        } catch (_) {
+          provider.button.disabled = true;
+          provider.button.style.opacity = '.55';
+          provider.button.title = `${provider.label} 로그인 설정을 확인할 수 없습니다.`;
+        }
+      }));
+    }
+
+    function startSocialOAuthLogin(providerKey) {
+      const provider = SOCIAL_PROVIDERS[providerKey];
+      if (!provider?.startEndpoint) return;
       const nextPath = resolvePendingReturnTarget() || '/index.html';
-      const url = new URL(GOOGLE_OAUTH_START_ENDPOINT);
+      const url = new URL(provider.startEndpoint);
       url.searchParams.set('next', nextPath);
       url.searchParams.set('origin', location.origin);
       location.href = url.toString();
@@ -474,7 +551,7 @@
       const age = Number(signupAge?.value || NaN);
       if (!Number.isFinite(age) || !ageVerifiedAt) {
         ok = false;
-        if (verifyAgeMsg && !verifyAgeMsg.textContent) verifyAgeMsg.textContent = '회원가입 전 본인인증(나이 확인)을 완료해주세요.';
+        if (verifyAgeMsg && !verifyAgeMsg.textContent) verifyAgeMsg.textContent = '가입 전 나이 확인을 완료해주세요.';
       }
 
       if (!selectedInterests.length) {
@@ -561,6 +638,25 @@
     });
     syncPolicyConfirmState();
 
+    if (devModeBtn && allowDevMode) {
+      devModeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (!window.WETHUS) return;
+        try {
+          const user = WETHUS.ensureLocalDevUser
+            ? WETHUS.ensureLocalDevUser()
+            : (WETHUS.setCurrentUser('dev-temp', true), { onboardingComplete: true });
+          msg.textContent = '로컬 테스트 계정으로 로그인했습니다. 이동 중입니다.';
+          setTimeout(() => {
+            redirectAfterAuth(user || (WETHUS.currentUser ? WETHUS.currentUser() : { onboardingComplete: true }), { fallback: 'index.html' });
+          }, 120);
+        } catch (err) {
+          msg.textContent = String(err?.message || '로컬 테스트 로그인에 실패했습니다.');
+        }
+      }, true);
+    }
+
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!window.WETHUS) return;
@@ -589,7 +685,7 @@
         const m = String(err?.message || '로그인에 실패했습니다.');
         const localUser = (WETHUS.getState().users || []).find(u => String(u.email || '').toLowerCase() === email);
 
-        if (/가입된 계정이 없습니다/.test(m) && (localUser?.password || localUser?.passwordHash)) {
+        if (isLocalHost && /가입된 계정이 없습니다/.test(m) && (localUser?.password || localUser?.passwordHash)) {
           try {
             await WETHUS.loginUser({ email, password });
             if (rememberEmail.checked) localStorage.setItem('wethus_saved_email', email);
@@ -667,10 +763,17 @@
       }
     });
 
-    googleOauthBtn?.addEventListener('click', () => {
-      googleHint.textContent = 'Google 로그인 페이지로 이동 중입니다.';
-      startGoogleOAuthLogin();
+    Object.entries(SOCIAL_PROVIDERS).forEach(([key, provider]) => {
+      provider.button?.addEventListener('click', () => {
+        if (provider.button.disabled) {
+          if (socialHint) socialHint.textContent = `${provider.label} 로그인 설정이 아직 완료되지 않았습니다.`;
+          return;
+        }
+        if (socialHint) socialHint.textContent = `${provider.label} 로그인 페이지로 이동 중입니다.`;
+        startSocialOAuthLogin(key);
+      });
     });
+    refreshSocialProviderReadiness();
   </script>
 </body>
 </html>

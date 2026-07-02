@@ -14,8 +14,21 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260419-25" />
   <style>
+    .explore-main {
+      flex: 0 0 auto;
+      min-height: 0;
+      padding-bottom: 32px;
+    }
+
+    .explore-main.page-main--standard {
+      min-height: 0;
+      padding-bottom: 32px;
+    }
+
     .explore-gateway {
-      padding: 34px 0 24px;
+      width: min(100%, 980px);
+      margin: 0 auto;
+      padding: 28px 0 0;
     }
 
     .gateway-title {
@@ -30,14 +43,19 @@
       color: #b8b8b8;
     }
 
+    .explore-gateway > .gateway-title,
+    .explore-gateway > .gateway-sub {
+      display: none;
+    }
+
     .stack-shell {
       position: relative;
-      padding-top: 42px;
+      padding-top: 18px;
     }
 
     .stack-wrap {
       position: relative;
-      height: 480px;
+      height: 420px;
       border-radius: 18px;
       overflow: hidden;
       border: 1px solid rgba(255,255,255,.16);
@@ -142,7 +160,7 @@
     .stack-topbar {
       position: absolute;
       top: 0;
-      right: -10px;
+      right: 0;
       z-index: 11;
       display: flex;
       justify-content: flex-start;
@@ -151,7 +169,7 @@
     .stack-total-btn {
       display: inline-flex;
       padding: 6px 10px;
-      border-radius: 2px;
+      border-radius: 10px;
       border: 1px solid rgba(255,255,255,.16);
       background: rgba(255,255,255,.03);
       color: rgba(245,245,245,.78);
@@ -164,11 +182,33 @@
       text-decoration: none;
     }
 
+    .stack-card p:last-child {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
     @media (max-width: 900px) {
+      .explore-main {
+        padding-bottom: 20px;
+      }
+
+      .stack-shell {
+        padding-top: 0;
+      }
+
       .stack-topbar {
         position: static;
         width: auto;
         margin-bottom: 12px;
+      }
+
+      .stack-total-btn {
+        width: 100%;
+        justify-content: center;
+        min-height: 40px;
+        font-size: .78rem;
       }
 
       .stack-wrap {
@@ -180,12 +220,21 @@
         position: relative;
         right: auto;
         width: 100%;
-        min-height: 150px;
+        min-height: 138px;
         clip-path: none;
+        padding: 18px 16px 20px;
       }
 
       .stack-card:hover {
         transform: none;
+      }
+
+      .stack-card h3 {
+        font-size: 1.04rem;
+      }
+
+      .stack-card p {
+        font-size: .79rem;
       }
     }
   </style>
@@ -206,14 +255,16 @@
     </div>
   </header>
 
-  <main class="container page-main page-main--standard">
+  <main class="container page-main page-main--standard explore-main">
     <section class="explore-gateway">
-      <h1 class="gateway-title">카테고리 탐색</h1>
-      <p class="gateway-sub">관심 분야를 선택하면 해당 테마의 프로젝트 탐색으로 이동합니다.</p>
+      <div class="page-header" style="margin-bottom:18px;">
+        <h1 class="page-title gateway-title" style="margin-bottom:8px;">카테고리 탐색</h1>
+        <p class="page-sub gateway-sub" style="margin:0;">분야를 고르면 바로 해당 테마로 이동합니다.</p>
+      </div>
 
       <div class="stack-shell">
         <div class="stack-topbar">
-          <a class="stack-total-btn" href="explore_v1.html">전체보기 -&gt;</a>
+          <a class="stack-total-btn" href="explore_v1.html">전체 프로젝트 보기</a>
         </div>
 
         <div class="stack-wrap" aria-label="카테고리 선택">
@@ -246,7 +297,7 @@
     <div class="container">
       <div class="footer-inner">
         <span class="wordmark">WETHUS</span>
-        <p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p>
+        <p class="footer-copy">학생 창업 실행 플랫폼 WETHUS<br/><a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a></p>
       </div>
     </div>
   </footer>

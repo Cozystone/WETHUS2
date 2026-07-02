@@ -139,6 +139,22 @@ const checks = [
     }
   },
   {
+    url: `${API_BASE_URL}/auth/naver/config`,
+    status: 200,
+    json: true,
+    requireObject: {
+      ok: true
+    }
+  },
+  {
+    url: `${API_BASE_URL}/auth/kakao/config`,
+    status: 200,
+    json: true,
+    requireObject: {
+      ok: true
+    }
+  },
+  {
     url: `${API_BASE_URL}/health`,
     status: 200,
     json: true,
@@ -260,7 +276,9 @@ async function runCheck(check) {
             'integrationsRequireSession',
             'integrationsEnforceLaunchScope',
             'projectInteractionsRequireSession',
-            'projectAccessRequireMembership'
+            'projectAccessRequireMembership',
+            'dmRequireSession',
+            'tokenEncryptionConfigured'
           ];
           for (const key of requiredSecurityKeys) {
             if (!Object.prototype.hasOwnProperty.call(parsed.security, key)) {
@@ -273,7 +291,9 @@ async function runCheck(check) {
             ['integrationsRequireSession', 'integration session guard'],
             ['integrationsEnforceLaunchScope', 'integration launch-scope enforcement'],
             ['projectInteractionsRequireSession', 'project interaction session guard'],
-            ['projectAccessRequireMembership', 'project membership access guard']
+            ['projectAccessRequireMembership', 'project membership access guard'],
+            ['dmRequireSession', 'DM session guard'],
+            ['tokenEncryptionConfigured', 'OAuth token encryption key']
           ];
           for (const [key, label] of requiredFlags) {
             if (parsed.security[key] !== true) {

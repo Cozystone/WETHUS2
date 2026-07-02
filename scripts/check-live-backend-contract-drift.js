@@ -43,7 +43,9 @@ async function run() {
     ['integrationsRequireSession key', Object.prototype.hasOwnProperty.call(health?.security || {}, 'integrationsRequireSession'), `value=${health?.security?.integrationsRequireSession}`],
     ['integrationsEnforceLaunchScope key', Object.prototype.hasOwnProperty.call(health?.security || {}, 'integrationsEnforceLaunchScope'), `value=${health?.security?.integrationsEnforceLaunchScope}`],
     ['projectInteractionsRequireSession key', Object.prototype.hasOwnProperty.call(health?.security || {}, 'projectInteractionsRequireSession'), `value=${health?.security?.projectInteractionsRequireSession}`],
-    ['projectAccessRequireMembership key', Object.prototype.hasOwnProperty.call(health?.security || {}, 'projectAccessRequireMembership'), `value=${health?.security?.projectAccessRequireMembership}`]
+    ['projectAccessRequireMembership key', Object.prototype.hasOwnProperty.call(health?.security || {}, 'projectAccessRequireMembership'), `value=${health?.security?.projectAccessRequireMembership}`],
+    ['dmRequireSession key', Object.prototype.hasOwnProperty.call(health?.security || {}, 'dmRequireSession'), `value=${health?.security?.dmRequireSession}`],
+    ['tokenEncryptionConfigured key', Object.prototype.hasOwnProperty.call(health?.security || {}, 'tokenEncryptionConfigured'), `value=${health?.security?.tokenEncryptionConfigured}`]
   ];
 
   for (const [label, ok, detail] of healthChecks) {

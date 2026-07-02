@@ -13,39 +13,71 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="styles.css?v=20260419-25" />
   <style>
-    .hub-shell{margin-top:24px}
-    .hub-list{display:grid;gap:10px}
+    .hub-shell{margin-top:16px}
+    .hub-list{display:grid;gap:8px}
     .hub-item{border:1px solid #2a2a2a;border-radius:12px;background:#121212;padding:12px;cursor:pointer}
     .hub-item:hover{border-color:#3a3a3a;background:#151515}
     .hub-item--project{display:flex;gap:10px;align-items:flex-start;min-width:0}
     .hub-item-copy{min-width:0;flex:1 1 auto}
     .hub-item-summary{margin:0;color:#d4d4d4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .hub-header{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start;border:1px solid #2a2a2a;border-radius:14px;background:linear-gradient(180deg,#141414,#111);padding:14px}
-    .hub-head-left{display:flex;gap:12px;align-items:flex-start}
-    .hub-thumb{width:84px;height:84px;border-radius:12px;object-fit:cover;border:1px solid #2f2f2f;background:#1b1b1b}
+    .hub-header{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start;border:1px solid #2a2a2a;border-radius:16px;background:linear-gradient(180deg,#151515,#101010);padding:14px}
+    .hub-head-left{display:flex;gap:11px;align-items:flex-start}
+    .hub-thumb{width:78px;height:78px;border-radius:12px;object-fit:cover;border:1px solid #2f2f2f;background:#1b1b1b}
+    .hub-thumb--fallback{width:44px;height:44px;border-radius:10px;flex:0 0 auto;background:linear-gradient(135deg,rgba(255,122,26,.72),rgba(37,99,235,.58));box-shadow:inset 0 1px 0 rgba(255,255,255,.22)}
+    .hub-summary-strip{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+    .hub-summary-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border-radius:999px;border:1px solid #2f2f2f;background:#161616;color:#e4ddd3;font-size:.72rem;line-height:1.18}
+    .hub-summary-chip strong{color:#fff4e7;font-size:.7rem;letter-spacing:.04em;text-transform:uppercase}
+    .hub-command-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0 8px}
+    .hub-command-card{border:1px solid #2a2a2a;border-radius:14px;background:linear-gradient(180deg,#151515,#111);padding:12px;display:grid;gap:8px;min-width:0}
+    .hub-command-card--lead{border-color:#5c3c12;background:linear-gradient(180deg,rgba(255,138,0,.16),rgba(255,255,255,.03))}
+    .hub-command-card--signal{border-color:#25415c;background:linear-gradient(180deg,rgba(45,125,255,.12),rgba(255,255,255,.025))}
+    .hub-command-card--ops{border-color:#214332;background:linear-gradient(180deg,rgba(31,153,103,.12),rgba(255,255,255,.025))}
+    .hub-command-label{color:#ffb36d;font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+    .hub-command-card strong{color:#fff5e8;font-size:.98rem;line-height:1.38}
+    .hub-command-card p{margin:0;color:#d9d1c6;font-size:.84rem;line-height:1.56;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+    .hub-command-meta{display:flex;gap:6px;flex-wrap:wrap}
+    .hub-command-meta span{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#efe6da;font-size:.74rem;line-height:1.2}
+    .hub-intelligence-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.9fr) minmax(0,.95fr) minmax(0,.95fr);gap:10px;margin:8px 0 10px}
+    .hub-intelligence-card{border:1px solid #2b2b2b;border-radius:12px;background:linear-gradient(180deg,#141414,#101010);padding:12px;display:grid;gap:8px;min-width:0}
+    .hub-intelligence-card--score{border-color:#4d3515;background:linear-gradient(180deg,rgba(255,138,0,.13),rgba(255,255,255,.025))}
+    .hub-intelligence-label{color:#b9b9b9;font-size:.7rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+    .hub-score-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+    .hub-score-value{color:#fff4e7;font-size:2rem;font-weight:900;line-height:1}
+    .hub-score-value small{font-size:.78rem;color:#bcb4aa}
+    .hub-score-bar{height:8px;border-radius:999px;background:#252525;overflow:hidden}
+    .hub-score-bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff8a00,#78d8a2);border-radius:inherit;transition:width .25s ease}
+    .hub-intelligence-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+    .hub-intelligence-list li{display:flex;justify-content:space-between;gap:8px;border-top:1px solid rgba(255,255,255,.07);padding-top:6px;color:#ddd4c8;font-size:.8rem;line-height:1.35}
+    .hub-intelligence-list li:first-child{border-top:0;padding-top:0}
+    .hub-intelligence-list strong{color:#fff4e7;font-weight:800}
+    .hub-intelligence-muted{margin:0;color:#aaa;font-size:.8rem;line-height:1.45}
     .hub-top-team{display:flex;gap:8px;flex-wrap:wrap}
     .hub-team-pill{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;border:1px solid #303030;background:#151515}
     .hub-team-pill .meta{color:#ff9a2f !important;}
     .hub-team-pill-remove{border:0;background:transparent;color:#ffb36d;font-weight:900;cursor:pointer;padding:0 2px;line-height:1;}
     .hub-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-    .hub-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;justify-content:stretch}
-    .hub-actions .btn{width:100%;min-width:0;justify-content:center;}
-    .hub-tabs-wrap{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:10px;align-items:stretch;margin:14px 0 12px}
-    .hub-tabs{display:flex;gap:8px;align-items:center}
-    .hub-tab{padding:8px 12px;border-radius:999px;border:1px solid #333;background:#151515;color:#ddd;cursor:pointer}
+    .hub-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;justify-content:stretch;max-width:268px}
+    .hub-actions .btn{width:100%;min-width:0;justify-content:center;min-height:40px;line-height:1.2;padding:8px 10px}
+    #hubMentorBtn{grid-column:1 / -1;min-height:44px;box-shadow:0 12px 24px rgba(255,138,0,.16)}
+    .hub-tabs-wrap{display:grid;grid-template-columns:minmax(0,1fr) 238px;gap:12px;align-items:stretch;margin:14px 0 12px}
+    .hub-tabs{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+    .hub-tab{padding:7px 10px;border-radius:999px;border:1px solid #333;background:#151515;color:#ddd;cursor:pointer;line-height:1.2;text-align:center;font-size:.8rem}
     .hub-tab.active{background:#ff8a00;color:#111;border-color:#ff8a00;font-weight:700}
-    .hub-llm-box{border:1px solid #2f2f2f;border-radius:10px;background:#151515;padding:6px 8px;min-height:52px}
-    .hub-llm-box h4{margin:0 0 1px;font-size:.84rem}
-    .hub-grid{display:grid;grid-template-columns:1.55fr .8fr;gap:12px}
+    .hub-llm-box{border:1px solid #2f2f2f;border-radius:12px;background:linear-gradient(180deg,#171717,#141414);padding:9px 10px;min-height:48px;min-width:0}
+    .hub-llm-box h4{margin:0 0 2px;font-size:.78rem}
+    .hub-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(290px,.85fr);gap:12px}
     .hub-left{display:grid;gap:10px}
-    .hub-card{border:1px solid #2a2a2a;border-radius:12px;background:#121212;padding:12px}
-    .hub-card h3{margin:0 0 8px;font-size:1rem}
+    .hub-card{border:1px solid #2a2a2a;border-radius:14px;background:linear-gradient(180deg,#131313,#111);padding:12px}
+    .hub-card h3{margin:0 0 8px;font-size:.94rem;line-height:1.34}
+    .hub-card p{overflow-wrap:anywhere;line-height:1.58}
+    .hub-card.is-muted{border-color:#252525;background:linear-gradient(180deg,#121212,#101010);opacity:.9}
+    .hub-card.is-hidden{display:none !important}
     .hub-wide{min-height:130px}
     .tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
     .tool-card{border:1px solid #333;border-radius:10px;padding:10px;background:#151515}
     .tool-card .btn{min-height:38px;display:inline-flex;align-items:center;justify-content:center;}
     .status-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0}
-    .status-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;border:1px solid #303030;background:#111;font-size:.78rem;color:#d7d7d7;line-height:1.2}
+    .status-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;border:1px solid #303030;background:#111;font-size:.76rem;color:#d7d7d7;line-height:1.18}
     .status-chip--launch{border-color:#3b2b12;background:#1d1409;color:#ffbf73}
     .status-chip--roadmap{border-color:#38314a;background:#1b1730;color:#c7b7ff}
     .status-chip--connected{border-color:#214332;background:#10271e;color:#7be3af}
@@ -58,9 +90,42 @@
     .tool-card-title{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
     .tool-card-main{display:grid;gap:6px}
     .tool-card-actions{display:grid;gap:6px;margin-top:10px}
-    .side-stack{display:grid;gap:10px}
+    .hub-section-head{display:grid;gap:4px;margin-bottom:10px}
+    .hub-section-head h3{margin:0;font-size:.96rem}
+    .hub-section-head p{margin:0;color:#b3b3b3;font-size:.82rem;line-height:1.48;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .hub-input-stack{display:grid;gap:8px}
+    .hub-inline-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .hub-input-surface{width:100%;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px}
+    .hub-split-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .mentor-run-grid{display:grid;gap:10px}
+    .mentor-run-card{border:1px solid #2d2d2d;border-radius:12px;background:linear-gradient(180deg,#151515,#111);padding:11px;display:grid;gap:9px}
+    .mentor-run-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+    .mentor-run-head h4{margin:0;font-size:.96rem;line-height:1.35}
+    .mentor-run-kicker{margin:0;color:#ffbe82;font-size:.75rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+    .mentor-run-chip-row{display:flex;flex-wrap:wrap;gap:7px}
+    .mentor-run-chip{display:inline-flex;align-items:center;padding:6px 9px;border-radius:999px;border:1px solid #313131;background:#181818;color:#ddd3c6;font-size:.76rem;line-height:1.2}
+    .mentor-run-summary{margin:0;color:#f1ece5;line-height:1.6}
+    .mentor-run-meta{margin:0;color:#a9a9a9;font-size:.81rem;line-height:1.5}
+    .mentor-run-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .side-stack{display:grid;gap:8px}
+    .side-stack .hub-card{padding:9px}
+    .side-stack .hub-card h3{font-size:.88rem;line-height:1.28}
+    .side-stack .meta-bullet li{
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+      line-height:1.42;
+      margin:3px 0;
+    }
+    .hub-side-details,
+    .hub-more-details,
+    .hub-progress-details{display:block}
+    .hub-side-summary,
+    .hub-more-summary,
+    .hub-progress-summary{display:none}
     .meta-bullet{margin:0;padding-left:17px;color:#d6d6d6}
-    .meta-bullet li{margin:4px 0}
+    .meta-bullet li{margin:5px 0;line-height:1.52}
     .hidden{display:none !important}
     .chat-row{display:grid;gap:4px;max-width:82%;}
     .chat-row.mine{justify-self:end;}
@@ -77,17 +142,48 @@
     .slash-item{padding:8px 10px;border-bottom:1px solid #232323;cursor:pointer}
     .slash-item:last-child{border-bottom:0}
     .slash-item:hover{background:#1a1a1a}
-    @media (max-width:960px){.hub-grid{grid-template-columns:1fr}.hub-header{grid-template-columns:1fr}.hub-actions{grid-template-columns:repeat(2,minmax(0,1fr));}.hub-tabs-wrap{grid-template-columns:1fr}}
+    @media (max-width:960px){.hub-grid{grid-template-columns:1fr}.hub-header{grid-template-columns:1fr}.hub-actions{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none}.hub-tabs-wrap{grid-template-columns:1fr}.side-stack{grid-template-columns:repeat(2,minmax(0,1fr));}.hub-command-grid{grid-template-columns:1fr}.hub-intelligence-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hub-side-summary,.hub-more-summary,.hub-progress-summary{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin:0 0 10px;padding:10px 12px;border:1px solid #333;border-radius:12px;background:#151515;color:#ddd;font-weight:700;cursor:pointer;list-style:none}}
     @media (max-width:640px){
+      .hub-shell{margin-top:12px}
       .hub-header{padding:12px}
       .hub-head-left{flex-direction:column;align-items:stretch;min-width:0}
       .hub-head-left > div{min-width:0}
-      .hub-head-left .hub-thumb{width:100%;max-width:100%;height:180px}
+      .hub-head-left .hub-thumb{width:100%;max-width:100%;height:168px}
+      #hubSummary{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
       .hub-actions{grid-template-columns:1fr}
+      .hub-actions .btn{min-height:40px}
+      #hubMentorBtn{grid-column:auto;order:-1;min-height:42px}
+      .hub-command-card{padding:11px}
+      .hub-intelligence-grid{grid-template-columns:1fr}
+      .hub-score-value{font-size:1.72rem}
+      .hub-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+      .hub-tab{width:100%;text-align:center;min-height:42px;padding:9px 8px;white-space:normal}
       .hub-item--project{flex-direction:column}
       .hub-item--project .hub-thumb,
-      .hub-item--project img{width:100%;max-width:100%;height:180px}
-      .hub-item-summary{white-space:normal;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+      .hub-item--project img{width:100%;max-width:100%;height:168px}
+      .hub-item-summary{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.5}
+      .hub-split-grid{grid-template-columns:1fr}
+      .hub-more-details:not([open]) .hub-more-stack{display:none}
+      .hub-more-details[open] .hub-more-stack{display:grid}
+      .hub-more-stack{display:grid;gap:10px}
+      .hub-progress-details:not([open]) .hub-progress-stack{display:none}
+      .hub-progress-details[open] .hub-progress-stack{display:grid}
+      .hub-progress-stack{display:grid;gap:10px}
+      .hub-side-details:not([open]) .side-stack{display:none}
+      .hub-side-details[open] .side-stack{display:grid}
+      .side-stack{grid-template-columns:1fr;gap:8px}
+      .hub-card{padding:10px}
+      .hub-card h3{font-size:.9rem}
+      .hub-actions .btn{font-size:.88rem;padding:10px 8px}
+      .hub-summary-strip{gap:4px}
+      .hub-summary-chip{width:auto;max-width:100%;justify-content:flex-start;padding:5px 7px;font-size:.72rem}
+      .hub-top-team{gap:6px}
+      .hub-team-pill{padding:6px 10px;font-size:.78rem}
+      .hub-llm-box{padding:8px}
+      .hub-llm-box p{font-size:.76rem;line-height:1.36}
+      .mentor-run-actions{display:grid;grid-template-columns:1fr;gap:6px}
+      .tool-grid{grid-template-columns:1fr}
+      .meta-bullet li{margin:4px 0;line-height:1.48}
     }
   </style>
 </head>
@@ -112,7 +208,7 @@
       <div class="projects-head-row" style="margin-bottom:8px;">
         <div>
           <h1 class="page-title" style="margin:0;">프로젝트 허브</h1>
-          <p class="page-sub" style="margin-top:6px;">내 프로젝트를 선택해 실행 현황, 자료, 팀 협업을 한 번에 관리하세요.</p>
+          <p class="page-sub" style="margin-top:6px;">상태, 로그, 자료, 연동을 한곳에서 봅니다.</p>
         </div>
       </div>
       <div id="hubProjectList" class="hub-list"></div>
@@ -120,7 +216,7 @@
 
     <section id="hubDetailView" class="hidden">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <button id="hubBackBtn" class="btn btn--secondary" type="button">← 프로젝트 목록으로</button>
+        <button id="hubBackBtn" class="btn btn--secondary" type="button">← 목록으로</button>
       </div>
       <section class="hub-header">
         <div class="hub-head-left">
@@ -133,14 +229,59 @@
               <span id="hubState" class="badge"></span>
             </div>
             <p id="hubSummary" class="page-sub" style="margin-top:8px;"></p>
+            <div id="hubSummaryStrip" class="hub-summary-strip"></div>
           </div>
         </div>
         <div class="hub-actions">
-          <button id="hubEditBtn" class="btn btn--secondary" type="button">프로젝트 수정</button>
-          <button id="hubToolBtn" class="btn btn--secondary" type="button">외부 툴 연결</button>
-          <button id="hubChatOpenBtn" class="btn btn--secondary" type="button">팀채팅</button>
-          <button id="hubMentorBtn" class="btn btn--primary" type="button">멘토링 요청</button>
+          <button id="hubEditBtn" class="btn btn--secondary" type="button">수정</button>
+          <button id="hubToolBtn" class="btn btn--secondary" type="button">도구 연동</button>
+          <button id="hubChatOpenBtn" class="btn btn--secondary" type="button">팀 채팅</button>
+          <button id="hubMentorBtn" class="btn btn--primary" type="button">AI 멘토</button>
         </div>
+      </section>
+
+      <section class="hub-command-grid" aria-label="프로젝트 허브 요약">
+        <article class="hub-command-card hub-command-card--lead">
+          <span class="hub-command-label">Execution Focus</span>
+          <strong id="hubCommandFocusTitle">이번 주 핵심 목표</strong>
+          <p id="hubCommandFocusBody">지금 바로 팀이 맞춰야 할 우선순위를 정리합니다.</p>
+          <div id="hubCommandFocusMeta" class="hub-command-meta"></div>
+        </article>
+        <article class="hub-command-card hub-command-card--signal">
+          <span class="hub-command-label">Signal Board</span>
+          <strong id="hubCommandSignalTitle">검증 신호와 다음 행동</strong>
+          <p id="hubCommandSignalBody">AI와 최근 활동에서 읽은 핵심 신호를 압축합니다.</p>
+          <div id="hubCommandSignalMeta" class="hub-command-meta"></div>
+        </article>
+        <article class="hub-command-card hub-command-card--ops">
+          <span class="hub-command-label">Ops Health</span>
+          <strong id="hubCommandOpsTitle">연동과 로그 상태</strong>
+          <p id="hubCommandOpsBody">외부 도구 연결, webhook, 최근 적재 상태를 빠르게 확인합니다.</p>
+          <div id="hubCommandOpsMeta" class="hub-command-meta"></div>
+        </article>
+      </section>
+
+      <section class="hub-intelligence-grid" aria-label="WETHUS AI 프로젝트 분석">
+        <article class="hub-intelligence-card hub-intelligence-card--score">
+          <span class="hub-intelligence-label">AI Progress Score</span>
+          <div class="hub-score-row">
+            <strong id="hubProjectScore" class="hub-score-value">0<small>/100</small></strong>
+            <p id="hubProjectScoreText" class="hub-intelligence-muted">로그와 자료를 읽는 중입니다.</p>
+          </div>
+          <div class="hub-score-bar" aria-hidden="true"><span id="hubProjectScoreBar"></span></div>
+        </article>
+        <article class="hub-intelligence-card">
+          <span class="hub-intelligence-label">Data Intake</span>
+          <ul id="hubDataIntakeList" class="hub-intelligence-list"></ul>
+        </article>
+        <article class="hub-intelligence-card">
+          <span class="hub-intelligence-label">Team Contribution</span>
+          <ul id="hubTeamContributionList" class="hub-intelligence-list"></ul>
+        </article>
+        <article class="hub-intelligence-card">
+          <span class="hub-intelligence-label">Evidence Gaps</span>
+          <ul id="hubEvidenceList" class="hub-intelligence-list"></ul>
+        </article>
       </section>
 
       <section class="hub-card" style="margin-top:8px;padding:8px 10px;">
@@ -152,15 +293,15 @@
         <div class="hub-tabs" id="hubTabs">
           <button class="hub-tab active" data-tab="overview" type="button">개요</button>
           <button class="hub-tab" data-tab="progress" type="button">진행</button>
-          <button class="hub-tab" data-tab="materials" type="button">작업자료</button>
-          <button class="hub-tab" data-tab="integrations" type="button">외부 연동</button>
-          <button class="hub-tab" data-tab="team" type="button">팀원</button>
+          <button class="hub-tab" data-tab="materials" type="button">자료</button>
+          <button class="hub-tab" data-tab="integrations" type="button">연동</button>
+          <button class="hub-tab" data-tab="team" type="button">팀</button>
         </div>
         <aside class="hub-llm-box" style="display:flex;gap:8px;align-items:center;">
           <div style="width:30px;height:30px;border-radius:999px;border:1px solid #3a3a3a;background:linear-gradient(135deg,#6b46ff,#2d7dff);display:grid;place-items:center;color:#fff;font-size:.75rem;font-weight:700;">AI</div>
           <div>
             <h4 style="margin:0;">WETHUS AI</h4>
-            <p id="hubLlmStatus" class="meta" style="margin:2px 0 0;">연결됨 · 허브 전역 문맥 기반 지원 활성</p>
+            <p id="hubLlmStatus" class="meta" style="margin:2px 0 0;">연결됨 · 프로젝트 문맥 사용</p>
           </div>
         </aside>
       </div>
@@ -168,11 +309,16 @@
       <section class="hub-grid">
         <div class="hub-left">
           <div id="tab-overview">
-            <article class="hub-card"><h3>현재 목표</h3><p id="ovGoal" style="margin:0;"></p></article>
+            <article class="hub-card"><h3>현재 목표</h3><p id="ovGoal" style="margin:0;line-height:1.55;"></p></article>
             <article class="hub-card"><h3>이번 주 할 일</h3><ul id="ovTodos" class="meta-bullet"></ul></article>
-            <article class="hub-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h3 style="margin:0;">최근 활동</h3><button id="ovRecentMoreBtn" class="btn btn--secondary" type="button" style="display:none;padding:6px 10px;">전체보기</button></div><ul id="ovRecent" class="meta-bullet" style="margin-top:8px;"></ul></article>
-            <article class="hub-card hub-wide"><h3>현재 이슈 / 현재 막힌 점</h3><p id="ovBlocker" style="margin:0;"></p></article>
-            <article class="hub-card"><h3>연결된 도구들</h3><div id="ovTools" class="tool-grid"></div></article>
+            <article class="hub-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h3 style="margin:0;">최근 활동</h3><button id="ovRecentMoreBtn" class="btn btn--secondary" type="button" style="display:none;padding:5px 9px;">전체보기</button></div><ul id="ovRecent" class="meta-bullet" style="margin-top:7px;"></ul></article>
+            <details id="hubOverviewMore" class="hub-more-details">
+              <summary id="hubOverviewMoreSummary" class="hub-more-summary">운영 정보</summary>
+              <div class="hub-more-stack">
+                <article class="hub-card hub-wide"><h3>막힌 점</h3><p id="ovBlocker" style="margin:0;line-height:1.55;"></p></article>
+                <article class="hub-card"><h3>도구 연결</h3><div id="ovTools" class="tool-grid"></div></article>
+              </div>
+            </details>
           </div>
 
           <div id="tab-progress" class="hidden">
@@ -180,31 +326,44 @@
             <article class="hub-card">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
                 <div style="min-width:220px;flex:1 1 260px;">
-                  <h3 style="margin:0;">프로젝트 운영 AI 요약</h3>
-                  <p class="meta" style="margin:6px 0 0;">허브 문맥을 바탕으로 지금의 우선순위와 실행 공백을 빠르게 정리합니다.</p>
+                  <h3 style="margin:0;">AI 실행 요약</h3>
+                  <p class="meta" style="margin:5px 0 0;">지금 할 일만 정리합니다.</p>
                 </div>
-                <button id="pgAiSummBtn" class="btn btn--secondary" type="button">허브 문맥 기반 요약 생성</button>
+                <button id="pgAiSummBtn" class="btn btn--secondary" type="button">AI 요약 생성</button>
               </div>
-              <p id="pgAiSummary" style="margin:10px 0 0;"></p>
-              <p id="pgAiPriority" class="meta" style="margin:8px 0 0;"></p>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
-                <div><strong style="display:block;margin-bottom:6px;">지금 막는 점</strong><ul id="pgAiBlockers" class="meta-bullet"></ul></div>
-                <div><strong style="display:block;margin-bottom:6px;">근거 빈칸</strong><ul id="pgAiEvidenceGaps" class="meta-bullet"></ul></div>
-              </div>
-              <ul id="pgAiGrounding" class="meta-bullet" style="margin-top:8px;"></ul>
-              <p id="pgAiChangeLog" class="meta" style="margin:8px 0 0;"></p>
+              <p id="pgAiSummary" style="margin:9px 0 0;line-height:1.58;"></p>
+              <p id="pgAiPriority" class="meta" style="margin:7px 0 0;"></p>
+              <details id="hubProgressMore" class="hub-progress-details">
+                <summary id="hubProgressMoreSummary" class="hub-progress-summary">세부 보기</summary>
+                <div class="hub-progress-stack">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div><strong style="display:block;margin-bottom:6px;">지금 막는 점</strong><ul id="pgAiBlockers" class="meta-bullet"></ul></div>
+                    <div><strong style="display:block;margin-bottom:6px;">근거 빈칸</strong><ul id="pgAiEvidenceGaps" class="meta-bullet"></ul></div>
+                  </div>
+                  <ul id="pgAiGrounding" class="meta-bullet" style="margin-top:7px;"></ul>
+                </div>
+              </details>
+              <p id="pgAiChangeLog" class="meta" style="margin:7px 0 0;"></p>
             </article>
-            <article class="hub-card"><h3>AI 멘토 히스토리</h3><div id="pgAiRuns" class="list-grid" style="margin-top:8px;"></div></article>
+            <details id="hubProgressHistory" class="hub-progress-details">
+              <summary id="hubProgressHistorySummary" class="hub-progress-summary">AI 멘토 기록</summary>
+              <article class="hub-card hub-progress-stack">
+                <h3>AI 멘토 기록</h3>
+                <div id="pgAiRuns" class="list-grid" style="margin-top:8px;"></div>
+              </article>
+            </details>
           </div>
 
           <div id="tab-materials" class="hidden">
             <article class="hub-card">
-              <h3>작업자료</h3>
-              <p class="meta" style="margin:0 0 8px;">Google Docs/Sheets와 공유 링크를 함께 관리하고, 필요한 자료를 한곳에 모아두세요.</p>
-              <div style="display:grid;gap:8px;margin-bottom:8px;">
-                <input id="mtLinkInput" type="url" placeholder="공유 링크 추가 (https://...)" style="width:100%;" />
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                  <input id="mtFileInput" type="file" />
+              <div class="hub-section-head">
+                <h3>작업자료</h3>
+                  <p>문서와 파일을 한곳에 모아 바로 참고하게 합니다.</p>
+              </div>
+              <div class="hub-input-stack" style="margin-bottom:8px;">
+                <input id="mtLinkInput" class="hub-input-surface" type="url" placeholder="공유 링크 추가 (https://...)" />
+                <div class="hub-inline-actions">
+                  <input id="mtFileInput" class="hub-input-surface" type="file" style="max-width:320px;padding:8px 10px;" />
                   <button id="mtAddBtn" class="btn btn--secondary" type="button">자료 추가</button>
                 </div>
               </div>
@@ -214,58 +373,74 @@
 
           <div id="tab-integrations" class="hidden">
             <article class="hub-card">
-              <h3 style="margin:0 0 8px;">외부 연동 현황</h3>
-              <p class="meta" style="margin:0 0 10px;">외부 툴에서 연결한 리소스와 최근 동기화 상태를 확인합니다.</p>
+              <h3 style="margin:0 0 8px;">연동 현황</h3>
+              <p class="meta" style="margin:0 0 10px;">연결 상태와 최근 반영만 확인합니다.</p>
               <div id="igList" class="list-grid"></div>
             </article>
           </div>
 
           <div id="tab-team" class="hidden">
-            <article class="hub-card">
-              <h3 style="margin:0 0 8px;">업무기록</h3>
-              <p class="meta" style="margin:0 0 10px;">팀채팅/활동 로그를 기반으로 AI가 팀원별 업무기록을 요약합니다.</p>
-              <div id="tmWorkLog" class="list-grid"></div>
-            </article>
-            <article class="hub-card" style="margin-top:10px;">
-              <h3 style="margin:0 0 8px;">지원서 관리</h3>
-              <p class="meta" style="margin:0 0 10px;">대표는 지원서를 검토하고 수락 또는 반려 처리할 수 있습니다.</p>
-              <div id="tmApplications" class="list-grid"></div>
-            </article>
+            <div class="hub-split-grid">
+              <article class="hub-card">
+                <div class="hub-section-head">
+                  <h3>업무기록</h3>
+                  <p>팀 흐름만 빠르게 요약합니다.</p>
+                </div>
+                <div id="tmWorkLog" class="list-grid"></div>
+              </article>
+              <article class="hub-card">
+                <div class="hub-section-head">
+                  <h3>지원서 관리</h3>
+                  <p>지원서를 바로 보고 처리합니다.</p>
+                </div>
+                <div id="tmApplications" class="list-grid"></div>
+              </article>
+            </div>
           </div>
         </div>
 
-        <aside class="side-stack">
+        <details id="hubSideDetails" class="hub-side-details">
+          <summary id="hubSideSummary" class="hub-side-summary">AI 인사이트 더보기</summary>
+          <aside id="hubSideStack" class="side-stack">
           <article class="hub-card"><h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">프로젝트 상태 <button id="sdRefreshBtn" class="btn btn--secondary" type="button" style="padding:4px 8px;min-height:auto;line-height:1;">↻</button></h3><ul id="sdStatus" class="meta-bullet"></ul></article>
           <article class="hub-card"><h3>진행 조언</h3><ul id="sdAdvice" class="meta-bullet"></ul></article>
           <article class="hub-card"><h3>지금 막는 점</h3><ul id="sdBlockers" class="meta-bullet"></ul></article>
-          <article class="hub-card"><h3>AI 실행 액션</h3><ul id="sdToolActions" class="meta-bullet"></ul></article>
-          <article class="hub-card"><h3>근거 부족 / 추가 확인</h3><ul id="sdEvidence" class="meta-bullet"></ul></article>
-          <article class="hub-card"><h3>AI 체크 질문</h3><ul id="sdQuestions" class="meta-bullet"></ul></article>
-          <article class="hub-card"><h3>멘토 또는 AI에게 요청하기</h3><div style="display:grid;gap:8px;"><button id="sdAiBtn" class="btn btn--primary" type="button">AI 멘토 요청</button><button id="sdHumanBtn" class="btn btn--secondary" type="button">인간 멘토 요청</button></div></article>
-        </aside>
+          <article class="hub-card"><h3>다음 액션</h3><ul id="sdToolActions" class="meta-bullet"></ul></article>
+          <article class="hub-card"><h3>추가 확인</h3><ul id="sdEvidence" class="meta-bullet"></ul></article>
+          <article class="hub-card"><h3>체크 질문</h3><ul id="sdQuestions" class="meta-bullet"></ul></article>
+          <article class="hub-card"><h3>도움 요청</h3><div style="display:grid;gap:8px;"><button id="sdAiBtn" class="btn btn--primary" type="button">AI 멘토 열기</button><button id="sdHumanBtn" class="btn btn--secondary" type="button">사람 멘토 요청</button></div></article>
+          </aside>
+        </details>
       </section>
     </section>
   </main>
 
   <div id="hubEditModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-edit="true"></div><article class="modal-panel" style="max-width:760px;"><button class="modal-close" id="hubEditClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">프로젝트 수정</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><input id="hubEditTitle" placeholder="제목" /><input id="hubEditSummary" placeholder="요약" /></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><select id="hubEditStatus"><option>모집 중</option><option>기획 중</option><option>진행 중</option><option>피보팅</option><option>완료</option></select><select id="hubEditTeamSize"><option>1인</option><option>2인</option><option>3인</option><option>4인이상</option></select></div><input id="hubEditRoles" placeholder="역할" style="margin-bottom:8px;" /><textarea id="hubEditDesc" style="width:100%;min-height:110px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;" placeholder="프로젝트 설명"></textarea><div style="display:flex;justify-content:flex-end;margin-top:10px;"><button id="hubEditSave" class="btn btn--primary" type="button">저장</button></div></div></article></div>
-  <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 툴 연결</h3><p id="hubToolModalDesc" class="meta" style="margin:0 0 10px;">OAuth로 계정을 연결한 뒤, 프로젝트에 연결할 문서·시트 리소스를 선택하세요.</p><article id="hubToolModalScope" class="hub-card" style="padding:10px;margin:0 0 10px;"><strong style="display:block;margin-bottom:4px;">연동 구조</strong><p class="meta" style="margin:0;">1) 제공자 선택 → 2) OAuth 인증 → 3) 문서/시트 선택 → 4) 프로젝트 허브에 연결 반영</p></article><div id="toolLogoGrid" class="tool-grid"></div></div></article></div>
-  <div id="hubWebhookModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-webhook="true"></div><article class="modal-panel" style="max-width:720px;"><button class="modal-close" id="hubWebhookClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">활동 로그 수집</h3><p id="hubWebhookDesc" class="meta" style="margin:0 0 10px;">외부 툴의 활동 로그를 프로젝트 타임라인에 반영할 수 있도록 수집 상태를 관리합니다.</p><article class="hub-card" style="padding:12px;margin:0 0 10px;"><strong id="hubWebhookName" style="display:block;margin-bottom:6px;">연결된 툴 선택 필요</strong><p id="hubWebhookStatus" class="meta" style="margin:0 0 8px;">연결/동기화 이벤트는 자동 기록되고, webhook을 발급하면 외부 푸시 이벤트도 수집할 수 있습니다.</p><p id="hubWebhookEvents" class="meta" style="margin:0 0 8px;"></p><div id="hubWebhookRecent" class="meta" style="margin:0 0 8px;"></div><p id="hubWebhookTestStatus" class="meta" style="margin:0;color:#ffb36d;">리더는 여기서 테스트 이벤트를 바로 남겨 실제 적재 여부를 확인할 수 있습니다.</p></article><article class="hub-card" style="padding:12px;margin:0 0 10px;"><strong style="display:block;margin-bottom:6px;">수집 엔드포인트</strong><p class="meta" style="margin:0 0 8px;">외부 서비스나 relay가 이 URL로 이벤트를 보내면 프로젝트 허브 활동 로그에 누적됩니다.</p><input id="hubWebhookUrl" readonly style="width:100%;margin:0 0 8px;" value="" /><input id="hubWebhookHeader" readonly style="width:100%;margin:0 0 8px;" value="x-webhook-secret: (발급 후 표시)" /><input id="hubWebhookSecret" readonly style="width:100%;margin:0 0 8px;" value="" /><div style="display:flex;gap:8px;flex-wrap:wrap;"><button id="hubWebhookCopyUrl" class="btn btn--secondary" type="button">URL 복사</button><button id="hubWebhookCopyHeader" class="btn btn--secondary" type="button">Header 복사</button><button id="hubWebhookCopySecret" class="btn btn--secondary" type="button">Secret 복사</button></div></article><article id="hubWebhookRelayCard" class="hub-card" style="padding:12px;margin:0 0 10px;"><strong style="display:block;margin-bottom:6px;">Relay 빠른 설정</strong><p id="hubWebhookRelayDesc" class="meta" style="margin:0 0 8px;">Google Docs/Sheets의 실제 변경 이벤트를 모으려면 Apps Script 같은 relay가 이 endpoint로 webhook payload를 보내야 합니다.</p><textarea id="hubWebhookRelayTemplate" readonly style="width:100%;min-height:220px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;margin:0 0 8px;"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap;"><button id="hubWebhookCopyTemplate" class="btn btn--secondary" type="button">템플릿 복사</button><button id="hubWebhookDownloadCode" class="btn btn--secondary" type="button">Code.js 다운로드</button><button id="hubWebhookDownloadManifest" class="btn btn--secondary" type="button">appsscript.json 다운로드</button><button id="hubWebhookCopyCurl" class="btn btn--secondary" type="button">cURL 예시 복사</button></div></article><p id="hubWebhookOpsStatus" class="meta" style="margin:0 0 10px;color:#9aa0a6;">준비되면 발급, 테스트, 복사를 진행할 수 있습니다.</p><div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;"><button id="hubWebhookTest" class="btn btn--secondary" type="button">테스트 이벤트 보내기</button><button id="hubWebhookIssue" class="btn btn--primary" type="button">Webhook 발급</button><button id="hubWebhookDone" class="btn btn--secondary" type="button">닫기</button></div></div></article></div>
-  <div id="hubChatModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-chat="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubChatClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">팀채팅</h3><p class="meta" style="margin:0 0 8px;">프로젝트 지원 AI는 프로젝트 정보/최근 활동/팀 채팅 문맥을 함께 참고합니다.</p><div id="chatList" style="max-height:320px;overflow:auto;display:grid;gap:8px;"></div><div class="slash-suggest" style="display:flex;gap:8px;margin-top:10px;"><input id="chatInput" style="flex:1;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px;" placeholder="메시지를 입력하세요 (/ai 질문 형태 지원)"/><button id="chatSend" class="btn btn--primary">보내기</button><div id="slashList" class="slash-list"></div></div></div></article></div>
+  <div id="hubToolModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-tool="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubToolClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">외부 도구 연결</h3><p id="hubToolModalDesc" class="meta" style="margin:0 0 10px;">계정을 연결하고 자료를 고릅니다.</p><article id="hubToolModalScope" class="hub-card" style="padding:10px;margin:0 0 10px;"><strong style="display:block;margin-bottom:4px;">연결 순서</strong><p class="meta" style="margin:0;">선택 → 연결 → 자료 지정</p></article><div id="toolLogoGrid" class="tool-grid"></div></div></article></div>
+  <div id="hubWebhookModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-webhook="true"></div><article class="modal-panel" style="max-width:720px;"><button class="modal-close" id="hubWebhookClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">활동 로그 수집</h3><p id="hubWebhookDesc" class="meta" style="margin:0 0 10px;">외부 활동을 허브에 모읍니다.</p><article class="hub-card" style="padding:12px;margin:0 0 10px;"><strong id="hubWebhookName" style="display:block;margin-bottom:6px;">연결된 툴 선택 필요</strong><p id="hubWebhookStatus" class="meta" style="margin:0 0 8px;">기본 연결은 자동 반영됩니다. webhook을 발급하면 외부 로그도 들어옵니다.</p><p id="hubWebhookEvents" class="meta" style="margin:0 0 8px;"></p><div id="hubWebhookRecent" class="meta" style="margin:0 0 8px;"></div><p id="hubWebhookTestStatus" class="meta" style="margin:0;color:#ffb36d;">리더는 여기서 테스트 적재를 확인합니다.</p></article><article class="hub-card" style="padding:12px;margin:0 0 10px;"><strong style="display:block;margin-bottom:6px;">수집 주소</strong><p class="meta" style="margin:0 0 8px;">이 주소로 보내면 허브에 쌓입니다.</p><input id="hubWebhookUrl" readonly style="width:100%;margin:0 0 8px;" value="" /><input id="hubWebhookHeader" readonly style="width:100%;margin:0 0 8px;" value="x-webhook-secret: (발급 후 표시)" /><input id="hubWebhookSecret" readonly style="width:100%;margin:0 0 8px;" value="" /><div style="display:flex;gap:8px;flex-wrap:wrap;"><button id="hubWebhookCopyUrl" class="btn btn--secondary" type="button">URL 복사</button><button id="hubWebhookCopyHeader" class="btn btn--secondary" type="button">Header 복사</button><button id="hubWebhookCopySecret" class="btn btn--secondary" type="button">Secret 복사</button></div></article><article id="hubWebhookRelayCard" class="hub-card" style="padding:12px;margin:0 0 10px;"><strong style="display:block;margin-bottom:6px;">Relay 빠른 설정</strong><p id="hubWebhookRelayDesc" class="meta" style="margin:0 0 8px;">Google Docs/Sheets는 Apps Script relay로 연결합니다.</p><textarea id="hubWebhookRelayTemplate" readonly style="width:100%;min-height:220px;background:#101010;color:#f5f5f5;border:1px solid #2a2a2a;border-radius:10px;padding:10px;margin:0 0 8px;"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap;"><button id="hubWebhookCopyTemplate" class="btn btn--secondary" type="button">템플릿 복사</button><button id="hubWebhookDownloadCode" class="btn btn--secondary" type="button">Code.js 받기</button><button id="hubWebhookDownloadManifest" class="btn btn--secondary" type="button">manifest 받기</button><button id="hubWebhookCopyCurl" class="btn btn--secondary" type="button">cURL 복사</button></div></article><p id="hubWebhookOpsStatus" class="meta" style="margin:0 0 10px;color:#9aa0a6;">발급 → 테스트 → 복사 순으로 진행하세요.</p><div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;"><button id="hubWebhookTest" class="btn btn--secondary" type="button">테스트 보내기</button><button id="hubWebhookIssue" class="btn btn--primary" type="button">Webhook 발급</button><button id="hubWebhookDone" class="btn btn--secondary" type="button">닫기</button></div></div></article></div>
+  <div id="hubChatModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-chat="true"></div><article class="modal-panel" style="max-width:700px;"><button class="modal-close" id="hubChatClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">팀채팅</h3><p class="meta" style="margin:0 0 8px;">AI는 최근 활동과 팀 채팅을 함께 읽습니다.</p><div id="chatList" style="max-height:320px;overflow:auto;display:grid;gap:8px;"></div><div class="slash-suggest" style="display:flex;gap:8px;margin-top:10px;"><input id="chatInput" style="flex:1;background:#101010;border:1px solid #2a2a2a;color:#f5f5f5;border-radius:10px;padding:10px;" placeholder="메시지를 입력하세요 (/ai 질문 가능)"/><button id="chatSend" class="btn btn--primary">보내기</button><div id="slashList" class="slash-list"></div></div></div></article></div>
   <div id="worklogModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-worklog="true"></div><article class="modal-panel" style="max-width:620px;"><button class="modal-close" id="worklogClose">×</button><div class="modal-content"><h3 id="worklogTitle" style="margin:0 0 8px;">업무기록</h3><ul id="worklogList" class="meta-bullet"></ul></div></article></div>
   <div id="recentModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-recent="true"></div><article class="modal-panel" style="max-width:680px;"><button class="modal-close" id="recentClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">최근 활동 전체</h3><ul id="recentList" class="meta-bullet"></ul></div></article></div>
-  <div id="hubAiAddModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-ai-add="true"></div><article class="modal-panel" style="max-width:520px;"><button class="modal-close" id="hubAiAddClose">×</button><div class="modal-content"><h3 id="hubAiAddTitle" style="margin:0 0 8px;">에이전트를 추가하시겠습니까?</h3><p id="hubAiAddDesc" class="meta" style="margin:0 0 12px;">선택한 AI 멘토를 이 프로젝트 허브 팀에 추가합니다.</p><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubAiAddCancel" class="btn btn--secondary" type="button">취소</button><button id="hubAiAddConfirm" class="btn btn--primary" type="button">확인</button></div></div></article></div>
-  <div id="hubAiRemoveModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-ai-remove="true"></div><article class="modal-panel" style="max-width:520px;"><button class="modal-close" id="hubAiRemoveClose">×</button><div class="modal-content"><h3 id="hubAiRemoveTitle" style="margin:0 0 8px;">에이전트를 제거하시겠습니까?</h3><p id="hubAiRemoveDesc" class="meta" style="margin:0 0 12px;">선택한 AI 멘토를 팀 구성에서 제거합니다.</p><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubAiRemoveCancel" class="btn btn--secondary" type="button">취소</button><button id="hubAiRemoveConfirm" class="btn btn--primary" type="button">확인</button></div></div></article></div>
-  <div id="hubResourceModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-resource="true"></div><article class="modal-panel" style="max-width:680px;"><button class="modal-close" id="hubResourceClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">연결할 리소스 선택</h3><p id="hubResourceHelp" class="meta" style="margin:0 0 10px;">연결할 문서/시트 리소스를 선택하세요.</p><div style="display:flex;gap:8px;align-items:center;margin:0 0 8px;"><button id="hubResourceUp" class="btn btn--secondary" type="button">상위 폴더</button><p id="hubResourcePath" class="meta" style="margin:0;">내 드라이브</p></div><input id="hubResourceSearch" placeholder="문서/시트/폴더 이름 검색" style="width:100%;margin:0 0 8px;" /><div id="hubResourceList" style="max-height:320px;overflow:auto;border:1px solid #2a2a2a;border-radius:10px;padding:6px;background:#111;display:grid;gap:6px;margin-bottom:10px;"></div><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubResourceCancel" class="btn btn--secondary" type="button">취소</button><button id="hubResourceConfirm" class="btn btn--primary" type="button">연결 저장</button></div></div></article></div>
+  <div id="hubAiAddModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-ai-add="true"></div><article class="modal-panel" style="max-width:520px;"><button class="modal-close" id="hubAiAddClose">×</button><div class="modal-content"><h3 id="hubAiAddTitle" style="margin:0 0 8px;">에이전트를 추가하시겠습니까?</h3><p id="hubAiAddDesc" class="meta" style="margin:0 0 12px;">선택한 AI 멘토를 이 팀에 추가합니다.</p><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubAiAddCancel" class="btn btn--secondary" type="button">취소</button><button id="hubAiAddConfirm" class="btn btn--primary" type="button">확인</button></div></div></article></div>
+  <div id="hubAiRemoveModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-ai-remove="true"></div><article class="modal-panel" style="max-width:520px;"><button class="modal-close" id="hubAiRemoveClose">×</button><div class="modal-content"><h3 id="hubAiRemoveTitle" style="margin:0 0 8px;">에이전트를 제거하시겠습니까?</h3><p id="hubAiRemoveDesc" class="meta" style="margin:0 0 12px;">선택한 AI 멘토를 팀에서 제거합니다.</p><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubAiRemoveCancel" class="btn btn--secondary" type="button">취소</button><button id="hubAiRemoveConfirm" class="btn btn--primary" type="button">확인</button></div></div></article></div>
+  <div id="hubResourceModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-close-resource="true"></div><article class="modal-panel" style="max-width:680px;"><button class="modal-close" id="hubResourceClose">×</button><div class="modal-content"><h3 style="margin:0 0 8px;">연결할 리소스 선택</h3><p id="hubResourceHelp" class="meta" style="margin:0 0 10px;">문서나 시트를 고르세요.</p><div style="display:flex;gap:8px;align-items:center;margin:0 0 8px;"><button id="hubResourceUp" class="btn btn--secondary" type="button">상위 폴더</button><p id="hubResourcePath" class="meta" style="margin:0;">내 드라이브</p></div><input id="hubResourceSearch" placeholder="문서/시트/폴더 이름 검색" style="width:100%;margin:0 0 8px;" /><div id="hubResourceList" style="max-height:320px;overflow:auto;border:1px solid #2a2a2a;border-radius:10px;padding:6px;background:#111;display:grid;gap:6px;margin-bottom:10px;"></div><div style="display:flex;justify-content:flex-end;gap:8px;"><button id="hubResourceCancel" class="btn btn--secondary" type="button">취소</button><button id="hubResourceConfirm" class="btn btn--primary" type="button">연결하기</button></div></div></article></div>
 
-  <footer class="footer"><div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">Built for real youth project execution · Developer <a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a><br/>Copyright © WETHUS. All rights reserved.</p></div></div></footer>
+  <footer class="footer"><div class="container"><div class="footer-inner"><span class="wordmark">WETHUS</span><p class="footer-copy">학생 창업 실행 플랫폼 WETHUS<br/><a href="mailto:wethus.biz@gmail.com">wethus.biz@gmail.com</a></p></div></div></footer>
 
   <script src="app.js?v=20260624-integrations-2"></script>
   <script>
-    WETHUS.requireAuth();
     const authLink = document.querySelector('.js-auth-link');
     function currentHubActorId() {
-      return WETHUS.currentActorId?.() || WETHUS.getCurrentUser?.()?.id || WETHUS.getState?.().currentUserId || (WETHUS.getState?.().devMode ? 'dev-temp' : '');
+      const state = WETHUS.getState ? WETHUS.getState() : {};
+      const currentUser = WETHUS.currentUser ? WETHUS.currentUser() : null;
+      const actor = WETHUS.currentActorId ? WETHUS.currentActorId() : '';
+      return actor || currentUser?.id || state.currentUserId || (state.devMode ? 'dev-temp' : '');
     }
+    const isLocalHub = ['localhost', '127.0.0.1'].includes(location.hostname);
+    if (isLocalHub && !currentHubActorId() && WETHUS.ensureLocalDevUser) {
+      WETHUS.ensureLocalDevUser();
+    }
+    WETHUS.requireAuth();
     if (authLink && currentHubActorId()) { authLink.textContent='로그아웃'; authLink.href='#'; authLink.addEventListener('click', (e)=>{e.preventDefault();WETHUS.logout();location.href='login.html';}); }
 
     const hubListView = document.getElementById('hubListView');
@@ -360,6 +535,111 @@
         aiMentors: []
       };
     }
+    function compactProjectSummary(value, max = 84){
+      const base = String(value || '').replace(/\s+/g, ' ').trim();
+      if (!base) return '';
+      return base.replace(/[.!?]+$/g, '').slice(0, max);
+    }
+    function recentActivityLabelFromHub(hub){
+      const row = Array.isArray(hub?.recentActivities) ? hub.recentActivities.find((item) => String(item?.text || '').trim()) : null;
+      return row ? compactProjectSummary(row.text, 72) : '';
+    }
+    function clampScore(value) {
+      return Math.max(0, Math.min(100, Math.round(Number(value || 0))));
+    }
+    function integrationIsConnected(item) {
+      return !!item && (item.connected === true || String(item.status || '').toLowerCase() === 'connected');
+    }
+    function integrationIsLogVerified(item) {
+      if (!item) return false;
+      const state = String(item.webhook_health || item.webhookVerificationState || item.verificationState || '').toLowerCase();
+      return !!item.webhook_last_event_at || state === 'healthy' || state === 'verified';
+    }
+    function buildTeamContributionRows(project, hub, timeline) {
+      const members = Array.isArray(project?.teamMembers) ? project.teamMembers : [];
+      const chatRows = Array.isArray(hub?.teamChat) ? hub.teamChat : [];
+      const workRows = Array.isArray(hub?.workLogs) ? hub.workLogs : [];
+      const eventRows = Array.isArray(timeline) ? timeline : [];
+      const rows = members.map((member) => {
+        const name = String(member?.name || member?.nickname || '팀원').trim();
+        const id = String(member?.id || '').trim();
+        const chatCount = chatRows.filter((row) => {
+          const from = String(row?.from || row?.userId || row?.name || '').trim();
+          return from === name || (!!id && from === id);
+        }).length;
+        const work = workRows.find((row) => String(row?.name || '').trim() === name);
+        const eventCount = eventRows.filter((row) => String(row?.text || '').includes(name)).length;
+        const score = chatCount + eventCount + (work?.summary ? 2 : 0) + (member?.isLeader ? 1 : 0);
+        return {
+          name,
+          role: String(member?.role || (member?.isLeader ? '대표' : '팀원')).trim(),
+          score,
+          label: chatCount || eventCount || work?.summary ? `${chatCount + eventCount}개 신호` : '기록 대기'
+        };
+      }).sort((a, b) => b.score - a.score);
+      if (rows.length) return rows.slice(0, 3);
+      return [{ name: '팀 구성', role: '대기', score: 0, label: '팀원 정보 없음' }];
+    }
+    function evidenceGapRows(project, hub, snapshot, integrations, timeline) {
+      const gaps = [];
+      if (!Array.isArray(hub?.materials) || hub.materials.length === 0) gaps.push(['자료', '기획 문서/파일 없음']);
+      if (!Array.isArray(timeline) || timeline.length < 3) gaps.push(['로그', '최근 활동 부족']);
+      if (!(integrations || []).some(integrationIsConnected)) gaps.push(['연동', '외부 툴 미연결']);
+      if (!(integrations || []).some(integrationIsLogVerified)) gaps.push(['수집', '실시간 로그 검증 전']);
+      if (!String(snapshot?.suggested_next_action || '').trim() && (!Array.isArray(hub?.mentorNextActions) || hub.mentorNextActions.length === 0)) gaps.push(['AI', '다음 액션 미정']);
+      if (!Array.isArray(project?.teamMembers) || project.teamMembers.length <= 1) gaps.push(['팀', '기여 비교 데이터 부족']);
+      return gaps.slice(0, 4);
+    }
+    function renderHubIntelligencePanel({ project, hub, snapshot, integrations, timeline, applications }) {
+      const materialsCount = Array.isArray(hub?.materials) ? hub.materials.length : 0;
+      const todoCount = Array.isArray(hub?.weeklyTodos) ? hub.weeklyTodos.filter(Boolean).length : 0;
+      const teamCount = Array.isArray(project?.teamMembers) ? project.teamMembers.length : 0;
+      const connectedCount = (integrations || []).filter(integrationIsConnected).length;
+      const verifiedCount = (integrations || []).filter(integrationIsLogVerified).length;
+      const timelineCount = Array.isArray(timeline) ? timeline.length : 0;
+      const mentorReady = !!String(hub?.mentorSummary || snapshot?.recent_activity_summary || '').trim();
+      const acceptedApps = (applications || []).filter((app) => normalizeApplicationStatus(app?.status) === 'accepted').length;
+      const score = clampScore(
+        12 +
+        Math.min(18, todoCount * 6) +
+        Math.min(18, materialsCount * 6) +
+        Math.min(18, timelineCount * 3) +
+        Math.min(12, connectedCount * 6) +
+        Math.min(10, verifiedCount * 10) +
+        Math.min(8, Math.max(0, teamCount - 1) * 4) +
+        (mentorReady ? 8 : 0)
+      );
+      const scoreText = score >= 78
+        ? '실행 흐름이 잘 보입니다.'
+        : score >= 52
+          ? '진행은 보이지만 근거가 더 필요합니다.'
+          : 'AI가 판단할 로그와 자료가 부족합니다.';
+      const scoreEl = document.getElementById('hubProjectScore');
+      const scoreBar = document.getElementById('hubProjectScoreBar');
+      const scoreTextEl = document.getElementById('hubProjectScoreText');
+      if (scoreEl) scoreEl.innerHTML = `${score}<small>/100</small>`;
+      if (scoreBar) scoreBar.style.width = `${score}%`;
+      if (scoreTextEl) scoreTextEl.textContent = scoreText;
+
+      const dataRows = [
+        ['외부 로그', timelineCount ? `${timelineCount}건` : '대기'],
+        ['연결 서비스', connectedCount ? `${connectedCount}개` : '없음'],
+        ['파일/자료', materialsCount ? `${materialsCount}건` : '없음'],
+        ['지원/합류', acceptedApps ? `${acceptedApps}명 합류` : `${(applications || []).length}건`]
+      ];
+      const teamRows = buildTeamContributionRows(project, hub, timeline)
+        .map((row) => [row.name, `${row.role} · ${row.label}`]);
+      const gapRows = evidenceGapRows(project, hub, snapshot, integrations, timeline);
+      const writeRows = (id, rows, emptyLabel) => {
+        const node = document.getElementById(id);
+        if (!node) return;
+        const list = rows.length ? rows : [['상태', emptyLabel]];
+        node.innerHTML = list.map(([label, value]) => `<li><strong>${esc(label)}</strong><span>${esc(value)}</span></li>`).join('');
+      };
+      writeRows('hubDataIntakeList', dataRows, '수집 대기');
+      writeRows('hubTeamContributionList', teamRows, '기여 기록 대기');
+      writeRows('hubEvidenceList', gapRows, '큰 빈칸 없음');
+    }
 
     function openModal(id){ const el=document.getElementById(id); el.classList.add('open'); el.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; }
     function closeModal(id){ const el=document.getElementById(id); el.classList.remove('open'); el.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
@@ -367,7 +647,7 @@
     function renderProjectList(){
       const list = WETHUS.myProjects();
       if(!list.length){ hubProjectList.innerHTML='<article class="hub-item"><h3 style="margin:0 0 6px;">프로젝트가 없습니다.</h3><p class="meta" style="margin:0;">먼저 프로젝트를 시작하면 허브를 사용할 수 있어요.</p><div style="margin-top:10px;"><a href="founder.html" class="btn btn--primary">프로젝트 시작하기</a></div></article>'; return; }
-      hubProjectList.innerHTML = list.map(p=>`<article class="hub-item hub-item--project" data-id="${esc(p.id)}"><img src="${esc(safeUrl(p.image||'https://picsum.photos/seed/hub-list/84/84'))}" alt="project" class="hub-thumb" style="width:44px;height:44px;border-radius:10px;flex:0 0 auto;"/><div class="hub-item-copy"><h3 style="margin:0 0 6px;">${esc(p.title)}</h3><p class="meta" style="margin:0 0 4px;">${esc(p.category||'')} · ${esc(p.status||'')}</p><p class="hub-item-summary">${esc(p.summary||'')}</p></div></article>`).join('');
+      hubProjectList.innerHTML = list.map(p=>`<article class="hub-item hub-item--project" data-id="${esc(p.id)}">${p.image ? `<img src="${esc(safeUrl(p.image))}" alt="project" class="hub-thumb" style="width:44px;height:44px;border-radius:10px;flex:0 0 auto;"/>` : '<span class="hub-thumb hub-thumb--fallback" aria-hidden="true"></span>'}<div class="hub-item-copy"><h3 style="margin:0 0 6px;">${esc(p.title)}</h3><p class="meta" style="margin:0 0 4px;">${esc(p.category||'')} · ${esc(p.status||'')}</p><p class="hub-item-summary">${esc(compactProjectSummary(p.summary, 48) || '요약 준비 중')}</p></div></article>`).join('');
       hubProjectList.querySelectorAll('[data-id]').forEach(el=>el.addEventListener('click',()=>openProject(el.getAttribute('data-id'))));
     }
 
@@ -384,7 +664,7 @@
       const workEl = document.getElementById('tmWorkLog');
       workEl.innerHTML = '<p class="meta">업무기록 업데이트중...</p>';
       const rows = Object.entries(byUser).filter(([_, logs]) => logs.length);
-      if (!rows.length) { workEl.innerHTML = '<p class="meta">업무기록이 아직 없습니다.</p>'; return; }
+      if (!rows.length) { workEl.innerHTML = '<p class="meta">업무 기록이 아직 없습니다.</p>'; return; }
 
       const sourceSig = `${(hub.teamChat||[]).length}:${(hub.teamChat||[]).slice(-1)[0]?.id || ''}`;
       let display = Array.isArray(hub.workLogs) ? hub.workLogs : [];
@@ -471,7 +751,7 @@
       renderWorkLogs(p.teamMembers||[], hub).catch(() => {});
       renderTeamApplications();
       document.getElementById('sdStatus').innerHTML=`<li>현재 단계: ${esc(p.status||'기획 중')}</li><li>최근 업데이트: ${(hub.updatedAt?new Date(hub.updatedAt).toLocaleString('ko-KR'):'방금')}</li><li>팀원 수: ${(p.teamMembers||[]).length}명</li>`;
-      document.getElementById('sdAdvice').innerHTML='<li>목표를 이번 주 단위로 쪼개세요.</li><li>막힌 점을 카드에 명시하세요.</li><li>멘토링 요청은 구체적으로 작성하세요.</li>';
+      document.getElementById('sdAdvice').innerHTML='<li>목표를 이번 주 단위로 쪼개세요.</li><li>막힌 점을 카드에 적어두세요.</li><li>멘토 요청은 구체적으로 쓰세요.</li>';
       const mergedTimeline = mergedProjectTimeline(80);
       const mergedRecentTop = mergedTimeline.slice(0, 5);
       document.getElementById('ovRecent').innerHTML = mergedRecentTop.map((item) => `<li>${esc(renderTimelineItem(item))}</li>`).join('') || '<li>최근 활동이 없습니다.</li>';
@@ -484,10 +764,10 @@
       const snapshot = remoteStatusSnapshot;
       const snapshotUpdatedAt = snapshot?.updated_at ? new Date(snapshot.updated_at).toLocaleString('ko-KR') : '';
       const statusRows = [];
-      statusRows.push(`?꾩옱 ?④퀎: ${snapshot?.current_stage || p.status || '湲고쉷 以?'}`);
-      statusRows.push(snapshot?.recent_activity_summary ? `理쒓렐 ?곹깭: ${snapshot.recent_activity_summary}` : `理쒓렐 ?낅뜲?댄듃: ${hub.updatedAt ? new Date(hub.updatedAt).toLocaleString('ko-KR') : '諛⑷툑'}`);
-      statusRows.push(snapshot?.suggested_next_action ? `?ㅼ쓬 ?≪뀡: ${snapshot.suggested_next_action}` : `????? ${(p.teamMembers||[]).length}紐?`);
-      if (snapshotUpdatedAt) statusRows.push(`?쒕쾭 ?ㅻ꺽?? ${snapshotUpdatedAt}`);
+      statusRows.push(`현재 단계: ${snapshot?.current_stage || p.status || '기획 중'}`);
+      statusRows.push(snapshot?.recent_activity_summary ? `최근 상태: ${snapshot.recent_activity_summary}` : `최근 업데이트: ${hub.updatedAt ? new Date(hub.updatedAt).toLocaleString('ko-KR') : '방금'}`);
+      statusRows.push(snapshot?.suggested_next_action ? `다음 액션: ${snapshot.suggested_next_action}` : `팀원 수: ${(p.teamMembers||[]).length}명`);
+      if (snapshotUpdatedAt) statusRows.push(`상태 갱신: ${snapshotUpdatedAt}`);
       document.getElementById('sdStatus').innerHTML = statusRows.map((row) => `<li>${esc(row)}</li>`).join('');
       renderTab(activeTab);
     }
@@ -512,23 +792,100 @@
       };
       return map[String(mode || '').trim()] || 'WETHUS AI';
     }
+    function isUiPlaceholderText(value) {
+      const text = String(value || '').replace(/\s+/g, ' ').trim();
+      if (!text) return true;
+      return /아직|없습니다|없음|비어|등록하세요|정리 필요|준비 중|기록 없음|추가 대기|미연결|비공개/.test(text);
+    }
+    function setHubCardStateByTarget(target, options = {}) {
+      const node = typeof target === 'string' ? document.querySelector(target) : target;
+      const card = node?.closest?.('.hub-card');
+      if (!card) return;
+      const {
+        hideWhenEmpty = false,
+        treatAsList = false,
+        minimumItems = 1,
+        keepVisible = false
+      } = options;
+      if (keepVisible) {
+        card.classList.remove('is-hidden', 'is-muted');
+        return;
+      }
+      let hasStrongContent = false;
+      if (treatAsList) {
+        const items = Array.from(node.querySelectorAll('li')).map((item) => item.textContent || '').filter(Boolean);
+        hasStrongContent = items.length >= minimumItems && items.some((item) => !isUiPlaceholderText(item));
+      } else {
+        hasStrongContent = !isUiPlaceholderText(node.textContent || '');
+      }
+      card.classList.toggle('is-hidden', hideWhenEmpty && !hasStrongContent);
+      card.classList.toggle('is-muted', !hideWhenEmpty && !hasStrongContent);
+    }
+    function refreshHubDensityUi(hub) {
+      setHubCardStateByTarget('#ovGoal', { hideWhenEmpty: true });
+      setHubCardStateByTarget('#ovBlocker', { hideWhenEmpty: true });
+      const toolsRoot = document.getElementById('ovTools');
+      const toolsCard = toolsRoot?.closest('.hub-card');
+      if (toolsCard) {
+        const toolCount = toolsRoot.querySelectorAll('.tool-card').length;
+        toolsCard.classList.toggle('is-hidden', toolCount === 0);
+        toolsCard.classList.remove('is-muted');
+      }
+      const overviewDetails = document.getElementById('hubOverviewMore');
+      if (overviewDetails) {
+        const hasOverviewExtra = Array.from(overviewDetails.querySelectorAll('.hub-card')).some((card) => !card.classList.contains('is-hidden'));
+        overviewDetails.classList.toggle('is-hidden', !hasOverviewExtra);
+      }
+      setHubCardStateByTarget('#sdStatus', { hideWhenEmpty: true, treatAsList: true });
+      setHubCardStateByTarget('#sdAdvice', { hideWhenEmpty: true, treatAsList: true });
+      setHubCardStateByTarget('#sdBlockers', { hideWhenEmpty: true, treatAsList: true });
+      setHubCardStateByTarget('#sdToolActions', { hideWhenEmpty: true, treatAsList: true });
+      setHubCardStateByTarget('#sdEvidence', { hideWhenEmpty: true, treatAsList: true });
+      setHubCardStateByTarget('#sdQuestions', { hideWhenEmpty: true, treatAsList: true });
+
+      const progressSummary = document.getElementById('hubProgressMoreSummary');
+      const progressDetails = document.getElementById('hubProgressMore');
+      if (progressDetails && progressSummary) {
+        const blockerWrap = document.getElementById('pgAiBlockers')?.parentElement || null;
+        const evidenceWrap = document.getElementById('pgAiEvidenceGaps')?.parentElement || null;
+        const groundingList = document.getElementById('pgAiGrounding');
+        const blockerVisible = !!blockerWrap && Array.from(blockerWrap.querySelectorAll('li')).some((item) => !isUiPlaceholderText(item.textContent || ''));
+        const evidenceVisible = !!evidenceWrap && Array.from(evidenceWrap.querySelectorAll('li')).some((item) => !isUiPlaceholderText(item.textContent || ''));
+        const groundingVisible = !!groundingList && Array.from(groundingList.querySelectorAll('li')).some((item) => !isUiPlaceholderText(item.textContent || ''));
+        if (blockerWrap) blockerWrap.style.display = blockerVisible ? '' : 'none';
+        if (evidenceWrap) evidenceWrap.style.display = evidenceVisible ? '' : 'none';
+        if (groundingList) groundingList.style.display = groundingVisible ? '' : 'none';
+        const shouldShow = blockerVisible || evidenceVisible || groundingVisible;
+        progressDetails.classList.toggle('is-hidden', !shouldShow);
+      }
+
+      const historySummary = document.getElementById('hubProgressHistorySummary');
+      const historyDetails = document.getElementById('hubProgressHistory');
+      if (historyDetails && historySummary) {
+        const runCount = Array.isArray(hub?.mentorRuns) ? hub.mentorRuns.length : 0;
+        historyDetails.classList.toggle('is-hidden', runCount === 0);
+      }
+    }
     function renderBulletList(elementId, items, emptyText) {
       const el = document.getElementById(elementId);
       if (!el) return;
       const rows = Array.isArray(items) ? items.filter(Boolean) : [];
+      const compactIds = new Set(['sdStatus', 'sdAdvice', 'sdBlockers', 'sdToolActions', 'sdEvidence', 'sdQuestions']);
+      const visibleRows = compactIds.has(elementId) ? rows.slice(0, 2) : rows.slice(0, 3);
+      const shouldStayQuiet = compactIds.has(elementId);
       el.innerHTML = rows.length
-        ? rows.map((item) => `<li>${esc(item)}</li>`).join('')
-        : `<li>${esc(emptyText)}</li>`;
+        ? visibleRows.map((item) => `<li>${esc(item)}</li>`).join('')
+        : (shouldStayQuiet ? '' : `<li>${esc(emptyText)}</li>`);
     }
     function renderMentorRunHistory(hub) {
       const el = document.getElementById('pgAiRuns');
       if (!el) return;
       const runs = Array.isArray(hub?.mentorRuns) ? hub.mentorRuns.slice(0, 5) : [];
       if (!runs.length) {
-        el.innerHTML = '<article class="list-item"><h3>아직 기록 없음</h3><p class="meta">AI 멘토를 한 번 실행하면 최근 판단 흐름이 여기에 쌓입니다.</p></article>';
+        el.innerHTML = '';
         return;
       }
-      el.innerHTML = runs.map((run) => {
+      el.innerHTML = `<div class="mentor-run-grid">${runs.map((run) => {
         const reviewedAt = run?.reviewedAt ? new Date(run.reviewedAt).toLocaleString('ko-KR') : '방금';
         const trigger = String(run?.trigger || '').trim() || 'manual';
         const mode = mentorModeLabel(run?.mentorMode || '');
@@ -538,19 +895,30 @@
         const priority = String(run?.priority || '').trim();
         const actionCount = Array.isArray(run?.nextActions) ? run.nextActions.filter(Boolean).length : 0;
         const gapCount = Array.isArray(run?.evidenceGaps) ? run.evidenceGaps.filter(Boolean).length : 0;
-        return `<article class="list-item">
-          <h3 style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><span>${esc(mode)}</span><span class="meta" style="white-space:nowrap;">${esc(reviewedAt)}</span></h3>
-          <p class="meta" style="margin:6px 0 0;">실행 방식: ${esc(trigger)}${prompt ? ` · 요청: ${esc(prompt)}` : ''}</p>
-          <p style="margin:8px 0 0;">${esc(summary || '요약 없음')}</p>
-          ${priority ? `<p class="meta" style="margin:8px 0 0;">우선순위: ${esc(priority)}</p>` : ''}
-          ${blocker ? `<p class="meta" style="margin:6px 0 0;">막는 점: ${esc(blocker)}</p>` : ''}
-          <p class="meta" style="margin:6px 0 0;">실행 액션 ${actionCount}건 · 근거 빈칸 ${gapCount}건</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+        const chips = [
+          trigger ? `실행 방식 ${trigger}` : '',
+          priority ? `우선순위 ${priority}` : '',
+          `액션 ${actionCount}건`,
+          `근거 빈칸 ${gapCount}건`
+        ].filter(Boolean);
+        return `<article class="mentor-run-card">
+          <div class="mentor-run-head">
+            <div>
+              <p class="mentor-run-kicker">Mentor Run</p>
+              <h4>${esc(mode)}</h4>
+            </div>
+            <span class="meta" style="white-space:nowrap;">${esc(reviewedAt)}</span>
+          </div>
+          <div class="mentor-run-chip-row">${chips.map((chip) => `<span class="mentor-run-chip">${esc(chip)}</span>`).join('')}</div>
+          <p class="mentor-run-summary">${esc(summary || '요약 없음.')}</p>
+          ${blocker ? `<p class="mentor-run-meta">막는 점: ${esc(blocker)}</p>` : ''}
+          ${prompt ? `<p class="mentor-run-meta">최근 요청: ${esc(prompt)}</p>` : ''}
+          <div class="mentor-run-actions">
             <button class="btn btn--secondary" type="button" data-mentor-run-use="${esc(run.id || '')}">현재 패널로 보기</button>
             <button class="btn btn--secondary" type="button" data-mentor-run-followup="${esc(run.id || '')}">이 판단 기준으로 후속 요청</button>
           </div>
         </article>`;
-      }).join('');
+      }).join('')}</div>`;
     }
     function mentorRunById(hub, runId) {
       return (Array.isArray(hub?.mentorRuns) ? hub.mentorRuns : []).find((run) => String(run?.id || '') === String(runId || '')) || null;
@@ -610,29 +978,33 @@
       const changeLog = String(hub?.mentorChangeLog || '').trim();
 
       if (summaryEl) {
-        summaryEl.textContent = summary || '허브 문맥을 바탕으로 AI 멘토 요약을 아직 생성하지 않았습니다.';
+        summaryEl.textContent = summary || '';
+        summaryEl.style.display = summary ? '' : 'none';
       }
       if (priorityEl) {
         priorityEl.textContent = priority
           ? `${mode} 우선순위 · ${priority}${input ? ` · 최근 요청: ${input}` : ''}`
-          : `${mode} 실행 우선순위가 아직 없습니다.`;
+          : '';
+        priorityEl.style.display = priority ? '' : 'none';
       }
-      renderBulletList('pgAiBlockers', hub?.mentorBlockers, '지금 막는 점이 아직 정리되지 않았습니다.');
-      renderBulletList('pgAiEvidenceGaps', hub?.mentorEvidenceGaps, '추가 확인이 필요한 근거 빈칸이 아직 없습니다.');
-      renderBulletList('pgAiGrounding', hub?.mentorGrounding, '근거가 아직 없습니다.');
+      renderBulletList('pgAiBlockers', hub?.mentorBlockers, '막힌 점 없음');
+      renderBulletList('pgAiEvidenceGaps', hub?.mentorEvidenceGaps, '추가 확인 없음');
+      renderBulletList('pgAiGrounding', hub?.mentorGrounding, '근거 없음');
       if (changeLogEl) {
-        changeLogEl.textContent = changeLog || 'AI 변경 로그가 아직 없습니다.';
+        changeLogEl.textContent = changeLog || '';
+        changeLogEl.style.display = changeLog ? '' : 'none';
       }
       renderMentorRunHistory(hub);
 
       const statusRows = Array.isArray(defaults.statusRows) ? defaults.statusRows : [];
       const adviceRows = Array.isArray(defaults.adviceRows) ? defaults.adviceRows : [];
-      renderBulletList('sdStatus', summary ? [summary, ...(priority ? [`우선순위: ${priority}`] : []), ...statusRows.slice(0, 2)] : statusRows, '상태 정보가 아직 없습니다.');
-      renderBulletList('sdAdvice', (hub?.mentorNextActions || []).length ? hub.mentorNextActions : adviceRows, 'AI 실행 조언이 아직 없습니다.');
-      renderBulletList('sdBlockers', hub?.mentorBlockers, '지금 막는 점이 아직 없습니다.');
-      renderBulletList('sdToolActions', hub?.mentorToolActions, '연동 도구 기반 액션이 아직 없습니다.');
-      renderBulletList('sdEvidence', hub?.mentorEvidenceGaps, '추가 확인이 필요한 근거 빈칸이 아직 없습니다.');
-      renderBulletList('sdQuestions', hub?.mentorQuestions, '팀이 답해야 할 질문이 아직 없습니다.');
+      renderBulletList('sdStatus', summary ? [summary, ...(priority ? [`우선순위: ${priority}`] : []), ...statusRows.slice(0, 2)] : statusRows, '');
+      renderBulletList('sdAdvice', (hub?.mentorNextActions || []).length ? hub.mentorNextActions : adviceRows, '');
+      renderBulletList('sdBlockers', hub?.mentorBlockers, '막힌 점 없음');
+      renderBulletList('sdToolActions', hub?.mentorToolActions, '도구 액션 없음');
+      renderBulletList('sdEvidence', hub?.mentorEvidenceGaps, '추가 확인 없음');
+      renderBulletList('sdQuestions', hub?.mentorQuestions, '질문 없음');
+      refreshHubDensityUi(hub);
     }
     function buildProjectMentorChatReply(result = {}) {
       const lines = [];
@@ -704,7 +1076,7 @@
         mentorModeLabel: mentorModeLabel(result?.mentorMode || '')
       };
     }
-    function setHubLoadingState(on, label = '로딩중...') {
+    function setHubLoadingState(on, label = '불러오는 중...') {
       if (on) {
         document.getElementById('sdStatus').innerHTML = `<li>${esc(label)}</li>`;
         document.getElementById('sdAdvice').innerHTML = `<li>${esc(label)}</li>`;
@@ -727,7 +1099,7 @@
       if (!currentProject) return;
       const { silent = false } = opts;
       if (insightTimer) clearTimeout(insightTimer);
-      if (!silent) setHubLoadingState(true, 'WETHUS AI 업데이트중...');
+      if (!silent) setHubLoadingState(true, 'WETHUS AI 정리 중...');
       insightTimer = setTimeout(async () => {
         const hub = WETHUS.getProjectHub(currentProject.id);
         let externalDocContext = '';
@@ -915,11 +1287,15 @@
     });
 
     const toolTargets = [
-      { name:'Notion', provider:'notion', resourceProvider:'notion', type:'workspace', logo:'🧩', home:'https://www.notion.so', desc:'문서와 체크리스트 연결', ready:false, launchPhase:'deferred', launchNote:'로드맵 연동으로 보류 중입니다. 상용 런칭 범위에는 아직 포함되지 않습니다.' },
+      { name:'Notion', provider:'notion', resourceProvider:'notion', type:'workspace', logo:'🧩', home:'https://www.notion.so', desc:'문서와 체크리스트 연결', ready:true, launchPhase:'launch', launchNote:'OAuth 설정이 완료되면 바로 연결할 수 있는 정식 연동입니다.' },
       { name:'Google Docs', provider:'google', resourceProvider:'google_docs', type:'document', allowFolderSelect:true, logo:'📝', home:'https://docs.google.com', desc:'프로젝트 문서/폴더 연결', ready:true, launchPhase:'launch', launchNote:'현재 상용 런칭 범위에 포함된 문서 연동입니다.' },
       { name:'Google Sheets', provider:'google', resourceProvider:'google_sheets', type:'spreadsheet', logo:'📊', home:'https://sheets.google.com', desc:'일정/지표 시트 연결', ready:true, launchPhase:'launch', launchNote:'현재 상용 런칭 범위에 포함된 시트 연동입니다.' },
-      { name:'Slack', provider:'slack', resourceProvider:'slack', type:'channel', logo:'💬', home:'https://slack.com', desc:'프로젝트 채널 활동 연결', ready:false, launchPhase:'deferred', launchNote:'로드맵 연동으로 보류 중입니다. 상용 런칭 범위에는 아직 포함되지 않습니다.' },
-      { name:'Figma', provider:'figma', resourceProvider:'figma', type:'file', logo:'🎨', home:'https://www.figma.com', desc:'디자인 파일 상태 연결', ready:false, launchPhase:'deferred', launchNote:'로드맵 연동으로 보류 중입니다. 상용 런칭 범위에는 아직 포함되지 않습니다.' }
+      { name:'Slack', provider:'slack', resourceProvider:'slack', type:'channel', logo:'💬', home:'https://slack.com', desc:'프로젝트 채널 활동 연결', ready:true, launchPhase:'launch', launchNote:'OAuth 설정이 완료되면 바로 연결할 수 있는 정식 연동입니다.' },
+      { name:'Figma', provider:'figma', resourceProvider:'figma', type:'file', logo:'🎨', home:'https://www.figma.com', desc:'디자인 파일 상태 연결', ready:true, launchPhase:'launch', launchNote:'OAuth 설정이 완료되면 바로 연결할 수 있는 정식 연동입니다.' },
+      { name:'GitHub', provider:'github', resourceProvider:'github', type:'account', logo:'🐙', home:'https://github.com', desc:'코드, 이슈, PR 실행 기록 연결', ready:true, launchPhase:'launch', launchNote:'OAuth 설정이 완료되면 바로 연결할 수 있는 정식 연동입니다.' },
+      { name:'Discord', provider:'discord', resourceProvider:'discord', type:'account', logo:'🎧', home:'https://discord.com', desc:'학생 팀 커뮤니티와 채널 연결', ready:true, launchPhase:'launch', launchNote:'OAuth 설정이 완료되면 바로 연결할 수 있는 정식 연동입니다.' },
+      { name:'Google Calendar', provider:'google_calendar', resourceProvider:'google_calendar', type:'calendar', logo:'🗓️', home:'https://calendar.google.com', desc:'회의, 멘토링, 마일스톤 일정 연결', ready:true, launchPhase:'launch', launchNote:'OAuth 설정이 완료되면 바로 연결할 수 있는 정식 연동입니다.' },
+      { name:'Airtable', provider:'airtable', resourceProvider:'airtable', type:'workspace', logo:'🧱', home:'https://airtable.com', desc:'수요조사, 인터뷰, 운영 DB 연결', ready:true, launchPhase:'launch', launchNote:'OAuth 설정이 완료되면 바로 연결할 수 있는 정식 연동입니다.' }
     ];
 
     async function fetchToolMeta(url) {
@@ -1171,7 +1547,19 @@
       document.getElementById('hubCategory').textContent = p.category || 'Uncategorized';
       document.getElementById('hubStage').textContent = p.status || '기획 중';
       document.getElementById('hubState').textContent = '팀 운영 중';
-      document.getElementById('hubSummary').textContent = p.summary || '';
+      document.getElementById('hubSummary').textContent = compactProjectSummary(p.summary, 56) || '';
+      const summaryStrip = document.getElementById('hubSummaryStrip');
+      const materialsCount = Array.isArray(hub.materials) ? hub.materials.length : 0;
+      const todoCount = Array.isArray(hub.weeklyTodos) ? hub.weeklyTodos.filter(Boolean).length : 0;
+      const teamCount = Array.isArray(p.teamMembers) ? p.teamMembers.length : 0;
+      const summaryChips = [
+        { label: '팀', value: `${teamCount}명` },
+        { label: '자료', value: materialsCount ? `${materialsCount}건` : '없음' },
+        { label: '이번 주', value: todoCount ? `할 일 ${todoCount}개` : '정리 필요' }
+      ];
+      if (summaryStrip) {
+        summaryStrip.innerHTML = summaryChips.map((chip) => `<span class="hub-summary-chip"><strong>${esc(chip.label)}</strong><span>${esc(chip.value)}</span></span>`).join('');
+      }
 
       const teamPills = [
         ...(p.teamMembers || []).map((member) => `<span class='hub-team-pill'><strong>${esc(member.name)}</strong><span class='meta'>${esc(member.role || '')}</span></span>`),
@@ -1203,6 +1591,53 @@
       renderToolCards();
       renderIntegrationsTab();
 
+      const snapshot = remoteStatusSnapshot;
+      const mergedTimeline = mergedProjectTimeline(80);
+      const connectedIntegrations = remoteIntegrations.filter(integrationIsConnected);
+      const verifiedIntegrations = remoteIntegrations.filter(integrationIsLogVerified);
+      const latestServerEvent = normalizedRemoteActivityEvents(1)[0] || null;
+      const focusMeta = [
+        `팀 ${teamCount}명`,
+        todoCount ? `이번 주 ${todoCount}개` : '할 일 정리 필요',
+        materialsCount ? `자료 ${materialsCount}건` : '자료 없음'
+      ];
+      const signalMeta = [
+        p.status || '기획 중',
+        snapshot?.current_stage || '스냅샷 대기',
+        snapshot?.suggested_next_action ? '다음 액션 있음' : 'AI 재정리 가능'
+      ];
+      const opsMeta = [
+        connectedIntegrations.length ? `연동 ${connectedIntegrations.length}개` : '연동 없음',
+        verifiedIntegrations.length ? `로그 확인 ${verifiedIntegrations.length}개` : '로그 확인 필요',
+        latestServerEvent?.createdAt ? `최근 적재 ${new Date(latestServerEvent.createdAt).toLocaleDateString('ko-KR')}` : '최근 적재 없음'
+      ];
+      const setBoardMeta = (id, items) => {
+        const node = document.getElementById(id);
+        if (!node) return;
+        node.innerHTML = items.filter(Boolean).map((item) => `<span>${esc(item)}</span>`).join('');
+      };
+      const setBoardText = (id, value, fallback = '') => {
+        const node = document.getElementById(id);
+        if (node) node.textContent = value || fallback;
+      };
+      setBoardText('hubCommandFocusTitle', hub.goal || '이번 주 핵심 목표를 먼저 정리하세요.');
+      setBoardText('hubCommandFocusBody', hub.weeklyTodos?.[0] || hub.blocker || '할 일, 막힌 점, 필요한 도움을 한 줄로 적어두면 팀 속도가 올라갑니다.');
+      setBoardText('hubCommandSignalTitle', snapshot?.suggested_next_action || '지금 보이는 실행 신호를 먼저 붙잡으세요.');
+      setBoardText('hubCommandSignalBody', snapshot?.recent_activity_summary || recentActivityLabelFromHub(hub) || '최근 로그와 AI 요약이 모이면 다음 행동이 더 또렷해집니다.');
+      setBoardText('hubCommandOpsTitle', connectedIntegrations.length ? `연결된 외부 도구 ${connectedIntegrations.length}개` : '외부 도구 연결을 시작해보세요.');
+      setBoardText('hubCommandOpsBody', verifiedIntegrations.length ? '활동 로그가 실제로 허브에 들어오는 연결이 있습니다.' : '연결만 된 상태일 수 있으니 webhook 테스트까지 확인하는 편이 안전합니다.');
+      setBoardMeta('hubCommandFocusMeta', focusMeta);
+      setBoardMeta('hubCommandSignalMeta', signalMeta);
+      setBoardMeta('hubCommandOpsMeta', opsMeta);
+      renderHubIntelligencePanel({
+        project: p,
+        hub,
+        snapshot,
+        integrations: remoteIntegrations,
+        timeline: mergedTimeline,
+        applications: teamApplicationsCache
+      });
+
       document.getElementById('mtList').innerHTML = (hub.materials || []).map((item) => {
         const label = `${item.name} (${item.type || '자료'})`;
         if (item.url) return `<li><a href="${esc(safeUrl(item.url))}" target="_blank" rel="noopener noreferrer">${esc(label)}</a></li>`;
@@ -1212,7 +1647,6 @@
       renderWorkLogs(p.teamMembers || [], hub).catch(() => {});
       renderTeamApplications();
 
-      const mergedTimeline = mergedProjectTimeline(80);
       const recentTop = mergedTimeline.slice(0, 5);
       document.getElementById('ovRecent').innerHTML = recentTop.map((item) => `<li>${esc(item.text)} · ${esc(new Date(item.createdAt).toLocaleString('ko-KR'))}${item.source === 'server' ? ' · 서버기록' : ''}</li>`).join('') || '<li>최근 활동이 없습니다.</li>';
       const moreBtn = document.getElementById('ovRecentMoreBtn');
@@ -1223,7 +1657,6 @@
       };
       document.getElementById('pgLogs').innerHTML = mergedTimeline.map((item) => `<li>${esc(item.text)} · ${esc(new Date(item.createdAt || Date.now()).toLocaleString('ko-KR'))}${item.source === 'server' ? ' · 서버기록' : ''}</li>`).join('') || '<li>진행 로그 없음</li>';
 
-      const snapshot = remoteStatusSnapshot;
       const statusRows = [
         `현재 단계: ${snapshot?.current_stage || p.status || '기획 중'}`,
         snapshot?.recent_activity_summary
@@ -1238,9 +1671,10 @@
       }
       renderMentorPanels(WETHUS.getProjectHub(p.id), {
         statusRows,
-        adviceRows: ['목표를 이번 주 단위로 쪼개세요.', '막힘 요소를 카드에 명시하세요.', '멘토링 요청을 구체적으로 작성하세요.']
+        adviceRows: ['목표를 이번 주 단위로 쪼개세요.', '막힘 요소를 카드에 적어두세요.', '멘토 요청을 구체적으로 쓰세요.']
       });
       renderTab(activeTab);
+      refreshHubDensityUi(WETHUS.getProjectHub(p.id));
     };
 
     async function loadIntegrationsForCurrentProject() {
@@ -1282,14 +1716,14 @@
       }));
       const merged = rows.length ? rows : localRows;
       if (!merged.length) {
-        el.innerHTML = '<article class="list-item"><h3>연결된 외부툴 없음</h3><p class="meta">외부 연동을 먼저 연결하면 이곳에 요약이 표시됩니다.</p></article>';
+        el.innerHTML = '<article class="list-item"><h3>연결된 외부툴 없음</h3><p class="meta">외부 연동을 연결하면 여기에 요약이 보입니다.</p></article>';
         return;
       }
 
       const actionable = merged.filter(i => i.integration_type !== 'account');
       const accountOnly = merged.length > 0 && actionable.length === 0;
       if (accountOnly) {
-        el.innerHTML = `<article class="list-item"><h3>Google 계정만 연결됨</h3><p class="meta">문서 반영을 위해선 Google Docs/폴더 리소스를 추가로 선택해야 합니다.</p><p class="meta" style="margin-top:6px;">우측 외부툴 카드에서 Google Docs의 연결/동기화를 눌러 리소스를 선택하세요.</p></article>`;
+        el.innerHTML = `<article class="list-item"><h3>Google 계정만 연결됨</h3><p class="meta">문서 반영용 Google Docs 또는 폴더를 더 선택해야 합니다.</p><p class="meta" style="margin-top:6px;">우측 외부툴 카드에서 Google Docs 연결/동기화를 눌러 리소스를 고르세요.</p></article>`;
         return;
       }
 
@@ -1311,7 +1745,7 @@
           <h3>${esc(i.provider)} · ${esc(i.integration_type)}</h3>
           <p style="margin:6px 0 4px;">${esc(i.external_resource_name || i.external_resource_id || '-')}</p>
           <p class="meta" style="margin:0 0 6px;">최근 동기화: ${esc(i.last_synced_at ? new Date(i.last_synced_at).toLocaleString('ko-KR') : '기록 없음')}</p>
-          <p class="meta" style="margin:0;">${esc(firstSnippet || '요약 데이터 없음 (권한/포맷/동기화 상태 확인 필요)')}</p>
+          <p class="meta" style="margin:0;">${esc(firstSnippet || '요약 데이터 없음 · 권한/포맷/동기화 확인 필요')}</p>
           <p class="meta" style="margin:6px 0 0;">반영 문서: ${matchedCount}건${errorCount ? ` · 오류 ${errorCount}건` : ''}</p>
           ${collectionPolicy ? `<p class="meta" style="margin:6px 0 0;">수집 정책: ${esc(collectionPolicy)}</p>` : ''}
           <p class="meta" style="margin:6px 0 0;">활동 로그: ${esc(webhookSummary)}</p>
@@ -1420,7 +1854,7 @@
     }
 
     function toolCardLogSummary(integration, meta) {
-      if (!integration?.id) return '로그 상태는 연결 후 확인됩니다.';
+      if (!integration?.id) return '연결 후 로그 확인';
       const status = integrationWebhookStatus(integration, meta);
       const compact = status
         .replace('현재는 연결/동기화 이벤트만 자동 기록됩니다. · ', '')
@@ -1459,17 +1893,17 @@
       const modalDesc = document.getElementById('hubToolModalDesc');
       const scopeCard = document.getElementById('hubToolModalScope');
       if (hubToolBtn) {
-        hubToolBtn.textContent = canManage ? '외부 툴 연결' : '외부 툴 보기';
+        hubToolBtn.textContent = canManage ? '연동' : '연동 보기';
       }
       if (modalDesc) {
         modalDesc.textContent = canManage
-          ? 'OAuth로 계정을 연결한 뒤, 프로젝트에 연결할 문서·시트 리소스를 선택하세요.'
-          : '현재 연결된 외부 연동 현황을 확인할 수 있습니다. 연결 변경은 대표/리더만 가능합니다.';
+          ? '계정 연결 뒤 이 프로젝트에 붙일 자료를 고르세요.'
+          : '현재 연결 상태만 볼 수 있습니다. 변경은 대표/리더만 가능합니다.';
       }
       if (scopeCard) {
         scopeCard.innerHTML = canManage
-          ? '<strong style="display:block;margin-bottom:4px;">연동 구조</strong><p class="meta" style="margin:0;">1) 제공자 선택 → 2) OAuth 인증 → 3) 문서/시트 선택 → 4) 프로젝트 허브에 연결 반영</p>'
-          : '<strong style="display:block;margin-bottom:4px;">읽기 전용 모드</strong><p class="meta" style="margin:0;">대표/리더가 연결한 외부 문서와 최근 반영 상태를 확인할 수 있습니다. 변경 권한은 프로젝트 운영 리더에게만 열립니다.</p>';
+          ? '<strong style="display:block;margin-bottom:4px;">연결 순서</strong><p class="meta" style="margin:0;">1) 도구 선택 → 2) 계정 연결 → 3) 자료 선택</p>'
+          : '<strong style="display:block;margin-bottom:4px;">읽기 전용</strong><p class="meta" style="margin:0;">대표/리더가 연결한 자료와 최근 반영 상태만 볼 수 있습니다.</p>';
       }
     }
 
@@ -1488,7 +1922,7 @@
 
       if (isLeader) {
         if (!(teamApplicationsCache || []).length) {
-          el.innerHTML = '<article class="list-item"><h3>들어온 지원서가 없습니다</h3><p class="meta">새 지원이 들어오면 여기에서 바로 검토할 수 있습니다.</p></article>';
+          el.innerHTML = '<article class="list-item"><h3>들어온 지원서 없음</h3><p class="meta">새 지원이 오면 여기서 바로 확인합니다.</p></article>';
           return;
         }
 
@@ -1539,7 +1973,7 @@
         return;
       }
 
-      el.innerHTML = '<article class="list-item"><h3>지원 현황 없음</h3><p class="meta">이 프로젝트에 제출한 지원서가 아직 없습니다.</p></article>';
+      el.innerHTML = '<article class="list-item"><h3>지원 현황 없음</h3><p class="meta">이 프로젝트에 제출한 지원서가 없습니다.</p></article>';
     }
 
     async function loadTeamApplicationsForCurrentProject() {
@@ -1594,8 +2028,8 @@
       if (normalized === 'accepted') {
         const reviewedAt = app?.reviewedAt ? new Date(app.reviewedAt).toLocaleString('ko-KR') : '';
         return reviewedAt
-          ? `수락 완료 · ${reviewedAt} · 팀 채팅과 허브 협업 흐름으로 바로 이어집니다.`
-          : '수락 완료 · 팀 채팅과 허브 협업 흐름으로 바로 이어집니다.';
+          ? `수락 완료 · ${reviewedAt} · 팀 채팅과 허브 협업 흐름으로 이어집니다.`
+          : '수락 완료 · 팀 채팅과 허브 협업 흐름으로 이어집니다.';
       }
       if (normalized === 'rejected') {
         const reviewedAt = app?.reviewedAt ? new Date(app.reviewedAt).toLocaleString('ko-KR') : '';
@@ -1604,7 +2038,7 @@
           : '반려 처리 · 필요하면 지원자와 별도 대화를 이어가세요.';
       }
       if (normalized === 'cancelled') return '지원자가 직접 지원을 취소했습니다.';
-      return '검토중 · 프로젝트 상황이 맞으면 수락 후 팀원으로 바로 합류시킬 수 있습니다.';
+      return '검토중 · 맞으면 수락 후 팀원으로 합류시킬 수 있습니다.';
     }
 
     function renderTeamApplications() {
@@ -1621,7 +2055,7 @@
 
       if (isManager) {
         if (!(teamApplicationsCache || []).length) {
-          el.innerHTML = '<article class="list-item"><h3>들어온 지원서가 없습니다</h3><p class="meta">새 지원이 들어오면 여기에서 바로 검토할 수 있습니다.</p></article>';
+        el.innerHTML = '<article class="list-item"><h3>들어온 지원서 없음</h3><p class="meta">새 지원이 오면 여기서 바로 확인합니다.</p></article>';
           return;
         }
 
@@ -1689,12 +2123,12 @@
           const canCancel = normalized === 'applied';
           const myMember = currentProjectMemberById(app?.userId || app?.applicantId || '');
           const helperMessage = normalized === 'accepted'
-            ? `이제 이 프로젝트의 팀원으로 참여 중입니다.${myMember?.role ? ` 현재 역할은 ${myMember.role}입니다.` : ''} 프로젝트 허브의 팀 채팅과 외부 툴, 진행 로그를 바로 사용할 수 있습니다.`
+            ? `이제 이 프로젝트의 팀원으로 참여 중입니다.${myMember?.role ? ` 현재 역할은 ${myMember.role}입니다.` : ''} 프로젝트 허브의 팀 채팅, 외부 툴, 진행 로그를 사용할 수 있습니다.`
             : normalized === 'rejected'
               ? '이번 지원서는 반려되었습니다. 프로젝트 방향이 바뀌면 다른 기회에 다시 지원할 수 있습니다.'
               : normalized === 'cancelled'
                 ? '지원이 취소되었습니다. 다시 참여하고 싶다면 새 지원서를 제출하면 됩니다.'
-                : '대표 또는 리더가 지원서를 검토 중입니다. 검토가 끝나면 이곳 상태가 바로 바뀝니다.';
+                : '대표 또는 리더가 지원서를 검토 중입니다. 검토가 끝나면 이곳 상태가 바뀝니다.';
           return `<article class="list-item">
             <h3>내 지원서</h3>
             <p class="meta" style="margin:6px 0 8px;">상태: ${esc(statusLabel)}</p>
@@ -1727,7 +2161,7 @@
         return;
       }
 
-      el.innerHTML = '<article class="list-item"><h3>지원 현황 없음</h3><p class="meta">이 프로젝트에 제출한 지원서가 아직 없습니다.</p></article>';
+      el.innerHTML = '<article class="list-item"><h3>지원 현황 없음</h3><p class="meta">이 프로젝트에 제출한 지원서가 없습니다.</p></article>';
     }
 
     let pendingResourceTool = null;
@@ -1995,15 +2429,15 @@ function logManualUpdate() {
 
       if (!integration) {
         nameEl.textContent = '연결된 툴 선택 필요';
-        descEl.textContent = '외부 툴의 활동 로그를 프로젝트 타임라인에 반영할 수 있도록 수집 상태를 관리합니다.';
-        statusEl.textContent = '먼저 문서나 시트 리소스를 연결하면 로그 수집 상태를 확인할 수 있습니다.';
+        descEl.textContent = '외부 도구 활동을 프로젝트 타임라인에 자동으로 쌓을 수 있도록 설정합니다.';
+        statusEl.textContent = '먼저 문서나 시트를 연결하면 로그 상태를 볼 수 있습니다.';
         eventsEl.textContent = '';
         recentEl.innerHTML = '';
         urlEl.value = '';
         headerEl.value = 'x-webhook-secret: (발급 후 표시)';
         secretEl.value = '';
         relayTemplateEl.value = 'Webhook을 먼저 발급하면 Apps Script relay 템플릿이 여기에 채워집니다.';
-        relayDescEl.textContent = 'Google Docs/Sheets의 실제 변경 이벤트를 모으려면 Apps Script 같은 relay가 이 endpoint로 webhook payload를 보내야 합니다.';
+        relayDescEl.textContent = 'Google Docs/Sheets 자동 수집은 Apps Script relay로 연결하세요.';
         relayCard.style.display = '';
         issueBtn.disabled = true;
         issueBtn.textContent = 'Webhook 발급';
@@ -2015,7 +2449,7 @@ function logManualUpdate() {
         downloadCodeBtn.disabled = true;
         downloadManifestBtn.disabled = true;
         copyCurlBtn.disabled = true;
-        testStatusEl.textContent = '먼저 연결된 문서나 시트를 선택한 뒤 로그 수집 상태를 확인해주세요.';
+        testStatusEl.textContent = '먼저 연결된 문서나 시트를 고른 뒤 로그 상태를 확인해주세요.';
         setWebhookOpsStatus('먼저 연결 리소스를 선택해주세요.');
         return;
       }
@@ -2031,12 +2465,12 @@ function logManualUpdate() {
       nameEl.textContent = `${activeWebhookToolName || integration.provider} · ${integration.external_resource_name || integration.external_resource_id || '연결 리소스'}`;
       descEl.textContent = webhookReady
         ? 'Webhook을 재발급하면 기존 relay secret은 즉시 무효화됩니다. 외부 자동 로그가 붙어 있다면 새 secret으로 함께 갱신해주세요.'
-        : '외부 툴의 활동 로그를 프로젝트 타임라인에 반영할 수 있도록 수집 상태를 관리합니다.';
+        : '외부 도구 활동을 프로젝트 타임라인에 자동으로 쌓을 수 있도록 설정합니다.';
       statusEl.textContent = integrationWebhookStatus(integration, providerMeta);
       eventsEl.textContent = eventSummary;
       recentEl.innerHTML = recentLines.length
         ? `<strong style="display:block;margin-bottom:6px;">최근 적재 ${recentLines.length}건</strong>${recentLines.map((line) => `<div style="margin:0 0 4px;">${esc(line)}</div>`).join('')}`
-        : '<span style="color:#9aa0a6;">아직 적재된 개별 이벤트가 없습니다. 연결/동기화 또는 테스트 이벤트로 먼저 흐름을 확인해보세요.</span>';
+        : '<span style="color:#9aa0a6;">아직 적재된 이벤트가 없습니다. 연결 또는 테스트로 먼저 확인해보세요.</span>';
       urlEl.value = integrationWebhookUrl(integration);
       headerEl.value = issuedSecret ? `x-webhook-secret: ${issuedSecret}` : `x-webhook-secret: ${integration.webhook_secret_preview || '(발급 후 표시)'}`;
       secretEl.value = issuedSecret
@@ -2044,8 +2478,8 @@ function logManualUpdate() {
         : (integration.webhook_enabled ? `저장된 secret 미리보기: ${integration.webhook_secret_preview || '발급됨'}` : '아직 발급되지 않았습니다.');
       relayCard.style.display = relayNeeded ? '' : 'none';
       relayDescEl.textContent = relayNeeded
-        ? `${providerLabel}의 실제 변경 이벤트를 자동 반영하려면 Apps Script나 별도 relay가 이 endpoint로 payload를 보내야 합니다. 아래 템플릿을 그대로 시작점으로 쓸 수 있습니다.`
-        : '현재 이 연동은 별도 relay 안내가 필요하지 않습니다.';
+        ? `${providerLabel} 활동을 자동 반영하려면 Apps Script나 relay가 이 주소로 이벤트를 보내야 합니다.`
+        : '이 연동은 별도 relay 안내가 필요하지 않습니다.';
       relayTemplateEl.value = webhookRelayTemplate(urlEl.value, revealSecret, integration.provider, integration.external_resource_name || integration.external_resource_id || providerLabel);
       issueBtn.disabled = !canManage || webhookModalBusy;
       issueBtn.textContent = webhookReady ? 'Webhook 재발급' : 'Webhook 발급';
@@ -2058,12 +2492,12 @@ function logManualUpdate() {
       downloadManifestBtn.disabled = webhookModalBusy || !revealSecret || !relayNeeded;
       copyCurlBtn.disabled = webhookModalBusy || !revealSecret;
       testStatusEl.textContent = canManage
-        ? `테스트 이벤트는 허브에서 직접 남기는 샘플 로그이며, 외부 relay 없이도 적재 흐름을 바로 확인할 수 있습니다.${providerMeta?.relayRequired ? ' 실제 외부 변경 로그는 별도 relay/webhook 연결이 필요합니다.' : ''}`
+        ? `테스트 이벤트는 허브에서 남기는 샘플 로그입니다. 외부 relay 없이도 적재 흐름을 볼 수 있습니다.${providerMeta?.relayRequired ? ' 실제 외부 변경 로그는 별도 relay 연결이 필요합니다.' : ''}`
         : '테스트 이벤트 발송은 대표/리더만 가능합니다.';
       if (webhookModalBusy) {
         setWebhookOpsStatus(webhookModalBusyReason || '요청을 처리하고 있습니다...', 'busy');
       } else if (revealSecret) {
-        setWebhookOpsStatus('방금 발급한 secret은 지금 이 모달에서만 전체 값으로 확인할 수 있습니다.');
+        setWebhookOpsStatus('방금 발급한 secret은 이 모달에서만 전체 값을 볼 수 있습니다.');
       } else {
         setWebhookOpsStatus('준비되면 발급, 테스트, 복사를 진행할 수 있습니다.');
       }
@@ -2124,10 +2558,10 @@ function logManualUpdate() {
         await loadRemoteActivityEventsForCurrentProject();
         renderToolCards();
         await renderHub();
-        statusEl.textContent = '테스트 이벤트를 기록했습니다. 최근 활동과 이벤트 현황에서 바로 확인할 수 있습니다.';
+        statusEl.textContent = '테스트 이벤트를 기록했습니다. 최근 활동에서 확인할 수 있습니다.';
         setWebhookModalBusy(false);
         renderWebhookModal();
-        setWebhookOpsStatus('테스트 이벤트를 기록했습니다. 최근 이벤트 요약에서 반영 여부를 바로 확인할 수 있습니다.', 'success');
+        setWebhookOpsStatus('테스트 이벤트를 기록했습니다. 최근 이벤트 요약에서 확인할 수 있습니다.', 'success');
       } catch (e) {
         statusEl.textContent = e?.message || '테스트 이벤트 기록에 실패했습니다.';
         setWebhookModalBusy(false);
@@ -2191,17 +2625,21 @@ function logManualUpdate() {
         const statusLabel = deferred
           ? '로드맵'
           : (setupRequired ? '설정 필요' : (t.ready ? (st?.connected ? '연결됨' : (st?.everConnected ? '연결해제됨' : '미연결')) : '준비중'));
-        const actionLabel = st?.connected ? '동기화' : connectLabel;
+        const actionLabel = deferred ? '준비 중' : (setupRequired ? '설정 필요' : (st?.connected ? '동기화' : connectLabel));
         const integration = currentToolIntegration(t);
         const statusChips = toolCardStatusChips(t, st, integration, meta, setupRequired);
         const logSummary = toolCardLogSummary(integration, meta);
         const eventSummary = integration?.id ? integrationEventSummary(integration.id) : '이벤트 없음';
         const hint = toolCardOpsHint(t, integration, meta, canManage);
         const actionDisabled = !canManage || !t.ready || setupRequired || deferred;
+        const disconnectButton = st?.connected
+          ? `<button class="btn btn--secondary" data-tool-disconnect="${esc(t.name)}" type="button" ${actionDisabled ? 'disabled' : ''}>해제</button>`
+          : '';
         const logButton = integration?.id
           ? `<button class="btn btn--secondary" data-tool-webhook="${esc(t.name)}" type="button">${canManage ? '로그 설정' : '로그 보기'}</button>`
           : '';
-        const actionColumns = logButton ? 'grid-template-columns:1fr 1fr 1fr;' : 'grid-template-columns:1fr 1fr;';
+        const actionCount = 1 + (disconnectButton ? 1 : 0) + (logButton ? 1 : 0);
+        const actionColumns = `grid-template-columns:repeat(${actionCount}, minmax(0, 1fr));`;
         return `<article class="tool-card" data-tool="${esc(t.name)}">
           <div class="tool-card-main">
             <div class="tool-card-title">
@@ -2211,19 +2649,19 @@ function logManualUpdate() {
               </div>
             </div>
             <div class="status-row">${statusChips.map((chip) => `<span class="status-chip ${esc(chip.className)}">${esc(chip.label)}</span>`).join('')}</div>
-            <p class="meta" style="margin:0;">${esc(statusLabel)}${st?.lastSynced ? ` · 마지막 반영 ${esc(new Date(st.lastSynced).toLocaleString('ko-KR'))}` : ''}</p>
+            <p class="meta" style="margin:0;">${esc(statusLabel)}${st?.lastSynced ? ` · ${esc(new Date(st.lastSynced).toLocaleString('ko-KR'))}` : ''}</p>
             <p class="meta" style="margin:0;">${esc(hint)}</p>
-            <p class="meta" style="margin:0;">로그 ${esc(logSummary)}</p>
-            <p class="meta" style="margin:0;">이벤트 ${esc(eventSummary)}</p>
+            <p class="meta" style="margin:0;">로그 ${esc(logSummary)}${eventSummary === '이벤트 없음' ? '' : ` · 이벤트 ${esc(eventSummary)}`}</p>
           </div>
           <div class="tool-card-actions" style="${actionColumns}">
             <button class="btn btn--primary" data-tool-connect="${esc(t.name)}" type="button" ${actionDisabled ? 'disabled' : ''}>${esc(actionLabel)}</button>
-            <button class="btn btn--secondary" data-tool-disconnect="${esc(t.name)}" type="button" ${actionDisabled ? 'disabled' : ''}>해제</button>
+            ${disconnectButton}
             ${logButton}
           </div>
         </article>`;
       };
-      const launchHeader = `<article class="hub-card" style="grid-column:1 / -1;padding:10px;"><strong style="display:block;margin-bottom:4px;">지금 연결 가능</strong><p class="meta" style="margin:0;">Google Docs, Google Sheets</p></article>`;
+      const launchNames = launchTools.map(t => t.name).join(', ') || '연결 가능한 도구 없음';
+      const launchHeader = `<article class="hub-card" style="grid-column:1 / -1;padding:10px;"><strong style="display:block;margin-bottom:4px;">지금 연결 가능</strong><p class="meta" style="margin:0;">${esc(launchNames)}</p></article>`;
       const roadmapHeader = roadmapTools.length
         ? `<article class="hub-card" style="grid-column:1 / -1;padding:10px;"><strong style="display:block;margin-bottom:4px;">준비 중</strong><p class="meta" style="margin:0;">Notion, Slack, Figma</p></article>`
         : '';
@@ -2781,10 +3219,121 @@ function logManualUpdate() {
       await renderHub();
     });
 
+    const hubSideDetails = document.getElementById('hubSideDetails');
+    const hubSideSummary = document.getElementById('hubSideSummary');
+    const hubSideStack = document.getElementById('hubSideStack');
+    const hubOverviewMore = document.getElementById('hubOverviewMore');
+    const hubOverviewMoreSummary = document.getElementById('hubOverviewMoreSummary');
+    const hubProgressMore = document.getElementById('hubProgressMore');
+    const hubProgressMoreSummary = document.getElementById('hubProgressMoreSummary');
+    const hubProgressHistory = document.getElementById('hubProgressHistory');
+    const hubProgressHistorySummary = document.getElementById('hubProgressHistorySummary');
+    let hubSideWasMobile = null;
+    function syncHubSideToggle() {
+      if (!hubSideDetails || !hubSideSummary || !hubSideStack) return;
+      const mobile = window.matchMedia('(max-width: 640px)').matches;
+      if (mobile !== hubSideWasMobile) {
+        if (mobile) {
+          hubSideDetails.removeAttribute('open');
+        } else {
+          hubSideDetails.setAttribute('open', 'open');
+        }
+        hubSideWasMobile = mobile;
+      }
+      if (!mobile) {
+        hubSideDetails.setAttribute('open', 'open');
+      }
+      const open = hubSideDetails.hasAttribute('open');
+      hubSideSummary.textContent = mobile ? (open ? 'AI 인사이트 접기' : 'AI 인사이트 더보기') : 'AI 인사이트';
+    }
+    hubSideDetails?.addEventListener('toggle', syncHubSideToggle);
+    window.addEventListener('resize', syncHubSideToggle);
+    syncHubSideToggle();
+    let hubOverviewWasMobile = null;
+    function syncHubOverviewToggle() {
+      if (!hubOverviewMore || !hubOverviewMoreSummary) return;
+      const mobile = window.matchMedia('(max-width: 640px)').matches;
+      if (mobile !== hubOverviewWasMobile) {
+        if (mobile) hubOverviewMore.removeAttribute('open');
+        else hubOverviewMore.setAttribute('open', 'open');
+        hubOverviewWasMobile = mobile;
+      }
+      if (!mobile) hubOverviewMore.setAttribute('open', 'open');
+      const open = hubOverviewMore.hasAttribute('open');
+      hubOverviewMoreSummary.textContent = mobile ? (open ? '운영 정보 접기' : '운영 정보') : '운영 정보';
+    }
+    hubOverviewMore?.addEventListener('toggle', syncHubOverviewToggle);
+    window.addEventListener('resize', syncHubOverviewToggle);
+    syncHubOverviewToggle();
+    let hubProgressWasMobile = null;
+    function syncHubProgressToggle() {
+      const mobile = window.matchMedia('(max-width: 640px)').matches;
+      if (mobile !== hubProgressWasMobile) {
+        if (mobile) {
+          hubProgressMore?.removeAttribute('open');
+          hubProgressHistory?.removeAttribute('open');
+        } else {
+          hubProgressMore?.setAttribute('open', 'open');
+          hubProgressHistory?.setAttribute('open', 'open');
+        }
+        hubProgressWasMobile = mobile;
+      }
+      if (!mobile) {
+        hubProgressMore?.setAttribute('open', 'open');
+        hubProgressHistory?.setAttribute('open', 'open');
+      }
+      if (hubProgressMoreSummary) {
+        const open = hubProgressMore?.hasAttribute('open');
+        hubProgressMoreSummary.textContent = mobile ? (open ? '세부 보기 접기' : '세부 보기') : '세부 보기';
+      }
+      if (hubProgressHistorySummary) {
+        const open = hubProgressHistory?.hasAttribute('open');
+        hubProgressHistorySummary.textContent = mobile ? (open ? 'AI 멘토 기록 접기' : 'AI 멘토 기록 더보기') : 'AI 멘토 기록';
+      }
+    }
+    hubProgressMore?.addEventListener('toggle', syncHubProgressToggle);
+    hubProgressHistory?.addEventListener('toggle', syncHubProgressToggle);
+    window.addEventListener('resize', syncHubProgressToggle);
+    syncHubProgressToggle();
+
     const pid=params.get('projectId') || getPersistedProject();
     renderProjectList();
     if(pid) openProject(pid);
 
+  </script>
+  <script>
+    (function () {
+      const replacements = [
+        ['지금 가장 먼저 움직여야 할 일과 비어 있는 실행 근거를 빠르게 정리합니다.', '지금 가장 먼저 움직일 일만 빠르게 정리합니다.'],
+        ['문서 링크와 파일을 한곳에 모아 팀이 바로 참고할 수 있게 정리하세요.', '문서와 파일을 한곳에 모아 팀이 바로 참고할 수 있게 정리하세요.'],
+        ['연결된 외부 도구와 최근 반영 상태를 확인합니다.', '연결된 도구와 최근 반영 상태를 확인합니다.'],
+        ['연결 상태와 최근 반영만 확인합니다.', '연결 상태와 최근 반영만 확인합니다.'],
+        ['외부 연동을 먼저 연결하면 이곳에 요약이 표시됩니다.', '외부 연동을 연결하면 이곳에 요약이 표시됩니다.'],
+        ['팀채팅과 활동 로그를 바탕으로 AI가 업무를 요약합니다.', '팀채팅과 활동 로그를 바탕으로 AI가 업무를 요약합니다.'],
+        ['대표는 지원서를 검토하고 수락 또는 반려 처리할 수 있습니다.', '대표는 지원서를 보고 수락 또는 반려 처리할 수 있습니다.'],
+        ['프로젝트 지원 AI는 프로젝트 정보/최근 활동/팀 채팅 문맥을 함께 참고합니다.', 'AI는 최근 활동과 팀 채팅을 함께 참고합니다.'],
+        ['AI 멘토를 한 번 실행하면 최근 판단 흐름이 여기에 쌓입니다.', 'AI 멘토를 실행하면 최근 판단이 여기에 쌓입니다.'],
+        ['허브 문맥을 바탕으로 AI 멘토 요약을 아직 생성하지 않았습니다.', 'AI 멘토 요약 없음.']
+      ];
+      function polishHubCopy() {
+        document.querySelectorAll('.meta, .page-sub, p').forEach((node) => {
+          const text = node.textContent && node.textContent.trim();
+          const found = replacements.find(([from]) => text === from);
+          if (found && found[1] !== text) node.textContent = found[1];
+        });
+      }
+      polishHubCopy();
+      let polishQueued = false;
+      const observer = new MutationObserver(() => {
+        if (polishQueued) return;
+        polishQueued = true;
+        requestAnimationFrame(() => {
+          polishQueued = false;
+          polishHubCopy();
+        });
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }());
   </script>
 </body>
 </html>

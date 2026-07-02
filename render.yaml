@@ -13,6 +13,8 @@ services:
         value: production
       - key: JWT_SECRET
         sync: false
+      - key: TOKEN_ENCRYPTION_KEY
+        sync: false
       - key: ADMIN_EMAIL
         value: admin@wethus.ai
       - key: ADMIN_BOOTSTRAP_PASSWORD
@@ -43,6 +45,22 @@ services:
         value: https://wethus-api.onrender.com/auth/google/callback
       - key: GOOGLE_LOGIN_REDIRECT_URIS
         value: http://127.0.0.1:8787/auth/google/callback,https://wethus-api.onrender.com/auth/google/callback
+      - key: NAVER_CLIENT_ID
+        sync: false
+      - key: NAVER_CLIENT_SECRET
+        sync: false
+      - key: NAVER_LOGIN_REDIRECT_URI
+        value: https://wethus-api.onrender.com/auth/naver/callback
+      - key: NAVER_LOGIN_REDIRECT_URIS
+        value: http://127.0.0.1:8787/auth/naver/callback,https://wethus-api.onrender.com/auth/naver/callback
+      - key: KAKAO_CLIENT_ID
+        sync: false
+      - key: KAKAO_CLIENT_SECRET
+        sync: false
+      - key: KAKAO_LOGIN_REDIRECT_URI
+        value: https://wethus-api.onrender.com/auth/kakao/callback
+      - key: KAKAO_LOGIN_REDIRECT_URIS
+        value: http://127.0.0.1:8787/auth/kakao/callback,https://wethus-api.onrender.com/auth/kakao/callback
       - key: NOTION_CLIENT_ID
         sync: false
       - key: NOTION_CLIENT_SECRET
@@ -61,10 +79,34 @@ services:
         sync: false
       - key: FIGMA_REDIRECT_URI
         value: https://wethus-api.onrender.com/oauth/figma/callback
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_REDIRECT_URI
+        value: https://wethus-api.onrender.com/oauth/github/callback
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
+      - key: DISCORD_REDIRECT_URI
+        value: https://wethus-api.onrender.com/oauth/discord/callback
+      - key: GOOGLE_CALENDAR_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CALENDAR_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CALENDAR_REDIRECT_URI
+        value: https://wethus-api.onrender.com/oauth/google_calendar/callback
+      - key: AIRTABLE_CLIENT_ID
+        sync: false
+      - key: AIRTABLE_CLIENT_SECRET
+        sync: false
+      - key: AIRTABLE_REDIRECT_URI
+        value: https://wethus-api.onrender.com/oauth/airtable/callback
       - key: WETHUS_LAUNCH_PROVIDERS
-        value: google_docs,google_sheets
+        value: google_docs,google_sheets,notion,slack,figma,github,discord,google_calendar,airtable
       - key: WETHUS_DEFERRED_PROVIDERS
-        value: notion,slack,figma
+        value: ""
       - key: CLOUD_STATE_REQUIRE_SESSION
         value: "true"
       - key: INTEGRATIONS_REQUIRE_ACTOR
@@ -76,4 +118,6 @@ services:
       - key: PROJECT_INTERACTIONS_REQUIRE_SESSION
         value: "true"
       - key: PROJECT_ACCESS_REQUIRE_MEMBERSHIP
+        value: "true"
+      - key: DM_REQUIRE_SESSION
         value: "true"

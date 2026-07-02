@@ -32,6 +32,14 @@ if (process.env.NODE_ENV === 'production' && JWT_SECRET_WEAK) {
   throw new Error('JWT_SECRET must be set to a strong random value in production.');
 }
 const JWT_SECRET = JWT_SECRET_WEAK ? crypto.randomBytes(32).toString('hex') : RAW_JWT_SECRET;
+const TOKEN_ENCRYPTION_KEY_RAW = String(process.env.TOKEN_ENCRYPTION_KEY || '').trim();
+if (process.env.NODE_ENV === 'production' && (!TOKEN_ENCRYPTION_KEY_RAW || TOKEN_ENCRYPTION_KEY_RAW.length < 32)) {
+  throw new Error('TOKEN_ENCRYPTION_KEY must be set to a strong random value in production.');
+}
+const TOKEN_ENCRYPTION_KEY = crypto
+  .createHash('sha256')
+  .update(TOKEN_ENCRYPTION_KEY_RAW || JWT_SECRET)
+  .digest();
 const AI_PROVIDER = (process.env.AI_PROVIDER || 'openai').toLowerCase();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
@@ -74,6 +82,28 @@ const GOOGLE_LOGIN_REDIRECT_URIS = Array.from(new Set([
     .map(s => s.trim())
     .filter(Boolean)
 ]));
+const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID || '';
+const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET || '';
+const NAVER_LOGIN_REDIRECT_URI = process.env.NAVER_LOGIN_REDIRECT_URI || `${INTEGRATION_APP_URL}/auth/naver/callback`;
+const NAVER_LOGIN_REDIRECT_URIS = Array.from(new Set([
+  NAVER_LOGIN_REDIRECT_URI,
+  `${INTEGRATION_APP_URL}/auth/naver/callback`,
+  ...(process.env.NAVER_LOGIN_REDIRECT_URIS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+]));
+const KAKAO_CLIENT_ID = process.env.KAKAO_CLIENT_ID || '';
+const KAKAO_CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET || '';
+const KAKAO_LOGIN_REDIRECT_URI = process.env.KAKAO_LOGIN_REDIRECT_URI || `${INTEGRATION_APP_URL}/auth/kakao/callback`;
+const KAKAO_LOGIN_REDIRECT_URIS = Array.from(new Set([
+  KAKAO_LOGIN_REDIRECT_URI,
+  `${INTEGRATION_APP_URL}/auth/kakao/callback`,
+  ...(process.env.KAKAO_LOGIN_REDIRECT_URIS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+]));
 const NOTION_CLIENT_ID = process.env.NOTION_CLIENT_ID || process.env.NOTION_OAUTH_CLIENT_ID || '';
 const NOTION_CLIENT_SECRET = process.env.NOTION_CLIENT_SECRET || process.env.NOTION_OAUTH_CLIENT_SECRET || '';
 const NOTION_REDIRECT_URI = process.env.NOTION_REDIRECT_URI || process.env.NOTION_OAUTH_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/notion/callback`;
@@ -83,6 +113,18 @@ const SLACK_REDIRECT_URI = process.env.SLACK_REDIRECT_URI || `${INTEGRATION_APP_
 const FIGMA_CLIENT_ID = process.env.FIGMA_CLIENT_ID || '';
 const FIGMA_CLIENT_SECRET = process.env.FIGMA_CLIENT_SECRET || '';
 const FIGMA_REDIRECT_URI = process.env.FIGMA_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/figma/callback`;
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || '';
+const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/github/callback`;
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '';
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || '';
+const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/discord/callback`;
+const GOOGLE_CALENDAR_CLIENT_ID = process.env.GOOGLE_CALENDAR_CLIENT_ID || GOOGLE_OAUTH_CLIENT_ID;
+const GOOGLE_CALENDAR_CLIENT_SECRET = process.env.GOOGLE_CALENDAR_CLIENT_SECRET || GOOGLE_OAUTH_CLIENT_SECRET;
+const GOOGLE_CALENDAR_REDIRECT_URI = process.env.GOOGLE_CALENDAR_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/google_calendar/callback`;
+const AIRTABLE_CLIENT_ID = process.env.AIRTABLE_CLIENT_ID || '';
+const AIRTABLE_CLIENT_SECRET = process.env.AIRTABLE_CLIENT_SECRET || '';
+const AIRTABLE_REDIRECT_URI = process.env.AIRTABLE_REDIRECT_URI || `${INTEGRATION_APP_URL}/oauth/airtable/callback`;
 const DEFAULT_ALLOWED_ORIGINS = [
   'http://localhost:8080',
   'http://127.0.0.1:8080',
@@ -101,6 +143,9 @@ const INTEGRATIONS_REQUIRE_SESSION = String(process.env.INTEGRATIONS_REQUIRE_SES
 const INTEGRATIONS_ENFORCE_LAUNCH_SCOPE = String(process.env.INTEGRATIONS_ENFORCE_LAUNCH_SCOPE || 'false').toLowerCase() === 'true';
 const PROJECT_INTERACTIONS_REQUIRE_SESSION = String(process.env.PROJECT_INTERACTIONS_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
 const PROJECT_ACCESS_REQUIRE_MEMBERSHIP = String(process.env.PROJECT_ACCESS_REQUIRE_MEMBERSHIP || 'false').toLowerCase() === 'true';
+const DM_REQUIRE_SESSION = String(process.env.DM_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
+const WEBHOOK_EVENT_TYPE_MAX = 80;
+const WEBHOOK_ITEM_FIELD_MAX = 240;
 const BUILD_COMMIT = String(process.env.RENDER_GIT_COMMIT || process.env.VERCEL_GIT_COMMIT_SHA || process.env.GIT_COMMIT || process.env.SOURCE_VERSION || '').trim();
 const BUILD_REF = String(process.env.RENDER_GIT_BRANCH || process.env.VERCEL_GIT_COMMIT_REF || process.env.GIT_BRANCH || '').trim();
 const RATE_LIMIT_SWEEP_MS = 5 * 60 * 1000;
@@ -224,7 +269,19 @@ function requestedGoogleOAuthRedirectUri(req) {
 }
 
 function resolveGoogleLoginRedirectUri(req, fallback = GOOGLE_LOGIN_REDIRECT_URI) {
-  const candidates = GOOGLE_LOGIN_REDIRECT_URIS
+  return resolveAuthRedirectUri(req, GOOGLE_LOGIN_REDIRECT_URIS, fallback);
+}
+
+function resolveNaverLoginRedirectUri(req, fallback = NAVER_LOGIN_REDIRECT_URI) {
+  return resolveAuthRedirectUri(req, NAVER_LOGIN_REDIRECT_URIS, fallback);
+}
+
+function resolveKakaoLoginRedirectUri(req, fallback = KAKAO_LOGIN_REDIRECT_URI) {
+  return resolveAuthRedirectUri(req, KAKAO_LOGIN_REDIRECT_URIS, fallback);
+}
+
+function resolveAuthRedirectUri(req, uris, fallback = '') {
+  const candidates = (Array.isArray(uris) ? uris : [])
     .map(uri => ({ uri, parsed: safeUrl(uri) }))
     .filter(entry => !!entry.parsed);
   if (!candidates.length) return String(fallback || '').trim();
@@ -276,35 +333,55 @@ function buildPostAuthRedirectUrl({ appOrigin, nextPath, onboardingComplete }) {
 }
 
 function upsertGoogleUserFromPayload(payload = {}) {
-  const email = normEmail(payload.email);
+  return upsertSocialUser({
+    provider: 'google',
+    providerSub: payload.sub,
+    email: payload.email,
+    name: payload.name,
+    nickname: payload.name,
+    profileImage: payload.picture
+  });
+}
+
+function upsertSocialUser({ provider, providerSub, email, name, nickname, profileImage }) {
+  const providerKey = String(provider || '').trim().toLowerCase();
+  const subField = `${providerKey}Sub`;
+  const emailValue = normEmail(email);
+  const subValue = String(providerSub || '').trim();
+  if (!providerKey || !subValue || !emailValue) {
+    throw new Error('social auth profile missing required id/email');
+  }
   const users = readUsers();
-  let user = users.find(u => (u.googleSub && u.googleSub === payload.sub) || normEmail(u.email) === email);
+  let user = users.find(u => (u[subField] && String(u[subField]) === subValue) || normEmail(u.email) === emailValue);
   const now = new Date().toISOString();
   if (!user) {
     user = {
       id: crypto.randomUUID(),
-      name: payload.name || email,
-      nickname: String(payload.name || email.split('@')[0] || 'google_user').replace(/\s+/g, ''),
-      email,
+      name: name || emailValue,
+      nickname: String(nickname || name || emailValue.split('@')[0] || `${providerKey}_user`).replace(/\s+/g, ''),
+      email: emailValue,
       passwordHash: '',
       plan: 'free',
       founderVerified: false,
-      profileImage: payload.picture || '',
+      profileImage: profileImage || '',
       bio: '',
       onboardingComplete: false,
       school: '',
       careerRaw: '',
       careerSummary: '',
       interestTags: [],
-      googleSub: payload.sub,
+      [subField]: subValue,
+      authProviders: [providerKey],
       createdAt: now,
       updatedAt: now
     };
     users.push(user);
   } else {
-    user.googleSub = payload.sub;
-    user.name = payload.name || user.name;
-    user.profileImage = payload.picture || user.profileImage || '';
+    user[subField] = subValue;
+    user.authProviders = Array.from(new Set([...(Array.isArray(user.authProviders) ? user.authProviders : []), providerKey]));
+    user.name = name || user.name;
+    user.nickname = nickname || user.nickname || user.name;
+    user.profileImage = profileImage || user.profileImage || '';
     user.updatedAt = now;
   }
   writeUsers(users);
@@ -346,6 +423,101 @@ async function completeGoogleLoginFlow(req, res, { code, redirectUri, appOrigin,
   }));
 }
 
+function buildAuthErrorRedirectUrl({ appOrigin, nextPath, provider, error }) {
+  const url = new URL('/login.html', resolveAllowedAppOrigin(appOrigin));
+  const safeNext = sanitizeReturnPath(nextPath);
+  if (safeNext) url.searchParams.set('next', safeNext);
+  url.searchParams.set('authError', `${provider}:${String(error || 'login_failed').slice(0, 120)}`);
+  return url.toString();
+}
+
+async function completeNaverLoginFlow(req, res, { code, state, redirectUri, appOrigin, nextPath }) {
+  const tokenRes = await fetch('https://nid.naver.com/oauth2.0/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      client_id: NAVER_CLIENT_ID,
+      client_secret: NAVER_CLIENT_SECRET,
+      code,
+      state: String(state || '')
+    })
+  });
+  const tokenJson = await tokenRes.json().catch(() => ({}));
+  if (!tokenRes.ok || !tokenJson?.access_token) {
+    return res.redirect(buildAuthErrorRedirectUrl({ appOrigin, nextPath, provider: 'naver', error: tokenJson?.error_description || 'token_exchange_failed' }));
+  }
+
+  const profileRes = await fetch('https://openapi.naver.com/v1/nid/me', {
+    headers: { Authorization: `Bearer ${tokenJson.access_token}` }
+  });
+  const profileJson = await profileRes.json().catch(() => ({}));
+  const profile = profileJson?.response || {};
+  if (!profileRes.ok || !profile?.id || !profile?.email) {
+    return res.redirect(buildAuthErrorRedirectUrl({ appOrigin, nextPath, provider: 'naver', error: 'email_required' }));
+  }
+
+  const user = upsertSocialUser({
+    provider: 'naver',
+    providerSub: profile.id,
+    email: profile.email,
+    name: profile.name || profile.nickname,
+    nickname: profile.nickname || profile.name,
+    profileImage: profile.profile_image
+  });
+  setSessionCookie(req, res, createSessionToken(user));
+  return res.redirect(buildPostAuthRedirectUrl({
+    appOrigin,
+    nextPath,
+    onboardingComplete: !!user.onboardingComplete
+  }));
+}
+
+async function completeKakaoLoginFlow(req, res, { code, redirectUri, appOrigin, nextPath }) {
+  const params = new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: KAKAO_CLIENT_ID,
+    redirect_uri: redirectUri,
+    code
+  });
+  if (KAKAO_CLIENT_SECRET) params.set('client_secret', KAKAO_CLIENT_SECRET);
+
+  const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params
+  });
+  const tokenJson = await tokenRes.json().catch(() => ({}));
+  if (!tokenRes.ok || !tokenJson?.access_token) {
+    return res.redirect(buildAuthErrorRedirectUrl({ appOrigin, nextPath, provider: 'kakao', error: tokenJson?.error_description || tokenJson?.error || 'token_exchange_failed' }));
+  }
+
+  const profileRes = await fetch('https://kapi.kakao.com/v2/user/me', {
+    headers: { Authorization: `Bearer ${tokenJson.access_token}` }
+  });
+  const profileJson = await profileRes.json().catch(() => ({}));
+  const account = profileJson?.kakao_account || {};
+  const profile = account?.profile || {};
+  if (!profileRes.ok || !profileJson?.id || !account?.email) {
+    return res.redirect(buildAuthErrorRedirectUrl({ appOrigin, nextPath, provider: 'kakao', error: 'email_required' }));
+  }
+
+  const user = upsertSocialUser({
+    provider: 'kakao',
+    providerSub: profileJson.id,
+    email: account.email,
+    name: profile.nickname || account.name,
+    nickname: profile.nickname || account.name,
+    profileImage: profile.profile_image_url || profile.thumbnail_image_url
+  });
+  setSessionCookie(req, res, createSessionToken(user));
+  return res.redirect(buildPostAuthRedirectUrl({
+    appOrigin,
+    nextPath,
+    onboardingComplete: !!user.onboardingComplete
+  }));
+}
+
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 const DATA_DIR = process.env.WETHUS_DATA_DIR
   ? path.resolve(process.env.WETHUS_DATA_DIR)
@@ -363,18 +535,26 @@ const PLAN_REQUESTS_DB = path.join(DATA_DIR, 'plan-requests.json');
 
 function ensureDb() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(USERS_DB)) fs.writeFileSync(USERS_DB, JSON.stringify({ users: [] }, null, 2));
-  if (!fs.existsSync(DM_DB)) fs.writeFileSync(DM_DB, JSON.stringify({ threads: [] }, null, 2));
-  if (!fs.existsSync(INTEGRATIONS_DB)) fs.writeFileSync(INTEGRATIONS_DB, JSON.stringify({ integrations: [] }, null, 2));
-  if (!fs.existsSync(ACTIVITY_EVENTS_DB)) fs.writeFileSync(ACTIVITY_EVENTS_DB, JSON.stringify({ events: [] }, null, 2));
-  if (!fs.existsSync(STATUS_SNAPSHOTS_DB)) fs.writeFileSync(STATUS_SNAPSHOTS_DB, JSON.stringify({ snapshots: [] }, null, 2));
-  if (!fs.existsSync(EXTERNAL_IDENTITIES_DB)) fs.writeFileSync(EXTERNAL_IDENTITIES_DB, JSON.stringify({ maps: [] }, null, 2));
-  if (!fs.existsSync(CLOUD_STATE_DB)) fs.writeFileSync(CLOUD_STATE_DB, JSON.stringify({ states: [] }, null, 2));
-  if (!fs.existsSync(PROJECT_APPLICATIONS_DB)) fs.writeFileSync(PROJECT_APPLICATIONS_DB, JSON.stringify({ applications: [] }, null, 2));
-  if (!fs.existsSync(PROJECT_BOOKMARKS_DB)) fs.writeFileSync(PROJECT_BOOKMARKS_DB, JSON.stringify({ bookmarks: [] }, null, 2));
-  if (!fs.existsSync(PLAN_REQUESTS_DB)) fs.writeFileSync(PLAN_REQUESTS_DB, JSON.stringify({ requests: [] }, null, 2));
+  if (!fs.existsSync(USERS_DB)) writeJsonAtomic(USERS_DB, { users: [] });
+  if (!fs.existsSync(DM_DB)) writeJsonAtomic(DM_DB, { threads: [] });
+  if (!fs.existsSync(INTEGRATIONS_DB)) writeJsonAtomic(INTEGRATIONS_DB, { integrations: [] });
+  if (!fs.existsSync(ACTIVITY_EVENTS_DB)) writeJsonAtomic(ACTIVITY_EVENTS_DB, { events: [] });
+  if (!fs.existsSync(STATUS_SNAPSHOTS_DB)) writeJsonAtomic(STATUS_SNAPSHOTS_DB, { snapshots: [] });
+  if (!fs.existsSync(EXTERNAL_IDENTITIES_DB)) writeJsonAtomic(EXTERNAL_IDENTITIES_DB, { maps: [] });
+  if (!fs.existsSync(CLOUD_STATE_DB)) writeJsonAtomic(CLOUD_STATE_DB, { states: [] });
+  if (!fs.existsSync(PROJECT_APPLICATIONS_DB)) writeJsonAtomic(PROJECT_APPLICATIONS_DB, { applications: [] });
+  if (!fs.existsSync(PROJECT_BOOKMARKS_DB)) writeJsonAtomic(PROJECT_BOOKMARKS_DB, { bookmarks: [] });
+  if (!fs.existsSync(PLAN_REQUESTS_DB)) writeJsonAtomic(PLAN_REQUESTS_DB, { requests: [] });
   const cp = cloudProjectsDbPath();
-  if (!fs.existsSync(cp)) fs.writeFileSync(cp, JSON.stringify({ projects: [] }, null, 2));
+  if (!fs.existsSync(cp)) writeJsonAtomic(cp, { projects: [] });
+}
+
+function writeJsonAtomic(filePath, value) {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const tmp = path.join(dir, `.${path.basename(filePath)}.${process.pid}.${Date.now()}.tmp`);
+  fs.writeFileSync(tmp, JSON.stringify(value, null, 2));
+  fs.renameSync(tmp, filePath);
 }
 function readUsers() {
   ensureDb();
@@ -388,7 +568,7 @@ function readUsers() {
 }
 function writeUsers(users) {
   ensureDb();
-  fs.writeFileSync(USERS_DB, JSON.stringify({ users }, null, 2));
+  writeJsonAtomic(USERS_DB, { users });
 }
 function readDmThreads() {
   ensureDb();
@@ -402,7 +582,7 @@ function readDmThreads() {
 }
 function writeDmThreads(threads) {
   ensureDb();
-  fs.writeFileSync(DM_DB, JSON.stringify({ threads }, null, 2));
+  writeJsonAtomic(DM_DB, { threads });
 }
 
 function readCollection(filePath, key) {
@@ -418,7 +598,7 @@ function readCollection(filePath, key) {
 
 function writeCollection(filePath, key, rows) {
   ensureDb();
-  fs.writeFileSync(filePath, JSON.stringify({ [key]: rows }, null, 2));
+  writeJsonAtomic(filePath, { [key]: rows });
 }
 
 function readPlanRequests() {
@@ -580,6 +760,8 @@ function sanitizeIntegrationForClient(row = {}, options = {}) {
   const {
     _token_demo_only,
     _refresh_token_demo_only,
+    oauth_access_token_encrypted,
+    oauth_refresh_token_encrypted,
     webhook_secret,
     ...rest
   } = row || {};
@@ -596,6 +778,69 @@ function sanitizeIntegrationForClient(row = {}, options = {}) {
     ...(includeWebhookSecret ? { webhook_secret: row?.webhook_secret || '' } : {})
   };
 }
+
+function upsertOAuthIntegration({
+  projectId,
+  userId,
+  provider,
+  integrationType = 'account',
+  resourceId,
+  resourceName,
+  resourceUrl = '',
+  accessToken = '',
+  refreshToken = '',
+  tokenPayload = {}
+}) {
+  const rows = readIntegrations();
+  const now = new Date().toISOString();
+  const normalizedProvider = String(provider || '').trim().toLowerCase();
+  const normalizedType = String(integrationType || 'account').trim();
+  const normalizedResourceId = String(resourceId || `${normalizedProvider}-${Date.now()}`).trim();
+  const idx = rows.findIndex(r =>
+    r.project_id === projectId
+    && r.provider === normalizedProvider
+    && r.integration_type === normalizedType
+    && r.external_resource_id === normalizedResourceId
+  );
+  const row = {
+    id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
+    project_id: projectId,
+    integration_type: normalizedType,
+    provider: normalizedProvider,
+    external_resource_id: normalizedResourceId,
+    external_resource_name: String(resourceName || normalizedResourceId || normalizedProvider).trim(),
+    external_resource_url: String(resourceUrl || '').trim(),
+    status: 'connected',
+    access_token_reference: accessToken ? `${normalizedProvider}:token:${normalizedResourceId}` : '',
+    connected_by_user_id: userId,
+    last_synced_at: now,
+    created_at: idx >= 0 ? rows[idx].created_at : now,
+    updated_at: now,
+    oauth_access_token_encrypted: accessToken ? encryptSecret(accessToken) : rows[idx]?.oauth_access_token_encrypted || '',
+    oauth_refresh_token_encrypted: refreshToken ? encryptSecret(refreshToken) : rows[idx]?.oauth_refresh_token_encrypted || '',
+    _token_demo_only: '',
+    _refresh_token_demo_only: '',
+    oauth_token_payload: tokenPayload && typeof tokenPayload === 'object' ? tokenPayload : {}
+  };
+  if (idx >= 0) rows[idx] = { ...rows[idx], ...row };
+  else rows.push(row);
+  writeIntegrations(rows);
+  recordActivityEvent({
+    projectId,
+    integrationId: row.id,
+    sourceType: normalizedProvider,
+    sourceItemId: row.external_resource_id,
+    sourceItemName: row.external_resource_name,
+    actorId: userId,
+    eventType: idx >= 0 ? 'integration_reconnected' : 'integration_connected',
+    payload: { provider: normalizedProvider, integration_type: normalizedType, oauth: true }
+  });
+  return { row, wasReconnect: idx >= 0 };
+}
+
+function oauthConnectedHtml(provider, projectId, label = provider) {
+  return `<!doctype html><meta charset="utf-8"><title>Connected</title><body style="font-family:sans-serif;padding:24px;">${label} 연결 완료. 이 창은 자동으로 닫힙니다.<script>try{window.opener&&window.opener.postMessage({type:'wethus-oauth-connected',provider:${JSON.stringify(provider)},projectId:${JSON.stringify(projectId)}},'*')}catch(e){};setTimeout(()=>window.close(),400);</script></body>`;
+}
 function normEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
@@ -608,6 +853,53 @@ function timingSafeEqualText(a, b) {
   const right = Buffer.from(String(b || ''), 'utf8');
   if (left.length !== right.length) return false;
   return crypto.timingSafeEqual(left, right);
+}
+
+function timingSafeEqualSecret(a, b) {
+  const left = Buffer.from(String(a || ''), 'utf8');
+  const right = Buffer.from(String(b || ''), 'utf8');
+  if (!left.length || left.length !== right.length) return false;
+  return crypto.timingSafeEqual(left, right);
+}
+
+function clampText(value, max = 240) {
+  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+function encryptSecret(value) {
+  const text = String(value || '');
+  if (!text) return '';
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', TOKEN_ENCRYPTION_KEY, iv);
+  const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `v1:${iv.toString('base64url')}:${tag.toString('base64url')}:${encrypted.toString('base64url')}`;
+}
+
+function decryptSecret(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (!raw.startsWith('v1:')) return raw;
+  const [, ivRaw, tagRaw, encryptedRaw] = raw.split(':');
+  if (!ivRaw || !tagRaw || !encryptedRaw) return '';
+  try {
+    const decipher = crypto.createDecipheriv('aes-256-gcm', TOKEN_ENCRYPTION_KEY, Buffer.from(ivRaw, 'base64url'));
+    decipher.setAuthTag(Buffer.from(tagRaw, 'base64url'));
+    return Buffer.concat([
+      decipher.update(Buffer.from(encryptedRaw, 'base64url')),
+      decipher.final()
+    ]).toString('utf8');
+  } catch (_) {
+    return '';
+  }
+}
+
+function integrationAccessToken(row = {}) {
+  return decryptSecret(row.oauth_access_token_encrypted || row._token_demo_only || '');
+}
+
+function integrationRefreshToken(row = {}) {
+  return decryptSecret(row.oauth_refresh_token_encrypted || row._refresh_token_demo_only || '');
 }
 
 function makePasswordHash(pw) {
@@ -698,6 +990,23 @@ function requireActor(req, res, options = {}) {
   const actorId = getActorId(req, options);
   if (!actorId) {
     res.status(401).json({ ok: false, error: 'actor required' });
+    return null;
+  }
+  return actorId;
+}
+
+function requireDmActor(req, res) {
+  const actorId = requireActor(req, res);
+  if (!actorId) return null;
+  if (!DM_REQUIRE_SESSION) return actorId;
+  const session = getSession(req);
+  if (!session?.sub) {
+    res.status(401).json({ ok: false, error: 'session required' });
+    return null;
+  }
+  const explicit = explicitActorId(req);
+  if (explicit && String(session.sub) !== String(actorId)) {
+    res.status(403).json({ ok: false, error: 'session actor mismatch' });
     return null;
   }
   return actorId;
@@ -1120,7 +1429,9 @@ function healthPayload() {
       integrationsRequireSession: INTEGRATIONS_REQUIRE_SESSION,
       integrationsEnforceLaunchScope: INTEGRATIONS_ENFORCE_LAUNCH_SCOPE,
       projectInteractionsRequireSession: PROJECT_INTERACTIONS_REQUIRE_SESSION,
-      projectAccessRequireMembership: PROJECT_ACCESS_REQUIRE_MEMBERSHIP
+      projectAccessRequireMembership: PROJECT_ACCESS_REQUIRE_MEMBERSHIP,
+      dmRequireSession: DM_REQUIRE_SESSION,
+      tokenEncryptionConfigured: !!TOKEN_ENCRYPTION_KEY_RAW
     }
   };
 }
@@ -1136,7 +1447,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
-app.use(['/auth/login', '/auth/register', '/auth/google', '/auth/google/link-password', '/pass/start'], authRateLimit);
+app.use(['/auth/login', '/auth/register', '/auth/google', '/auth/google/link-password', '/auth/naver', '/auth/kakao', '/pass/start'], authRateLimit);
 app.use('/ai', aiRateLimit);
 app.use('/webhooks', webhookRateLimit);
 app.use('/tools/fetch-meta', toolRateLimit);
@@ -1288,7 +1599,7 @@ app.post('/integrations/:id/sync', async (req, res) => {
     if (integration.provider === 'google') {
       const account = rows.find(i => i.project_id === integration.project_id && i.provider === 'google' && i.integration_type === 'account' && i.status === 'connected')
         || rows.find(i => i.provider === 'google' && i.integration_type === 'account' && i.status === 'connected');
-      const token = String(account?._token_demo_only || '').trim();
+      const token = integrationAccessToken(account);
       if (!token) return res.status(400).json({ ok: false, error: 'Google 계정 연결이 필요합니다.' });
 
       if (integration.integration_type === 'document') {
@@ -1344,6 +1655,10 @@ app.get('/integrations/providers', (req, res) => {
   const notionReady = !!(NOTION_CLIENT_ID && NOTION_CLIENT_SECRET && NOTION_REDIRECT_URI);
   const slackReady = !!(SLACK_CLIENT_ID && SLACK_CLIENT_SECRET && SLACK_REDIRECT_URI);
   const figmaReady = !!(FIGMA_CLIENT_ID && FIGMA_CLIENT_SECRET && FIGMA_REDIRECT_URI);
+  const githubReady = !!(GITHUB_CLIENT_ID && GITHUB_CLIENT_SECRET && GITHUB_REDIRECT_URI);
+  const discordReady = !!(DISCORD_CLIENT_ID && DISCORD_CLIENT_SECRET && DISCORD_REDIRECT_URI);
+  const googleCalendarReady = !!(GOOGLE_CALENDAR_CLIENT_ID && GOOGLE_CALENDAR_CLIENT_SECRET && GOOGLE_CALENDAR_REDIRECT_URI);
+  const airtableReady = !!(AIRTABLE_CLIENT_ID && AIRTABLE_CLIENT_SECRET && AIRTABLE_REDIRECT_URI);
   const launchScope = currentLaunchScope();
   const launchSet = new Set(launchScope.launchProviders);
   const deferredSet = new Set(launchScope.deferredProviders);
@@ -1473,7 +1788,51 @@ app.get('/integrations/providers', (req, res) => {
       ...providerActivityMeta('figma'),
       message: providerMessage('figma', figmaReady, '계정 연결 후 파일 상태를 가져올 수 있습니다.', 'Figma OAuth 설정이 아직 완료되지 않았습니다.')
     }
-  ];
+,
+    {
+      key: 'github',
+      label: 'GitHub',
+      description: '코드, 이슈, PR 실행 기록 연결',
+      status: providerStatus('github', githubReady),
+      oauthConfigured: githubReady,
+      setupRequired: providerSetupRequired('github', githubReady),
+      ...providerLaunchMeta('github'),
+      ...providerActivityMeta('github'),
+      message: providerMessage('github', githubReady, 'GitHub 계정과 저장소 실행 기록을 연결할 수 있습니다.', 'GitHub OAuth 설정이 아직 완료되지 않았습니다.')
+    },
+    {
+      key: 'discord',
+      label: 'Discord',
+      description: '학생 팀 커뮤니티와 채널 연결',
+      status: providerStatus('discord', discordReady),
+      oauthConfigured: discordReady,
+      setupRequired: providerSetupRequired('discord', discordReady),
+      ...providerLaunchMeta('discord'),
+      ...providerActivityMeta('discord'),
+      message: providerMessage('discord', discordReady, 'Discord 계정과 서버 정보를 연결할 수 있습니다.', 'Discord OAuth 설정이 아직 완료되지 않았습니다.')
+    },
+    {
+      key: 'google_calendar',
+      label: 'Google Calendar',
+      description: '회의, 멘토링, 마일스톤 일정 연결',
+      status: providerStatus('google_calendar', googleCalendarReady),
+      oauthConfigured: googleCalendarReady,
+      setupRequired: providerSetupRequired('google_calendar', googleCalendarReady),
+      ...providerLaunchMeta('google_calendar'),
+      ...providerActivityMeta('google_calendar'),
+      message: providerMessage('google_calendar', googleCalendarReady, 'Google Calendar 일정 정보를 연결할 수 있습니다.', 'Google Calendar OAuth 설정이 아직 완료되지 않았습니다.')
+    },
+    {
+      key: 'airtable',
+      label: 'Airtable',
+      description: '수요조사, 인터뷰, 운영 DB 연결',
+      status: providerStatus('airtable', airtableReady),
+      oauthConfigured: airtableReady,
+      setupRequired: providerSetupRequired('airtable', airtableReady),
+      ...providerLaunchMeta('airtable'),
+      ...providerActivityMeta('airtable'),
+      message: providerMessage('airtable', airtableReady, 'Airtable base와 검증 데이터를 연결할 수 있습니다.', 'Airtable OAuth 설정이 아직 완료되지 않았습니다.')
+    }  ];
   return res.json({ ok: true, providers, launchScope });
 });
 
@@ -1494,7 +1853,7 @@ app.get('/integrations/resources', async (req, res) => {
   if (provider === 'google_docs' || provider === 'google_sheets') {
     const account = integrations.find(i => i.provider === 'google' && i.integration_type === 'account')
       || readIntegrations().filter(i => i.provider === 'google' && i.integration_type === 'account' && i.status === 'connected' && actorOwnsIntegration(actorId, i)).sort((a,b)=>new Date(b.updated_at||0)-new Date(a.updated_at||0))[0];
-    const token = String(account?._token_demo_only || '').trim();
+    const token = integrationAccessToken(account);
     if (!token) {
       return res.json({ ok: true, provider, resources: [], placeholder: true, setupRequired: true, message: 'Google 계정 연결이 필요합니다.' });
     }
@@ -1534,7 +1893,7 @@ app.get('/integrations/resources', async (req, res) => {
 
   if (provider === 'slack') {
     const account = integrations.find(i => i.provider === 'slack' && i.integration_type === 'workspace');
-    const token = String(account?._token_demo_only || '').trim();
+    const token = integrationAccessToken(account);
     if (!token) return res.json({ ok: true, provider, resources: [], placeholder: true, setupRequired: true, message: 'Slack 워크스페이스 연결이 필요합니다.' });
     try {
       const r = await fetch('https://slack.com/api/conversations.list?types=public_channel,private_channel&limit=50', {
@@ -1551,7 +1910,7 @@ app.get('/integrations/resources', async (req, res) => {
 
   if (provider === 'figma') {
     const account = integrations.find(i => i.provider === 'figma' && i.integration_type === 'workspace');
-    const token = String(account?._token_demo_only || '').trim();
+    const token = integrationAccessToken(account);
     if (!token) return res.json({ ok: true, provider, resources: [], placeholder: true, setupRequired: true, message: 'Figma 계정 연결이 필요합니다.' });
     try {
       const r = await fetch('https://api.figma.com/v1/me', { headers: { 'X-Figma-Token': token } });
@@ -1619,16 +1978,16 @@ app.post('/webhooks/:provider/:integrationId', (req, res) => {
   if (!integration) return res.status(404).json({ ok: false, error: 'integration not found' });
 
   const secret = String(req.headers['x-webhook-secret'] || '').trim();
-  if (!integration.webhook_secret || secret !== integration.webhook_secret) {
+  if (!integration.webhook_secret || !timingSafeEqualSecret(secret, integration.webhook_secret)) {
     return res.status(401).json({ ok: false, error: 'invalid webhook secret' });
   }
 
   const now = new Date().toISOString();
   const payload = req.body || {};
-  const eventType = String(payload.event_type || payload.type || 'webhook_event');
-  const itemId = String(payload.item_id || payload.id || '');
-  const itemName = String(payload.item_name || payload.title || payload.name || 'Webhook Item');
-  const actorName = String(payload.actor_name || payload.user || provider);
+  const eventType = clampText(payload.event_type || payload.type || 'webhook_event', WEBHOOK_EVENT_TYPE_MAX) || 'webhook_event';
+  const itemId = clampText(payload.item_id || payload.id || '', WEBHOOK_ITEM_FIELD_MAX);
+  const itemName = clampText(payload.item_name || payload.title || payload.name || 'Webhook Item', WEBHOOK_ITEM_FIELD_MAX) || 'Webhook Item';
+  const actorName = clampText(payload.actor_name || payload.user || provider, WEBHOOK_ITEM_FIELD_MAX) || provider;
 
   const event = recordActivityEvent({
     projectId: integration.project_id,
@@ -1689,10 +2048,10 @@ app.get('/integrations/insights', async (req, res) => {
     const out = [];
 
     const googleAccount = rows.find(r => r.provider === 'google' && r.integration_type === 'account');
-    let googleToken = String(googleAccount?._token_demo_only || '').trim();
+    let googleToken = integrationAccessToken(googleAccount);
 
     async function refreshGoogleAccessTokenIfNeeded() {
-      const refreshToken = String(googleAccount?._refresh_token_demo_only || '').trim();
+      const refreshToken = integrationRefreshToken(googleAccount);
       if (!refreshToken || !GOOGLE_OAUTH_CLIENT_ID || !GOOGLE_OAUTH_CLIENT_SECRET) return false;
       try {
         const tr = await fetch('https://oauth2.googleapis.com/token', {
@@ -1715,7 +2074,8 @@ app.get('/integrations/insights', async (req, res) => {
         if (idx >= 0) {
           all[idx] = {
             ...all[idx],
-            _token_demo_only: googleToken,
+            oauth_access_token_encrypted: encryptSecret(googleToken),
+            _token_demo_only: '',
             updated_at: new Date().toISOString(),
             last_synced_at: new Date().toISOString()
           };
@@ -1783,7 +2143,7 @@ app.get('/integrations/insights', async (req, res) => {
     }
 
     const linkedGoogleDocs = rows.filter(it => it.provider === 'google' && (it.integration_type === 'document' || it.integration_type === 'folder'));
-    if ((!googleToken && googleAccount?._refresh_token_demo_only) && linkedGoogleDocs.length) {
+    if ((!googleToken && integrationRefreshToken(googleAccount)) && linkedGoogleDocs.length) {
       await refreshGoogleAccessTokenIfNeeded();
     }
     if (googleToken && linkedGoogleDocs.length) {
@@ -2001,7 +2361,7 @@ function decodeState(state) {
 
 app.get('/oauth/:provider/start', (req, res) => {
   const provider = String(req.params.provider || '').toLowerCase();
-  const supported = ['google', 'notion', 'slack', 'figma'];
+  const supported = ['google', 'notion', 'slack', 'figma', 'github', 'discord', 'google_calendar', 'airtable'];
   if (!supported.includes(provider)) return res.status(404).json({ ok: false, error: 'provider not supported' });
   const launchState = ensureLaunchScopeAllowed(req, res, provider);
   if (!launchState) return;
@@ -2022,7 +2382,11 @@ app.get('/oauth/:provider/start', (req, res) => {
     google: { clientId: GOOGLE_OAUTH_CLIENT_ID, redirectUri: googleRedirectUri },
     notion: { clientId: NOTION_CLIENT_ID, redirectUri: NOTION_REDIRECT_URI },
     slack: { clientId: SLACK_CLIENT_ID, redirectUri: SLACK_REDIRECT_URI },
-    figma: { clientId: FIGMA_CLIENT_ID, redirectUri: FIGMA_REDIRECT_URI }
+    figma: { clientId: FIGMA_CLIENT_ID, redirectUri: FIGMA_REDIRECT_URI },
+    github: { clientId: GITHUB_CLIENT_ID, redirectUri: GITHUB_REDIRECT_URI },
+    discord: { clientId: DISCORD_CLIENT_ID, redirectUri: DISCORD_REDIRECT_URI },
+    google_calendar: { clientId: GOOGLE_CALENDAR_CLIENT_ID, redirectUri: GOOGLE_CALENDAR_REDIRECT_URI },
+    airtable: { clientId: AIRTABLE_CLIENT_ID, redirectUri: AIRTABLE_REDIRECT_URI }
   }[provider];
 
   if (!conf?.clientId) {
@@ -2067,6 +2431,43 @@ app.get('/oauth/:provider/start', (req, res) => {
     u.searchParams.set('redirect_uri', FIGMA_REDIRECT_URI);
     u.searchParams.set('scope', 'file_read');
     u.searchParams.set('response_type', 'code');
+    u.searchParams.set('state', state);
+    authUrl = u.toString();
+  }
+  if (provider === 'github') {
+    const u = new URL('https://github.com/login/oauth/authorize');
+    u.searchParams.set('client_id', GITHUB_CLIENT_ID);
+    u.searchParams.set('redirect_uri', GITHUB_REDIRECT_URI);
+    u.searchParams.set('scope', 'read:user public_repo');
+    u.searchParams.set('state', state);
+    authUrl = u.toString();
+  }
+  if (provider === 'discord') {
+    const u = new URL('https://discord.com/oauth2/authorize');
+    u.searchParams.set('client_id', DISCORD_CLIENT_ID);
+    u.searchParams.set('redirect_uri', DISCORD_REDIRECT_URI);
+    u.searchParams.set('response_type', 'code');
+    u.searchParams.set('scope', 'identify guilds webhook.incoming');
+    u.searchParams.set('state', state);
+    authUrl = u.toString();
+  }
+  if (provider === 'google_calendar') {
+    const u = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    u.searchParams.set('client_id', GOOGLE_CALENDAR_CLIENT_ID);
+    u.searchParams.set('redirect_uri', GOOGLE_CALENDAR_REDIRECT_URI);
+    u.searchParams.set('response_type', 'code');
+    u.searchParams.set('scope', 'https://www.googleapis.com/auth/calendar.events.readonly');
+    u.searchParams.set('access_type', 'offline');
+    u.searchParams.set('prompt', 'consent');
+    u.searchParams.set('state', state);
+    authUrl = u.toString();
+  }
+  if (provider === 'airtable') {
+    const u = new URL('https://airtable.com/oauth2/v1/authorize');
+    u.searchParams.set('client_id', AIRTABLE_CLIENT_ID);
+    u.searchParams.set('redirect_uri', AIRTABLE_REDIRECT_URI);
+    u.searchParams.set('response_type', 'code');
+    u.searchParams.set('scope', 'data.records:read schema.bases:read');
     u.searchParams.set('state', state);
     authUrl = u.toString();
   }
@@ -2119,7 +2520,7 @@ app.get('/oauth/:provider/callback', async (req, res) => {
       const now = new Date().toISOString();
       const idx = rows.findIndex(r => r.project_id === projectId && r.provider === 'google' && r.integration_type === 'account');
       const prev = idx >= 0 ? rows[idx] : null;
-      const refreshToken = tokenJson?.refresh_token || prev?._refresh_token_demo_only || '';
+      const refreshToken = tokenJson?.refresh_token || integrationRefreshToken(prev) || '';
       const row = {
         id: idx >= 0 ? rows[idx].id : crypto.randomUUID(),
         project_id: projectId,
@@ -2133,8 +2534,10 @@ app.get('/oauth/:provider/callback', async (req, res) => {
         last_synced_at: now,
         created_at: idx >= 0 ? rows[idx].created_at : now,
         updated_at: now,
-        _token_demo_only: tokenJson?.access_token || prev?._token_demo_only || '',
-        _refresh_token_demo_only: refreshToken
+        oauth_access_token_encrypted: tokenJson?.access_token ? encryptSecret(tokenJson.access_token) : prev?.oauth_access_token_encrypted || '',
+        oauth_refresh_token_encrypted: refreshToken ? encryptSecret(refreshToken) : prev?.oauth_refresh_token_encrypted || '',
+        _token_demo_only: '',
+        _refresh_token_demo_only: ''
       };
       if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
       writeIntegrations(rows);
@@ -2187,7 +2590,8 @@ app.get('/oauth/:provider/callback', async (req, res) => {
         last_synced_at: now,
         created_at: idx >= 0 ? rows[idx].created_at : now,
         updated_at: now,
-        _token_demo_only: tokenJson?.access_token || ''
+        oauth_access_token_encrypted: tokenJson?.access_token ? encryptSecret(tokenJson.access_token) : '',
+        _token_demo_only: ''
       };
       if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
       writeIntegrations(rows);
@@ -2242,7 +2646,8 @@ app.get('/oauth/:provider/callback', async (req, res) => {
         last_synced_at: now,
         created_at: idx >= 0 ? rows[idx].created_at : now,
         updated_at: now,
-        _token_demo_only: tokenJson?.access_token || ''
+        oauth_access_token_encrypted: tokenJson?.access_token ? encryptSecret(tokenJson.access_token) : '',
+        _token_demo_only: ''
       };
       if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
       writeIntegrations(rows);
@@ -2259,6 +2664,69 @@ app.get('/oauth/:provider/callback', async (req, res) => {
       return res.send(`<!doctype html><meta charset="utf-8"><title>Connected</title><body style="font-family:sans-serif;padding:24px;">Figma 연결 완료. 이 창은 자동으로 닫힙니다.<script>try{window.opener&&window.opener.postMessage({type:'wethus-oauth-connected',provider:'figma',projectId:${JSON.stringify(projectId)}},'*')}catch(e){};setTimeout(()=>window.close(),400);</script></body>`);
     }
 
+    if (provider === 'github') {
+      if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET || !GITHUB_REDIRECT_URI) {
+        return res.status(400).json({ ok: false, error: 'GITHUB oauth env missing', setupRequired: true });
+      }
+      const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ code, client_id: GITHUB_CLIENT_ID, client_secret: GITHUB_CLIENT_SECRET, redirect_uri: GITHUB_REDIRECT_URI })
+      });
+      const tokenJson = await tokenRes.json().catch(() => ({}));
+      if (!tokenRes.ok || !tokenJson?.access_token) return res.status(500).json({ ok: false, error: tokenJson?.error_description || tokenJson?.error || 'github token exchange failed', detail: tokenJson });
+      const meRes = await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${tokenJson.access_token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'WETHUS' } });
+      const me = await meRes.json().catch(() => ({}));
+      const { row } = upsertOAuthIntegration({ projectId, userId, provider: 'github', integrationType: 'account', resourceId: String(me?.id || me?.login || `github-${Date.now()}`), resourceName: String(me?.login || me?.name || 'GitHub Account'), resourceUrl: String(me?.html_url || ''), accessToken: tokenJson.access_token, tokenPayload: { scope: tokenJson.scope || '' } });
+      return res.send(oauthConnectedHtml('github', projectId, row.external_resource_name || 'GitHub'));
+    }
+
+    if (provider === 'discord') {
+      if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET || !DISCORD_REDIRECT_URI) {
+        return res.status(400).json({ ok: false, error: 'DISCORD oauth env missing', setupRequired: true });
+      }
+      const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ code, client_id: DISCORD_CLIENT_ID, client_secret: DISCORD_CLIENT_SECRET, redirect_uri: DISCORD_REDIRECT_URI, grant_type: 'authorization_code' })
+      });
+      const tokenJson = await tokenRes.json().catch(() => ({}));
+      if (!tokenRes.ok || !tokenJson?.access_token) return res.status(500).json({ ok: false, error: tokenJson?.error_description || tokenJson?.error || 'discord token exchange failed', detail: tokenJson });
+      const meRes = await fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${tokenJson.access_token}` } });
+      const me = await meRes.json().catch(() => ({}));
+      const { row } = upsertOAuthIntegration({ projectId, userId, provider: 'discord', integrationType: 'account', resourceId: String(me?.id || `discord-${Date.now()}`), resourceName: String(me?.global_name || me?.username || 'Discord Account'), accessToken: tokenJson.access_token, refreshToken: tokenJson.refresh_token || '', tokenPayload: { scope: tokenJson.scope || '', webhook: tokenJson.webhook ? true : false } });
+      return res.send(oauthConnectedHtml('discord', projectId, row.external_resource_name || 'Discord'));
+    }
+
+    if (provider === 'google_calendar') {
+      if (!GOOGLE_CALENDAR_CLIENT_ID || !GOOGLE_CALENDAR_CLIENT_SECRET || !GOOGLE_CALENDAR_REDIRECT_URI) {
+        return res.status(400).json({ ok: false, error: 'GOOGLE_CALENDAR oauth env missing', setupRequired: true });
+      }
+      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ code, client_id: GOOGLE_CALENDAR_CLIENT_ID, client_secret: GOOGLE_CALENDAR_CLIENT_SECRET, redirect_uri: GOOGLE_CALENDAR_REDIRECT_URI, grant_type: 'authorization_code' })
+      });
+      const tokenJson = await tokenRes.json().catch(() => ({}));
+      if (!tokenRes.ok || !tokenJson?.access_token) return res.status(500).json({ ok: false, error: tokenJson?.error_description || tokenJson?.error || 'google calendar token exchange failed', detail: tokenJson });
+      const { row } = upsertOAuthIntegration({ projectId, userId, provider: 'google_calendar', integrationType: 'calendar', resourceId: String(tokenJson?.id_token || tokenJson?.access_token || `google-calendar-${Date.now()}`).slice(0, 48), resourceName: 'Google Calendar', accessToken: tokenJson.access_token, refreshToken: tokenJson.refresh_token || '', tokenPayload: { scope: tokenJson.scope || 'calendar.events.readonly' } });
+      return res.send(oauthConnectedHtml('google_calendar', projectId, row.external_resource_name || 'Google Calendar'));
+    }
+
+    if (provider === 'airtable') {
+      if (!AIRTABLE_CLIENT_ID || !AIRTABLE_CLIENT_SECRET || !AIRTABLE_REDIRECT_URI) {
+        return res.status(400).json({ ok: false, error: 'AIRTABLE oauth env missing', setupRequired: true });
+      }
+      const tokenRes = await fetch('https://airtable.com/oauth2/v1/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Basic ${Buffer.from(`${AIRTABLE_CLIENT_ID}:${AIRTABLE_CLIENT_SECRET}`).toString('base64')}` },
+        body: new URLSearchParams({ code, redirect_uri: AIRTABLE_REDIRECT_URI, grant_type: 'authorization_code' })
+      });
+      const tokenJson = await tokenRes.json().catch(() => ({}));
+      if (!tokenRes.ok || !tokenJson?.access_token) return res.status(500).json({ ok: false, error: tokenJson?.error_description || tokenJson?.error || 'airtable token exchange failed', detail: tokenJson });
+      const { row } = upsertOAuthIntegration({ projectId, userId, provider: 'airtable', integrationType: 'workspace', resourceId: String(tokenJson?.refresh_token || tokenJson?.access_token || `airtable-${Date.now()}`).slice(0, 48), resourceName: 'Airtable Workspace', accessToken: tokenJson.access_token, refreshToken: tokenJson.refresh_token || '', tokenPayload: { scope: tokenJson.scope || '' } });
+      return res.send(oauthConnectedHtml('airtable', projectId, row.external_resource_name || 'Airtable'));
+    }
     if (provider !== 'notion') {
       return res.json({ ok: true, provider, received: req.query || {}, note: 'Phase 1 callback placeholder. Exchange code for tokens in production setup.' });
     }
@@ -2301,7 +2769,8 @@ app.get('/oauth/:provider/callback', async (req, res) => {
       last_synced_at: now,
       created_at: idx >= 0 ? rows[idx].created_at : now,
       updated_at: now,
-      _token_demo_only: tokenJson?.access_token || ''
+      oauth_access_token_encrypted: tokenJson?.access_token ? encryptSecret(tokenJson.access_token) : '',
+      _token_demo_only: ''
     };
     if (idx >= 0) rows[idx] = { ...rows[idx], ...row }; else rows.push(row);
     writeIntegrations(rows);
@@ -2346,7 +2815,7 @@ function buildSnapshotFromEvents(projectId, newEvents = []) {
 }
 
 async function runNotionSyncForIntegration(integration, projectId) {
-  const token = String(integration._token_demo_only || '').trim();
+  const token = integrationAccessToken(integration);
   if (!token) throw new Error('notion token missing (connect first)');
 
   const notionRes = await fetch('https://api.notion.com/v1/search', {
@@ -2439,7 +2908,7 @@ app.post('/sync/notion/run-all', async (_req, res) => {
 });
 
 app.get('/dm/threads', (req, res) => {
-  const actorId = requireActor(req, res);
+  const actorId = requireDmActor(req, res);
   if (!actorId) return;
   const threads = readDmThreads()
     .filter(t => Array.isArray(t.participants) && t.participants.includes(actorId))
@@ -2453,7 +2922,10 @@ app.get('/dm/threads', (req, res) => {
         peerAvatar,
         lastMessage: t.lastMessage || '',
         updatedAt: t.updatedAt || t.createdAt,
-        unreadCount: 0,
+        unreadCount: (Array.isArray(t.messages) ? t.messages : []).filter((message) => (
+          String(message?.fromId || '') !== String(actorId) &&
+          !(Array.isArray(message?.readBy) && message.readBy.includes(actorId))
+        )).length,
         messageCount: Array.isArray(t.messages) ? t.messages.length : 0
       };
     });
@@ -2461,7 +2933,7 @@ app.get('/dm/threads', (req, res) => {
 });
 
 app.post('/dm/threads', (req, res) => {
-  const actorId = requireActor(req, res);
+  const actorId = requireDmActor(req, res);
   if (!actorId) return;
   const rawTargetUserId = String(req.body?.targetUserId || '').trim();
   const rawTargetName = String(req.body?.targetName || '').trim();
@@ -2500,19 +2972,30 @@ app.post('/dm/threads', (req, res) => {
 });
 
 app.get('/dm/threads/:threadId/messages', (req, res) => {
-  const actorId = requireActor(req, res);
+  const actorId = requireDmActor(req, res);
   if (!actorId) return;
   const threadId = String(req.params.threadId || '').trim();
-  const thread = readDmThreads().find(t => t.id === threadId);
+  const threads = readDmThreads();
+  const thread = threads.find(t => t.id === threadId);
   if (!thread) return res.status(404).json({ ok: false, error: 'thread not found' });
   if (!Array.isArray(thread.participants) || !thread.participants.includes(actorId)) {
     return res.status(403).json({ ok: false, error: 'forbidden' });
   }
+  let changed = false;
+  thread.messages = (Array.isArray(thread.messages) ? thread.messages : []).map((message) => {
+    const readBy = Array.isArray(message?.readBy) ? message.readBy.slice() : [];
+    if (String(message?.fromId || '') !== String(actorId) && !readBy.includes(actorId)) {
+      readBy.push(actorId);
+      changed = true;
+    }
+    return { ...message, readBy };
+  });
+  if (changed) writeDmThreads(threads);
   return res.json({ ok: true, messages: Array.isArray(thread.messages) ? thread.messages : [] });
 });
 
 app.post('/dm/threads/:threadId/messages', (req, res) => {
-  const actorId = requireActor(req, res);
+  const actorId = requireDmActor(req, res);
   if (!actorId) return;
   const text = String(req.body?.text || '').trim();
   if (!text) return res.status(400).json({ ok: false, error: 'text required' });
@@ -2530,7 +3013,8 @@ app.post('/dm/threads/:threadId/messages', (req, res) => {
     fromId: actorId,
     from: getUserNameById(actorId),
     text,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    readBy: [actorId]
   };
   thread.messages = Array.isArray(thread.messages) ? thread.messages : [];
   thread.messages.push(message);
@@ -2541,7 +3025,7 @@ app.post('/dm/threads/:threadId/messages', (req, res) => {
 });
 
 app.post('/dm/threads/:threadId/agent-reply', async (req, res) => {
-  const actorId = requireActor(req, res);
+  const actorId = requireDmActor(req, res);
   if (!actorId) return;
   const threadId = String(req.params.threadId || '').trim();
   const userText = String(req.body?.userText || '').trim();
@@ -2565,7 +3049,8 @@ app.post('/dm/threads/:threadId/agent-reply', async (req, res) => {
     fromId: targetId,
     from: thread.targetName || agentCode,
     text: replyText,
-    createdAt: now
+    createdAt: now,
+    readBy: [targetId]
   };
   thread.messages = Array.isArray(thread.messages) ? thread.messages : [];
   thread.messages.push(message);
@@ -3183,6 +3668,103 @@ app.get('/auth/google/callback', async (req, res) => {
   } catch (err) {
     console.error('[auth/google/callback] failed:', err?.message || err);
     return res.status(500).send(err?.message || 'google oauth callback failed');
+  }
+});
+
+app.get('/auth/naver/config', (req, res) => {
+  return res.json({ ok: true, ready: !!(NAVER_CLIENT_ID && NAVER_CLIENT_SECRET), clientId: NAVER_CLIENT_ID || '' });
+});
+
+app.get('/auth/naver/start', (req, res) => {
+  try {
+    if (!NAVER_CLIENT_ID || !NAVER_CLIENT_SECRET) {
+      return res.status(500).json({ ok: false, error: 'NAVER_CLIENT_ID/SECRET not configured' });
+    }
+    const redirectUri = resolveNaverLoginRedirectUri(req);
+    if (!redirectUri) return res.status(500).json({ ok: false, error: 'NAVER_LOGIN_REDIRECT_URI not configured' });
+    const nextPath = sanitizeReturnPath(String(req.query?.next || '').trim());
+    const appOrigin = resolveAllowedAppOrigin(String(req.query?.origin || req.get('origin') || req.get('referer') || '').trim());
+    const state = encodeState({
+      ts: Date.now(),
+      auth_flow: 'login',
+      provider: 'naver',
+      next_path: nextPath,
+      app_origin: appOrigin,
+      redirect_uri: redirectUri
+    });
+    const authUrl = new URL('https://nid.naver.com/oauth2.0/authorize');
+    authUrl.searchParams.set('response_type', 'code');
+    authUrl.searchParams.set('client_id', NAVER_CLIENT_ID);
+    authUrl.searchParams.set('redirect_uri', redirectUri);
+    authUrl.searchParams.set('state', state);
+    return res.redirect(authUrl.toString());
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'naver oauth start failed' });
+  }
+});
+
+app.get('/auth/naver/callback', async (req, res) => {
+  const code = String(req.query?.code || '').trim();
+  const rawState = String(req.query?.state || '').trim();
+  const state = decodeState(rawState);
+  const redirectUri = String(state?.redirect_uri || resolveNaverLoginRedirectUri(req)).trim();
+  const appOrigin = resolveAllowedAppOrigin(String(state?.app_origin || '').trim());
+  const nextPath = sanitizeReturnPath(String(state?.next_path || '').trim());
+  if (!code) return res.status(400).send('code missing');
+  if (!NAVER_CLIENT_ID || !NAVER_CLIENT_SECRET || !redirectUri) return res.status(500).send('naver oauth env missing');
+  try {
+    return await completeNaverLoginFlow(req, res, { code, state: rawState, redirectUri, appOrigin, nextPath });
+  } catch (err) {
+    console.error('[auth/naver/callback] failed:', err?.message || err);
+    return res.redirect(buildAuthErrorRedirectUrl({ appOrigin, nextPath, provider: 'naver', error: err?.message || 'callback_failed' }));
+  }
+});
+
+app.get('/auth/kakao/config', (req, res) => {
+  return res.json({ ok: true, ready: !!KAKAO_CLIENT_ID, clientId: KAKAO_CLIENT_ID || '' });
+});
+
+app.get('/auth/kakao/start', (req, res) => {
+  try {
+    if (!KAKAO_CLIENT_ID) {
+      return res.status(500).json({ ok: false, error: 'KAKAO_CLIENT_ID not configured' });
+    }
+    const redirectUri = resolveKakaoLoginRedirectUri(req);
+    if (!redirectUri) return res.status(500).json({ ok: false, error: 'KAKAO_LOGIN_REDIRECT_URI not configured' });
+    const nextPath = sanitizeReturnPath(String(req.query?.next || '').trim());
+    const appOrigin = resolveAllowedAppOrigin(String(req.query?.origin || req.get('origin') || req.get('referer') || '').trim());
+    const state = encodeState({
+      ts: Date.now(),
+      auth_flow: 'login',
+      provider: 'kakao',
+      next_path: nextPath,
+      app_origin: appOrigin,
+      redirect_uri: redirectUri
+    });
+    const authUrl = new URL('https://kauth.kakao.com/oauth/authorize');
+    authUrl.searchParams.set('response_type', 'code');
+    authUrl.searchParams.set('client_id', KAKAO_CLIENT_ID);
+    authUrl.searchParams.set('redirect_uri', redirectUri);
+    authUrl.searchParams.set('state', state);
+    return res.redirect(authUrl.toString());
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'kakao oauth start failed' });
+  }
+});
+
+app.get('/auth/kakao/callback', async (req, res) => {
+  const code = String(req.query?.code || '').trim();
+  const state = decodeState(req.query?.state);
+  const redirectUri = String(state?.redirect_uri || resolveKakaoLoginRedirectUri(req)).trim();
+  const appOrigin = resolveAllowedAppOrigin(String(state?.app_origin || '').trim());
+  const nextPath = sanitizeReturnPath(String(state?.next_path || '').trim());
+  if (!code) return res.status(400).send('code missing');
+  if (!KAKAO_CLIENT_ID || !redirectUri) return res.status(500).send('kakao oauth env missing');
+  try {
+    return await completeKakaoLoginFlow(req, res, { code, redirectUri, appOrigin, nextPath });
+  } catch (err) {
+    console.error('[auth/kakao/callback] failed:', err?.message || err);
+    return res.redirect(buildAuthErrorRedirectUrl({ appOrigin, nextPath, provider: 'kakao', error: err?.message || 'callback_failed' }));
   }
 });
 
@@ -3851,7 +4433,7 @@ app.get('/integrations/resources2', async (req, res) => {
 
     const rows = readIntegrations().filter(r => r.project_id === projectId && r.provider === 'google' && r.status === 'connected' && actorOwnsIntegration(actorId, r));
     const account = rows.find(r => r.integration_type === 'account');
-    const token = String(account?._token_demo_only || '').trim();
+    const token = integrationAccessToken(account);
     if (!token) return res.status(400).json({ ok: false, error: 'google account token missing' });
 
     const wantDocs = resourceProvider === 'google_docs';

@@ -16,7 +16,8 @@ const securityFlags = [
   ['integrationsRequireSession', 'INTEGRATIONS_REQUIRE_SESSION'],
   ['integrationsEnforceLaunchScope', 'INTEGRATIONS_ENFORCE_LAUNCH_SCOPE'],
   ['projectInteractionsRequireSession', 'PROJECT_INTERACTIONS_REQUIRE_SESSION'],
-  ['projectAccessRequireMembership', 'PROJECT_ACCESS_REQUIRE_MEMBERSHIP']
+  ['projectAccessRequireMembership', 'PROJECT_ACCESS_REQUIRE_MEMBERSHIP'],
+  ['dmRequireSession', 'DM_REQUIRE_SESSION']
 ];
 
 function readRenderYaml() {

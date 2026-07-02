@@ -9,6 +9,7 @@ const backendRoot = path.join(repoRoot, 'WETHUS2', 'backend');
 const port = Number(process.env.WETHUS_BACKEND_SMOKE_PORT || 8899);
 const baseUrl = `http://127.0.0.1:${port}`;
 const TEST_JWT_SECRET = process.env.JWT_SECRET || 'backend-security-smoke-secret-1234567890';
+const TEST_TOKEN_ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY || 'backend-security-token-encryption-secret-1234567890';
 const errors = [];
 let smokeDataDirGlobal = '';
 
@@ -71,6 +72,8 @@ async function expectSecurityHeaders() {
   if (body.security?.integrationsEnforceLaunchScope !== true) fail('/health should expose integration launch-scope enforcement status');
   if (body.security?.projectInteractionsRequireSession !== true) fail('/health should expose project interaction guard status');
   if (body.security?.projectAccessRequireMembership !== true) fail('/health should expose project membership guard status');
+  if (body.security?.dmRequireSession !== true) fail('/health should expose DM session guard status');
+  if (body.security?.tokenEncryptionConfigured !== true) fail('/health should expose configured token encryption status');
   if (!csp.includes("default-src 'none'")) fail('missing strict Content-Security-Policy on /health');
   if (nosniff !== 'nosniff') fail('missing X-Content-Type-Options: nosniff');
   if (frame !== 'DENY') fail('missing X-Frame-Options: DENY');
@@ -386,6 +389,41 @@ async function expectProjectMembershipGuard() {
   }
 }
 
+async function expectDmSessionGuard() {
+  seedProjectAccessFixture();
+  const noSessionCreate = await fetch(`${baseUrl}/dm/threads`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-user-id': 'actor-a'
+    },
+    body: JSON.stringify({ targetUserId: 'actor-b', targetName: 'Actor B' })
+  });
+  if (noSessionCreate.status !== 401) fail(`POST /dm/threads should require a session when guard is enabled, got ${noSessionCreate.status}`);
+
+  const mismatchCreate = await fetch(`${baseUrl}/dm/threads`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-user-id': 'actor-a',
+      authorization: `Bearer ${makeTestJwt({ sub: 'actor-b', email: 'actor-b@example.com', name: 'Actor B' })}`
+    },
+    body: JSON.stringify({ targetUserId: 'actor-b', targetName: 'Actor B' })
+  });
+  if (mismatchCreate.status !== 403) fail(`POST /dm/threads with mismatched session should be forbidden, got ${mismatchCreate.status}`);
+
+  const okCreate = await fetch(`${baseUrl}/dm/threads`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${makeTestJwt({ sub: 'actor-a', email: 'actor-a@example.com', name: 'Actor A' })}`
+    },
+    body: JSON.stringify({ targetUserId: 'actor-b', targetName: 'Actor B' })
+  });
+  const payload = await okCreate.json().catch(() => ({}));
+  if (!okCreate.ok || !payload?.thread?.id) fail(`POST /dm/threads with session-only actor should succeed, got ${okCreate.status}`);
+}
+
 (async () => {
   const logs = { text: '' };
   const smokeDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wethus-backend-smoke-'));
@@ -406,7 +444,9 @@ async function expectProjectMembershipGuard() {
         INTEGRATIONS_ENFORCE_LAUNCH_SCOPE: 'true',
         PROJECT_INTERACTIONS_REQUIRE_SESSION: 'true',
         PROJECT_ACCESS_REQUIRE_MEMBERSHIP: 'true',
-        JWT_SECRET: TEST_JWT_SECRET
+        DM_REQUIRE_SESSION: 'true',
+        JWT_SECRET: TEST_JWT_SECRET,
+        TOKEN_ENCRYPTION_KEY: TEST_TOKEN_ENCRYPTION_KEY
       },
       stdio: ['ignore', 'pipe', 'pipe']
     });
@@ -422,6 +462,7 @@ async function expectProjectMembershipGuard() {
     await expectIntegrationActorGuard();
     await expectProjectInteractionSessionGuard();
     await expectProjectMembershipGuard();
+    await expectDmSessionGuard();
   } finally {
     await stopChild(child);
     fs.rmSync(smokeDataDir, { recursive: true, force: true });

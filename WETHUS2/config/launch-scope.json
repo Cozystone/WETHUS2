@@ -1,15 +1,18 @@
 {
   "launchProviders": [
     "google_docs",
-    "google_sheets"
-  ],
-  "deferredProviders": [
+    "google_sheets",
     "notion",
     "slack",
-    "figma"
+    "figma",
+    "github",
+    "discord",
+    "google_calendar",
+    "airtable"
   ],
+  "deferredProviders": [],
   "notes": [
-    "Commercial launch scope currently includes only Google Docs and Google Sheets integrations.",
-    "Notion, Slack, and Figma remain valid roadmap integrations but are deferred until their OAuth setup and production operations are ready."
+    "Commercial launch scope includes Google Docs, Google Sheets, Notion, Slack, Figma, GitHub, Discord, Google Calendar, and Airtable integrations.",
+    "Each provider still requires its production OAuth credentials before users can complete connection."
   ]
 }

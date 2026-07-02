@@ -16,7 +16,8 @@ const securityFlags = [
   ['integrationsRequireSession', 'INTEGRATIONS_REQUIRE_SESSION'],
   ['integrationsEnforceLaunchScope', 'INTEGRATIONS_ENFORCE_LAUNCH_SCOPE'],
   ['projectInteractionsRequireSession', 'PROJECT_INTERACTIONS_REQUIRE_SESSION'],
-  ['projectAccessRequireMembership', 'PROJECT_ACCESS_REQUIRE_MEMBERSHIP']
+  ['projectAccessRequireMembership', 'PROJECT_ACCESS_REQUIRE_MEMBERSHIP'],
+  ['dmRequireSession', 'DM_REQUIRE_SESSION']
 ];
 
 const frontendChecks = [
@@ -193,7 +194,9 @@ async function backendContractDriftStatus() {
       ...(Object.prototype.hasOwnProperty.call(health?.security || {}, 'integrationsRequireSession') ? [] : ['integrationsRequireSession key']),
       ...(Object.prototype.hasOwnProperty.call(health?.security || {}, 'integrationsEnforceLaunchScope') ? [] : ['integrationsEnforceLaunchScope key']),
       ...(Object.prototype.hasOwnProperty.call(health?.security || {}, 'projectInteractionsRequireSession') ? [] : ['projectInteractionsRequireSession key']),
-      ...(Object.prototype.hasOwnProperty.call(health?.security || {}, 'projectAccessRequireMembership') ? [] : ['projectAccessRequireMembership key'])
+      ...(Object.prototype.hasOwnProperty.call(health?.security || {}, 'projectAccessRequireMembership') ? [] : ['projectAccessRequireMembership key']),
+      ...(Object.prototype.hasOwnProperty.call(health?.security || {}, 'dmRequireSession') ? [] : ['dmRequireSession key']),
+      ...(Object.prototype.hasOwnProperty.call(health?.security || {}, 'tokenEncryptionConfigured') ? [] : ['tokenEncryptionConfigured key'])
     ]
   });
 
@@ -237,6 +240,7 @@ async function buildSummary() {
   const backendContract = await backendContractDriftStatus();
 
   const disabledFlags = securityFlags.filter(([key]) => runtime.security?.[key] !== true);
+  const missingSecrets = runtime.security?.tokenEncryptionConfigured === true ? [] : ['TOKEN_ENCRYPTION_KEY'];
   const providerWarnings = LAUNCH_SCOPE.launchProviders
     .map((key) => [key, runtime.providerMap[key]?.status || 'missing'])
     .filter(([, status]) => status !== 'ready');
@@ -244,7 +248,7 @@ async function buildSummary() {
   const backendContractWarnings = backendContract.filter((row) => row.status !== 200 || row.drift.length > 0);
 
   const localReady = source.aligned && !source.dirty;
-  const productionReady = !disabledFlags.length && !frontendWarnings.length && !backendContractWarnings.length;
+  const productionReady = !disabledFlags.length && !missingSecrets.length && !frontendWarnings.length && !backendContractWarnings.length;
 
   return {
     generatedAt: new Date().toISOString(),
@@ -263,6 +267,7 @@ async function buildSummary() {
         ...(source.dirty ? ['local worktree still has uncommitted changes'] : [])
       ],
       disabledFlags: disabledFlags.map(([, envKey]) => envKey),
+      missingSecrets,
       renderEnvSync: renderEnvSync.mismatches,
       providers: providerWarnings.map(([provider, status]) => ({ provider, status })),
       frontend: frontendWarnings.map((row) => ({ file: row.file, driftCount: row.snippetDrift.length, status: row.status })),
@@ -271,8 +276,9 @@ async function buildSummary() {
     nextActions: [
       ...((!source.aligned || source.dirty) ? ['commit and push the current commercialization bundle'] : []),
       ...disabledFlags.map(([, envKey]) => `set Render env ${envKey}=true`),
+      ...missingSecrets.map((envKey) => `set Render secret ${envKey} to a strong random value`),
       ...(renderEnvSync.envSyncPending ? ['sync Render saved env values with the current render.yaml blueprint or update them manually in the Render dashboard'] : []),
-      ...(disabledFlags.length ? ['redeploy Render backend'] : []),
+      ...((disabledFlags.length || missingSecrets.length) ? ['redeploy Render backend'] : []),
       ...(backendContractWarnings.length ? ['rerun node scripts/check-live-backend-contract-drift.js after backend deploys'] : []),
       ...(frontendWarnings.length ? ['redeploy Vercel frontend', 'rerun node scripts/check-live-frontend-drift.js'] : []),
       ...(providerWarnings.length ? ['configure the remaining launch-scope provider secrets or remove them from launch scope'] : []),
@@ -307,6 +313,7 @@ function printSummary(summary) {
   for (const [healthKey, envKey] of securityFlags) {
     console.log(`- ${envKey}: ${runtime.security?.[healthKey] === true ? 'true' : 'false'}`);
   }
+  console.log(`- TOKEN_ENCRYPTION_KEY: ${runtime.security?.tokenEncryptionConfigured === true ? 'configured' : 'missing'}`);
 
   printSection('Render env sync');
   if (!renderEnvSync.mismatches.length) {
