@@ -532,6 +532,11 @@ const CLOUD_STATE_DB = path.join(DATA_DIR, 'cloud-state.json');
 const PROJECT_APPLICATIONS_DB = path.join(DATA_DIR, 'project-applications.json');
 const PROJECT_BOOKMARKS_DB = path.join(DATA_DIR, 'project-bookmarks.json');
 const PLAN_REQUESTS_DB = path.join(DATA_DIR, 'plan-requests.json');
+const DATA_BACKUP_DIR = path.join(DATA_DIR, 'backups');
+const WRITE_BACKUPS_ENABLED = String(process.env.WETHUS_WRITE_BACKUPS || 'true').toLowerCase() !== 'false';
+const DATA_BACKUP_RETENTION_DAYS = Math.max(1, Number(process.env.WETHUS_BACKUP_RETENTION_DAYS || 14));
+const ACCOUNT_DELETE_CONFIRM_TEXT = 'DELETE';
+let lastBackupSweepDate = '';
 
 function ensureDb() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -552,9 +557,47 @@ function ensureDb() {
 function writeJsonAtomic(filePath, value) {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  backupJsonBeforeWrite(filePath);
   const tmp = path.join(dir, `.${path.basename(filePath)}.${process.pid}.${Date.now()}.tmp`);
   fs.writeFileSync(tmp, JSON.stringify(value, null, 2));
   fs.renameSync(tmp, filePath);
+}
+
+function safeBackupTimestamp() {
+  return new Date().toISOString().replace(/[:.]/g, '-');
+}
+
+function backupJsonBeforeWrite(filePath) {
+  if (!WRITE_BACKUPS_ENABLED || !fs.existsSync(filePath)) return;
+  try {
+    const date = new Date().toISOString().slice(0, 10);
+    const backupDir = path.join(DATA_BACKUP_DIR, date);
+    if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+    const backupFile = path.join(backupDir, `${safeBackupTimestamp()}-${path.basename(filePath)}.bak`);
+    fs.copyFileSync(filePath, backupFile);
+    sweepOldDataBackups(date);
+  } catch (e) {
+    console.warn('[data-backup] skipped:', e?.message || e);
+  }
+}
+
+function sweepOldDataBackups(currentDate) {
+  if (lastBackupSweepDate === currentDate) return;
+  lastBackupSweepDate = currentDate;
+  try {
+    if (!fs.existsSync(DATA_BACKUP_DIR)) return;
+    const cutoff = Date.now() - DATA_BACKUP_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+    for (const entry of fs.readdirSync(DATA_BACKUP_DIR, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const fullPath = path.join(DATA_BACKUP_DIR, entry.name);
+      const time = new Date(`${entry.name}T00:00:00.000Z`).getTime();
+      if (Number.isFinite(time) && time < cutoff) {
+        fs.rmSync(fullPath, { recursive: true, force: true });
+      }
+    }
+  } catch (e) {
+    console.warn('[data-backup] sweep skipped:', e?.message || e);
+  }
 }
 function readUsers() {
   ensureDb();
@@ -1036,6 +1079,7 @@ function findUserForSession(session) {
   const sessionEmail = normEmail(session.email);
   if (!sessionSub && !sessionEmail) return null;
   return readUsers().find(user => {
+    if (user?.deletedAt || user?.anonymized) return false;
     const userId = String(user?.id || user?.googleSub || '').trim();
     return (sessionSub && userId === sessionSub) || (sessionEmail && normEmail(user?.email) === sessionEmail);
   }) || null;
@@ -1144,6 +1188,36 @@ function getUserById(userId) {
 
 function getGlobalProjectById(projectId) {
   return readCloudProjects().find(p => String(p?.id) === String(projectId)) || null;
+}
+
+function isDeletedProject(project) {
+  return !!project && (
+    !!project.deletedAt ||
+    String(project?.moderationStatus || '').toLowerCase() === 'deleted' ||
+    String(project?.visibility || '').toLowerCase() === 'deleted'
+  );
+}
+
+function rejectDeletedProject(res) {
+  return res.status(410).json({ ok: false, error: 'project deleted' });
+}
+
+function actorCanManageExistingProject(actorId, project) {
+  if (!project || !actorId) return false;
+  return canManageProjectRole(actorProjectRole(actorId, project));
+}
+
+function actorCanWriteProjectFromCloud(actorId, email, incomingProject, previousProject, usersById = new Map()) {
+  if (!incomingProject?.id) return false;
+  if (isAdminUser(getUserById(actorId))) return true;
+  if (previousProject) return actorCanManageExistingProject(actorId, previousProject);
+  const founderId = String(incomingProject?.founderId || '').trim();
+  const founderUser = founderId ? usersById.get(founderId) : null;
+  const founderEmail = normEmail(incomingProject?.founderEmail || founderUser?.email || '');
+  return (
+    (!!actorId && founderId === String(actorId)) ||
+    (!!email && founderEmail === normEmail(email))
+  );
 }
 
 function upsertGlobalProject(projectId, updater) {
@@ -1432,6 +1506,11 @@ function healthPayload() {
       projectAccessRequireMembership: PROJECT_ACCESS_REQUIRE_MEMBERSHIP,
       dmRequireSession: DM_REQUIRE_SESSION,
       tokenEncryptionConfigured: !!TOKEN_ENCRYPTION_KEY_RAW
+    },
+    dataPolicy: {
+      writeBackupsEnabled: WRITE_BACKUPS_ENABLED,
+      backupRetentionDays: DATA_BACKUP_RETENTION_DAYS,
+      accountDeleteMode: 'anonymize-and-hide-owned-projects'
     }
   };
 }
@@ -3867,6 +3946,206 @@ app.get('/auth/session', (req, res) => {
   }
 });
 
+function requireSessionUser(req, res) {
+  const session = getSession(req);
+  if (!session) {
+    res.status(401).json({ ok: false, error: 'session required' });
+    return null;
+  }
+  const user = findUserForSession(session);
+  if (!user) {
+    res.status(401).json({ ok: false, error: 'user not found' });
+    return null;
+  }
+  return { session, user };
+}
+
+function collectUserDataBundle(user) {
+  const userId = String(user?.id || '').trim();
+  const email = normEmail(user?.email || '');
+  const projects = readCloudProjects();
+  const applications = readProjectApplications();
+  const bookmarks = readProjectBookmarks();
+  const cloudStates = readCloudStates();
+  const dmThreads = readDmThreads();
+  const integrations = readIntegrations();
+  const activityEvents = readActivityEvents();
+  const ownedProjects = projects.filter(project => String(project?.founderId || '') === userId || normEmail(project?.founderEmail || '') === email);
+  const memberProjects = projects.filter(project => (
+    Array.isArray(project?.teamMembers) &&
+    project.teamMembers.some(member => String(member?.id || member?.userId || '') === userId)
+  ));
+  const authoredComments = projects.flatMap(project => (
+    Array.isArray(project?.comments)
+      ? project.comments
+          .filter(comment => String(comment?.userId || '') === userId)
+          .map(comment => ({ projectId: project.id, projectTitle: project.title || '', comment }))
+      : []
+  ));
+  return {
+    exportedAt: new Date().toISOString(),
+    user: sanitizeUserForClient(user),
+    cloudState: cloudStates.find(row => normEmail(row?.email || '') === email) || null,
+    ownedProjects,
+    memberProjects,
+    applications: applications.filter(item => String(item?.userId || '') === userId || normEmail(item?.applicantEmail || '') === email),
+    bookmarks: bookmarks.filter(item => String(item?.userId || '') === userId),
+    likedProjectIds: projects
+      .filter(project => Array.isArray(project?.likedBy) && project.likedBy.includes(userId))
+      .map(project => String(project?.id || '')).filter(Boolean),
+    authoredComments,
+    dmThreads: dmThreads.filter(thread => Array.isArray(thread?.participants) && thread.participants.includes(userId)),
+    integrations: integrations
+      .filter(row => String(row?.connected_by_user_id || '') === userId)
+      .map(row => sanitizeIntegrationForClient(row)),
+    activityEvents: activityEvents.filter(event => String(event?.actor_id || event?.actorId || '') === userId)
+  };
+}
+
+function anonymizedDeletedUser(userId) {
+  return `deleted:${crypto.createHash('sha256').update(String(userId || '')).digest('hex').slice(0, 12)}`;
+}
+
+function deleteAccountData(user) {
+  const userId = String(user?.id || '').trim();
+  const email = normEmail(user?.email || '');
+  const now = new Date().toISOString();
+  const deletedRef = anonymizedDeletedUser(userId);
+
+  const users = readUsers();
+  const userIdx = users.findIndex(item => String(item?.id || '') === userId || normEmail(item?.email || '') === email);
+  if (userIdx >= 0) {
+    users[userIdx] = {
+      id: userId,
+      email: `${deletedRef}@deleted.local`,
+      name: 'Deleted user',
+      nickname: 'Deleted user',
+      passwordHash: '',
+      role: '',
+      plan: 'free',
+      founderVerified: false,
+      profileImage: '',
+      bio: '',
+      headline: '',
+      school: '',
+      careerRaw: '',
+      careerSummary: '',
+      portfolioHighlights: '',
+      lookingFor: '',
+      instagramUrl: '',
+      githubUrl: '',
+      linkedinUrl: '',
+      portfolioUrl: '',
+      interestTags: [],
+      deletedAt: now,
+      anonymized: true,
+      createdAt: users[userIdx].createdAt || now,
+      updatedAt: now
+    };
+    writeUsers(users);
+  }
+
+  writeCloudStates(readCloudStates().filter(row => normEmail(row?.email || '') !== email));
+  writeProjectBookmarks(readProjectBookmarks().filter(item => String(item?.userId || '') !== userId));
+
+  writeProjectApplications(readProjectApplications().map(item => {
+    if (String(item?.userId || '') !== userId && normEmail(item?.applicantEmail || '') !== email) return item;
+    return {
+      ...item,
+      applicantName: 'Deleted user',
+      applicantEmail: '',
+      motivation: '',
+      status: normalizeProjectApplicationStatus(item.status) === 'accepted' ? 'accepted_deleted_account' : 'withdrawn_deleted_account',
+      deletedAt: now,
+      updatedAt: now
+    };
+  }));
+
+  writeCloudProjects(readCloudProjects().map(project => {
+    const isOwner = String(project?.founderId || '') === userId || normEmail(project?.founderEmail || '') === email;
+    const next = { ...project };
+    next.likedBy = Array.isArray(next.likedBy) ? next.likedBy.filter(id => String(id) !== userId) : [];
+    next.likes = next.likedBy.length;
+    next.comments = Array.isArray(next.comments)
+      ? next.comments.map(comment => (
+          String(comment?.userId || '') === userId
+            ? { ...comment, author: 'Deleted user', text: 'Deleted comment', deletedAt: now }
+            : comment
+        ))
+      : [];
+    next.teamMembers = Array.isArray(next.teamMembers)
+      ? next.teamMembers.filter(member => String(member?.id || member?.userId || '') !== userId)
+      : [];
+    if (isOwner) {
+      return {
+        ...next,
+        title: next.title || '',
+        summary: '',
+        description: '',
+        founderId: deletedRef,
+        founderEmail: '',
+        founderName: 'Deleted user',
+        moderationStatus: 'deleted',
+        visibility: 'deleted',
+        deletedAt: now,
+        deletedBy: userId,
+        deletedReason: 'account_deleted',
+        _updatedAt: now
+      };
+    }
+    return { ...next, _updatedAt: now };
+  }));
+
+  writeIntegrations(readIntegrations().filter(row => String(row?.connected_by_user_id || '') !== userId));
+  writeExternalIdentityMaps(readExternalIdentityMaps().filter(row => String(row?.user_id || row?.userId || '') !== userId));
+  writeDmThreads(readDmThreads().map(thread => {
+    if (!Array.isArray(thread?.participants) || !thread.participants.includes(userId)) return thread;
+    const participants = thread.participants.filter(id => String(id) !== userId);
+    const messages = Array.isArray(thread.messages)
+      ? thread.messages.map(message => (
+          String(message?.fromId || '') === userId
+            ? { ...message, from: 'Deleted user', text: 'Deleted message', deletedAt: now }
+            : message
+        ))
+      : [];
+    return { ...thread, participants, messages, updatedAt: now };
+  }));
+
+  writeActivityEvents(readActivityEvents().map(event => (
+    String(event?.actor_id || event?.actorId || '') === userId
+      ? { ...event, actor_id: deletedRef, actorId: deletedRef, anonymizedAt: now }
+      : event
+  )));
+
+  return { deletedAt: now, deletedRef };
+}
+
+app.get('/me/data-export', (req, res) => {
+  try {
+    const sessionUser = requireSessionUser(req, res);
+    if (!sessionUser) return;
+    return res.json({ ok: true, data: collectUserDataBundle(sessionUser.user) });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'data export failed' });
+  }
+});
+
+app.delete('/me/account', (req, res) => {
+  try {
+    const sessionUser = requireSessionUser(req, res);
+    if (!sessionUser) return;
+    const confirm = String(req.body?.confirm || '').trim();
+    if (confirm !== ACCOUNT_DELETE_CONFIRM_TEXT) {
+      return res.status(400).json({ ok: false, error: 'confirm DELETE required' });
+    }
+    const result = deleteAccountData(sessionUser.user);
+    res.clearCookie('wethus_session');
+    return res.json({ ok: true, ...result });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'account delete failed' });
+  }
+});
+
 app.post('/auth/logout', (req, res) => {
   res.clearCookie('wethus_session');
   res.json({ ok: true });
@@ -4069,6 +4348,9 @@ app.post('/projects/:projectId/likes/toggle', (req, res) => {
     if (!actorId) return;
     const projectId = String(req.params.projectId || '').trim();
     if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
+    const targetProject = getGlobalProjectById(projectId);
+    if (!targetProject) return res.status(404).json({ ok: false, error: 'project not found' });
+    if (isDeletedProject(targetProject)) return rejectDeletedProject(res);
     const updated = upsertGlobalProject(projectId, (project) => {
       const likedBy = Array.isArray(project.likedBy) ? [...project.likedBy] : [];
       const idx = likedBy.indexOf(actorId);
@@ -4127,6 +4409,7 @@ app.post('/projects/:projectId/bookmarks/toggle', (req, res) => {
     if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
     const project = getGlobalProjectById(projectId);
     if (!project) return res.status(404).json({ ok: false, error: 'project not found' });
+    if (isDeletedProject(project)) return rejectDeletedProject(res);
     const rows = readProjectBookmarks();
     const idx = rows.findIndex(item => String(item.projectId || '') === projectId && String(item.userId || '') === actorId);
     let bookmarked = false;
@@ -4167,6 +4450,9 @@ app.post('/projects/:projectId/comments', (req, res) => {
     const projectId = String(req.params.projectId || '').trim();
     const text = String(req.body?.text || '').trim();
     if (!projectId || !text) return res.status(400).json({ ok: false, error: 'projectId/text required' });
+    const targetProject = getGlobalProjectById(projectId);
+    if (!targetProject) return res.status(404).json({ ok: false, error: 'project not found' });
+    if (isDeletedProject(targetProject)) return rejectDeletedProject(res);
     const actor = getUserById(actorId);
     const comment = {
       id: crypto.randomUUID(),
@@ -4203,6 +4489,7 @@ app.get('/projects/:projectId/applications', (req, res) => {
     if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
     const project = getGlobalProjectById(projectId);
     if (!project) return res.status(404).json({ ok: false, error: 'project not found' });
+    if (isDeletedProject(project)) return rejectDeletedProject(res);
     const role = actorProjectRole(actorId, project);
     const isManager = canManageProjectRole(role);
     const rows = readProjectApplications()
@@ -4225,6 +4512,7 @@ app.post('/projects/:projectId/applications', (req, res) => {
     if (!projectId || !motivation) return res.status(400).json({ ok: false, error: 'projectId/motivation required' });
     const project = getGlobalProjectById(projectId);
     if (!project) return res.status(404).json({ ok: false, error: 'project not found' });
+    if (isDeletedProject(project)) return rejectDeletedProject(res);
     const role = actorProjectRole(actorId, project);
     if (role === 'founder') return res.status(400).json({ ok: false, error: 'founder cannot apply own project' });
     if (role === 'leader' || role === 'member') return res.status(400).json({ ok: false, error: 'existing team member cannot apply' });
@@ -4277,6 +4565,7 @@ app.post('/projects/:projectId/applications/:applicationId/status', (req, res) =
     if (!['accepted', 'rejected'].includes(status)) return res.status(400).json({ ok: false, error: 'accepted or rejected required' });
     const project = getGlobalProjectById(projectId);
     if (!project) return res.status(404).json({ ok: false, error: 'project not found' });
+    if (isDeletedProject(project)) return rejectDeletedProject(res);
     const role = actorProjectRole(actorId, project);
     if (!canManageProjectRole(role)) return res.status(403).json({ ok: false, error: 'project manager required' });
     const rows = readProjectApplications();
@@ -4345,6 +4634,52 @@ app.delete('/projects/:projectId/applications/me', (req, res) => {
   }
 });
 
+app.delete('/projects/:projectId', (req, res) => {
+  try {
+    const actorId = requireProjectActor(req, res);
+    if (!actorId) return;
+    const projectId = String(req.params.projectId || '').trim();
+    if (!projectId) return res.status(400).json({ ok: false, error: 'projectId required' });
+    const project = getGlobalProjectById(projectId);
+    if (!project) return res.status(404).json({ ok: false, error: 'project not found' });
+    if (isDeletedProject(project)) return res.json({ ok: true, deleted: true, project });
+    const role = actorProjectRole(actorId, project);
+    if (!canManageProjectRole(role)) return res.status(403).json({ ok: false, error: 'project manager required' });
+    const now = new Date().toISOString();
+    const updated = upsertGlobalProject(projectId, (current) => ({
+      title: current.title || '',
+      summary: '',
+      description: '',
+      moderationStatus: 'deleted',
+      visibility: 'deleted',
+      deletedAt: now,
+      deletedBy: actorId,
+      deletedReason: 'owner_request',
+      comments: [],
+      likedBy: [],
+      likes: 0
+    })) || { ...project, deletedAt: now, visibility: 'deleted', moderationStatus: 'deleted' };
+    const applications = readProjectApplications().map((item) => (
+      String(item.projectId || '') === projectId
+        ? { ...item, status: 'project_deleted', updatedAt: now }
+        : item
+    ));
+    writeProjectApplications(applications);
+    writeProjectBookmarks(readProjectBookmarks().filter(item => String(item.projectId || '') !== projectId));
+    recordProjectAuditEvent({
+      projectId,
+      actorId,
+      eventType: 'project_deleted',
+      payload: { mode: 'soft_delete' },
+      sourceItemId: projectId,
+      sourceItemName: project.title || ''
+    });
+    return res.json({ ok: true, deleted: true, project: updated });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'project delete failed' });
+  }
+});
+
 app.get('/cloud/state', (req, res) => {
   try {
     const email = normEmail(req.query?.email);
@@ -4366,6 +4701,8 @@ app.post('/cloud/state', (req, res) => {
     const state = req.body?.state;
     if (!email || !state || typeof state !== 'object') return res.status(400).json({ ok: false, error: 'email/state required' });
     if (!requireEmailSession(req, res, email)) return;
+    const session = getSession(req);
+    const actorId = String(session?.sub || '').trim();
 
     const rows = readCloudStates();
     const now = new Date().toISOString();
@@ -4391,6 +4728,9 @@ app.post('/cloud/state', (req, res) => {
       if (p?.moderationStatus === 'rejected') continue;
       const key = String(p.id);
       const prev = map.get(key) || {};
+      if (!actorCanWriteProjectFromCloud(actorId, email, p, prev?.id ? prev : null, usersById)) {
+        continue;
+      }
       const prevTs = new Date(prev.updatedAt || prev._updatedAt || prev.createdAt || 0).getTime() || 0;
       const nextTs = new Date(p.updatedAt || p.createdAt || now).getTime() || Date.now();
       const founderId = String(p?.founderId || '').trim();

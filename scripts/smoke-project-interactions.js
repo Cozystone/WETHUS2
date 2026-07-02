@@ -246,6 +246,58 @@ async function expectBookmarkLifecycle() {
   }
 }
 
+async function expectSoftDeleteGuards() {
+  const deniedDelete = await fetch(`${baseUrl}/projects/interaction-project`, {
+    method: 'DELETE',
+    headers: actorHeaders('actor-b'),
+    body: JSON.stringify({ reason: 'unauthorized smoke attempt' })
+  });
+  if (deniedDelete.status !== 403) {
+    fail(`project delete should reject non-managers with 403, got ${deniedDelete.status}`);
+  }
+
+  const ownerDelete = await fetch(`${baseUrl}/projects/interaction-project`, {
+    method: 'DELETE',
+    headers: actorHeaders('actor-a'),
+    body: JSON.stringify({ reason: 'smoke cleanup' })
+  });
+  const ownerDeletePayload = await ownerDelete.json().catch(() => ({}));
+  if (!ownerDelete.ok || ownerDeletePayload.deleted !== true) {
+    fail(`project delete should soft-delete for owner, got ${ownerDelete.status}`);
+    return;
+  }
+
+  const deletedProject = readProjects().find(project => project.id === 'interaction-project');
+  if (deletedProject?.moderationStatus !== 'deleted' || deletedProject?.visibility !== 'deleted' || !deletedProject?.deletedAt) {
+    fail('project delete should persist deleted moderation status, visibility, and deletedAt');
+  }
+
+  const blockedLike = await fetch(`${baseUrl}/projects/interaction-project/likes/toggle`, {
+    method: 'POST',
+    headers: actorHeaders('actor-b')
+  });
+  if (blockedLike.status !== 410) {
+    fail(`deleted project like should return 410, got ${blockedLike.status}`);
+  }
+
+  const blockedComment = await fetch(`${baseUrl}/projects/interaction-project/comments`, {
+    method: 'POST',
+    headers: actorHeaders('actor-b'),
+    body: JSON.stringify({ text: 'Should not be accepted.' })
+  });
+  if (blockedComment.status !== 410) {
+    fail(`deleted project comment should return 410, got ${blockedComment.status}`);
+  }
+
+  const blockedBookmark = await fetch(`${baseUrl}/projects/interaction-project/bookmarks/toggle`, {
+    method: 'POST',
+    headers: actorHeaders('actor-b')
+  });
+  if (blockedBookmark.status !== 410) {
+    fail(`deleted project bookmark should return 410, got ${blockedBookmark.status}`);
+  }
+}
+
 function expectAuditEvents() {
   const eventTypes = readEvents().map(event => String(event?.event_type || ''));
   const required = [
@@ -253,7 +305,8 @@ function expectAuditEvents() {
     'project_like_removed',
     'project_comment_added',
     'project_bookmark_added',
-    'project_bookmark_removed'
+    'project_bookmark_removed',
+    'project_deleted'
   ];
   required.forEach((eventType) => {
     if (!eventTypes.includes(eventType)) {
@@ -290,6 +343,7 @@ function expectAuditEvents() {
     await expectLikeLifecycle();
     await expectCommentLifecycle();
     await expectBookmarkLifecycle();
+    await expectSoftDeleteGuards();
     expectAuditEvents();
   } finally {
     await stopChild(child);

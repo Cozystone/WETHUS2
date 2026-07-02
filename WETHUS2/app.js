@@ -1232,6 +1232,8 @@
     const includeRejected = !!options.includeRejected;
     return Array.from(map.values()).filter((p) => {
       const status = String(p?.moderationStatus || 'approved');
+      const visibility = String(p?.visibility || '').toLowerCase();
+      if (p?.deletedAt || status === 'deleted' || visibility === 'deleted') return false;
       if (status === 'approved') return true;
       if (status === 'manual_review') return includePending;
       if (status === 'rejected') return includeRejected;
@@ -1627,6 +1629,38 @@
       }
       return payload;
     });
+  }
+
+  async function fetchAccountEndpoint(path, options = {}) {
+    const base = currentCloudApiBase();
+    if (!base) throw new Error('cloud api unavailable');
+    const response = await fetch(`${String(base).replace(/\/$/, '')}${path}`, {
+      method: options.method || 'GET',
+      headers: actorRequestHeaders({
+        'Content-Type': 'application/json'
+      }),
+      credentials: 'include',
+      body: options.body ? JSON.stringify(options.body) : undefined
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload?.ok === false) throw new Error(payload?.error || `account request failed (${response.status})`);
+    return payload;
+  }
+
+  async function exportAccountData() {
+    return fetchAccountEndpoint('/me/data-export');
+  }
+
+  async function deleteCurrentAccount(confirmText = '') {
+    const payload = await fetchAccountEndpoint('/me/account', {
+      method: 'DELETE',
+      body: { confirm: confirmText }
+    });
+    try {
+      localStorage.removeItem(KEY);
+      localStorage.removeItem(GLOBAL_PROJECTS_KEY);
+    } catch (_) {}
+    return payload;
   }
 
   function recordProjectView(projectId) {
@@ -2045,6 +2079,8 @@
     s.projects.splice(idx, 1);
     s.applications = (s.applications || []).filter(a => a.projectId !== projectId);
     save(s);
+    postProjectInteraction(`/projects/${encodeURIComponent(projectId)}`, { method: 'DELETE' }).catch(() => {});
+    scheduleCloudSync('save');
     return true;
   }
 
@@ -3645,6 +3681,8 @@
     upsertCloudUser,
     restoreServerSession,
     syncCloudState,
+    exportAccountData,
+    deleteCurrentAccount,
     currentPlan,
     setCurrentUserPlan,
     listPlanRequests,
