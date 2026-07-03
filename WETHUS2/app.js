@@ -3359,7 +3359,7 @@
       const state = getState();
       if (state.devMode && !Array.from(nav.querySelectorAll('a')).some(a => (a.textContent || '').includes('WETHUS 1.0'))) {
         const legacy = document.createElement('a');
-        legacy.href = 'explore_v1.html';
+        legacy.href = 'explore_theme.html?cat=All';
         legacy.className = 'nav-link';
         legacy.textContent = 'WETHUS 1.0';
         nav.appendChild(legacy);
@@ -3434,6 +3434,20 @@
           ${(state.devMode || isAdminActor()) ? `<a href="admin.html" class="side-drawer-item side-drawer-item--row"><span>프로젝트 검토</span></a>` : ''}
         </aside>
       `;
+
+      const adLinks = Array.from(menuWrap.querySelectorAll('a[href="ad-center.html"], a[href="ad-launch.html"]'));
+      if (!(state.devMode || isAdminActor())) {
+        const adTitle = adLinks[0]?.previousElementSibling;
+        if (adTitle?.classList?.contains('side-drawer-group-title')) adTitle.remove();
+        adLinks.forEach(link => link.remove());
+      } else {
+        const adTitle = adLinks[0]?.previousElementSibling;
+        if (adTitle?.classList?.contains('side-drawer-group-title')) adTitle.textContent = 'AD · 홍보';
+        adLinks.forEach(link => {
+          const label = link.querySelector('span:last-child');
+          if (label) label.textContent = link.getAttribute('href') === 'ad-center.html' ? 'AD 센터' : '캠페인 만들기';
+        });
+      }
 
       nav.appendChild(chipWrap);
       nav.appendChild(menuWrap);
@@ -3607,6 +3621,27 @@
     } catch (_) {}
   }
 
+  function enhanceLegalFooterLinks() {
+    try {
+      const footers = document.querySelectorAll('.footer');
+      if (!footers.length) return;
+      footers.forEach((footer) => {
+        if (footer.querySelector('.footer-links')) return;
+        const inner = footer.querySelector('.footer-inner') || footer;
+        const links = document.createElement('nav');
+        links.className = 'footer-links';
+        links.setAttribute('aria-label', 'WETHUS 정책 및 문의');
+        links.innerHTML = [
+          '<a href="terms.html">이용약관</a>',
+          '<a href="privacy.html">개인정보처리방침</a>',
+          '<a href="operations-policy.html">운영정책</a>',
+          '<a href="support.html">문의</a>'
+        ].join('');
+        inner.appendChild(links);
+      });
+    } catch (_) {}
+  }
+
   function initNotifyToast() {
     const seenKey = 'wethus_last_toast_notification';
     const latest = listNotifications(20).find(n => n.unread && n.type === 'review_result');
@@ -3628,10 +3663,12 @@
 
   async function initAppShell() {
     ensureFavicon();
+    enhanceLegalFooterLinks();
     await restoreServerSession().catch(() => ({ ok: false }));
     initGuestNavGuard();
     initGuestApplyGuard();
     initNotificationNav();
+    enhanceLegalFooterLinks();
     applyLanguageUI();
     applyAuthReturnState();
     initNotifyToast();

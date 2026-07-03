@@ -36,16 +36,12 @@
   - `INTEGRATIONS_REQUIRE_SESSION`
 - Added `/health` build/security metadata for drift diagnosis.
 
-## Known Production Drift
-- Production API still appears old:
-  - `https://wethus-api.onrender.com/health` returns only `{ "ok": true }`.
-  - It does not expose `service: "wethus-backend"`.
-  - It does not return the new security headers.
-- Assumption: Render is not redeploying the latest backend commit or is deployed from a different path/config.
-- Do not enable strict production header gate until Render is confirmed current.
+## Production Health
+- Render backend drift was resolved.
+- Latest verified on 2026-07-03 KST: `https://wethus-api.onrender.com/health` returns `service: "wethus-backend"`, build commit `39f522d5b69a`, `ref: "main"`, and the expected security flags including `dmRequireSession: true` and `tokenEncryptionConfigured: true`.
+- Continue verifying production from live endpoints before making deployment assumptions.
 
 ## High-Priority Next Moves
-- Fix Render deployment drift.
 - Bootstrap admin with a strong temporary password, then rotate/remove it.
 - Browser-test founder submit to manual review and admin approve/reject.
 - Enable security flags gradually after browser confirmation.

@@ -374,6 +374,7 @@
     let selectedCategory = null;
 
     const themeMap = {
+      All: { title: '전체 프로젝트 탐색', sub: '승인된 모든 학생 창업 프로젝트', tint: '#ffb27a', tint2: '#ff6a00' },
       MathSci: { title: 'Math & Sci 탐색', sub: '수학/과학/연구형 프로젝트', tint: '#2fd4ff', tint2: '#2b6fff' },
       ArtCulture: { title: 'Art & Culture 탐색', sub: '영화/전시/출판/문화 프로젝트', tint: '#ff9a5f', tint2: '#ff4f5e' },
       StartupBusiness: { title: 'Startup & Business 탐색', sub: '창업 검증 프로젝트', tint: '#ffd247', tint2: '#ff7f1f' },
@@ -733,6 +734,7 @@
     }
 
     function inTheme(project) {
+      if (catParam === 'All') return true;
       return projectThemeKey(project) === catParam;
     }
 

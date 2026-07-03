@@ -49,6 +49,7 @@
       <div class="container">
         <h1 class="hero-headline">모든 학생 창업 프로젝트, 여기서 시작된다.</h1>
         <p class="hero-support">아이디어를 말로 끝내지 않습니다. 학생 창업 시도부터 영화·정책·캠페인·서비스 실험까지, 팀을 만들고 실행하고 필요할 때 멘토와 연결됩니다.</p>
+        <p class="hero-support hero-age-note">현재 베타 가입은 만 14세 이상, 만 22세 미만 학생을 기준으로 운영하며 학교·기관 테스트 계정은 별도 승인으로 열립니다.</p>
         <div class="hero-tags">
           <span class="chip">실행 중심 스타트업</span>
           <span class="chip">팀빌딩</span>
@@ -271,6 +272,13 @@
             ${hidden.length ? `<button class="team-toggle">팀원 ${hidden.length+1}명</button><div class="team-list">${hidden.map(m=>`<a class="member-pill block" href="${esc(safeUrl(memberHref(m)))}"><span class="member-name">${esc(m.name)}</span> <span class="member-role">${esc(m.role||'')}</span></a>`).join('')}</div>` : ''}
           </div>`;
       };
+      const renderSocialSignal = (project, isFallback) => {
+        if (isFallback) return '<span>베타 예시</span><span>참고용</span>';
+        const likes = Number(project.likes || 0);
+        const comments = Array.isArray(project.comments) ? project.comments.length : 0;
+        if (!likes && !comments) return '<span>신규 팀</span><span>피드백 대기</span>';
+        return `<span>♡ ${likes}</span><span>💬 ${comments}</span>`;
+      };
       el.innerHTML = featured.map(p => {
         const isFallback = String(p.id || '').startsWith('home-fallback-');
         const imageUrl = safeUrl(p.image, `https://picsum.photos/seed/wethus-${encodeURIComponent(String(p.category||'project').toLowerCase())}/900/560`);
@@ -288,9 +296,9 @@
           ${renderTeam(p.teamMembers)}
           <div class="meta"><span class="card-status">${esc(p.status || '기획 중')}</span> · ${esc(p.roles || '')}${p.neededRoles ? ` · 필요:${esc(p.neededRoles)}` : ''}${p.neededAgeGroup ? ` · ${esc(p.neededAgeGroup)}` : ''}${(p.targetCapacity || p.currentMembers) ? ` · 정원 ${p.currentMembers || 0}/${p.targetCapacity || '-'}` : ''}</div>
           <div class="card-bottom-row">
-            <div class="card-social"><span>♡ ${(p.likes||0)}</span><span>💬 ${Array.isArray(p.comments)?p.comments.length:0}</span></div>
+            <div class="card-social">${renderSocialSignal(p, isFallback)}</div>
             ${(() => {
-              if (isFallback) return '<button class="apply-btn" type="button" disabled style="opacity:.55;cursor:not-allowed;">준비중</button>';
+              if (isFallback) return '<button class="apply-btn" type="button" disabled style="opacity:.55;cursor:not-allowed;">베타 예시</button>';
               const me = WETHUS.getCurrentUser?.();
               const actorId = me?.id || WETHUS.getState?.().currentUserId || '';
               const isFounder = !!actorId && p.founderId === actorId;
@@ -324,6 +332,7 @@
             if (social) {
               social.innerHTML = `<span>♡ ${(fresh?.likes || 0)}</span><span>💬 ${Array.isArray(fresh?.comments) ? fresh.comments.length : 0}</span>`;
             }
+            if (social) social.innerHTML = renderSocialSignal(fresh, String(projectId).startsWith('home-fallback-'));
             const applyBtn = card.querySelector('.apply-btn[data-apply]');
             if (applyBtn && !applyBtn.classList.contains('mine')) {
               const applied = !!WETHUS.hasApplied(projectId);
