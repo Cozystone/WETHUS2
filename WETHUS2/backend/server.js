@@ -129,6 +129,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'http://localhost:8080',
   'http://127.0.0.1:8080',
   'https://wethus-2.vercel.app',
+  'https://wethus-prelaunch.vercel.app',
   'https://wethus.co.kr',
   'https://www.wethus.co.kr'
 ];
@@ -532,6 +533,7 @@ const CLOUD_STATE_DB = path.join(DATA_DIR, 'cloud-state.json');
 const PROJECT_APPLICATIONS_DB = path.join(DATA_DIR, 'project-applications.json');
 const PROJECT_BOOKMARKS_DB = path.join(DATA_DIR, 'project-bookmarks.json');
 const PLAN_REQUESTS_DB = path.join(DATA_DIR, 'plan-requests.json');
+const PRELAUNCH_SIGNUPS_DB = path.join(DATA_DIR, 'prelaunch-signups.json');
 
 function ensureDb() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -545,6 +547,7 @@ function ensureDb() {
   if (!fs.existsSync(PROJECT_APPLICATIONS_DB)) writeJsonAtomic(PROJECT_APPLICATIONS_DB, { applications: [] });
   if (!fs.existsSync(PROJECT_BOOKMARKS_DB)) writeJsonAtomic(PROJECT_BOOKMARKS_DB, { bookmarks: [] });
   if (!fs.existsSync(PLAN_REQUESTS_DB)) writeJsonAtomic(PLAN_REQUESTS_DB, { requests: [] });
+  if (!fs.existsSync(PRELAUNCH_SIGNUPS_DB)) writeJsonAtomic(PRELAUNCH_SIGNUPS_DB, { signups: [] });
   const cp = cloudProjectsDbPath();
   if (!fs.existsSync(cp)) writeJsonAtomic(cp, { projects: [] });
 }
@@ -1411,6 +1414,7 @@ const authRateLimit = createRateLimit({ windowMs: 15 * 60 * 1000, max: 30, name:
 const aiRateLimit = createRateLimit({ windowMs: 60 * 1000, max: 40, name: 'ai' });
 const webhookRateLimit = createRateLimit({ windowMs: 60 * 1000, max: 120, name: 'webhook' });
 const toolRateLimit = createRateLimit({ windowMs: 60 * 1000, max: 20, name: 'tool' });
+const prelaunchRateLimit = createRateLimit({ windowMs: 10 * 60 * 1000, max: 10, name: 'prelaunch' });
 const startedAt = new Date().toISOString();
 
 function healthPayload() {
@@ -1451,6 +1455,7 @@ app.use(['/auth/login', '/auth/register', '/auth/google', '/auth/google/link-pas
 app.use('/ai', aiRateLimit);
 app.use('/webhooks', webhookRateLimit);
 app.use('/tools/fetch-meta', toolRateLimit);
+app.use('/prelaunch', prelaunchRateLimit);
 
 app.get('/health', (_, res) => res.json(healthPayload()));
 
@@ -3499,6 +3504,49 @@ app.post('/tools/fetch-meta', async (req, res) => {
     }
     return res.status(500).json({ ok: false, error: e?.message || 'fetch meta failed' });
   }
+});
+
+function readPrelaunchSignups() {
+  return readCollection(PRELAUNCH_SIGNUPS_DB, 'signups');
+}
+
+app.post('/prelaunch/signups', (req, res) => {
+  try {
+    const email = normEmail(req.body?.email);
+    const name = String(req.body?.name || '').trim().slice(0, 60);
+    const track = String(req.body?.track || '').trim().slice(0, 30);
+    const role = String(req.body?.role || '').trim().slice(0, 30);
+    const interest = String(req.body?.interest || '').trim().slice(0, 200);
+    const source = String(req.body?.source || 'prelaunch-landing').trim().slice(0, 60);
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ ok: false, error: '올바른 이메일을 입력해 주세요.' });
+    }
+    const signups = readPrelaunchSignups();
+    if (signups.some(s => normEmail(s.email) === email)) {
+      return res.json({ ok: true, duplicate: true, message: '이미 사전예약이 완료된 이메일입니다.' });
+    }
+    signups.push({
+      id: crypto.randomUUID(),
+      email,
+      name,
+      track,
+      role,
+      interest,
+      source,
+      createdAt: new Date().toISOString()
+    });
+    writeJsonAtomic(PRELAUNCH_SIGNUPS_DB, { signups });
+    return res.json({ ok: true, duplicate: false, count: signups.length });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message || 'prelaunch signup failed' });
+  }
+});
+
+app.get('/prelaunch/signups', (req, res) => {
+  const admin = requireAdminUser(req, res);
+  if (!admin) return;
+  const signups = readPrelaunchSignups();
+  return res.json({ ok: true, count: signups.length, signups });
 });
 
 app.post('/pass/start', (req, res) => {

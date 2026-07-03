@@ -1608,6 +1608,19 @@
     return headers;
   }
 
+  async function listPrelaunchSignups() {
+    const base = currentCloudApiBase();
+    if (!base) throw new Error('cloud api unavailable');
+    const response = await fetch(`${String(base).replace(/\/$/, '')}/prelaunch/signups`, {
+      method: 'GET',
+      headers: actorRequestHeaders(),
+      credentials: 'include'
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload?.ok === false) throw new Error(payload?.error || `prelaunch signups request failed (${response.status})`);
+    return Array.isArray(payload.signups) ? payload.signups : [];
+  }
+
   function postProjectInteraction(path, options = {}) {
     const actorId = currentActorId();
     if (!actorId) return;
@@ -3645,6 +3658,7 @@
     upsertCloudUser,
     restoreServerSession,
     syncCloudState,
+    listPrelaunchSignups,
     currentPlan,
     setCurrentUserPlan,
     listPlanRequests,
