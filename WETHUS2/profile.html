@@ -569,7 +569,6 @@
                   <strong style="display:block;font-size:.92rem;">이용 플랜</strong>
                   <p class="meta" style="margin:4px 0 0;">현재 ${esc(currentPlanLabel)} 플랜을 사용 중입니다. 필요 시 업그레이드 요청을 보낼 수 있습니다.</p>
                 </div>
-                <a href="pricing.html" class="btn btn--secondary" style="padding:6px 10px;">플랜 보기</a>
               </div>
             </div>
           `;
@@ -591,7 +590,6 @@
                 <p class="meta" style="margin:4px 0 0;">${esc(summary)}</p>
                 <p class="meta" style="margin:6px 0 0;">최근 요청: ${esc(new Date(latestPlanRequest.createdAt).toLocaleString('ko-KR'))}</p>
               </div>
-              <a href="pricing.html" class="btn btn--secondary" style="padding:6px 10px;">요청 내역</a>
             </div>
           </div>
         `;
@@ -630,9 +628,8 @@
           <div class="profile-stats" style="margin-top:10px;">
             <span><strong>${WETHUS.myProjects().length}</strong> 프로젝트</span>
             <span><strong>${WETHUS.listProjects().filter(p => p.founderId === (u ? u.id : 'dev-temp')).length}</strong> 등록</span>
-            <span><strong>${esc(currentPlanLabel)}</strong> 플랜</span>
           </div>
-          <div id="profilePlanStatus">${planStatusMarkup}</div>
+          <div id="profilePlanStatus"></div>
         </div>
       `;
 
@@ -1068,7 +1065,6 @@
                 <p class="profile-headline">${esc(user.headline || '프로젝트로 실력을 증명하는 학생 창업자')}</p>
                 <div class="profile-identity-meta">
                   ${schoolAndAge.map((item) => `<span class="profile-identity-chip">${esc(item)}</span>`).join('')}
-                  <span class="profile-identity-chip">현재 플랜 ${esc(currentPlanLabel)}</span>
                   <span class="profile-identity-chip">검증 링크 ${esc(String(profileLinks.length || 0))}개</span>
                   ${featuredProject?.category ? `<span class="profile-identity-chip">${esc(featuredProject.category)}</span>` : ''}
                 </div>
@@ -1125,7 +1121,6 @@
                   <div class="profile-stats profile-stats--portfolio">
                     <span><strong>${WETHUS.myProjects().length}</strong> 프로젝트</span>
                     <span><strong>${WETHUS.listProjects().filter(p => p.founderId === (u ? u.id : 'dev-temp')).length}</strong> 등록</span>
-                    <span><strong>${esc(currentPlanLabel)}</strong> 플랜</span>
                   </div>
                   <p class="meta" style="margin:10px 0 0;">${esc(schoolAndAge.join(' · '))}</p>
                 </div>
@@ -1155,7 +1150,7 @@
                 ${lookingForMarkup}
               </section>
             </div>
-            <div id="profilePlanStatus">${planStatusMarkup}</div>
+            <div id="profilePlanStatus"></div>
             <section class="profile-portfolio-card">
               <h3>프로젝트 아카이브</h3>
               <p class="profile-section-note">홈과 탐색에 보이는 프로젝트를 한 번에 보는 영역입니다.</p>
@@ -1884,14 +1879,13 @@
                   <p class="meta" style="margin:4px 0 0;">${esc(summary)}</p>
                   <p class="meta" style="margin:6px 0 0;">최근 요청: ${esc(new Date(latest.createdAt).toLocaleString('ko-KR'))}</p>
                 </div>
-                <a href="pricing.html" class="btn btn--secondary" style="padding:6px 10px;">요청 내역</a>
               </div>
             </div>
           `;
         } catch (_) {}
       }
 
-      refreshRemotePlanStatus();
+      // Pricing is intentionally hidden until launch.
 
       if (u) {
         const profileForm = document.getElementById('profileForm');

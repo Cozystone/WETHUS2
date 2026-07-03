@@ -3381,14 +3381,10 @@
       const avatarHtml = u.profileImage
         ? `<img src="${u.profileImage}" alt="avatar" class="profile-chip-avatar"/>`
         : `<span class="profile-chip-avatar-fallback">${(u.name || 'U').slice(0, 1)}</span>`;
-      const plan = (u.plan || 'free').toLowerCase();
-      const planClass = plan === 'premium'
-        ? 'profile-chip-btn--premium'
-        : ((plan === 'pro' || plan === 'master') ? 'profile-chip-btn--master' : '');
       chipWrap.innerHTML = `
-        <button class="profile-chip-btn ${planClass}" type="button" aria-label="프로필 메뉴">
+        <button class="profile-chip-btn" type="button" aria-label="프로필 메뉴">
           ${avatarHtml}
-          <span class="profile-chip-texts"><strong>${u.name || '사용자'}</strong><em>${(u.plan || 'free').toUpperCase()}</em></span>
+          <span class="profile-chip-texts"><strong>${u.name || '사용자'}</strong></span>
         </button>
         <div class="notify-dropdown profile-chip-dropdown" style="display:none;">
           <a class="notify-item liquid-metal-btn" href="profile.html"><strong>프로필</strong><p>내 프로필 보기 및 수정</p></a>
