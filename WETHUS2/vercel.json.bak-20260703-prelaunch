@@ -3,10 +3,6 @@
     {
       "src": "^/$",
       "dest": "/index.html"
-    },
-    {
-      "src": "^/prelaunch/?$",
-      "dest": "/prelaunch.html"
     }
   ]
 }

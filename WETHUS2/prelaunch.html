@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PKF58GJC08"></script>
+  <script>
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);}
+   gtag('js', new Date());
+   gtag('config', 'G-PKF58GJC08');
+  </script>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WETHUS 사전예약 | 학생 창업, 아이디어에서 실행까지</title>
+  <meta name="description" content="학생들이 창업 프로젝트를 시작하고 팀을 꾸려 실행까지 이어갈 수 있게 돕는 학생 창업 플랫폼, WETHUS. 지금 사전예약하고 얼리 액세스를 받아보세요." />
+  <meta property="og:title" content="WETHUS 사전예약 | 학생 창업, 아이디어에서 실행까지" />
+  <meta property="og:description" content="아이디어는 있는데 같이할 사람이 없다면. 팀빌딩부터 실행, 멘토 연결까지 — WETHUS가 시작을 돕습니다." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://wethus.co.kr/prelaunch" />
+  <link rel="icon" href="favicon.ico" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" crossorigin="anonymous" />
+  <style>
+    :root {
+      --bg: #050505;
+      --surface: #101010;
+      --surface-alt: #181818;
+      --border: #2a2a2a;
+      --text-primary: #f5f5f5;
+      --text-secondary: #a3a3a3;
+      --orange: #ff6a00;
+      --orange-bright: #ff7e1a;
+      --orange-deep: #d94f00;
+      --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --container: 1080px;
+      --glass-bg: rgba(255, 255, 255, 0.06);
+      --glass-border: rgba(255, 255, 255, 0.16);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(1200px 520px at 82% -12%, rgba(255,106,0,.14), transparent 62%),
+        radial-gradient(900px 460px at 8% 4%, rgba(255,126,26,.07), transparent 58%),
+        var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      word-break: keep-all;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    .container { width: min(92vw, var(--container)); margin: 0 auto; padding: 0 20px; }
+
+    /* Nav */
+    .nav {
+      position: sticky; top: 0; z-index: 100;
+      background: linear-gradient(180deg, rgba(12,12,14,.88), rgba(10,10,12,.78));
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(12px) saturate(110%);
+      -webkit-backdrop-filter: blur(12px) saturate(110%);
+    }
+    .nav-inner {
+      width: min(92vw, var(--container)); margin: 0 auto; padding: 14px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .wordmark { font-size: 1.2rem; font-weight: 900; letter-spacing: .02em; }
+    .wordmark em { font-style: normal; color: var(--orange); }
+    .nav-cta {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: .82rem; font-weight: 800;
+      color: #0b0b0b; background: linear-gradient(135deg, var(--orange-bright), var(--orange));
+      border-radius: 999px; padding: 8px 18px;
+      box-shadow: 0 8px 20px rgba(255,106,0,.32);
+      transition: transform .18s ease, box-shadow .2s ease;
+    }
+    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(255,106,0,.42); }
+
+    /* Hero */
+    .hero { padding: 88px 0 64px; text-align: center; position: relative; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: .76rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+      color: var(--orange-bright);
+      border: 1px solid rgba(255,106,0,.45);
+      background: rgba(255,106,0,.10);
+      border-radius: 999px; padding: 7px 16px;
+      margin-bottom: 26px;
+    }
+    .hero-badge .dot {
+      width: 7px; height: 7px; border-radius: 999px; background: var(--orange);
+      box-shadow: 0 0 0 0 rgba(255,106,0,.6); animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255,106,0,.55); }
+      70% { box-shadow: 0 0 0 9px rgba(255,106,0,0); }
+      100% { box-shadow: 0 0 0 0 rgba(255,106,0,0); }
+    }
+    .hero h1 {
+      margin: 0 0 18px; font-size: clamp(2rem, 5.4vw, 3.4rem);
+      font-weight: 900; line-height: 1.22; letter-spacing: -0.01em;
+    }
+    .hero h1 .accent { color: var(--orange); }
+    .hero-sub {
+      margin: 0 auto 34px; max-width: 640px;
+      color: var(--text-secondary); font-size: clamp(.98rem, 2.4vw, 1.12rem);
+    }
+    .hero-cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border-radius: 14px; padding: 14px 30px; font-size: .96rem; font-weight: 800;
+      cursor: pointer; border: 0; font-family: inherit;
+      transition: transform .18s ease, box-shadow .2s ease, filter .2s ease;
+    }
+    .btn--primary {
+      color: #0b0b0b; background: linear-gradient(135deg, var(--orange-bright), var(--orange));
+      box-shadow: 0 10px 26px rgba(255,106,0,.36);
+    }
+    .btn--primary:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(255,106,0,.46); }
+    .btn--ghost {
+      color: var(--text-primary); background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(10px);
+    }
+    .btn--ghost:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.34); }
+    .hero-chips { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .chip {
+      font-size: .78rem; font-weight: 700; color: var(--text-secondary);
+      border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px;
+      background: rgba(255,255,255,.03);
+    }
+
+    /* Ribbon */
+    .ribbon { overflow: hidden; border-top: 1px solid rgba(255,106,0,.28); border-bottom: 1px solid rgba(255,106,0,.28); padding: 10px 0; background: rgba(255,106,0,.05); }
+    .ribbon-track { display: flex; gap: 42px; white-space: nowrap; animation: marquee 26s linear infinite; width: max-content; }
+    .ribbon-track span { font-size: .74rem; font-weight: 800; letter-spacing: .22em; color: rgba(255,126,26,.85); text-transform: uppercase; }
+    @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* Sections */
+    .section { padding: 84px 0; }
+    .section-kicker {
+      margin: 0 0 12px; font-size: .78rem; font-weight: 800; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--orange);
+    }
+    .section-title { margin: 0 0 16px; font-size: clamp(1.5rem, 3.6vw, 2.2rem); font-weight: 900; line-height: 1.3; }
+    .section-lead { margin: 0 0 40px; max-width: 660px; color: var(--text-secondary); font-size: .98rem; }
+
+    /* Problem quotes */
+    .quote-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 30px; }
+    .quote-card {
+      border: 1px solid var(--border); border-radius: 18px; padding: 22px 20px;
+      background: linear-gradient(180deg, var(--surface), var(--surface-alt));
+      font-size: .95rem; font-weight: 700; line-height: 1.55;
+      position: relative;
+    }
+    .quote-card::before { content: "“"; display: block; font-size: 1.8rem; line-height: 1; color: var(--orange); margin-bottom: 8px; font-weight: 900; }
+    .problem-frame {
+      border-left: 3px solid var(--orange); padding: 6px 0 6px 20px;
+      color: var(--text-secondary); font-size: .97rem; max-width: 720px;
+    }
+    .problem-frame strong { color: var(--text-primary); }
+
+    /* Feature cards */
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .feature-card {
+      border: 1px solid var(--border); border-radius: 20px; padding: 26px 22px;
+      background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
+      transition: transform .2s ease, border-color .2s ease;
+    }
+    .feature-card:hover { transform: translateY(-4px); border-color: rgba(255,106,0,.5); }
+    .feature-icon {
+      width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
+      background: rgba(255,106,0,.14); border: 1px solid rgba(255,106,0,.4);
+      font-size: 1.2rem; margin-bottom: 16px;
+    }
+    .feature-card h3 { margin: 0 0 10px; font-size: 1.04rem; font-weight: 800; }
+    .feature-card p { margin: 0; color: var(--text-secondary); font-size: .88rem; }
+
+    /* Roadmap */
+    .roadmap { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+    .road-step {
+      border: 1px solid var(--border); border-radius: 20px; padding: 28px 24px;
+      background: linear-gradient(180deg, var(--surface), var(--surface-alt));
+      position: relative; overflow: hidden;
+    }
+    .road-step::after {
+      content: attr(data-step); position: absolute; right: 14px; top: 6px;
+      font-size: 3.4rem; font-weight: 900; color: rgba(255,106,0,.12); line-height: 1;
+    }
+    .road-step .step-tag {
+      display: inline-block; font-size: .7rem; font-weight: 800; letter-spacing: .12em;
+      color: var(--orange-bright); text-transform: uppercase; margin-bottom: 12px;
+    }
+    .road-step h3 { margin: 0 0 10px; font-size: 1.08rem; font-weight: 800; }
+    .road-step p { margin: 0; color: var(--text-secondary); font-size: .88rem; }
+    .track-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .track-chips .chip { font-size: .72rem; padding: 4px 12px; border-color: rgba(255,106,0,.4); color: var(--orange-bright); background: rgba(255,106,0,.07); }
+
+    /* Story */
+    .story {
+      border: 1px solid rgba(255,106,0,.3); border-radius: 24px;
+      background:
+        radial-gradient(600px 260px at 90% -20%, rgba(255,106,0,.14), transparent 60%),
+        linear-gradient(180deg, var(--surface), var(--surface-alt));
+      padding: clamp(28px, 5vw, 52px);
+    }
+    .story p { color: var(--text-secondary); font-size: .97rem; margin: 0 0 16px; max-width: 760px; }
+    .story p strong { color: var(--text-primary); }
+    .story .sign { color: var(--text-primary); font-weight: 800; font-size: .9rem; margin: 0; }
+
+    /* Form */
+    .reserve { padding: 90px 0 110px; }
+    .reserve-wrap {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+      border: 1px solid var(--border); border-radius: 28px;
+      background:
+        radial-gradient(700px 320px at -10% -20%, rgba(255,106,0,.12), transparent 60%),
+        linear-gradient(180deg, var(--surface), #0c0c0c);
+      padding: clamp(28px, 5vw, 56px);
+    }
+    .perk-list { list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 14px; }
+    .perk-list li { display: flex; gap: 12px; align-items: flex-start; color: var(--text-secondary); font-size: .92rem; }
+    .perk-list .tick {
+      flex: none; width: 22px; height: 22px; border-radius: 999px; display: grid; place-items: center;
+      background: rgba(255,106,0,.16); border: 1px solid rgba(255,106,0,.5);
+      color: var(--orange-bright); font-size: .7rem; font-weight: 900; margin-top: 2px;
+    }
+    .perk-list strong { color: var(--text-primary); }
+
+    .form { display: grid; gap: 14px; }
+    .field label { display: block; font-size: .8rem; font-weight: 800; margin-bottom: 6px; color: var(--text-primary); }
+    .field label .req { color: var(--orange); }
+    .field input[type="text"], .field input[type="email"], .field select {
+      width: 100%; border-radius: 12px; border: 1px solid var(--border);
+      background: rgba(255,255,255,.04); color: var(--text-primary);
+      padding: 13px 14px; font-size: .92rem; font-family: inherit;
+      outline: none; transition: border-color .18s ease, box-shadow .18s ease;
+      appearance: none;
+    }
+    .field select { background-image: linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%), linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%); background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px; background-repeat: no-repeat; }
+    .field select option { background: #161616; color: var(--text-primary); }
+    .field input:focus, .field select:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,106,0,.18); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .consent { display: flex; gap: 10px; align-items: flex-start; font-size: .78rem; color: var(--text-secondary); }
+    .consent input { margin-top: 3px; accent-color: var(--orange); }
+    .form .btn--primary { width: 100%; padding: 16px; font-size: 1rem; margin-top: 4px; }
+    .form-note { font-size: .74rem; color: #777; margin: 0; text-align: center; }
+    .form-msg { display: none; border-radius: 12px; padding: 12px 14px; font-size: .86rem; font-weight: 700; }
+    .form-msg--error { background: rgba(255,72,72,.12); border: 1px solid rgba(255,72,72,.4); color: #ff9d9d; }
+    .form-msg--info { background: rgba(255,106,0,.1); border: 1px solid rgba(255,106,0,.4); color: var(--orange-bright); }
+
+    .done { display: none; text-align: center; padding: 30px 10px; }
+    .done .done-icon {
+      width: 68px; height: 68px; margin: 0 auto 20px; border-radius: 999px;
+      display: grid; place-items: center; font-size: 1.8rem;
+      background: rgba(255,106,0,.15); border: 1px solid rgba(255,106,0,.55);
+      color: var(--orange-bright);
+    }
+    .done h3 { margin: 0 0 10px; font-size: 1.3rem; font-weight: 900; }
+    .done p { margin: 0; color: var(--text-secondary); font-size: .92rem; }
+
+    /* Footer */
+    footer { border-top: 1px solid var(--border); padding: 34px 0 48px; }
+    .footer-inner { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+    footer p { margin: 0; color: #666; font-size: .78rem; }
+    .footer-links { display: flex; gap: 16px; font-size: .78rem; color: var(--text-secondary); }
+
+    .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease, transform .7s ease; }
+    .reveal.on { opacity: 1; transform: none; }
+
+    @media (max-width: 860px) {
+      .reserve-wrap { grid-template-columns: 1fr; gap: 30px; }
+      .section { padding: 60px 0; }
+      .hero { padding: 60px 0 48px; }
+    }
+    @media (max-width: 520px) {
+      .field-row { grid-template-columns: 1fr; }
+      .hero-cta-row .btn { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ribbon-track { animation: none; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="wordmark">WETHUS<em>.</em></a>
+      <a href="#reserve" class="nav-cta">사전예약하기</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <span class="hero-badge"><span class="dot"></span>2026 PRE-LAUNCH · 사전예약 오픈</span>
+        <h1>학생 창업,<br/>아이디어에서 <span class="accent">실행</span>까지.</h1>
+        <p class="hero-sub">학생들이 창업 프로젝트를 시작하고, 팀을 꾸리고, 실행까지 이어갈 수 있게 돕는 학생 창업 플랫폼 — WETHUS가 곧 문을 엽니다.</p>
+        <div class="hero-cta-row">
+          <a href="#reserve" class="btn btn--primary">지금 사전예약하기</a>
+          <a href="#why" class="btn btn--ghost">WETHUS 알아보기</a>
+        </div>
+        <div class="hero-chips">
+          <span class="chip">팀빌딩</span>
+          <span class="chip">포트폴리오 신뢰 신호</span>
+          <span class="chip">프로젝트 허브</span>
+          <span class="chip">AI 실행 보조</span>
+          <span class="chip">멘토 연결</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="ribbon" aria-hidden="true">
+      <div class="ribbon-track">
+        <span>WETHUS · STUDENT STARTUP EXECUTION · BUILD TEAMS · EXECUTE IDEAS ·</span>
+        <span>WETHUS · STUDENT STARTUP EXECUTION · BUILD TEAMS · EXECUTE IDEAS ·</span>
+        <span>WETHUS · STUDENT STARTUP EXECUTION · BUILD TEAMS · EXECUTE IDEAS ·</span>
+        <span>WETHUS · STUDENT STARTUP EXECUTION · BUILD TEAMS · EXECUTE IDEAS ·</span>
+      </div>
+    </div>
+
+    <section class="section" id="why">
+      <div class="container">
+        <p class="section-kicker reveal">The Problem</p>
+        <h2 class="section-title reveal">학생 창업이 멈추는 진짜 이유는<br/>아이디어가 아닙니다.</h2>
+        <p class="section-lead reveal">창업 대회, 커뮤니티, 학생창업팀에서 만난 학생들은 모두 같은 지점에서 막혔습니다.</p>
+        <div class="quote-grid">
+          <div class="quote-card reveal">아이디어는 있는데, 같이할 사람을 못 찾겠어요.</div>
+          <div class="quote-card reveal">개발자나 디자이너를 어디서 구해야 할지 모르겠어요.</div>
+          <div class="quote-card reveal">만나도 서로의 실력과 역할 적합성을 판단하기 어려워요.</div>
+          <div class="quote-card reveal">팀이 꾸려져도 실행 구조가 없어 금방 멈춰요.</div>
+        </div>
+        <p class="problem-frame reveal">이건 단순한 네트워킹 부족이 아니라, <strong>학생 창업을 위한 생태계와 실행 인프라의 부족</strong>입니다. 학교 친구, 동아리, 오픈채팅 같은 느슨한 연결만으로는 창업 프로젝트에 적합한 팀을 안정적으로 만들 수 없습니다.</p>
+      </div>
+    </section>
+
+    <section class="section" id="solution">
+      <div class="container">
+        <p class="section-kicker reveal">The Solution</p>
+        <h2 class="section-title reveal">WETHUS는 시작부터 실행까지<br/>전 과정을 연결합니다.</h2>
+        <div class="feature-grid">
+          <div class="feature-card reveal">
+            <div class="feature-icon">🤝</div>
+            <h3>맞춤형 팀 매칭</h3>
+            <p>관심 분야, 보유 역량, 희망 역할 기반으로 프로젝트에 맞는 팀원을 탐색하고 추천받습니다. 개발·디자인·마케팅·기획, 원하는 역할로 합류하세요.</p>
+          </div>
+          <div class="feature-card reveal">
+            <div class="feature-icon">🛡️</div>
+            <h3>포트폴리오 신뢰 신호</h3>
+            <p>자기소개 한 줄이 아니라 포트폴리오, 역할 경험, 이전 프로젝트 활동으로 서로의 팀 적합성을 판단할 수 있습니다.</p>
+          </div>
+          <div class="feature-card reveal">
+            <div class="feature-icon">🚀</div>
+            <h3>프로젝트 허브 + AI 보조</h3>
+            <p>프로젝트 단계, 역할, 진행 상황, 초기 실행 계획을 구조화합니다. AI가 다음 액션 제안까지 도와 팀이 '만남'에서 '실행'으로 넘어갑니다.</p>
+          </div>
+          <div class="feature-card reveal">
+            <div class="feature-icon">🎓</div>
+            <h3>멘토링 &amp; 창업 아카이브</h3>
+            <p>창업 경험이 있는 선배·전문가와 연결되고, 성공·실패 사례와 실질적인 조언이 담긴 자료 아카이브로 시행착오를 줄입니다.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="roadmap">
+      <div class="container">
+        <p class="section-kicker reveal">Roadmap</p>
+        <h2 class="section-title reveal">이렇게 단계적으로 실현합니다.</h2>
+        <div class="roadmap">
+          <div class="road-step reveal" data-step="01">
+            <span class="step-tag">Step 01</span>
+            <h3>프로젝트 등록 &amp; 팀빌딩</h3>
+            <p>창업 아이디어를 등록하고 필요한 역할을 설정하면, 다른 학생들이 탐색 후 합류합니다. 신뢰 신호와 함께.</p>
+          </div>
+          <div class="road-step reveal" data-step="02">
+            <span class="step-tag">Step 02</span>
+            <h3>초기 실행 지원</h3>
+            <p>프로젝트 허브에서 팀이 실제로 움직입니다. AI 보조가 프로젝트 구조화와 역할 정리를 돕고, 필요할 때 멘토와 연결됩니다.</p>
+          </div>
+          <div class="road-step reveal" data-step="03">
+            <span class="step-tag">Step 03</span>
+            <h3>트랙 기반 생태계 확장</h3>
+            <p>학생 창업팀이 성장하며 더 넓은 협업 환경으로 이동하고, 장기적으로 학교·대학·기업·공공영역과 연결됩니다.</p>
+            <div class="track-chips">
+              <span class="chip">Youth 트랙</span>
+              <span class="chip">Bridge 트랙</span>
+              <span class="chip">Open 트랙</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="story">
+      <div class="container">
+        <div class="story reveal">
+          <p class="section-kicker">Founder's Note</p>
+          <h2 class="section-title">"무엇을 만들까"보다<br/>"누구와 시작할까"에서 막혔습니다.</h2>
+          <p>2025년, '문학인을 위한 SNS 플랫폼 시나브로'를 기획하고 팀을 모아 <strong>학생창업유망팀300+</strong>에 진출하는 과정에서 직접 겪었습니다. 같이할 팀원을 찾기 어렵고, 만나도 역량을 판단하기 어렵고, 팀이 꾸려져도 초반 실행 구조가 없어 흐지부지되는 일이 반복됐습니다.</p>
+          <p>좋은 아이디어를 가진 학생이 혼자 멈추지 않도록 — 팀을 만들고, 실행하고, 더 큰 생태계로 연결되도록. 그래서 WETHUS를 만들고 있습니다.</p>
+          <p class="sign">— WETHUS 팀 드림</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="reserve" id="reserve">
+      <div class="container">
+        <div class="reserve-wrap reveal">
+          <div>
+            <p class="section-kicker">Pre-Launch Reservation</p>
+            <h2 class="section-title">사전예약하고<br/>가장 먼저 시작하세요.</h2>
+            <ul class="perk-list">
+              <li><span class="tick">✓</span><span><strong>얼리 액세스</strong> — 정식 오픈 전, 가장 먼저 초대해 드립니다.</span></li>
+              <li><span class="tick">✓</span><span><strong>첫 팀빌딩 매칭 우선권</strong> — 초기 프로젝트 등록과 팀원 탐색에서 우선 노출됩니다.</span></li>
+              <li><span class="tick">✓</span><span><strong>창업 아카이브 우선 제공</strong> — 창업 지식·사례·조언 자료를 먼저 받아보세요.</span></li>
+              <li><span class="tick">✓</span><span><strong>오픈 소식 알림</strong> — 출시와 이벤트 소식을 이메일로 알려드립니다.</span></li>
+            </ul>
+          </div>
+          <div>
+            <form class="form" id="reserveForm" novalidate>
+              <div class="field">
+                <label for="email">이메일 <span class="req">*</span></label>
+                <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email" />
+              </div>
+              <div class="field">
+                <label for="name">이름 또는 닉네임</label>
+                <input type="text" id="name" name="name" placeholder="어떻게 불러드릴까요?" maxlength="60" autocomplete="name" />
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="track">소속</label>
+                  <select id="track" name="track">
+                    <option value="">선택해 주세요</option>
+                    <option value="middle">중학생</option>
+                    <option value="high">고등학생</option>
+                    <option value="university">대학생</option>
+                    <option value="etc">기타</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="role">희망 역할</label>
+                  <select id="role" name="role">
+                    <option value="">선택해 주세요</option>
+                    <option value="founder">창업가 · 기획</option>
+                    <option value="dev">개발</option>
+                    <option value="design">디자인</option>
+                    <option value="marketing">마케팅</option>
+                    <option value="etc">기타</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label for="interest">관심 분야 (선택)</label>
+                <input type="text" id="interest" name="interest" placeholder="예: 교육, AI 서비스, 커머스, 콘텐츠…" maxlength="200" />
+              </div>
+              <label class="consent">
+                <input type="checkbox" id="consent" required />
+                <span>사전예약 안내를 위한 이메일 수집·이용에 동의합니다. 수집 항목은 오픈 알림 발송에만 사용되며, 오픈 후 지체 없이 파기됩니다. <a href="privacy.html" style="text-decoration: underline;">개인정보처리방침</a></span>
+              </label>
+              <div class="form-msg" id="formMsg" role="alert"></div>
+              <button type="submit" class="btn btn--primary" id="submitBtn">사전예약 완료하기</button>
+              <p class="form-note">스팸은 보내지 않습니다. 오픈 소식만 딱 한 번.</p>
+            </form>
+            <div class="done" id="doneBox">
+              <div class="done-icon">✓</div>
+              <h3>사전예약이 완료되었습니다!</h3>
+              <p id="doneMsg">WETHUS가 문을 열면 가장 먼저 이메일로 알려드릴게요.<br/>함께 시작할 날을 기다리겠습니다. 🚀</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <p>© 2026 WETHUS. 모든 학생 창업 프로젝트, 여기서 시작된다.</p>
+      <div class="footer-links">
+        <a href="index.html">홈</a>
+        <a href="terms.html">이용약관</a>
+        <a href="privacy.html">개인정보처리방침</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var API_BASES = [];
+      if (typeof window !== 'undefined' && window.WETHUS_API_BASE) API_BASES.push(window.WETHUS_API_BASE);
+      API_BASES.push('https://wethus-api.onrender.com');
+
+      var form = document.getElementById('reserveForm');
+      var doneBox = document.getElementById('doneBox');
+      var doneMsg = document.getElementById('doneMsg');
+      var msgBox = document.getElementById('formMsg');
+      var submitBtn = document.getElementById('submitBtn');
+
+      function showMsg(text, kind) {
+        msgBox.textContent = text;
+        msgBox.className = 'form-msg form-msg--' + kind;
+        msgBox.style.display = 'block';
+      }
+      function hideMsg() { msgBox.style.display = 'none'; }
+
+      function showDone(text) {
+        form.style.display = 'none';
+        if (text) doneMsg.innerHTML = text;
+        doneBox.style.display = 'block';
+        try { gtag('event', 'prelaunch_signup'); } catch (e) {}
+      }
+
+      async function postSignup(payload) {
+        var lastError = null;
+        for (var i = 0; i < API_BASES.length; i++) {
+          try {
+            var res = await fetch(API_BASES[i] + '/prelaunch/signups', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            var data = await res.json().catch(function () { return {}; });
+            if (res.ok && data.ok) return data;
+            if (res.status === 400 || res.status === 429) {
+              throw Object.assign(new Error(data.error || '요청이 거절되었습니다.'), { fatal: true });
+            }
+            lastError = new Error(data.error || ('HTTP ' + res.status));
+          } catch (e) {
+            if (e && e.fatal) throw e;
+            lastError = e;
+          }
+        }
+        throw lastError || new Error('network error');
+      }
+
+      form.addEventListener('submit', async function (ev) {
+        ev.preventDefault();
+        hideMsg();
+
+        var email = String(document.getElementById('email').value || '').trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          showMsg('올바른 이메일 주소를 입력해 주세요.', 'error');
+          return;
+        }
+        if (!document.getElementById('consent').checked) {
+          showMsg('이메일 수집·이용 동의가 필요합니다.', 'error');
+          return;
+        }
+
+        var payload = {
+          email: email,
+          name: String(document.getElementById('name').value || '').trim(),
+          track: String(document.getElementById('track').value || ''),
+          role: String(document.getElementById('role').value || ''),
+          interest: String(document.getElementById('interest').value || '').trim(),
+          source: 'prelaunch-landing'
+        };
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = '접수 중…';
+
+        try {
+          var data = await postSignup(payload);
+          if (data.duplicate) {
+            showDone('이미 사전예약이 완료된 이메일입니다.<br/>오픈 소식을 꼭 전해드릴게요!');
+          } else {
+            showDone();
+          }
+        } catch (e) {
+          if (e && e.fatal) {
+            showMsg(e.message, 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = '사전예약 완료하기';
+            return;
+          }
+          // 서버 접수 실패 시 로컬에 대기열로 보관하고 안내
+          try {
+            var key = 'wethus_prelaunch_pending';
+            var pending = JSON.parse(localStorage.getItem(key) || '[]');
+            payload.queuedAt = new Date().toISOString();
+            pending.push(payload);
+            localStorage.setItem(key, JSON.stringify(pending));
+          } catch (err) {}
+          showMsg('서버 연결이 원활하지 않아요. 신청 내용은 이 브라우저에 임시 저장되었으며, 다음 방문 시 자동으로 다시 접수됩니다.', 'info');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '다시 시도하기';
+        }
+      });
+
+      // 이전에 실패해 로컬에 저장된 신청 재전송
+      (async function retryPending() {
+        var key = 'wethus_prelaunch_pending';
+        var pending;
+        try { pending = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) { return; }
+        if (!Array.isArray(pending) || !pending.length) return;
+        var remaining = [];
+        for (var i = 0; i < pending.length; i++) {
+          try { await postSignup(pending[i]); } catch (e) { if (!e || !e.fatal) remaining.push(pending[i]); }
+        }
+        try {
+          if (remaining.length) localStorage.setItem(key, JSON.stringify(remaining));
+          else localStorage.removeItem(key);
+        } catch (e) {}
+      })();
+
+      // 스크롤 리빌
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.isIntersecting) { en.target.classList.add('on'); observer.unobserve(en.target); }
+        });
+      }, { threshold: 0.12 });
+      document.querySelectorAll('.reveal').forEach(function (el) { observer.observe(el); });
+    })();
+  </script>
+</body>
+</html>
