@@ -2446,14 +2446,6 @@ a { color: inherit; text-decoration: none; }
   .profile-clean-link-row {
     justify-content: center;
   }
-  .profile-verify-strip {
-    grid-template-columns: 1fr;
-    width: 100%;
-    text-align: center;
-  }
-  .profile-verify-ready {
-    justify-content: center;
-  }
   .profile-clean-avatar {
     width: 104px;
     height: 104px;
@@ -2637,90 +2629,14 @@ a { color: inherit; text-decoration: none; }
   color: #fff;
   font-size: 1.05rem;
 }
-.profile-verify-strip {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px;
-  align-items: stretch;
-  width: min(680px, 100%);
-  border: 1px solid rgba(255,176,103,.18);
-  border-radius: 18px;
-  background:
-    linear-gradient(135deg, rgba(255,176,103,.13), rgba(255,255,255,.035)),
-    radial-gradient(circle at top left, rgba(255,106,0,.14), transparent 56%);
-  padding: 10px;
-}
-.profile-evidence-count {
-  min-width: 96px;
-  border-radius: 14px;
-  background: rgba(0,0,0,.22);
-  border: 1px solid rgba(255,255,255,.08);
-  display: grid;
-  place-items: center;
-  padding: 8px 10px;
-}
-.profile-evidence-count span {
-  color: rgba(255,255,255,.62);
-  font-size: .68rem;
-  font-weight: 900;
-  letter-spacing: .08em;
-}
-.profile-evidence-count strong {
-  color: #fff4e8;
-  font-size: 1.62rem;
-  line-height: 1;
-}
-.profile-evidence-count em {
-  color: #ffb067;
-  font-size: .72rem;
-  font-style: normal;
-  font-weight: 900;
-}
-.profile-verify-body {
-  min-width: 0;
-  display: grid;
-  align-content: center;
-  gap: 7px;
-}
-.profile-verify-ready {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.profile-verify-ready span {
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 999px;
-  background: rgba(255,255,255,.07);
-  color: #fff1df;
-  font-size: .76rem;
-  font-weight: 900;
-  padding: 5px 8px;
-}
-.profile-verify-body p {
-  margin: 0;
-  color: rgba(255,255,255,.64);
-  font-size: .8rem;
-  line-height: 1.4;
-}
 @media (max-width: 760px) {
   .profile-clean-head {
     grid-template-columns: 1fr;
     justify-items: center;
     text-align: center;
   }
-  .profile-clean-info,
-  .profile-verify-strip {
+  .profile-clean-info {
     width: 100%;
-  }
-  .profile-verify-strip {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-  .profile-evidence-count {
-    min-width: 0;
-  }
-  .profile-verify-ready {
-    justify-content: center;
   }
 }
 .profile-clean-headline,

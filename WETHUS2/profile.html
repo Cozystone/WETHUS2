@@ -1718,10 +1718,6 @@
           .map((line) => line.replace(/^[•\-]\s*/, '').trim())
           .filter(Boolean)
           .slice(0, 3);
-        const proofSummary = WETHUS.getProfileProofSummary ? WETHUS.getProfileProofSummary(user) : null;
-        const evidenceSignals = Array.isArray(proofSummary?.evidenceSignals) ? proofSummary.evidenceSignals : [];
-        const readySignals = evidenceSignals.filter((signal) => signal.ready);
-        const suggestedSignals = evidenceSignals.filter((signal) => !signal.ready).slice(0, 3);
         const tags = WETHUS.normalizeInterestTags ? WETHUS.normalizeInterestTags(user.interestTags || []) : (user.interestTags || []);
         const likesReceived = ownProjects.reduce((sum, project) => sum + Number(project?.likes || 0), 0);
         const commentsReceived = ownProjects.reduce((sum, project) => sum + (Array.isArray(project?.comments) ? project.comments.length : 0), 0);
@@ -1762,23 +1758,6 @@
                   <span><strong>${esc(String(ownProjects.length))}</strong> 프로젝트</span>
                   <span><strong>${esc(String(likesReceived + commentsReceived))}</strong> 반응</span>
                   <span><strong>${esc(String(links.length))}</strong> 링크</span>
-                </div>
-                <div class="profile-verify-strip" aria-label="포트폴리오 근거">
-                  <div class="profile-evidence-count">
-                    <span>확인 가능한 흔적</span>
-                    <strong>${esc(String(proofSummary?.evidenceCount ?? 0))}</strong>
-                    <em>${esc(String(proofSummary?.evidenceTotal ?? (evidenceSignals.length || 0)))}개 항목 중</em>
-                  </div>
-                  <div class="profile-verify-body">
-                    <div class="profile-verify-ready">
-                      ${readySignals.length
-                        ? readySignals.slice(0, 4).map((signal) => `<span>${esc(signal.label)}</span>`).join('')
-                        : '<span>아직 공개된 근거 없음</span>'}
-                    </div>
-                    <p>${suggestedSignals.length
-                      ? `프로필에 더하면 좋은 것: ${esc(suggestedSignals.map((signal) => signal.label).join(' · '))}`
-                      : '프로젝트, 링크, 실행 근거가 자연스럽게 연결되어 있습니다.'}</p>
-                  </div>
                 </div>
                 <p class="profile-clean-headline">${esc(user.headline || featuredProject?.title || '학생 창업 프로젝트를 실행 중입니다.')}</p>
                 <p class="profile-clean-bio">${esc(user.bio || proofLines[0] || '소개와 실행 근거를 추가하면 프로필이 더 선명해집니다.')}</p>
