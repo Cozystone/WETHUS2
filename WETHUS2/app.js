@@ -1651,6 +1651,19 @@
     return fetchAccountEndpoint('/me/data-export');
   }
 
+  async function listPrelaunchSignups() {
+    const base = currentCloudApiBase();
+    if (!base) throw new Error('cloud api unavailable');
+    const response = await fetch(`${String(base).replace(/\/$/, '')}/prelaunch/signups`, {
+      method: 'GET',
+      headers: actorRequestHeaders(),
+      credentials: 'include'
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload?.ok === false) throw new Error(payload?.error || `prelaunch signups request failed (${response.status})`);
+    return Array.isArray(payload.signups) ? payload.signups : [];
+  }
+
   async function deleteCurrentAccount(confirmText = '') {
     const payload = await fetchAccountEndpoint('/me/account', {
       method: 'DELETE',
@@ -3682,6 +3695,7 @@
     restoreServerSession,
     syncCloudState,
     exportAccountData,
+    listPrelaunchSignups,
     deleteCurrentAccount,
     currentPlan,
     setCurrentUserPlan,
