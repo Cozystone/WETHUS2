@@ -421,7 +421,7 @@
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 4500);
         try {
-          const res = await fetch(endpoint, { method: 'GET', signal: controller.signal });
+          const res = await fetch(endpoint, { method: 'GET', credentials: 'include', signal: controller.signal });
           const data = await res.json().catch(() => ({}));
           clearTimeout(timeout);
           if (!res.ok) throw new Error(data?.error || `요청 실패 (${res.status})`);
@@ -445,6 +445,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body || {}),
+            credentials: 'include',
             signal: controller.signal
           });
           const data = await res.json().catch(() => ({}));
