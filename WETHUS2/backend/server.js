@@ -152,6 +152,8 @@ const SMTP_SECURE = String(process.env.SMTP_SECURE || 'false').toLowerCase() ===
 const SMTP_USER = String(process.env.SMTP_USER || '').trim();
 const SMTP_PASS = String(process.env.SMTP_PASS || '');
 const SMTP_FROM = String(process.env.SMTP_FROM || SMTP_USER || '').trim();
+const RESEND_API_KEY = String(process.env.RESEND_API_KEY || '').trim();
+const RESEND_FROM = String(process.env.RESEND_FROM || SMTP_FROM || 'WETHUS <onboarding@resend.dev>').trim();
 const PRELAUNCH_NOTIFY_EMAIL = String(process.env.PRELAUNCH_NOTIFY_EMAIL || ADMIN_EMAIL_RAW || '').trim();
 const WEBHOOK_EVENT_TYPE_MAX = 80;
 const WEBHOOK_ITEM_FIELD_MAX = 240;
@@ -923,7 +925,7 @@ function getPrelaunchMailer() {
   return prelaunchMailer;
 }
 
-async function notifyPrelaunchSignup(signup, count) {
+async function notifyPrelaunchSignupViaSmtpLegacy(signup, count) {
   const mailer = getPrelaunchMailer();
   if (!mailer) return { ok: false, skipped: true };
   const appUrl = PUBLIC_APP_URL.replace(/\/$/, '');
@@ -963,6 +965,84 @@ async function notifyPrelaunchSignup(signup, count) {
     `
   });
   return { ok: true };
+}
+
+function prelaunchSignupEmailContent(signup, count) {
+  const appUrl = PUBLIC_APP_URL.replace(/\/$/, '');
+  const adminUrl = `${appUrl}/admin.html`;
+  const subject = `[WETHUS] New prelaunch signup: ${signup.email}`;
+  const lines = [
+    'A new WETHUS prelaunch signup was submitted.',
+    '',
+    `Email: ${signup.email}`,
+    `Name: ${signup.name || '-'}`,
+    `Track: ${signup.track || '-'}`,
+    `Role: ${signup.role || '-'}`,
+    `Interest: ${signup.interest || '-'}`,
+    `Source: ${signup.source || '-'}`,
+    `Submitted at: ${signup.createdAt}`,
+    `Total prelaunch signups: ${count}`,
+    '',
+    `Admin page: ${adminUrl}`
+  ];
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.55;color:#111;">
+      <h2>A new WETHUS prelaunch signup was submitted.</h2>
+      <p><strong>Email:</strong> ${escapeHtml(signup.email)}</p>
+      <p><strong>Name:</strong> ${escapeHtml(signup.name || '-')}</p>
+      <p><strong>Track:</strong> ${escapeHtml(signup.track || '-')}</p>
+      <p><strong>Role:</strong> ${escapeHtml(signup.role || '-')}</p>
+      <p><strong>Interest:</strong> ${escapeHtml(signup.interest || '-')}</p>
+      <p><strong>Source:</strong> ${escapeHtml(signup.source || '-')}</p>
+      <p><strong>Submitted at:</strong> ${escapeHtml(signup.createdAt)}</p>
+      <p><strong>Total prelaunch signups:</strong> ${Number(count) || 0}</p>
+      <p><a href="${escapeHtml(adminUrl)}">Open admin page</a></p>
+    </div>
+  `;
+  return { subject, text: lines.join('\n'), html };
+}
+
+async function sendPrelaunchSignupViaResend(signup, count) {
+  if (!RESEND_API_KEY || !RESEND_FROM || !PRELAUNCH_NOTIFY_EMAIL) return { ok: false, skipped: true };
+  const content = prelaunchSignupEmailContent(signup, count);
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'wethus-backend/1.0'
+    },
+    body: JSON.stringify({
+      from: RESEND_FROM,
+      to: [PRELAUNCH_NOTIFY_EMAIL],
+      subject: content.subject,
+      text: content.text,
+      html: content.html
+    })
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = payload?.message || payload?.error || `Resend email request failed (${response.status})`;
+    throw new Error(message);
+  }
+  return { ok: true, provider: 'resend', id: payload?.id || '' };
+}
+
+async function notifyPrelaunchSignup(signup, count) {
+  if (RESEND_API_KEY) {
+    return sendPrelaunchSignupViaResend(signup, count);
+  }
+  const mailer = getPrelaunchMailer();
+  if (!mailer) return { ok: false, skipped: true };
+  const content = prelaunchSignupEmailContent(signup, count);
+  await mailer.sendMail({
+    from: SMTP_FROM,
+    to: PRELAUNCH_NOTIFY_EMAIL,
+    subject: content.subject,
+    text: content.text,
+    html: content.html
+  });
+  return { ok: true, provider: 'smtp' };
 }
 
 function hashPw(pw) {

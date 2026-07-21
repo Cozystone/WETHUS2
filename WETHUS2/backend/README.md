@@ -27,7 +27,8 @@ cp .env.example .env
 - `WETHUS_DATA_DIR`: optional path for JSON state files. Defaults to `backend/data`; tests should use a temporary directory and production should use a persistent disk or database-backed replacement.
 - Prelaunch notifications:
   - `PRELAUNCH_NOTIFY_EMAIL`: email address that receives a notification for each new prelaunch signup.
-  - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`: SMTP delivery settings. If SMTP is not configured, signups are still saved and email notifications are skipped.
+  - `RESEND_API_KEY`, `RESEND_FROM`: preferred HTTP email API settings for Render free services. `RESEND_FROM` should use a verified Resend sender/domain for production.
+  - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`: fallback SMTP delivery settings for local or paid hosts. If no email provider is configured, signups are still saved and email notifications are skipped.
 - AI provider:
   - `AI_PROVIDER=openai` is recommended.
   - `OPENAI_API_KEY=...`

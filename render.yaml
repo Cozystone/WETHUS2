@@ -109,6 +109,10 @@ services:
         value: ""
       - key: PRELAUNCH_NOTIFY_EMAIL
         value: anseokkim@gmail.com
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        value: WETHUS <onboarding@resend.dev>
       - key: CLOUD_STATE_REQUIRE_SESSION
         value: "true"
       - key: INTEGRATIONS_REQUIRE_ACTOR
