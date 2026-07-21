@@ -107,6 +107,8 @@ services:
         value: google_docs,google_sheets,notion,slack,figma,github,discord,google_calendar,airtable
       - key: WETHUS_DEFERRED_PROVIDERS
         value: ""
+      - key: PRELAUNCH_NOTIFY_EMAIL
+        value: anseokkim@gmail.com
       - key: CLOUD_STATE_REQUIRE_SESSION
         value: "true"
       - key: INTEGRATIONS_REQUIRE_ACTOR
