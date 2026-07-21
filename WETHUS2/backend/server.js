@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
 import { OAuth2Client } from 'google-auth-library';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -145,6 +146,13 @@ const INTEGRATIONS_ENFORCE_LAUNCH_SCOPE = String(process.env.INTEGRATIONS_ENFORC
 const PROJECT_INTERACTIONS_REQUIRE_SESSION = String(process.env.PROJECT_INTERACTIONS_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
 const PROJECT_ACCESS_REQUIRE_MEMBERSHIP = String(process.env.PROJECT_ACCESS_REQUIRE_MEMBERSHIP || 'false').toLowerCase() === 'true';
 const DM_REQUIRE_SESSION = String(process.env.DM_REQUIRE_SESSION || 'false').toLowerCase() === 'true';
+const SMTP_HOST = String(process.env.SMTP_HOST || '').trim();
+const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
+const SMTP_SECURE = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
+const SMTP_USER = String(process.env.SMTP_USER || '').trim();
+const SMTP_PASS = String(process.env.SMTP_PASS || '');
+const SMTP_FROM = String(process.env.SMTP_FROM || SMTP_USER || '').trim();
+const PRELAUNCH_NOTIFY_EMAIL = String(process.env.PRELAUNCH_NOTIFY_EMAIL || ADMIN_EMAIL_RAW || '').trim();
 const WEBHOOK_EVENT_TYPE_MAX = 80;
 const WEBHOOK_ITEM_FIELD_MAX = 240;
 const BUILD_COMMIT = String(process.env.RENDER_GIT_COMMIT || process.env.VERCEL_GIT_COMMIT_SHA || process.env.GIT_COMMIT || process.env.SOURCE_VERSION || '').trim();
@@ -890,6 +898,73 @@ function oauthConnectedHtml(provider, projectId, label = provider) {
 function normEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[ch]);
+}
+
+let prelaunchMailer = null;
+function getPrelaunchMailer() {
+  if (prelaunchMailer) return prelaunchMailer;
+  if (!SMTP_HOST || !SMTP_FROM || !PRELAUNCH_NOTIFY_EMAIL) return null;
+  const auth = SMTP_USER && SMTP_PASS ? { user: SMTP_USER, pass: SMTP_PASS } : undefined;
+  prelaunchMailer = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_SECURE,
+    auth
+  });
+  return prelaunchMailer;
+}
+
+async function notifyPrelaunchSignup(signup, count) {
+  const mailer = getPrelaunchMailer();
+  if (!mailer) return { ok: false, skipped: true };
+  const appUrl = PUBLIC_APP_URL.replace(/\/$/, '');
+  const adminUrl = `${appUrl}/admin.html`;
+  const lines = [
+    '새 WETHUS 사전예약이 들어왔습니다.',
+    '',
+    `이메일: ${signup.email}`,
+    `이름: ${signup.name || '-'}`,
+    `트랙: ${signup.track || '-'}`,
+    `역할: ${signup.role || '-'}`,
+    `관심사: ${signup.interest || '-'}`,
+    `유입: ${signup.source || '-'}`,
+    `신청 시각: ${signup.createdAt}`,
+    `누적 사전예약: ${count}`,
+    '',
+    `관리자 페이지: ${adminUrl}`
+  ];
+  await mailer.sendMail({
+    from: SMTP_FROM,
+    to: PRELAUNCH_NOTIFY_EMAIL,
+    subject: `[WETHUS] 새 사전예약: ${signup.email}`,
+    text: lines.join('\n'),
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.55;color:#111;">
+        <h2>새 WETHUS 사전예약이 들어왔습니다.</h2>
+        <p><strong>이메일:</strong> ${escapeHtml(signup.email)}</p>
+        <p><strong>이름:</strong> ${escapeHtml(signup.name || '-')}</p>
+        <p><strong>트랙:</strong> ${escapeHtml(signup.track || '-')}</p>
+        <p><strong>역할:</strong> ${escapeHtml(signup.role || '-')}</p>
+        <p><strong>관심사:</strong> ${escapeHtml(signup.interest || '-')}</p>
+        <p><strong>유입:</strong> ${escapeHtml(signup.source || '-')}</p>
+        <p><strong>신청 시각:</strong> ${escapeHtml(signup.createdAt)}</p>
+        <p><strong>누적 사전예약:</strong> ${Number(count) || 0}</p>
+        <p><a href="${escapeHtml(adminUrl)}">관리자 페이지에서 확인</a></p>
+      </div>
+    `
+  });
+  return { ok: true };
+}
+
 function hashPw(pw) {
   return crypto.createHash('sha256').update(String(pw || '')).digest('hex');
 }
@@ -3604,7 +3679,7 @@ app.post('/prelaunch/signups', (req, res) => {
     if (signups.some(s => normEmail(s.email) === email)) {
       return res.json({ ok: true, duplicate: true, message: '이미 사전예약이 완료된 이메일입니다.' });
     }
-    signups.push({
+    const signup = {
       id: crypto.randomUUID(),
       email,
       name,
@@ -3613,9 +3688,18 @@ app.post('/prelaunch/signups', (req, res) => {
       interest,
       source,
       createdAt: new Date().toISOString()
-    });
+    };
+    signups.push(signup);
     writeJsonAtomic(PRELAUNCH_SIGNUPS_DB, { signups });
-    return res.json({ ok: true, duplicate: false, count: signups.length });
+    const count = signups.length;
+    const payload = JSON.stringify({ ok: true, duplicate: false, count });
+    res.status(201).type('application/json').send(payload);
+    setImmediate(() => {
+      notifyPrelaunchSignup(signup, count).catch((err) => {
+        console.warn('prelaunch signup notification failed:', err?.message || err);
+      });
+    });
+    return;
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || 'prelaunch signup failed' });
   }

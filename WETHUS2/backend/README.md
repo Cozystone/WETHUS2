@@ -25,6 +25,9 @@ cp .env.example .env
 - `WETHUS_LAUNCH_PROVIDERS`: optional comma-separated override for launch-scope providers. Use only when production should diverge from `WETHUS2/config/launch-scope.json`.
 - `WETHUS_DEFERRED_PROVIDERS`: optional comma-separated override for deferred roadmap providers. Keep it aligned with launch policy and smoke tests.
 - `WETHUS_DATA_DIR`: optional path for JSON state files. Defaults to `backend/data`; tests should use a temporary directory and production should use a persistent disk or database-backed replacement.
+- Prelaunch notifications:
+  - `PRELAUNCH_NOTIFY_EMAIL`: email address that receives a notification for each new prelaunch signup.
+  - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`: SMTP delivery settings. If SMTP is not configured, signups are still saved and email notifications are skipped.
 - AI provider:
   - `AI_PROVIDER=openai` is recommended.
   - `OPENAI_API_KEY=...`
